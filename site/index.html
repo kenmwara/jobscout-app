@@ -1,12 +1,358 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8">
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>JobScout — AI job-search copilot</title></head>
-<body style="font-family:system-ui;max-width:640px;margin:80px auto;padding:0 24px">
-<h1>JobScout</h1>
-<p>Interactive demo under construction — the API underneath is live:</p>
-<pre id="h">checking…</pre>
+<title>JobScout — AI job-search copilot</title>
+<meta name="description" content="Live demo: an LLM scores real job postings against a real profile — honest verdicts, visible reasoning, costs on screen.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%237C5AFF'/%3E%3Cpath d='M16 6l2.6 7.4L26 16l-7.4 2.6L16 26l-2.6-7.4L6 16l7.4-2.6z' fill='%23fff'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#191722; --ink2:#3f3b4e; --muted:#6f6a80; --faint:#9c97ab;
+    --accent:#7C5AFF; --accent-ink:#5B3FE8; --accent-soft:#f1edff;
+    --pass:#1d8a3f; --pass-soft:#e9f6ee; --reject:#b3261e; --reject-soft:#fdeeed;
+    --line:#e6e3ef; --fill:#f7f6fb; --card:#ffffff;
+    --disp:"Bricolage Grotesque",system-ui,sans-serif;
+    --body:-apple-system,system-ui,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+    --ease:cubic-bezier(.22,1,.36,1);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:#fff;color:var(--ink);font-family:var(--body);font-size:16.5px;line-height:1.55;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:880px;margin:0 auto;padding:0 24px}
+  a{color:var(--accent-ink);text-decoration:none}
+  a:hover{text-decoration:underline;text-underline-offset:3px}
+  button{font:inherit;cursor:pointer}
+
+  header{border-bottom:1px solid var(--line)}
+  header .wrap{display:flex;align-items:center;gap:12px;height:60px}
+  .mark{width:26px;height:26px;border-radius:7px;background:var(--accent);display:grid;place-items:center;flex:none}
+  .mark svg{width:16px;height:16px}
+  .brand{font-family:var(--disp);font-weight:700;font-size:18px;letter-spacing:-.01em}
+  .brand small{font-weight:500;color:var(--muted);font-size:13px;margin-left:8px;letter-spacing:0}
+  header nav{margin-left:auto;display:flex;gap:20px;font-size:14px}
+  .livechip{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:12px;color:var(--pass);background:var(--pass-soft);border-radius:99px;padding:3px 10px}
+  .livechip i{width:6px;height:6px;border-radius:50%;background:var(--pass);display:inline-block}
+
+  .hero{padding:56px 0 8px}
+  h1{font-family:var(--disp);font-weight:750;font-size:clamp(30px,5.2vw,46px);line-height:1.08;letter-spacing:-.025em;margin:0 0 14px;max-width:21ch}
+  h1 em{font-style:normal;color:var(--accent-ink)}
+  .sub{color:var(--muted);max-width:56ch;margin:0 0 8px;font-size:17.5px}
+  .sweepline{font-family:var(--mono);font-size:12.5px;color:var(--faint);margin:0 0 30px}
+  .sweepline b{color:var(--ink2);font-weight:600}
+
+  .chooser{background:var(--fill);border:1px solid var(--line);border-radius:16px;padding:22px}
+  .chooser h2{font-family:var(--disp);font-size:15px;font-weight:650;margin:0 0 12px}
+  .personas{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+  .persona{border:1.5px solid var(--line);background:var(--card);border-radius:12px;padding:13px 14px;text-align:left;transition:border-color .2s var(--ease), box-shadow .2s var(--ease)}
+  .persona:hover{border-color:var(--accent)}
+  .persona.sel{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+  .persona .pn{font-weight:650;font-size:14.5px;margin-bottom:2px}
+  .persona .pd{font-size:12.5px;color:var(--muted);line-height:1.4}
+  .ownrow{margin-top:12px;font-size:13.5px}
+  .ownrow button{background:none;border:none;color:var(--accent-ink);padding:0;font-size:13.5px}
+  textarea{width:100%;min-height:120px;margin-top:10px;border:1.5px solid var(--line);border-radius:12px;padding:12px 14px;font:13.5px/1.5 var(--body);resize:vertical;background:var(--card);color:var(--ink)}
+  textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+  .privacy{font-size:12px;color:var(--faint);margin-top:6px}
+  .runrow{margin-top:16px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+  .run{background:var(--accent);color:#fff;border:none;border-radius:99px;padding:12px 26px;font-weight:650;font-size:16px;letter-spacing:-.01em;box-shadow:0 2px 6px rgba(124,90,255,.25),0 8px 24px rgba(124,90,255,.18);transition:transform .2s var(--ease),box-shadow .2s var(--ease),background .2s}
+  .run:hover{background:var(--accent-ink);transform:translateY(-1px)}
+  .run:disabled{background:var(--faint);box-shadow:none;transform:none;cursor:default}
+  .runnote{font-size:12.5px;color:var(--faint)}
+
+  .stage{padding:36px 0 0}
+  .stage h2{font-family:var(--disp);font-size:22px;font-weight:700;letter-spacing:-.015em;margin:0 0 4px}
+  .stage .note{font-size:13.5px;color:var(--muted);margin:0 0 16px}
+  .rows{border-top:1px solid var(--ink);}
+  .row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 18px;padding:12px 2px;border-bottom:1px solid var(--line);opacity:0;transform:translateY(8px)}
+  .row.in{opacity:1;transform:none}
+  @media (prefers-reduced-motion:no-preference){.row{transition:opacity .45s var(--ease),transform .45s var(--ease)}}
+  .row .t{font-weight:600;font-size:15px}
+  .row .m{font-size:12.5px;color:var(--muted)}
+  .verdict{font-family:var(--mono);font-size:11.5px;align-self:center;border-radius:99px;padding:3px 10px;white-space:nowrap}
+  .verdict.pass{color:var(--pass);background:var(--pass-soft)}
+  .verdict.reject{color:var(--reject);background:var(--reject-soft)}
+  .gatereason{grid-column:1/-1;font-size:12.5px;color:var(--faint)}
+  .row.rej .t{color:var(--muted);text-decoration:line-through;text-decoration-color:rgba(179,38,30,.35);text-decoration-thickness:1.5px}
+
+  .scores{display:flex;flex-direction:column;gap:14px;margin-top:6px}
+  .scard{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 20px;display:grid;grid-template-columns:64px minmax(0,1fr);gap:4px 18px;opacity:0;transform:translateY(10px);box-shadow:0 1px 2px rgba(25,23,34,.04)}
+  .scard.in{opacity:1;transform:none}
+  @media (prefers-reduced-motion:no-preference){.scard{transition:opacity .5s var(--ease),transform .5s var(--ease)}}
+  .fit{font-family:var(--disp);font-weight:750;font-size:30px;letter-spacing:-.02em;align-self:start;line-height:1;padding-top:2px}
+  .fit small{display:block;font-family:var(--mono);font-size:10px;font-weight:500;color:var(--faint);letter-spacing:.06em;margin-top:4px}
+  .fit.hi{color:var(--pass)} .fit.mid{color:#a05a00} .fit.lo{color:var(--faint)}
+  .scard .head{font-weight:650;font-size:15.5px}
+  .scard .head .co{color:var(--muted);font-weight:500}
+  .scard .v{font-size:14px;color:var(--ink2);margin-top:2px}
+  .scard .sw{font-size:12.5px;color:var(--muted);margin-top:6px}
+  .scard .sw b{color:var(--pass);font-weight:600}
+  .scard .sw i{color:var(--reject);font-style:normal;font-weight:600}
+  .scard .act{grid-column:2;margin-top:10px}
+  .letterbtn{background:var(--accent-soft);color:var(--accent-ink);border:none;border-radius:99px;padding:7px 16px;font-size:13px;font-weight:600}
+  .letterbtn:hover{background:#e6dfff}
+  .letter{grid-column:1/-1;margin-top:12px;background:var(--fill);border:1px solid var(--line);border-radius:12px;padding:16px 18px;font-size:14px;white-space:pre-wrap;color:var(--ink2)}
+  .letter .lm{font-family:var(--mono);font-size:11px;color:var(--faint);margin-top:10px;white-space:normal}
+
+  .status{font-family:var(--mono);font-size:12.5px;color:var(--muted);padding:14px 2px;display:flex;align-items:center;gap:10px}
+  .spin{width:13px;height:13px;border:2px solid var(--accent-soft);border-top-color:var(--accent);border-radius:50%;flex:none}
+  @media (prefers-reduced-motion:no-preference){.spin{animation:sp .7s linear infinite}}
+  @keyframes sp{to{transform:rotate(360deg)}}
+  .banner{border-radius:12px;padding:13px 16px;font-size:13.5px;margin:14px 0}
+  .banner.warn{background:#fff7e8;border:1px solid #f0dfb7;color:#7a5a12}
+  .banner.err{background:var(--reject-soft);border:1px solid #f2c9c6;color:var(--reject)}
+
+  footer{margin-top:64px;border-top:1px solid var(--line);background:var(--fill)}
+  footer .wrap{padding:34px 24px 44px}
+  .meta{font-family:var(--mono);font-size:12px;color:var(--muted);display:flex;flex-wrap:wrap;gap:8px 26px;margin-bottom:18px}
+  .meta b{color:var(--ink2);font-weight:600}
+  .honesty{font-size:13px;color:var(--muted);max-width:72ch;line-height:1.6}
+  .honesty b{color:var(--ink2)}
+  .ftlinks{margin-top:16px;font-size:13.5px;display:flex;gap:22px;flex-wrap:wrap}
+
+  @media (max-width:640px){
+    .personas{grid-template-columns:1fr}
+    .scard{grid-template-columns:52px minmax(0,1fr)}
+    .fit{font-size:24px}
+    header nav .hidesm{display:none}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <span class="mark" aria-hidden="true"><svg viewBox="0 0 32 32"><path d="M16 6l2.6 7.4L26 16l-7.4 2.6L16 26l-2.6-7.4L6 16l7.4-2.6z" fill="#fff"/></svg></span>
+    <span class="brand">JobScout <small>AI job-search copilot</small></span>
+    <nav>
+      <span class="livechip"><i></i>live · real postings</span>
+      <a class="hidesm" href="https://github.com/kenmwara/jobscout-app" target="_blank" rel="noopener">code</a>
+      <a class="hidesm" href="https://tbot.trade/portfolio" target="_blank" rel="noopener">builder</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="hero">
+    <h1>Watch an <em>LLM</em> read the job market the way a tired applicant wishes it would.</h1>
+    <p class="sub">Pick a candidate. Real postings from this morning's sweep stream through deterministic eligibility gates, the survivors get scored live by Claude with the reasoning shown, and the numbers are honest — most jobs are a bad fit, and it says so.</p>
+    <p class="sweepline" id="sweepline">loading today's sweep…</p>
+
+    <div class="chooser">
+      <h2>Who's looking?</h2>
+      <div class="personas" id="personas"></div>
+      <div class="ownrow">
+        <button id="ownToggle" type="button">…or paste your own resume text</button>
+        <div id="ownBox" hidden>
+          <textarea id="ownText" maxlength="6000" placeholder="Paste plain resume text (max 6,000 chars)…"></textarea>
+          <p class="privacy">Processed in-memory for this one scoring run. Never stored, never logged, never used for anything else.</p>
+        </div>
+      </div>
+      <div class="runrow">
+        <button class="run" id="runBtn" type="button">Run the pipeline</button>
+        <span class="runnote">one Claude call · ~1¢ · rate-limited + budget-capped (that's part of the demo)</span>
+      </div>
+      <div id="banner"></div>
+    </div>
+  </section>
+
+  <section class="stage" id="gatesStage" hidden>
+    <h2>Eligibility gates</h2>
+    <p class="note">Deterministic, instant, free — the pipeline's own prefilter verdicts on today's real postings. No tokens spent saying no.</p>
+    <div class="rows" id="gateRows"></div>
+    <div class="status" id="gateStatus" hidden><span class="spin"></span><span></span></div>
+  </section>
+
+  <section class="stage" id="scoreStage" hidden>
+    <h2>Live scoring</h2>
+    <p class="note" id="scoreNote">The gate survivors go to Claude with JobScout's honest rubric: clean title + seniority + eligibility baselines ~70, niches are a bonus never a requirement, and a poor fit gets called a poor fit.</p>
+    <div class="status" id="scoreStatus"><span class="spin"></span><span>scoring with Claude…</span></div>
+    <div class="scores" id="scores"></div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="meta" id="meta">
+      <span>model <b id="mModel">—</b></span>
+      <span>this run <b id="mCost">—</b></span>
+      <span>today <b id="mDay">—</b></span>
+      <span>feed <b id="mFeed">—</b></span>
+    </div>
+    <p class="honesty"><b>What's real:</b> the postings come from JobScout's actual daily sweep (five boards + ~800 company ATS feeds); the gate verdicts are the production prefilter's own reasons; the scores and letters are live Claude calls. <b>What's capped:</b> a per-visitor rate limit and a global daily budget — when it's spent, the demo says so and serves a cached run instead of pretending. Built from the private pipeline that has run the author's own search since July 2026 — where a human clicks every Submit.</p>
+    <div class="ftlinks">
+      <a href="https://github.com/kenmwara/jobscout-app" target="_blank" rel="noopener">source code</a>
+      <a href="https://tbot.trade/portfolio" target="_blank" rel="noopener">more of the builder's work</a>
+      <a href="mailto:ken@tbot.trade">ken@tbot.trade</a>
+    </div>
+  </div>
+</footer>
+
 <script>
-fetch('https://jobscout-app-api.kenmwara.workers.dev/api/health').then(r=>r.json())
-.then(d=>{document.getElementById('h').textContent=JSON.stringify(d,null,2)})
-.catch(e=>{document.getElementById('h').textContent='api unreachable: '+e});
-</script></body></html>
+const API = "https://jobscout-app-api.kenmwara.workers.dev";
+const $ = s => document.querySelector(s);
+const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+const PERSONAS = [
+  { id:"maya", name:"Maya — Senior Platform Engineer", desc:"Vancouver · Canadian PR · remote-only · Python/TypeScript, Cloudflare, LLM orchestration",
+    profile:"Senior platform engineer in Vancouver, BC (Canadian PR; no US work authorization — US roles must allow remote-from-Canada). 8 years: Python, TypeScript, Cloudflare Workers/D1, DigitalOcean, FastAPI, nginx. Builds and operates LLM-orchestrated production systems (Claude API) end-to-end solo: trading platform, audit pipelines, edge APIs. Wants: senior/staff platform or AI-infrastructure roles, fully remote." },
+  { id:"dev", name:"Dev — New-grad SWE", desc:"Toronto · React/Node internships · hybrid OK · first full-time role",
+    profile:"New-grad software engineer in Toronto, ON (Canadian citizen). BSc CS 2026. Two internships: React/Next.js front-end at a fintech, Node/Express APIs at a startup. Comfortable with TypeScript, Postgres, basic AWS. Looking for: junior/new-grad full-stack or front-end roles, Toronto hybrid or remote-Canada." },
+  { id:"ingrid", name:"Ingrid — Data Scientist", desc:"Berlin · EU work auth · Python/ML · remote EU or hybrid Berlin",
+    profile:"Data scientist in Berlin, Germany (EU work authorization only). 5 years: Python, pandas, scikit-learn, PyTorch, SQL, dbt; production ML for churn and pricing at a marketplace. Strong experimentation/causal inference. Looking for: senior data science or ML engineer roles, remote within EU or hybrid Berlin. No relocation." },
+];
+
+let feed = null, selected = PERSONAS[0], running = false;
+
+function renderPersonas(){
+  $("#personas").innerHTML = PERSONAS.map(p =>
+    `<button type="button" class="persona${p===selected?" sel":""}" data-id="${p.id}">
+       <div class="pn">${p.name}</div><div class="pd">${p.desc}</div></button>`).join("");
+  document.querySelectorAll(".persona").forEach(b => b.onclick = () => {
+    selected = PERSONAS.find(p => p.id === b.dataset.id);
+    $("#ownBox").hidden = true; $("#ownText").value = "";
+    renderPersonas();
+  });
+}
+
+function profileText(){
+  const own = $("#ownText").value.trim();
+  return own.length > 40 ? own : selected.profile;
+}
+
+function banner(kind, text){
+  $("#banner").innerHTML = text ? `<div class="banner ${kind}">${text}</div>` : "";
+}
+
+async function loadFeed(){
+  try{
+    const r = await fetch(API + "/api/feed"); feed = await r.json();
+    const c = feed.counts || {};
+    $("#sweepline").innerHTML = `today's sweep · <b>${feed.postings.length}</b> curated from the real ledger · <b>${c.pass ?? "?"}</b> cleared the gates · <b>${c.reject ?? "?"}</b> shown rejected, with reasons · ${feed.day}`;
+    $("#mFeed").textContent = `${feed.day} · ${feed.postings.length} postings`;
+  }catch(e){
+    $("#sweepline").textContent = "feed unreachable — the demo can still explain itself, but scoring needs the API";
+  }
+}
+
+function sleep(ms){ return new Promise(r => setTimeout(r, reduced ? 0 : ms)); }
+
+async function runPipeline(){
+  if (running || !feed?.postings?.length) return;
+  running = true; $("#runBtn").disabled = true; banner("", "");
+  const profile = profileText();
+
+  // Stage 1 — gates (deterministic theater from real verdicts)
+  $("#gatesStage").hidden = false; $("#gateRows").innerHTML = "";
+  $("#scoreStage").hidden = true; $("#scores").innerHTML = "";
+  const rows = feed.postings.map(p => {
+    const el = document.createElement("div");
+    el.className = "row" + (p.gate?.verdict === "reject" ? " rej" : "");
+    el.innerHTML = `<div><div class="t">${esc(p.title)} <span class="co" style="color:var(--muted);font-weight:500">· ${esc(p.company)}</span></div>
+      <div class="m">${esc(p.location)} · ${esc(p.source || "board")}</div>
+      <div class="gatereason">${p.gate?.verdict === "reject" ? "✗ " : "✓ "}${esc(p.gate?.reason || "")}</div></div>
+      <span class="verdict ${p.gate?.verdict === "reject" ? "reject" : "pass"}">${p.gate?.verdict === "reject" ? "rejected" : "eligible"}</span>`;
+    $("#gateRows").appendChild(el);
+    return el;
+  });
+  $("#gatesStage").scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "start" });
+  for (const el of rows){ await sleep(110); el.classList.add("in"); }
+
+  // Stage 2 — live scoring of the survivors
+  const passers = feed.postings.filter(p => p.gate?.verdict !== "reject").slice(0, 8);
+  await sleep(400);
+  $("#scoreStage").hidden = false;
+  $("#scoreStatus").hidden = false;
+  $("#scoreStatus").lastElementChild.textContent = `scoring ${passers.length} eligible postings with Claude…`;
+  $("#scoreStage").scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "start" });
+
+  let data;
+  try{
+    const r = await fetch(API + "/api/score", {
+      method: "POST", headers: { "content-type": "application/json" },
+      body: JSON.stringify({ profile, postings: passers }),
+    });
+    data = await r.json();
+    if (r.status === 429) { banner("warn", "Rate limit reached for this hour — the guard is doing its job. Try again in a bit."); finish(); return; }
+  }catch(e){ banner("err", "Scoring API unreachable: " + e); finish(); return; }
+
+  $("#scoreStatus").hidden = true;
+
+  if (data.breaker){
+    banner("warn", data.detail + (data.cached ? " Showing the cached showcase run:" : ""));
+    if (data.cached?.scores) renderScores(data.cached.scores, passers, profile, data.cached.meta, true);
+    finish(); return;
+  }
+  if (!data.scores){ banner("err", "Unexpected response: " + JSON.stringify(data).slice(0,120)); finish(); return; }
+  renderScores(data.scores, passers, profile, data.meta, false);
+  finish();
+}
+
+function renderScores(scores, passers, profile, meta, cached){
+  const byId = Object.fromEntries(passers.map(p => [p.id, p]));
+  const sorted = [...scores].sort((a,b) => b.fit - a.fit);
+  sorted.forEach((s, i) => {
+    const p = byId[s.id] || {};
+    const cls = s.fit >= 70 ? "hi" : s.fit >= 45 ? "mid" : "lo";
+    const el = document.createElement("div");
+    el.className = "scard";
+    el.innerHTML = `<div class="fit ${cls}">${s.fit}<small>FIT</small></div>
+      <div>
+        <div class="head">${esc(p.title || s.id)} <span class="co">· ${esc(p.company || "")}</span></div>
+        <div class="v">${esc(s.verdict || "")}</div>
+        <div class="sw"><b>+</b> ${esc(s.strongest || "—")} &nbsp; <i>−</i> ${esc(s.weakest || "—")}</div>
+        ${i === 0 && !cached ? `<div class="act"><button class="letterbtn" type="button">Draft a grounded cover letter →</button></div>` : ""}
+      </div>`;
+    $("#scores").appendChild(el);
+    setTimeout(() => el.classList.add("in"), reduced ? 0 : 90 * i);
+    if (i === 0 && !cached){
+      el.querySelector(".letterbtn").onclick = () => draftLetter(el, p, profile);
+    }
+  });
+  if (meta){
+    $("#mModel").textContent = meta.model || "—";
+    $("#mCost").textContent = meta.cost_usd != null ? `$${meta.cost_usd}` : "—";
+    $("#mDay").textContent = `$${meta.day_spend_usd ?? "?"} / $${meta.day_budget_usd ?? "?"} budget`;
+  }
+}
+
+async function draftLetter(card, posting, profile){
+  const btn = card.querySelector(".letterbtn");
+  btn.disabled = true; btn.textContent = "drafting…";
+  try{
+    const r = await fetch(API + "/api/letter", {
+      method: "POST", headers: { "content-type": "application/json" },
+      body: JSON.stringify({ profile, posting }),
+    });
+    const d = await r.json();
+    if (d.letter){
+      const div = document.createElement("div");
+      div.className = "letter";
+      div.textContent = d.letter;
+      const lm = document.createElement("div");
+      lm.className = "lm";
+      lm.textContent = `grounded only in the profile shown · ${d.meta?.model} · $${d.meta?.cost_usd}`;
+      div.appendChild(lm);
+      card.appendChild(div);
+      btn.remove();
+      if (d.meta){ $("#mCost").textContent = `$${d.meta.cost_usd} (letter)`; $("#mDay").textContent = `$${d.meta.day_spend_usd} / $${d.meta.day_budget_usd} budget`; }
+    } else {
+      btn.textContent = d.detail || d.error || "unavailable";
+    }
+  }catch(e){ btn.textContent = "letter API unreachable"; }
+}
+
+function finish(){ running = false; $("#runBtn").disabled = false; }
+function esc(s){ return String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+
+$("#ownToggle").onclick = () => { $("#ownBox").hidden = !$("#ownBox").hidden; };
+$("#runBtn").onclick = runPipeline;
+renderPersonas();
+loadFeed();
+fetch(API + "/api/health").then(r => r.json()).then(d => { $("#mModel").textContent = d.model; }).catch(()=>{});
+</script>
+</body>
+</html>

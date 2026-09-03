@@ -132,7 +132,7 @@ export default {
 
       const body = await request.json().catch(() => ({}));
       const profile = String(body.profile || "").slice(0, 6000);
-      const postings = Array.isArray(body.postings) ? body.postings.slice(0, 5) : [];
+      const postings = Array.isArray(body.postings) ? body.postings.slice(0, 8) : [];
       if (!profile || !postings.length)
         return json(400, { error: "bad_request", detail: "profile + postings[] required" });
 
@@ -147,6 +147,53 @@ export default {
       return json(200, {
         scores: out,
         meta: { model: MODEL, tokens_in: tIn, tokens_out: tOut, cost_usd: +cost.toFixed(5),
+                day_spend_usd: +(spent + cost).toFixed(4), day_budget_usd: DAILY_BUDGET_USD },
+      });
+    }
+
+    if (url.pathname === "/api/letter" && request.method === "POST") {
+      const key = await ipKey(request);
+      if (await rateLimited(env, key))
+        return json(429, { error: "rate_limited", detail: `Demo cap: ${IP_RUNS_PER_HOUR} runs/hour.` });
+      const spent = await todaySpendUsd(env);
+      if (spent >= DAILY_BUDGET_USD)
+        return json(200, { breaker: true, detail: "Today's live-demo budget is spent — letter drafting resumes tomorrow." });
+
+      const body = await request.json().catch(() => ({}));
+      const profile = String(body.profile || "").slice(0, 6000);
+      const p = body.posting || {};
+      if (!profile || !p.title)
+        return json(400, { error: "bad_request", detail: "profile + posting required" });
+
+      const r = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: {
+          "x-api-key": env.ANTHROPIC_API_KEY,
+          "anthropic-version": "2023-06-01",
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({
+          model: MODEL,
+          max_tokens: 550,
+          system:
+            "Draft a short, specific cover letter (150-200 words) grounded ONLY in the " +
+            "candidate profile provided — never invent experience, credentials, or claims. " +
+            "Plain professional voice, no flattery padding, no 'I am writing to express'. " +
+            "Open with the single strongest genuine alignment. Sign off as 'the candidate'.",
+          messages: [{
+            role: "user",
+            content: `PROFILE:\n${profile}\n\nPOSTING:\n${p.title} — ${p.company}\n${p.location || ""} · ${p.remote_policy || ""}\n${p.summary || ""}`,
+          }],
+        }),
+      });
+      if (!r.ok) return json(502, { error: "upstream", detail: `anthropic ${r.status}` });
+      const data = await r.json();
+      const usage = data.usage || { input_tokens: 0, output_tokens: 0 };
+      const cost = (usage.input_tokens * PRICE_IN + usage.output_tokens * PRICE_OUT) / 1_000_000;
+      await recordRun(env, key, usage.input_tokens, usage.output_tokens, cost);
+      return json(200, {
+        letter: data.content?.[0]?.text ?? "",
+        meta: { model: MODEL, cost_usd: +cost.toFixed(5),
                 day_spend_usd: +(spent + cost).toFixed(4), day_budget_usd: DAILY_BUDGET_USD },
       });
     }
