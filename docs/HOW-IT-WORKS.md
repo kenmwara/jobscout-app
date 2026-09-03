@@ -20,10 +20,14 @@ Claude call whose cost prints at the bottom of the page.
 **1 · Candidate.** You pick one of three personas (or paste a resume, which is
 processed in memory and never stored). This is the profile the AI reads against.
 
+<img src="img/01-candidate.png" alt="Persona chooser" width="520">
+
 **2 · Gates before tokens.** Every posting first passes deterministic checks —
 is it genuinely remote, is the candidate's region actually eligible, is the
 title in scope. This is free and instant, and it's where most postings die.
 Design point: never spend AI money to discover what a rule already knows.
+
+<img src="img/02-gates.png" alt="Eligibility gates with real verdicts" width="520">
 
 **3 · Honest scoring.** The survivors go to Claude with a rubric that anchors a
 clean match near 70 and treats specialties as bonuses, never requirements. The
@@ -31,6 +35,8 @@ result renders on a bearing dial — the needle's angle *is* the score, and the
 color band it lands in *is* the routing decision the real pipeline makes
 (auto-apply / ping me / unsure / near-miss). Most jobs score low. That is the
 feature: the tool's job is to protect attention, not to flatter.
+
+<img src="img/03-score-dial.png" alt="Score card with the bearing dial" width="520">
 
 **4 · The letter.** One click drafts a short cover letter grounded only in the
 profile on screen — it cannot invent experience, by prompt design.
