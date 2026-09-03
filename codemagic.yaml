@@ -16,6 +16,7 @@ workflows:
           cd android
           gradle wrapper --gradle-version 8.9 --no-daemon
           ./gradlew --no-daemon assembleDebug
+          mv app/build/outputs/apk/debug/app-debug.apk app/build/outputs/apk/debug/JobScout-debug.apk
     artifacts:
       - android/app/build/outputs/apk/debug/*.apk
 
