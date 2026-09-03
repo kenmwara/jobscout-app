@@ -79,9 +79,10 @@ bearing dial in each platform's own graphics layer:
   `rotationEffect`). The `.xcodeproj` is generated in CI from
   [`project.yml`](ios/project.yml) (XcodeGen) — only sources are committed.
 
-CI is [`codemagic.yaml`](codemagic.yaml): `android-debug` produces an
-installable APK; `ios-simulator` proves the SwiftUI app compiles and links
-(device distribution waits on an Apple Developer account).
+CI is [`codemagic.yaml`](codemagic.yaml), and both workflows build green:
+`android-debug` produces an installable APK; `ios-simulator` proves the
+SwiftUI app compiles and links (device distribution waits on an Apple
+Developer account).
 
 ## Stack
 

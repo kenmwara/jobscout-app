@@ -64,4 +64,9 @@ output rendered as product (the dial), cost/abuse controls a public endpoint
 actually needs, and honest degradation states — designed, built, shipped, and
 operated by one person.
 
+The same demo also ships as **fully native mobile apps** — Kotlin/Jetpack
+Compose on Android and Swift/SwiftUI on iOS, no webview — built green in
+Codemagic CI against the same guarded API. The Android debug APK installs on
+any phone today; iOS device distribution awaits an Apple Developer account.
+
 — Ken Kariuki · ken@tbot.trade · [tbot.trade/portfolio](https://tbot.trade/portfolio)
