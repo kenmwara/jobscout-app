@@ -1,0 +1,12 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>JobScout — AI job-search copilot</title></head>
+<body style="font-family:system-ui;max-width:640px;margin:80px auto;padding:0 24px">
+<h1>JobScout</h1>
+<p>Interactive demo under construction — the API underneath is live:</p>
+<pre id="h">checking…</pre>
+<script>
+fetch('https://jobscout-app-api.kenmwara.workers.dev/api/health').then(r=>r.json())
+.then(d=>{document.getElementById('h').textContent=JSON.stringify(d,null,2)})
+.catch(e=>{document.getElementById('h').textContent='api unreachable: '+e});
+</script></body></html>

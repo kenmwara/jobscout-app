@@ -1,0 +1,9 @@
+name = "jobscout-app-api"
+main = "src/index.js"
+compatibility_date = "2026-08-01"
+workers_dev = true
+
+[[d1_databases]]
+binding = "DB"
+database_name = "jobscout-app"
+database_id = "744fec23-fba7-44d4-843c-54df8f27d174"
