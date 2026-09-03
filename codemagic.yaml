@@ -27,6 +27,7 @@ workflows:
       - name: Generate Xcode project
         script: |
           cd ios
+          command -v xcodegen >/dev/null || brew install xcodegen
           xcodegen generate
       - name: Build for simulator
         script: |
