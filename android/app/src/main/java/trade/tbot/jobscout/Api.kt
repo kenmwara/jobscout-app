@@ -31,12 +31,20 @@ data class Posting(
 )
 
 @Serializable
+data class Counts(val pass: Int = 0, val reject: Int = 0)
+
+@Serializable
 data class Feed(
     val day: String? = null,
     val generated_utc: String = "",
-    val passers: List<Posting> = emptyList(),
-    val rejects: List<Posting> = emptyList(),
-)
+    // The published feed is a single postings[] array; each item carries a
+    // gate.verdict of "pass"/"reject". Split it client-side, same as the web demo.
+    val postings: List<Posting> = emptyList(),
+    val counts: Counts = Counts(),
+) {
+    val passers: List<Posting> get() = postings.filter { it.gate.verdict != "reject" }
+    val rejects: List<Posting> get() = postings.filter { it.gate.verdict == "reject" }
+}
 
 @Serializable
 data class Score(

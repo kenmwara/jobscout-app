@@ -18,11 +18,17 @@ struct Posting: Codable, Identifiable {
     var gate = Gate()
 }
 
+struct Counts: Codable { var pass = 0; var reject = 0 }
+
 struct Feed: Codable {
     var day: String?
     var generated_utc = ""
-    var passers: [Posting] = []
-    var rejects: [Posting] = []
+    // The published feed is a single postings[] array; each item carries a
+    // gate.verdict of "pass"/"reject". Split it client-side, same as the web demo.
+    var postings: [Posting] = []
+    var counts = Counts()
+    var passers: [Posting] { postings.filter { $0.gate.verdict != "reject" } }
+    var rejects: [Posting] { postings.filter { $0.gate.verdict == "reject" } }
 }
 
 struct Score: Codable, Identifiable {
