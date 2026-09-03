@@ -20,6 +20,25 @@ workflows:
     artifacts:
       - android/app/build/outputs/apk/debug/*.apk
 
+  # Portfolio screenshots: build, install on an emulator, drive the real
+  # pipeline once, capture each stage (tools/native_screens.sh).
+  android-screens:
+    name: JobScout Android (UI screenshots)
+    instance_type: mac_mini_m2
+    max_build_duration: 30
+    environment:
+      java: 17
+    scripts:
+      - name: Build debug APK
+        script: |
+          cd android
+          gradle wrapper --gradle-version 8.9 --no-daemon
+          ./gradlew --no-daemon assembleDebug
+      - name: Emulator screenshots
+        script: bash tools/native_screens.sh android/app/build/outputs/apk/debug/app-debug.apk
+    artifacts:
+      - screens/*.png
+
   ios-simulator:
     name: JobScout iOS (simulator build)
     instance_type: mac_mini_m2
@@ -36,5 +55,17 @@ workflows:
           xcodebuild build -project JobScout.xcodeproj -scheme JobScout \
             -destination 'generic/platform=iOS Simulator' \
             -derivedDataPath build CODE_SIGNING_ALLOWED=NO
+      - name: Simulator screenshot
+        script: |
+          cd ios
+          UDID=$(xcrun simctl list devices available -j | python3 -c "import json,sys; d=json.load(sys.stdin); print(next(dev['udid'] for devs in d['devices'].values() for dev in devs if dev['name'].startswith('iPhone')))")
+          xcrun simctl boot "$UDID" || true
+          xcrun simctl bootstatus "$UDID" -b
+          xcrun simctl install "$UDID" build/Build/Products/Debug-iphonesimulator/JobScout.app
+          xcrun simctl launch "$UDID" trade.tbot.jobscout
+          sleep 7
+          mkdir -p screens
+          xcrun simctl io "$UDID" screenshot screens/ios-01-candidate.png
     artifacts:
       - ios/build/Build/Products/Debug-iphonesimulator/*.app
+      - ios/screens/*.png
