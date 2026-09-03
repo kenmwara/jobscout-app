@@ -1,0 +1,20 @@
+# XcodeGen spec — the .xcodeproj is generated in CI (xcodegen generate), never committed.
+name: JobScout
+options:
+  bundleIdPrefix: trade.tbot
+  deploymentTarget:
+    iOS: "16.0"
+targets:
+  JobScout:
+    type: application
+    platform: iOS
+    sources: [Sources]
+    info:
+      path: Info.plist
+      properties:
+        CFBundleDisplayName: JobScout
+        UILaunchScreen: {}
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: trade.tbot.jobscout
+        TARGETED_DEVICE_FAMILY: "1"

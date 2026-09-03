@@ -1,3 +1,14 @@
 node_modules/
 .wrangler/
 .dev.vars
+
+# native builds (generated in CI, never committed)
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties
+android/gradle/
+android/gradlew*
+ios/JobScout.xcodeproj/
+ios/Info.plist
+ios/build/

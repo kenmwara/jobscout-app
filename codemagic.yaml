@@ -1,0 +1,37 @@
+# JobScout native builds — Codemagic CI.
+# android-debug: installable debug APK (no signing setup needed).
+# ios-simulator: proves the SwiftUI app compiles + links; device/TestFlight
+#   distribution waits on an Apple Developer account.
+workflows:
+  android-debug:
+    name: JobScout Android (debug APK)
+    instance_type: linux_x2
+    max_build_duration: 30
+    environment:
+      java: 17
+    scripts:
+      - name: Build debug APK
+        script: |
+          cd android
+          gradle wrapper --gradle-version 8.9 --no-daemon
+          ./gradlew --no-daemon assembleDebug
+    artifacts:
+      - android/app/build/outputs/apk/debug/*.apk
+
+  ios-simulator:
+    name: JobScout iOS (simulator build)
+    instance_type: mac_mini_m2
+    max_build_duration: 30
+    scripts:
+      - name: Generate Xcode project
+        script: |
+          cd ios
+          xcodegen generate
+      - name: Build for simulator
+        script: |
+          cd ios
+          xcodebuild build -project JobScout.xcodeproj -scheme JobScout \
+            -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath build CODE_SIGNING_ALLOWED=NO
+    artifacts:
+      - ios/build/Build/Products/Debug-iphonesimulator/*.app

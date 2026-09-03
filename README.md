@@ -65,10 +65,29 @@ same discipline the parent pipeline applies to itself.
   every Submit, because applications carry legal attestations. The demo keeps
   that boundary as a design principle.
 
+## Native apps (Kotlin + Swift)
+
+The same demo, built fully native — no webview, no cross-platform wrapper.
+Both apps speak to the same guarded worker API and re-implement the brand-kit
+bearing dial in each platform's own graphics layer:
+
+- **`android/`** — Kotlin + Jetpack Compose (Material 3, ViewModel/StateFlow,
+  kotlinx-serialization, OkHttp; the dial is a Compose `Canvas` with an
+  animated needle). Built in CI as a debug APK.
+- **`ios/`** — Swift + SwiftUI (async/await, `ObservableObject`, Codable; the
+  dial is trimmed-`Circle` band segments plus a `Path` needle under
+  `rotationEffect`). The `.xcodeproj` is generated in CI from
+  [`project.yml`](ios/project.yml) (XcodeGen) — only sources are committed.
+
+CI is [`codemagic.yaml`](codemagic.yaml): `android-debug` produces an
+installable APK; `ios-simulator` proves the SwiftUI app compiles and links
+(device distribution waits on an Apple Developer account).
+
 ## Stack
 
 Cloudflare Pages + Workers + D1 · Anthropic Claude (Haiku) · Python (feed
-publisher) · vanilla JS, one self-contained page · JobScout Brand Kit v1.0
+publisher) · vanilla JS, one self-contained page · Kotlin/Jetpack Compose
+(Android) · Swift/SwiftUI (iOS) · Codemagic CI · JobScout Brand Kit v1.0
 (the bearing dial, the violet system, Inter/JetBrains embedded).
 
 ---
