@@ -59,6 +59,7 @@ enum class Phase { IDLE, GATES, SCORING, DONE }
 data class Ui(
     val feed: Feed? = null,
     val personaIdx: Int = 0,
+    val resume: String = "",          // pasted resume text — in-memory only, never persisted
     val phase: Phase = Phase.IDLE,
     val gatesShown: Int = 0,
     val scores: List<Score> = emptyList(),
@@ -83,6 +84,13 @@ class DemoVm : ViewModel() {
     }
 
     fun pick(i: Int) = _ui.update { it.copy(personaIdx = i) }
+    fun setResume(s: String) = _ui.update { it.copy(resume = s.take(6000)) }
+
+    /** Same rule as the web demo: pasted text wins once it is longer than 40 chars, else the persona. */
+    private fun profileText(): String {
+        val own = _ui.value.resume.trim()
+        return if (own.length > 40) own else PERSONAS[_ui.value.personaIdx].profile
+    }
 
     fun run() {
         val feed = _ui.value.feed ?: return
@@ -95,7 +103,7 @@ class DemoVm : ViewModel() {
                 _ui.update { s -> s.copy(gatesShown = s.gatesShown + 1) }
             }
             _ui.update { it.copy(phase = Phase.SCORING) }
-            val profile = PERSONAS[_ui.value.personaIdx].profile
+            val profile = profileText()
             runCatching { Api.score(profile, feed.passers.take(8)) }
                 .onSuccess { r ->
                     when {
@@ -110,7 +118,7 @@ class DemoVm : ViewModel() {
     }
 
     fun draftLetter(posting: Posting) {
-        val profile = PERSONAS[_ui.value.personaIdx].profile
+        val profile = profileText()
         viewModelScope.launch {
             _ui.update { it.copy(letterBusy = true, letterText = null) }
             runCatching { Api.letter(profile, posting) }
@@ -143,6 +151,8 @@ class MainActivity : ComponentActivity() {
 fun DemoScreen(vm: DemoVm = viewModel()) {
     val ui by vm.ui.collectAsState()
     val feed = ui.feed
+    var ownOpen by remember { mutableStateOf(false) }
+    val usingOwn = ui.resume.trim().length > 40
 
     LazyColumn(
         Modifier.fillMaxSize().background(CanvasBg),
@@ -154,7 +164,29 @@ fun DemoScreen(vm: DemoVm = viewModel()) {
 
         item { SectionLabel("000 · CANDIDATE") }
         itemsIndexed(PERSONAS) { i, p ->
-            PersonaCard(p, selected = i == ui.personaIdx) { vm.pick(i) }
+            PersonaCard(p, selected = i == ui.personaIdx && !usingOwn) { vm.pick(i) }
+        }
+        item {
+            // Same affordance as the web demo: hidden behind a toggle, processed in memory only.
+            TextButton(onClick = { ownOpen = !ownOpen }, contentPadding = PaddingValues(0.dp)) {
+                Text(if (ownOpen) "Hide resume box" else "…or paste your own resume text", color = VioletDeep, fontSize = 14.sp)
+            }
+            if (ownOpen) {
+                OutlinedTextField(
+                    value = ui.resume, onValueChange = vm::setResume,
+                    modifier = Modifier.fillMaxWidth(), minLines = 4, maxLines = 8,
+                    placeholder = { Text("Paste plain resume text (max 6,000 chars)…", color = Muted) },
+                    shape = RoundedCornerShape(12.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = Violet, unfocusedBorderColor = Hairline,
+                        focusedContainerColor = CardBg, unfocusedContainerColor = CardBg),
+                )
+                Text(
+                    (if (usingOwn) "Using your pasted resume for this run. " else "") +
+                        "Processed in-memory for this one scoring run. Never stored, never logged, never used for anything else.",
+                    color = Muted, fontSize = 12.sp, modifier = Modifier.padding(top = 6.dp),
+                )
+            }
         }
         item {
             Button(

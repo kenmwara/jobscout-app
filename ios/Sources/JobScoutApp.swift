@@ -31,6 +31,7 @@ enum Phase { case idle, gates, scoring, done }
 final class DemoVM: ObservableObject {
     @Published var feed: Feed?
     @Published var personaIdx = 0
+    @Published var resume = ""          // pasted resume text — in-memory only, never persisted
     @Published var phase = Phase.idle
     @Published var gatesShown = 0
     @Published var scores: [Score] = []
@@ -40,6 +41,13 @@ final class DemoVM: ObservableObject {
     @Published var letterText: String?
     @Published var letterBusy = false
     @Published var error: String?
+
+    /// Same rule as the web demo: pasted text wins once it is longer than 40 chars, else the persona.
+    var usingOwn: Bool { resume.trimmingCharacters(in: .whitespacesAndNewlines).count > 40 }
+    var profileText: String {
+        let own = resume.trimmingCharacters(in: .whitespacesAndNewlines)
+        return own.count > 40 ? own : personas[personaIdx].profile
+    }
 
     func load() async {
         do { feed = try await Api.feed() }
@@ -55,7 +63,7 @@ final class DemoVM: ObservableObject {
         }
         phase = .scoring
         do {
-            let r = try await Api.score(profile: personas[personaIdx].profile,
+            let r = try await Api.score(profile: profileText,
                                         postings: Array(feed.passers.prefix(8)))
             if r.breaker {
                 banner = r.detail
@@ -77,7 +85,7 @@ final class DemoVM: ObservableObject {
     func draftLetter(_ posting: Posting) async {
         letterBusy = true; letterText = nil
         do {
-            let r = try await Api.letter(profile: personas[personaIdx].profile, posting: posting)
+            let r = try await Api.letter(profile: profileText, posting: posting)
             letterText = (r.breaker || r.error != nil) ? (r.detail ?? "Unavailable.") : r.letter
         } catch {
             letterText = "Letter failed: \(error.localizedDescription)"
@@ -95,6 +103,7 @@ struct JobScoutApp: App {
 
 struct ContentView: View {
     @StateObject private var vm = DemoVM()
+    @State private var ownOpen = false
 
     var body: some View {
         ScrollView {
@@ -104,9 +113,10 @@ struct ContentView: View {
 
                 sectionLabel("000 · CANDIDATE")
                 ForEach(Array(personas.enumerated()), id: \.element.id) { i, p in
-                    personaCard(p, selected: i == vm.personaIdx)
+                    personaCard(p, selected: i == vm.personaIdx && !vm.usingOwn)
                         .onTapGesture { vm.personaIdx = i }
                 }
+                ownResumeBox
                 runButton
 
                 if vm.phase != .idle, let feed = vm.feed {
@@ -155,6 +165,32 @@ struct ContentView: View {
                  ? "Real sweep · \(vm.feed!.day!) · \(vm.feed!.passers.count) passers, \(vm.feed!.rejects.count) instructive rejects"
                  : "Loading today's sweep…")
                 .font(.system(size: 13)).foregroundColor(muted)
+        }
+    }
+
+    // Same affordance as the web demo: hidden behind a toggle, processed in memory only.
+    private var ownResumeBox: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Button(ownOpen ? "Hide resume box" : "…or paste your own resume text") { ownOpen.toggle() }
+                .font(.system(size: 14)).foregroundColor(violetDeep)
+            if ownOpen {
+                ZStack(alignment: .topLeading) {
+                    if vm.resume.isEmpty {
+                        Text("Paste plain resume text (max 6,000 chars)…").foregroundColor(muted)
+                            .padding(.horizontal, 14).padding(.vertical, 12)
+                    }
+                    TextEditor(text: $vm.resume)
+                        .scrollContentBackground(.hidden)
+                        .padding(.horizontal, 10).padding(.vertical, 6)
+                        .frame(minHeight: 120)
+                        .onChange(of: vm.resume) { v in if v.count > 6000 { vm.resume = String(v.prefix(6000)) } }
+                }
+                .background(Color.white)
+                .cornerRadius(12)
+                .overlay(RoundedRectangle(cornerRadius: 12).stroke(vm.usingOwn ? violet : hairline, lineWidth: vm.usingOwn ? 2 : 1))
+                Text((vm.usingOwn ? "Using your pasted resume for this run. " : "") + "Processed in-memory for this one scoring run. Never stored, never logged, never used for anything else.")
+                    .font(.system(size: 12)).foregroundColor(muted)
+            }
         }
     }
 
