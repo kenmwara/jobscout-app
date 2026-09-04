@@ -82,6 +82,8 @@ re-implement the brand-kit bearing dial in each platform's own graphics layer:
 
 **Try it on Android:** [download the APK](https://github.com/kenmwara/jobscout-app/releases/latest/download/JobScout-debug.apk) (debug build, Android 8+, sideload; SHA-256 in the release notes) — the link always serves the newest build.
 
+Both apps carry the full v0.4 feature set: upload a resume (PDF/DOCX/TXT) instead of typing it, open the original posting from any score card, and track the search on the device (gate survivor → applied → pending → responded → interviewed → callback). Nothing is sent anywhere and the app never submits an application.
+
 CI is [`codemagic.yaml`](codemagic.yaml), and both workflows build green:
 `android-debug` produces an installable APK; `ios-simulator` proves the
 SwiftUI app compiles and links (device distribution waits on an Apple
