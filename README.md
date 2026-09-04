@@ -80,6 +80,8 @@ re-implement the brand-kit bearing dial in each platform's own graphics layer:
   `rotationEffect`). The `.xcodeproj` is generated in CI from
   [`project.yml`](ios/project.yml) (XcodeGen) — only sources are committed.
 
+**Try it on Android:** [download the APK](https://github.com/kenmwara/jobscout-app/releases/latest/download/JobScout-debug.apk) (debug build, Android 8+, sideload; SHA-256 in the release notes) — the link always serves the newest build.
+
 CI is [`codemagic.yaml`](codemagic.yaml), and both workflows build green:
 `android-debug` produces an installable APK; `ios-simulator` proves the
 SwiftUI app compiles and links (device distribution waits on an Apple
