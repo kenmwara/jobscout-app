@@ -39,6 +39,32 @@ workflows:
     artifacts:
       - screens/*.png
 
+  # One-minute probe: what does the Mac image have for Android emulation? (informs
+  # whether android-screens can fit the 30-min budget or needs a different approach)
+  android-probe:
+    name: Android emulator feasibility probe
+    instance_type: mac_mini_m2
+    max_build_duration: 8
+    scripts:
+      - name: Probe
+        script: |
+          mkdir -p probe
+          {
+            set -x
+            echo "SDK=$ANDROID_SDK_ROOT / HOME=$ANDROID_HOME"
+            sysctl -n hw.ncpu hw.memsize machdep.cpu.brand_string kern.hv_support
+            ls "$ANDROID_SDK_ROOT" || ls "$ANDROID_HOME"
+            ls "$ANDROID_SDK_ROOT/system-images" 2>/dev/null && find "$ANDROID_SDK_ROOT/system-images" -maxdepth 3 -type d
+            ls "$ANDROID_SDK_ROOT/emulator" 2>/dev/null | head
+            "$ANDROID_SDK_ROOT/emulator/emulator" -version 2>&1 | head -3
+            "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" --list_installed 2>/dev/null | grep -iE "system-images|emulator|platform-tools|build-tools" 
+            "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/avdmanager" list avd 2>/dev/null | head -20
+            which adb emulator sdkmanager avdmanager
+          } > probe/log.txt 2>&1 || true
+          cat probe/log.txt
+    artifacts:
+      - probe/*.txt
+
   ios-simulator:
     name: JobScout iOS (simulator build)
     instance_type: mac_mini_m2
