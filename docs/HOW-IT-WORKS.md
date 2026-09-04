@@ -69,4 +69,6 @@ Compose on Android and Swift/SwiftUI on iOS, no webview — built green in
 Codemagic CI against the same guarded API. The Android debug APK installs on
 any phone today; iOS device distribution awaits an Apple Developer account.
 
+<img src="img/native/android-02-gates.jpg" width="230" alt="JobScout on Android — the real sweep streaming the gates">
+
 — Ken Kariuki · ken@tbot.trade · [tbot.trade/portfolio](https://tbot.trade/portfolio)

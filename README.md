@@ -84,6 +84,10 @@ CI is [`codemagic.yaml`](codemagic.yaml), and both workflows build green:
 SwiftUI app compiles and links (device distribution waits on an Apple
 Developer account).
 
+<img src="docs/img/native/android-02-gates.jpg" width="230" alt="JobScout on Android — today's real sweep streaming the eligibility gates, 14 passers cleared, scoring live">
+
+*Android, on a real phone: the day's sweep streaming the deterministic gates with the pipeline's own reject reasons, then live scoring.*
+
 ## Stack
 
 Cloudflare Pages + Workers + D1 · Anthropic Claude (Haiku) · Python (feed
