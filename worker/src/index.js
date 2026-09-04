@@ -7,8 +7,15 @@
  * processed in-memory and never stored or logged.
  */
 
+import { extractText, getDocumentProxy } from "unpdf";
+import { unzipSync } from "fflate";
+
 const MODEL = "claude-haiku-4-5-20251001";
 const MAX_SCORE_TOKENS = 400;
+const EXTRACT_MAX_BYTES = 2_000_000;
+const EXTRACT_MAX_CHARS = 6000;
+const FAILED = { fit: 0, verdict: "scoring failed (upstream)", strongest: "", weakest: "",
+                 usage: { input_tokens: 0, output_tokens: 0 }, cost: 0 };
 const IP_RUNS_PER_HOUR = 6;
 const DAILY_BUDGET_USD = 3.0;
 // Haiku pricing (USD per MTok) — used for the live cost counter + breaker math.
@@ -17,7 +24,7 @@ const PRICE_IN = 1.0, PRICE_OUT = 5.0;
 const CORS = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-  "Access-Control-Allow-Headers": "content-type",
+  "Access-Control-Allow-Headers": "content-type, x-filename",
 };
 
 const json = (status, body) =>
@@ -96,6 +103,37 @@ async function scoreOne(env, profile, posting) {
   return { ...parsed, usage, cost };
 }
 
+const DOCX_MIME = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+
+function extractKind(contentType, filename) {
+  const ct = String(contentType || "").split(";")[0].trim().toLowerCase();
+  const ext = String(filename || "").toLowerCase().match(/\.(pdf|docx|txt|md)$/)?.[1];
+  if (ct === "application/pdf" || ext === "pdf") return "pdf";
+  if (ct === DOCX_MIME || ext === "docx") return "docx";
+  if (ct === "text/plain" || ct === "text/markdown" || ext === "txt" || ext === "md") return "txt";
+  return null;
+}
+
+const normalise = s => String(s || "").replace(/\r\n?/g, "\n").replace(/[ \t\f\v]+/g, " ")
+  .replace(/ ?\n ?/g, "\n").replace(/\n{3,}/g, "\n\n").trim();
+
+async function extractResume(kind, buf) {
+  if (kind === "pdf") {
+    const pdf = await getDocumentProxy(new Uint8Array(buf));
+    const { text } = await extractText(pdf, { mergePages: true });
+    return text;
+  }
+  if (kind === "docx") {
+    const xml = unzipSync(new Uint8Array(buf))["word/document.xml"];
+    if (!xml) return "";
+    return new TextDecoder().decode(xml)
+      .replace(/<\/w:p>/g, "\n").replace(/<w:tab\/>/g, " ").replace(/<[^>]+>/g, "")
+      .replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"')
+      .replace(/&apos;/g, "'").replace(/&amp;/g, "&");
+  }
+  return new TextDecoder().decode(buf);
+}
+
 export default {
   async fetch(request, env) {
     if (request.method === "OPTIONS") return new Response(null, { headers: CORS });
@@ -136,13 +174,18 @@ export default {
       if (!profile || !postings.length)
         return json(400, { error: "bad_request", detail: "profile + postings[] required" });
 
+      // concurrent: 8 sequential Haiku calls were 16-40 s of silence → client read timeouts
+      const results = await Promise.all(postings.map(p => scoreOne(env, profile, p).catch(() => FAILED)));
+      // Honest degradation: a per-posting failure is a fit-0 row, but if EVERY call failed the run
+      // did not happen — say so rather than returning eight confident zeroes.
+      if (results.length && results.every(s => s === FAILED))
+        return json(502, { error: "upstream", detail: "Scoring is unavailable right now — every model call failed. Nothing was charged." });
       const out = [];
       let tIn = 0, tOut = 0, cost = 0;
-      for (const p of postings) {
-        const s = await scoreOne(env, profile, p);
+      results.forEach((s, i) => {
         tIn += s.usage.input_tokens; tOut += s.usage.output_tokens; cost += s.cost;
-        out.push({ id: p.id, fit: s.fit, verdict: s.verdict, strongest: s.strongest, weakest: s.weakest });
-      }
+        out.push({ id: postings[i].id, fit: s.fit, verdict: s.verdict, strongest: s.strongest, weakest: s.weakest });
+      });
       await recordRun(env, key, tIn, tOut, cost);
       return json(200, {
         scores: out,
@@ -196,6 +239,22 @@ export default {
         meta: { model: MODEL, cost_usd: +cost.toFixed(5),
                 day_spend_usd: +(spent + cost).toFixed(4), day_budget_usd: DAILY_BUDGET_USD },
       });
+    }
+
+    if (url.pathname === "/api/extract" && request.method === "POST") {
+      // Resume file → text, in memory only. No D1 write, no Claude cost; the size cap is the guard.
+      const len = +(request.headers.get("content-length") || 0);
+      if (len > EXTRACT_MAX_BYTES) return json(413, { error: "too_large", detail: "Max 2 MB." });
+      const buf = await request.arrayBuffer();
+      if (buf.byteLength > EXTRACT_MAX_BYTES) return json(413, { error: "too_large", detail: "Max 2 MB." });
+      const kind = extractKind(request.headers.get("content-type"), request.headers.get("x-filename"));
+      if (!kind) return json(415, { error: "unsupported", detail: "PDF, DOCX, TXT or MD only." });
+      let text = "";
+      try {
+        text = normalise(await extractResume(kind, buf));
+      } catch {}
+      if (!text) return json(422, { error: "unreadable", detail: "Couldn't read text from that file — paste the text instead." });
+      return json(200, { text: text.slice(0, EXTRACT_MAX_CHARS), chars: text.length, kind });
     }
 
     if (url.pathname === "/ingest/feed" && request.method === "POST") {

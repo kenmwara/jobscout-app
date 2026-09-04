@@ -6,6 +6,7 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
@@ -85,21 +86,36 @@ data class LetterResponse(
     val detail: String? = null,
 )
 
+/** /api/extract — resume file → text. `chars` is the length before the 6,000 cap. */
+@Serializable
+data class ExtractResponse(
+    val text: String = "",
+    val chars: Int = 0,
+    val kind: String = "",
+    val error: String? = null,
+    val detail: String? = null,
+)
+
 @Serializable private data class ScoreBody(val profile: String, val postings: List<Posting>)
 @Serializable private data class LetterBody(val profile: String, val posting: Posting)
 
 object Api {
     private val json = Json { ignoreUnknownKeys = true; encodeDefaults = true }
     private val jsonMedia = "application/json".toMediaType()
+    private val octetMedia = "application/octet-stream".toMediaType()
     private val http = OkHttpClient.Builder()
-        .callTimeout(120, TimeUnit.SECONDS)   // 8 sequential live LLM calls behind /api/score
+        .connectTimeout(20, TimeUnit.SECONDS)
+        .readTimeout(90, TimeUnit.SECONDS)    // /api/score is silent while up to 8 LLM calls run (default 10s tripped)
+        .writeTimeout(30, TimeUnit.SECONDS)
+        .callTimeout(120, TimeUnit.SECONDS)
         .build()
 
     private suspend fun call(req: Request): String = withContext(Dispatchers.IO) {
         http.newCall(req).execute().use { resp ->
             val body = resp.body?.string() ?: ""
-            // 429 (rate limit) still carries a JSON body the UI wants to show verbatim.
-            if (!resp.isSuccessful && resp.code != 429) error("HTTP ${resp.code}")
+            // Worker errors (429 rate limit, 413/415/422 from /api/extract) carry a JSON
+            // {error, detail} body the UI shows verbatim; anything else is a plain failure.
+            if (!resp.isSuccessful && !body.trimStart().startsWith("{")) error("HTTP ${resp.code}")
             body
         }
     }
@@ -118,6 +134,17 @@ object Api {
         json.decodeFromString(call(
             Request.Builder().url("$API_BASE/api/letter")
                 .post(json.encodeToString(LetterBody(profile, posting)).toRequestBody(jsonMedia))
+                .build()
+        ))
+
+    /** Raw file bytes in, extracted text out. The worker never stores or logs the content. */
+    suspend fun extract(bytes: ByteArray, mime: String, name: String): ExtractResponse =
+        json.decodeFromString(call(
+            Request.Builder().url("$API_BASE/api/extract")
+                // OkHttp rejects non-ASCII header values; the name only sniffs the extension anyway.
+                .header("x-filename", name.filter { it.code in 32..126 })
+                // A content provider can declare a malformed type — fall back, the worker sniffs x-filename.
+                .post(bytes.toRequestBody(mime.toMediaTypeOrNull() ?: octetMedia))
                 .build()
         ))
 }

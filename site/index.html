@@ -61,6 +61,10 @@
   textarea{width:100%;min-height:120px;margin-top:10px;border:1.5px solid var(--hair2);border-radius:12px;padding:12px 14px;font:13.5px/1.55 var(--sans);resize:vertical;background:var(--surface);color:var(--text)}
   textarea:focus{outline:none;border-color:var(--violet);box-shadow:0 0 0 3px rgba(124,90,255,.15)}
   .privacy{font-size:12px;color:var(--text3);margin-top:6px}
+  .upl{display:inline-block;margin-top:10px;background:var(--wash);color:var(--violet-deep);border-radius:99px;padding:8px 17px;font-size:13px;font-weight:650;cursor:pointer;transition:background .2s}
+  .upl:hover{background:var(--lilac)}
+  .upl.busy{opacity:.6;pointer-events:none}
+  .uplstat{font-family:var(--mono);font-size:11.5px;color:var(--text3);margin-left:10px}
   .runrow{margin-top:16px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
   .run{background:var(--violet);color:#fff;border:none;border-radius:99px;padding:12px 26px;font-weight:650;font-size:15.5px;letter-spacing:-.01em;box-shadow:0 2px 6px rgba(90,60,210,.25),0 8px 24px rgba(124,90,255,.2);transition:background .2s var(--ease),transform .2s var(--ease)}
   .run:hover{background:var(--violet-deep);transform:translateY(-1px)}
@@ -99,13 +103,25 @@
   .scard .sw{font-size:12.5px;color:var(--text2);margin-top:7px}
   .scard .sw b{color:var(--auto);font-weight:650}
   .scard .sw i{color:var(--unsure);font-style:normal;font-weight:650}
-  .scard .act{grid-column:2;margin-top:10px}
+  .scard .act{grid-column:2;margin-top:10px;display:flex;gap:12px 16px;align-items:center;flex-wrap:wrap}
+  .plink{font-size:13px;font-weight:600;white-space:nowrap}
+  select.stage{font:600 12.5px var(--sans);color:var(--violet-deep);background:var(--surface);border:1.5px solid var(--hair2);border-radius:99px;padding:5px 10px;cursor:pointer}
+  select.stage:focus{outline:none;border-color:var(--violet);box-shadow:0 0 0 3px rgba(124,90,255,.15)}
+  .pills{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 6px}
+  .pill{font-family:var(--mono);font-size:11px;border-radius:99px;padding:4px 11px;background:var(--wash);color:var(--violet-deep)}
+  .pill b{font-weight:600}
+  .tgroup{margin:18px 0 8px}
+  .tctl{grid-column:1/-1;display:flex;gap:12px 16px;align-items:center;flex-wrap:wrap;margin-top:6px}
+  .rm{background:none;border:none;color:var(--text3);padding:0;font-size:12.5px}
+  .rm:hover{color:#a02622}
+  .trackfoot{margin-top:16px}
   .letterbtn{background:var(--wash);color:var(--violet-deep);border:none;border-radius:99px;padding:8px 17px;font-size:13px;font-weight:650;transition:background .2s}
   .letterbtn:hover{background:var(--lilac)}
   .letter{grid-column:1/-1;margin-top:12px;background:var(--cover);border:1px solid var(--hair);border-left:3px solid var(--violet);border-radius:12px;padding:16px 18px;font-size:14px;line-height:1.65;white-space:pre-wrap;color:var(--text)}
   .letter .lm{font-family:var(--mono);font-size:10.5px;color:var(--text3);margin-top:11px;white-space:normal}
 
   .status{font-family:var(--mono);font-size:12px;color:var(--text2);padding:14px 2px;display:flex;align-items:center;gap:10px}
+  .status[hidden]{display:none}
   .spin{width:13px;height:13px;border:2px solid var(--wash);border-top-color:var(--violet);border-radius:50%;flex:none}
   @media (prefers-reduced-motion:no-preference){.spin{animation:sp .7s linear infinite}}
   @keyframes sp{to{transform:rotate(360deg)}}
@@ -141,6 +157,7 @@
     <span class="brand">JobScout<small>AI job-search copilot</small></span>
     <nav>
       <span class="livechip"><i></i>live · real postings</span>
+      <a href="#trackStage" id="navTrack" hidden>tracker (0)</a>
       <a class="hidesm" href="https://github.com/kenmwara/jobscout-app" target="_blank" rel="noopener">code</a>
       <a class="hidesm" href="https://tbot.trade/portfolio" target="_blank" rel="noopener">builder</a>
       <a class="hidesm" href="https://github.com/kenmwara/jobscout-app/releases/latest/download/JobScout-debug.apk" target="_blank" rel="noopener">android</a>
@@ -159,10 +176,11 @@
       <h2><b>000</b> · WHO'S LOOKING?</h2>
       <div class="personas" id="personas"></div>
       <div class="ownrow">
-        <button id="ownToggle" type="button">…or paste your own resume text</button>
+        <button id="ownToggle" type="button">…or upload / paste your own resume</button>
         <div id="ownBox" hidden>
+          <label class="upl"><input type="file" id="ownFile" accept=".pdf,.docx,.txt,.md,application/pdf" hidden> Upload resume (PDF, DOCX, TXT)</label><span class="uplstat" id="uplStatus"></span>
           <textarea id="ownText" maxlength="6000" placeholder="Paste plain resume text (max 6,000 chars)…"></textarea>
-          <p class="privacy">Processed in-memory for this one scoring run. Never stored, never logged, never used for anything else.</p>
+          <p class="privacy">Processed in-memory for this one scoring run. Never stored, never logged, never used for anything else. Uploads are extracted in memory and discarded.</p>
         </div>
       </div>
       <div class="runrow">
@@ -187,6 +205,15 @@
     <p class="note" id="scoreNote">The gate survivors go to Claude with JobScout's honest rubric. The needle is the score: fit 0–100 sweeps 270°, and the band it lands on selects the route — auto ≥80, ping 70–79, unsure 55–69, near-miss below.</p>
     <div class="status" id="scoreStatus"><span class="spin"></span><span>scoring with Claude…</span></div>
     <div class="scores" id="scores"></div>
+  </section>
+
+  <section class="stage" id="trackStage" hidden>
+    <div class="bearing"><b>270</b> — TRACKER</div>
+    <h2>Your pipeline</h2>
+    <p class="note">Saved in this browser only — nothing is sent anywhere. Applying happens on the employer's site; JobScout never submits for you.</p>
+    <div class="pills" id="trackPills"></div>
+    <div id="trackGroups"></div>
+    <div class="trackfoot"><button class="letterbtn" id="trackClear" type="button">Clear tracker</button></div>
   </section>
 </main>
 
@@ -252,13 +279,73 @@ function dialSVG(fit){
 
 let feed = null, selected = PERSONAS[0], running = false;
 
+/* ── Tracker: per-browser, localStorage only, key jobscout.tracker ── */
+const STAGES = [["survivor","Gate survivor"],["applied","Applied"],["pending","Pending"],
+                ["responded","Responded"],["interviewed","Interviewed"],["callback","Callback"]];
+const STAGE_LABEL = Object.fromEntries(STAGES);
+const TKEY = "jobscout.tracker";
+let tracker = {};
+try{ tracker = JSON.parse(localStorage.getItem(TKEY) || "{}").items || {}; }catch(e){ tracker = {}; }
+function saveTracker(){ try{ localStorage.setItem(TKEY, JSON.stringify({ v:1, items: tracker })); }catch(e){} }
+
+function trackUpsert(p, fit){
+  if (!p?.id) return;
+  const t = tracker[p.id];
+  const upd = { title: p.title || p.id, company: p.company || "", url: p.url || "", fit, updated: new Date().toISOString() };
+  tracker[p.id] = t ? { ...t, ...upd } : { id: p.id, stage: "survivor", ...upd };
+}
+function setStage(id, stage){
+  if (!tracker[id] || !STAGE_LABEL[stage]) return;
+  tracker[id].stage = stage; tracker[id].updated = new Date().toISOString();
+  saveTracker();
+  document.querySelectorAll("select.stage").forEach(s => { if (s.dataset.id === id) s.value = stage; });
+  renderTracker();
+}
+function stageSelect(id){
+  const cur = tracker[id]?.stage || "survivor";
+  return `<select class="stage" data-id="${esc(id)}" aria-label="stage">${STAGES.map(([v,l]) =>
+    `<option value="${v}"${v===cur?" selected":""}>${l}</option>`).join("")}</select>`;
+}
+function plink(url){
+  return url ? `<a class="plink" href="${esc(url)}" target="_blank" rel="noopener">View posting ↗</a>` : "";
+}
+function renderTracker(){
+  const items = Object.values(tracker);
+  $("#trackStage").hidden = !items.length;
+  $("#navTrack").hidden = !items.length;
+  $("#navTrack").textContent = `tracker (${items.length})`;
+  if (!items.length) return;
+  $("#trackPills").innerHTML = STAGES.map(([v,l]) => {
+    const n = items.filter(t => t.stage === v).length;
+    return n ? `<span class="pill">${l} <b>${n}</b></span>` : "";
+  }).join("");
+  $("#trackGroups").innerHTML = STAGES.map(([v,l]) => {
+    const g = items.filter(t => t.stage === v).sort((a,b) => b.fit - a.fit);
+    if (!g.length) return "";
+    return `<div class="bearing tgroup">${l.toUpperCase()} · ${g.length}</div><div class="rows">${g.map(t =>
+      `<div class="row in"><div><div class="t">${esc(t.title)} <span class="co">· ${esc(t.company)}</span></div>
+        <div class="m">fit ${t.fit} · ${t.updated.slice(0,10)}</div></div><span></span>
+        <div class="tctl">${stageSelect(t.id)}${plink(t.url)}<button class="rm" type="button" data-id="${esc(t.id)}">remove ×</button></div></div>`).join("")}</div>`;
+  }).join("");
+}
+document.addEventListener("change", e => {
+  if (e.target.matches("select.stage")) setStage(e.target.dataset.id, e.target.value);
+});
+$("#trackGroups").addEventListener("click", e => {
+  const b = e.target.closest(".rm");
+  if (b){ delete tracker[b.dataset.id]; saveTracker(); renderTracker(); }
+});
+$("#trackClear").onclick = () => {
+  if (confirm("Clear your tracker? This only affects this browser.")){ tracker = {}; saveTracker(); renderTracker(); }
+};
+
 function renderPersonas(){
   $("#personas").innerHTML = PERSONAS.map(p =>
     `<button type="button" class="persona${p===selected?" sel":""}" data-id="${p.id}">
        <div class="pn">${p.name}</div><div class="pd">${p.desc}</div></button>`).join("");
   document.querySelectorAll(".persona").forEach(b => b.onclick = () => {
     selected = PERSONAS.find(p => p.id === b.dataset.id);
-    $("#ownBox").hidden = true; $("#ownText").value = "";
+    $("#ownBox").hidden = true; $("#ownText").value = ""; $("#uplStatus").textContent = "";
     renderPersonas();
   });
 }
@@ -337,6 +424,8 @@ async function runPipeline(){
 function renderScores(scores, passers, profile, meta, cached){
   const byId = Object.fromEntries(passers.map(p => [p.id, p]));
   const sorted = [...scores].sort((a,b) => b.fit - a.fit);
+  sorted.forEach(s => trackUpsert({ ...(byId[s.id] || {}), id: s.id }, s.fit));
+  saveTracker(); renderTracker();
   sorted.forEach((s, i) => {
     const p = byId[s.id] || {};
     const [route, col] = BAND(s.fit);
@@ -347,7 +436,7 @@ function renderScores(scores, passers, profile, meta, cached){
         <div class="head">${esc(p.title || s.id)} <span class="co">· ${esc(p.company || "")}</span><span class="route" style="color:${col};background:${col}1a">${route}</span></div>
         <div class="v">${esc(s.verdict || "")}</div>
         <div class="sw"><b>+</b> ${esc(s.strongest || "—")} &nbsp; <i>−</i> ${esc(s.weakest || "—")}</div>
-        ${i === 0 && !cached ? `<div class="act"><button class="letterbtn" type="button">Draft a grounded cover letter →</button></div>` : ""}
+        <div class="act">${i === 0 && !cached ? `<button class="letterbtn" type="button">Draft a grounded cover letter →</button>` : ""}${plink(p.url)}${stageSelect(s.id)}</div>
       </div>`;
     $("#scores").appendChild(el);
     setTimeout(() => {
@@ -396,8 +485,25 @@ function finish(){ running = false; $("#runBtn").disabled = false; }
 function esc(s){ return String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
 
 $("#ownToggle").onclick = () => { $("#ownBox").hidden = !$("#ownBox").hidden; };
+$("#ownFile").onchange = async () => {
+  const file = $("#ownFile").files[0]; if (!file) return;
+  const lab = $("#ownFile").parentElement, st = $("#uplStatus");
+  lab.classList.add("busy"); st.textContent = "extracting…";
+  try{
+    const r = await fetch(API + "/api/extract", {
+      method: "POST", headers: { "content-type": file.type || "application/octet-stream", "x-filename": file.name }, body: file,
+    });
+    const d = await r.json();
+    if (d.text){
+      $("#ownText").value = d.text;
+      st.textContent = `✓ ${d.chars.toLocaleString()} characters extracted from ${file.name} — review, then run` + (d.chars > 6000 ? " (trimmed to 6,000)" : "");
+    } else st.textContent = d.detail || d.error || "extraction unavailable";
+  }catch(e){ st.textContent = "extract API unreachable"; }
+  lab.classList.remove("busy"); $("#ownFile").value = "";
+};
 $("#runBtn").onclick = runPipeline;
 renderPersonas();
+renderTracker();
 loadFeed();
 fetch(API + "/api/health").then(r => r.json()).then(d => { $("#mModel").textContent = d.model; }).catch(()=>{});
 </script>

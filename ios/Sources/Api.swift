@@ -65,6 +65,16 @@ struct LetterResponse: Codable {
     var detail: String?
 }
 
+/// /api/extract — every field optional because the error shapes (413/415/422)
+/// carry only error+detail.
+struct ExtractResponse: Codable {
+    var text: String?
+    var chars: Int?
+    var kind: String?
+    var error: String?
+    var detail: String?
+}
+
 enum Api {
     private static func post<B: Encodable, R: Decodable>(_ path: String, _ body: B) async throws -> R {
         var req = URLRequest(url: apiBase.appendingPathComponent(path))
@@ -89,5 +99,18 @@ enum Api {
     static func letter(profile: String, posting: Posting) async throws -> LetterResponse {
         struct Body: Encodable { let profile: String; let posting: Posting }
         return try await post("api/letter", Body(profile: profile, posting: posting))
+    }
+
+    /// Raw file bytes as the request body — the worker extracts text in memory and stores nothing.
+    static func extract(_ file: Data, mime: String, filename: String) async throws -> ExtractResponse {
+        var req = URLRequest(url: apiBase.appendingPathComponent("api/extract"))
+        req.httpMethod = "POST"
+        req.setValue(mime, forHTTPHeaderField: "content-type")
+        // ASCII-only: a header value must be Latin-1, and only the extension matters to the worker.
+        req.setValue(filename.filter { $0.isASCII && !$0.isNewline }, forHTTPHeaderField: "x-filename")
+        req.httpBody = file
+        req.timeoutInterval = 120
+        let (data, _) = try await URLSession.shared.data(for: req)
+        return try JSONDecoder().decode(ExtractResponse.self, from: data)
     }
 }

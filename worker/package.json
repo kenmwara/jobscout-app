@@ -1,0 +1,9 @@
+{
+  "name": "jobscout-app-api",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "fflate": "0.8.3",
+    "unpdf": "1.8.1"
+  }
+}

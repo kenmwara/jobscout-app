@@ -1,4 +1,6 @@
+import Foundation
 import SwiftUI
+import UniformTypeIdentifiers
 
 // ── Brand kit v1.0 ──────────────────────────────────────────────────────────
 let violet = Color(hex: 0x7C5AFF)
@@ -41,6 +43,11 @@ final class DemoVM: ObservableObject {
     @Published var letterText: String?
     @Published var letterBusy = false
     @Published var error: String?
+    @Published var uploading = false
+    @Published var uploadStatus: String?
+    @Published var tracker: [String: Tracked] = [:]
+
+    private let trackerKey = "jobscout.tracker"
 
     /// Same rule as the web demo: pasted text wins once it is longer than 40 chars, else the persona.
     var usingOwn: Bool { resume.trimmingCharacters(in: .whitespacesAndNewlines).count > 40 }
@@ -50,8 +57,32 @@ final class DemoVM: ObservableObject {
     }
 
     func load() async {
+        loadTracker()
         do { feed = try await Api.feed() }
         catch { self.error = "Feed unavailable: \(error.localizedDescription)" }
+    }
+
+    /// Resume file → worker /api/extract → the same text field a paste fills.
+    func importResume(_ file: Data?, mime: String, name: String) async {
+        guard let file else {
+            uploadStatus = "Couldn't read text from that file — paste the text instead."
+            return
+        }
+        uploading = true; uploadStatus = nil
+        do {
+            let r = try await Api.extract(file, mime: mime, filename: name)
+            if let t = r.text, !t.isEmpty {
+                resume = t
+                let n = r.chars ?? t.count
+                uploadStatus = "✓ \(n.formatted()) characters extracted from \(name) — review, then run"
+                    + (n > 6000 ? " (trimmed to 6,000)" : "")
+            } else {
+                uploadStatus = r.detail ?? r.error ?? "Couldn't read text from that file — paste the text instead."
+            }
+        } catch {
+            uploadStatus = "Upload failed: \(error.localizedDescription)"
+        }
+        uploading = false
     }
 
     func run() async {
@@ -79,7 +110,57 @@ final class DemoVM: ObservableObject {
         } catch {
             banner = "Scoring failed: \(error.localizedDescription)"
         }
+        autoTrack()
         phase = .done
+    }
+
+    // ── Tracker ────────────────────────────────────────────────────────────
+    /// Every scored posting (live or cached) enters as a gate survivor; an
+    /// already-tracked one keeps its stage and only refreshes the details.
+    private func autoTrack() {
+        guard !scores.isEmpty else { return }
+        let byId = Dictionary(uniqueKeysWithValues: (feed?.passers ?? []).map { ($0.id, $0) })
+        let now = nowISO()
+        for s in scores {
+            let p = byId[s.id]
+            let existing = tracker[s.id]
+            var t = existing ?? Tracked(id: s.id, stage: "survivor", updated: now)
+            t.title = p?.title ?? t.title
+            t.company = p?.company ?? t.company
+            t.url = p?.url ?? t.url
+            t.fit = s.fit
+            tracker[s.id] = t
+        }
+        saveTracker()
+    }
+
+    func setStage(_ id: String, _ stage: String) {
+        guard var t = tracker[id] else { return }
+        t.stage = stage
+        t.updated = nowISO()
+        tracker[id] = t
+        saveTracker()
+    }
+
+    func untrack(_ id: String) {
+        tracker[id] = nil
+        saveTracker()
+    }
+
+    func clearTracker() {
+        tracker = [:]
+        saveTracker()
+    }
+
+    private func loadTracker() {
+        guard let d = UserDefaults.standard.data(forKey: trackerKey),
+              let store = try? JSONDecoder().decode(TrackerStore.self, from: d) else { return }
+        tracker = store.items
+    }
+
+    private func saveTracker() {
+        guard let d = try? JSONEncoder().encode(TrackerStore(items: tracker)) else { return }
+        UserDefaults.standard.set(d, forKey: trackerKey)
     }
 
     func draftLetter(_ posting: Posting) async {
@@ -94,6 +175,26 @@ final class DemoVM: ObservableObject {
     }
 }
 
+/// A picked file lives outside the sandbox — the scope must be held across the read.
+func readScoped(_ url: URL) -> Data? {
+    // false here means the URL simply is not security-scoped (a file already in the container) —
+    // that is readable, so only balance the stop when the start actually succeeded.
+    let scoped = url.startAccessingSecurityScopedResource()
+    defer { if scoped { url.stopAccessingSecurityScopedResource() } }
+    return try? Data(contentsOf: url)
+}
+
+/// The worker sniffs the kind from content-type first, x-filename second.
+func mimeFor(_ ext: String) -> String {
+    switch ext {
+    case "pdf": return "application/pdf"
+    case "docx": return "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    case "txt": return "text/plain"
+    case "md", "markdown": return "text/markdown"
+    default: return "application/octet-stream"
+    }
+}
+
 @main
 struct JobScoutApp: App {
     var body: some Scene {
@@ -104,6 +205,8 @@ struct JobScoutApp: App {
 struct ContentView: View {
     @StateObject private var vm = DemoVM()
     @State private var ownOpen = false
+    @State private var importing = false
+    @State private var showTracker = false
 
     var body: some View {
         ScrollView {
@@ -148,6 +251,7 @@ struct ContentView: View {
             .padding(16)
         }
         .background(canvasBg.ignoresSafeArea())
+        .sheet(isPresented: $showTracker) { TrackerView(vm: vm) }
         .task { await vm.load() }
         .sheet(isPresented: .init(get: { vm.letterBusy || vm.letterText != nil },
                                   set: { if !$0 { vm.letterText = nil; vm.letterBusy = false } })) {
@@ -160,6 +264,12 @@ struct ContentView: View {
             HStack(spacing: 10) {
                 Text("JobScout").font(.system(size: 28, weight: .heavy)).foregroundColor(violetDeep)
                 chip("NATIVE", violet)
+                Spacer()
+                if !vm.tracker.isEmpty {
+                    Button("Tracker (\(vm.tracker.count))") { showTracker = true }
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(violetDeep)
+                }
             }
             Text(vm.feed?.day != nil
                  ? "Real sweep · \(vm.feed!.day!) · \(vm.feed!.passers.count) passers, \(vm.feed!.rejects.count) instructive rejects"
@@ -171,9 +281,19 @@ struct ContentView: View {
     // Same affordance as the web demo: hidden behind a toggle, processed in memory only.
     private var ownResumeBox: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Button(ownOpen ? "Hide resume box" : "…or paste your own resume text") { ownOpen.toggle() }
+            Button(ownOpen ? "Hide resume box" : "…or upload / paste your own resume") { ownOpen.toggle() }
                 .font(.system(size: 14)).foregroundColor(violetDeep)
             if ownOpen {
+                HStack(spacing: 10) {
+                    Button("Upload resume (PDF, DOCX, TXT)") { importing = true }
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(violetDeep)
+                        .disabled(vm.uploading)
+                    if vm.uploading { ProgressView().tint(violet) }
+                }
+                if let st = vm.uploadStatus {
+                    Text(st).font(.system(size: 12)).foregroundColor(muted)
+                }
                 ZStack(alignment: .topLeading) {
                     if vm.resume.isEmpty {
                         Text("Paste plain resume text (max 6,000 chars)…").foregroundColor(muted)
@@ -188,9 +308,19 @@ struct ContentView: View {
                 .background(Color.white)
                 .cornerRadius(12)
                 .overlay(RoundedRectangle(cornerRadius: 12).stroke(vm.usingOwn ? violet : hairline, lineWidth: vm.usingOwn ? 2 : 1))
-                Text((vm.usingOwn ? "Using your pasted resume for this run. " : "") + "Processed in-memory for this one scoring run. Never stored, never logged, never used for anything else.")
+                Text((vm.usingOwn ? "Using your own resume for this run. " : "") + "Processed in-memory for this one scoring run. Never stored, never logged, never used for anything else. Uploads are extracted in memory and discarded.")
                     .font(.system(size: 12)).foregroundColor(muted)
             }
+        }
+        .fileImporter(isPresented: $importing,
+                      allowedContentTypes: [.pdf, .plainText,
+                                            UTType("org.openxmlformats.wordprocessingml.document") ?? .data],
+                      allowsMultipleSelection: false) { result in
+            guard case .success(let urls) = result, let url = urls.first else { return }
+            let data = readScoped(url)
+            let name = url.lastPathComponent
+            let mime = mimeFor(url.pathExtension.lowercased())
+            Task { await vm.importResume(data, mime: mime, name: name) }
         }
     }
 
@@ -290,6 +420,16 @@ struct ContentView: View {
                 if !s.weakest.isEmpty {
                     Text("− \(s.weakest)").font(.system(size: 12)).foregroundColor(Color(hex: 0xFF9500))
                 }
+                HStack(spacing: 14) {
+                    if let p = posting, !p.url.isEmpty, let u = URL(string: p.url) {
+                        Link("View posting ↗", destination: u)
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundColor(violetDeep)
+                    }
+                    StageMenu(stage: vm.tracker[s.id]?.stage ?? "survivor") { vm.setStage(s.id, $0) }
+                    Spacer()
+                }
+                .padding(.top, 2)
                 if showLetter, let posting {
                     Button("Draft a grounded cover letter →") {
                         Task { await vm.draftLetter(posting) }
