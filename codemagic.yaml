@@ -57,15 +57,24 @@ workflows:
             -derivedDataPath build CODE_SIGNING_ALLOWED=NO
       - name: Simulator screenshot
         script: |
-          cd ios
-          UDID=$(xcrun simctl list devices available -j | python3 -c "import json,sys; d=json.load(sys.stdin); print(next(dev['udid'] for devs in d['devices'].values() for dev in devs if dev['name'].startswith('iPhone')))")
-          xcrun simctl boot "$UDID" || true
-          xcrun simctl bootstatus "$UDID" -b
-          xcrun simctl install "$UDID" build/Build/Products/Debug-iphonesimulator/JobScout.app
-          xcrun simctl launch "$UDID" trade.tbot.jobscout
-          sleep 7
-          mkdir -p screens
-          xcrun simctl io "$UDID" screenshot screens/ios-01-candidate.png
+          # Self-diagnosing: everything is logged to an artifact, and the step never
+          # hard-fails (the .app artifact still uploads; the log says what broke).
+          cd ios && mkdir -p screens
+          {
+            set -x
+            xcrun simctl list devices available | grep -i iphone | head -5
+            UDID=$(xcrun simctl list devices available | grep -m1 -E "iPhone" | grep -oE "[0-9A-F-]{36}")
+            echo "UDID=$UDID"
+            xcrun simctl boot "$UDID" || true
+            xcrun simctl bootstatus "$UDID" -b || true
+            ls build/Build/Products/Debug-iphonesimulator/
+            xcrun simctl install "$UDID" build/Build/Products/Debug-iphonesimulator/JobScout.app
+            xcrun simctl launch "$UDID" trade.tbot.jobscout
+            sleep 8
+            xcrun simctl io "$UDID" screenshot screens/ios-01-candidate.png
+            ls -la screens/
+          } > screens/log.txt 2>&1 || true
+          tail -30 screens/log.txt
     artifacts:
       - ios/build/Build/Products/Debug-iphonesimulator/*.app
       - ios/screens/*.png
