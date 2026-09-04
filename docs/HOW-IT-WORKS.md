@@ -71,4 +71,6 @@ any phone today; iOS device distribution awaits an Apple Developer account.
 
 <img src="img/native/android-02-gates.jpg" width="230" alt="JobScout on Android — the real sweep streaming the gates">
 
+<img src="img/native/ios-01-candidate.png" width="230" alt="JobScout on iOS — the candidate chooser with the real feed loaded">
+
 — Ken Kariuki · ken@tbot.trade · [tbot.trade/portfolio](https://tbot.trade/portfolio)

@@ -84,9 +84,13 @@ CI is [`codemagic.yaml`](codemagic.yaml), and both workflows build green:
 SwiftUI app compiles and links (device distribution waits on an Apple
 Developer account).
 
-<img src="docs/img/native/android-02-gates.jpg" width="230" alt="JobScout on Android — today's real sweep streaming the eligibility gates, 14 passers cleared, scoring live">
+<p>
+  <img src="docs/img/native/android-02-gates.jpg" width="230" alt="JobScout on Android — today's real sweep streaming the eligibility gates, 14 passers cleared, scoring live">
+  &nbsp;&nbsp;
+  <img src="docs/img/native/ios-01-candidate.png" width="230" alt="JobScout on iOS (simulator, captured in CI) — the candidate chooser with the day's real feed loaded">
+</p>
 
-*Android, on a real phone: the day's sweep streaming the deterministic gates with the pipeline's own reject reasons, then live scoring.*
+*Left — Android on a real phone: the day's sweep streaming the deterministic gates with the pipeline's own reject reasons, then live scoring. Right — iOS, captured by the CI simulator step: the candidate chooser with the real feed already loaded.*
 
 ## Stack
 
