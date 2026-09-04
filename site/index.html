@@ -457,6 +457,12 @@ function renderScores(scores, passers, profile, meta, cached){
 
 async function draftLetter(card, posting, profile){
   const btn = card.querySelector(".letterbtn");
+  const label = btn.textContent;
+  // A refused letter must not eat the button's label: overwriting it left a violet pill reading
+  // "Demo cap: 6 runs/hour." sitting in the action row like a status chip, permanently disabled.
+  // The guard message belongs in the banner (where the scoring path already puts it), and the
+  // button goes back to being a button so the visitor can retry once the hour rolls over.
+  const fail = msg => { banner("warn", msg); btn.disabled = false; btn.textContent = label; };
   btn.disabled = true; btn.textContent = "drafting…";
   try{
     const r = await fetch(API + "/api/letter", {
@@ -475,10 +481,12 @@ async function draftLetter(card, posting, profile){
       card.appendChild(div);
       btn.remove();
       if (d.meta){ $("#mCost").textContent = `$${d.meta.cost_usd} (letter)`; $("#mDay").textContent = `$${d.meta.day_spend_usd} / $${d.meta.day_budget_usd} budget`; }
+    } else if (r.status === 429){
+      fail((d.detail || "Demo cap reached.") + " The per-visitor limit is the guard working — letters resume next hour.");
     } else {
-      btn.textContent = d.detail || d.error || "unavailable";
+      fail(d.detail || d.error || "Letter drafting is unavailable right now.");
     }
-  }catch(e){ btn.textContent = "letter API unreachable"; }
+  }catch(e){ fail("Letter API unreachable: " + e); }
 }
 
 function finish(){ running = false; $("#runBtn").disabled = false; }
