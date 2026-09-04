@@ -71,7 +71,7 @@ workflows:
             xcrun simctl install "$UDID" build/Build/Products/Debug-iphonesimulator/JobScout.app
             xcrun simctl launch "$UDID" trade.tbot.jobscout
             sleep 8
-            xcrun simctl io "$UDID" screenshot screens/ios-01-candidate.png
+            xcrun simctl io "$UDID" screenshot "$PWD/screens/ios-01-candidate.png"   # simctl needs an ABSOLUTE path
             ls -la screens/
           } > screens/log.txt 2>&1 || true
           tail -30 screens/log.txt
