@@ -68,8 +68,9 @@ same discipline the parent pipeline applies to itself.
 ## Native apps (Kotlin + Swift)
 
 The same demo, built fully native — no webview, no cross-platform wrapper.
-Both apps speak to the same guarded worker API and re-implement the brand-kit
-bearing dial in each platform's own graphics layer:
+Both apps speak to the same guarded worker API, keep feature parity with the web
+demo (personas or your own pasted resume, processed in memory only), and
+re-implement the brand-kit bearing dial in each platform's own graphics layer:
 
 - **`android/`** — Kotlin + Jetpack Compose (Material 3, ViewModel/StateFlow,
   kotlinx-serialization, OkHttp; the dial is a Compose `Canvas` with an
