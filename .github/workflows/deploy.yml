@@ -1,0 +1,49 @@
+# Push-to-deploy for the Pages site.
+#
+# jobscout-app is a DIRECT-UPLOAD Pages project and Cloudflare cannot convert one
+# to a Git-connected project ("If you choose Direct Upload, you cannot switch to
+# Git integration later"). Going Git-connected would mean a NEW project, which
+# would take a different .pages.dev subdomain and force re-pointing
+# www.jobscout.tbot.trade. So this runs the same wrangler command by hand instead
+# - same project, same domains, same deploy mechanism, just triggered by a push.
+#
+# Needs one repository secret: CLOUDFLARE_API_TOKEN
+#   Cloudflare dashboard -> My Profile -> API Tokens -> Create Token
+#   -> "Edit Cloudflare Workers" template, or a custom token with
+#      Account | Cloudflare Pages | Edit   (account: 2e6bc4972886886c791bf361387b051d)
+#   then GitHub -> repo Settings -> Secrets and variables -> Actions -> New secret.
+# The account id below is not a secret; the token is the only thing that is.
+
+name: deploy site
+
+on:
+  push:
+    branches: [main]
+    paths: ['site/**', '.github/workflows/deploy.yml']
+  workflow_dispatch:
+
+concurrency:
+  group: pages-deploy
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy site/ to Cloudflare Pages
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: 2e6bc4972886886c791bf361387b051d
+        run: |
+          if [ -z "$CLOUDFLARE_API_TOKEN" ]; then
+            echo "::error::CLOUDFLARE_API_TOKEN is not set - add it in repo Settings > Secrets > Actions."
+            exit 1
+          fi
+          npx --yes wrangler@4.95.0 pages deploy site \
+            --project-name jobscout-app \
+            --branch main \
+            --commit-dirty=true
