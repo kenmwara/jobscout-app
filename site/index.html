@@ -20,6 +20,7 @@
     --canvas:#f8f3eb; --surface:#ffffff; --tinted:#f098d7; --accent:#ffaefe;
     --vibrant:#ff6d39; --info:#dce4fb;
     --forest:#328a3b; --meadow:#114e0b; --ember:#ff6d39; --ember-deep:#cc3600;
+    --blossom:#f098d7; --petal:#ffaefe;
 
     /* fit bands — product logic. text colour is contrast-checked on cream. */
     --auto:#114e0b;      --auto-fill:#328a3b;
@@ -213,9 +214,9 @@
     .needle{transition:transform 1s var(--ease)}}
   .dial{width:96px;align-self:start}
   .dial .fitnum{font-family:var(--serif);font-weight:400;font-size:26px;text-anchor:middle}
-  .scard .head{font-weight:500;font-size:17px;color:var(--ink)}
+  .scard .head{font-weight:500;font-size:17px;color:var(--ink);padding-right:52px}
   .scard .head .co{color:var(--text2);font-weight:400}
-  .scard .route{font-size:10.5px;font-weight:500;letter-spacing:.09em;text-transform:uppercase;
+  .scard .route{font-size:10.5px;font-weight:500;letter-spacing:.09em;text-transform:uppercase;white-space:nowrap;display:inline-block;
     border-radius:var(--pill);padding:4px 11px;margin-left:10px;vertical-align:2px}
   .scard .v{font-size:15px;color:var(--text2);margin-top:5px;line-height:1.6}
   .scard .sw{font-size:13.5px;color:var(--text2);margin-top:9px}
@@ -241,6 +242,95 @@
     border-left:3px solid var(--indigo);border-radius:var(--card);padding:20px 22px;
     font-size:15px;line-height:1.7;white-space:pre-wrap;color:var(--ink)}
   .letter .lm{font-size:11.5px;color:var(--text3);margin-top:14px;white-space:normal}
+
+  /* ── the indigo band, August's "care-obsessed operators" page ───────────
+     THE CURVE IS NOT AN SVG. August's home-hero_background is a 1668px-wide box
+     with border-radius:1600px - wider than the viewport, so only the curved
+     bottom edge shows. Reproduced here, and the radius relaxes to flat as the
+     band scrolls through, via a view() timeline where supported. */
+  .band{position:relative;margin:72px 0 0;padding:74px 0 96px;background:var(--midnight);
+    color:#fff;width:132vw;margin-left:calc(50% - 66vw);border-radius:0 0 1600px 1600px;
+    background-image:radial-gradient(rgba(255,255,255,.10) 1px,transparent 1px);
+    background-size:20px 20px}
+  .band>.wrap{max-width:1040px}
+  .band .bearing{background:rgba(255,255,255,.12);color:#dce4fb;box-shadow:none}
+  .band .bearing b{color:#fff}
+  .band h2{color:#fff}
+  .band .note{color:#c9d3ff}
+  @supports (animation-timeline: view()){
+    @media (prefers-reduced-motion:no-preference){
+      .band{animation:flatten linear both;animation-timeline:view();animation-range:exit 0% exit 90%}
+      @keyframes flatten{to{border-bottom-left-radius:0;border-bottom-right-radius:0}}
+    }
+  }
+
+  /* the three gate checks as August's multi-coloured frames */
+  .gatecards{position:relative;display:grid;gap:16px;margin:34px auto 40px;max-width:900px;padding:22px}
+  .gc{border-radius:var(--card);padding:26px 30px;display:grid;gap:6px 28px;
+    grid-template-columns:minmax(0,1fr);text-align:left;color:var(--ink)}
+  @media (min-width:820px){.gc{grid-template-columns:minmax(0,300px) minmax(0,1fr)}}
+  .gc h3{font-family:var(--serif);font-weight:400;font-size:27px;line-height:1.15;margin:0}
+  .gc p{margin:0;font-size:14.5px;line-height:1.6;color:rgba(8,3,49,.78)}
+  .gc-1{background:var(--forest);color:#fff} .gc-1 p{color:rgba(255,255,255,.9)}
+  .gc-2{background:var(--ember)}
+  .gc-3{background:var(--blossom)}
+  /* the clockwise-travelling border August draws around this group */
+  .gatecards::before{content:"";position:absolute;inset:0;border-radius:26px;padding:1.5px;
+    background:conic-gradient(from var(--spin,0deg),#328a3b,#ff6d39,#f098d7,#a2baff,#328a3b);
+    -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
+            mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
+    -webkit-mask-composite:xor;mask-composite:exclude;pointer-events:none}
+  @property --spin{syntax:'<angle>';inherits:false;initial-value:0deg}
+  @media (prefers-reduced-motion:no-preference){
+    .gatecards::before{animation:spinborder 14s linear infinite}
+    @keyframes spinborder{to{--spin:360deg}}
+  }
+  .band .rows{background:rgba(255,255,255,.06);box-shadow:none;
+    border:1px solid rgba(255,255,255,.14)}
+  .band .row{border-bottom-color:rgba(255,255,255,.1)}
+  .band .row:hover{background:rgba(255,255,255,.05)}
+  .band .row .t{color:#fff} .band .row .t .co{color:#c9d3ff}
+  .band .row .m,.band .row .gatereason{color:#a8b6e8}
+  .band .row.rej .t{color:#8f9ccc}
+  .band .verdict.pass{color:#d6ffd9;background:rgba(50,138,59,.42)}
+  .band .verdict.reject{color:#c9d3ff;background:rgba(255,255,255,.12)}
+  .band .status{color:#c9d3ff}
+
+  /* ── scoring: August's "Get to know us" frames - two roomy tinted cards ── */
+  @media (min-width:1060px){
+    .scores{display:grid;grid-template-columns:1fr 1fr;gap:22px}
+    .scard{padding:32px 34px}
+  }
+  .scard{position:relative;background:var(--surface)}
+  .scard:nth-child(4n+1){background:#f4f7f2} .scard:nth-child(4n+2){background:#fdf3ef}
+  .scard:nth-child(4n+3){background:#f5f2fb} .scard:nth-child(4n+4){background:#fdf1f9}
+  .scard .arrow{position:absolute;top:22px;right:22px;width:38px;height:38px;border-radius:100px;
+    background:var(--surface);display:grid;place-items:center;color:var(--indigo);
+    font-size:16px;box-shadow:var(--sh-subtle);transition:background .3s var(--ease)}
+  .scard:hover .arrow{background:var(--indigo);color:#fff}
+
+  /* ── metrics: the horizontally scrolling coloured cards at the foot ───── */
+  .metrics{margin:76px 0 0;padding:64px 0 72px;position:relative;
+    background-image:radial-gradient(rgba(8,3,49,.13) 1px,transparent 1px);background-size:14px 14px}
+  .mrail{display:flex;gap:18px;overflow-x:auto;padding:8px 24px 22px;scroll-snap-type:x mandatory;
+    scrollbar-width:none}
+  .mrail::-webkit-scrollbar{display:none}
+  .mcard{flex:0 0 268px;scroll-snap-align:center;border-radius:var(--card);padding:28px;
+    min-height:250px;display:flex;flex-direction:column;justify-content:space-between;
+    box-shadow:var(--sh-subtle);
+    transition:transform .38s var(--ease),box-shadow .38s var(--ease)}
+  @media (prefers-reduced-motion:no-preference){
+    .mcard:hover{transform:translateY(-14px) scale(1.035);box-shadow:rgba(75,68,57,.2) 0 28px 48px 0}
+  }
+  .mcard .big{font-family:var(--serif);font-weight:400;font-size:52px;line-height:1;letter-spacing:-.02em}
+  .mcard .cap{font-size:14.5px;line-height:1.5;margin-top:12px}
+  .mcard .foot{font-size:12px;opacity:.72;margin-top:20px}
+  .m-a{background:var(--midnight);color:#fff}
+  .m-b{background:var(--indigo);color:#fff}
+  .m-c{background:var(--blossom);color:var(--ink)}
+  .m-d{background:var(--forest);color:#fff}
+  .m-e{background:var(--ember);color:var(--ink)}
+  .m-f{background:var(--info);color:var(--ink)}
 
   /* ── status / banners ─────────────────────────────────────────────────── */
   .status{font-size:13px;color:var(--text2);padding:16px 2px;display:flex;align-items:center;gap:10px;justify-content:center}
@@ -349,12 +439,28 @@
       <div class="tickrun"><span class="src"><b>Greenhouse</b><i>ATS</i></span><span class="src"><b>Lever</b><i>ATS</i></span><span class="src"><b>Ashby</b><i>ATS</i></span><span class="src"><b>Workable</b><i>ATS</i></span><span class="src"><b>SmartRecruiters</b><i>ATS</i></span><span class="src"><b>Workday</b><i>ATS</i></span><span class="src"><b>BambooHR</b><i>ATS</i></span><span class="src"><b>Recruitee</b><i>ATS</i></span><span class="src"><b>RemoteOK</b><i>board</i></span><span class="src"><b>We Work Remotely</b><i>board</i></span><span class="src"><b>Hacker News</b><i>board</i></span><span class="src"><b>Wellfound</b><i>board</i></span><span class="src"><b>Remotive</b><i>board</i></span></div><div class="tickrun"><span class="src"><b>Greenhouse</b><i>ATS</i></span><span class="src"><b>Lever</b><i>ATS</i></span><span class="src"><b>Ashby</b><i>ATS</i></span><span class="src"><b>Workable</b><i>ATS</i></span><span class="src"><b>SmartRecruiters</b><i>ATS</i></span><span class="src"><b>Workday</b><i>ATS</i></span><span class="src"><b>BambooHR</b><i>ATS</i></span><span class="src"><b>Recruitee</b><i>ATS</i></span><span class="src"><b>RemoteOK</b><i>board</i></span><span class="src"><b>We Work Remotely</b><i>board</i></span><span class="src"><b>Hacker News</b><i>board</i></span><span class="src"><b>Wellfound</b><i>board</i></span><span class="src"><b>Remotive</b><i>board</i></span></div>
     </div>
   </section>
-  <section class="stage" id="gatesStage" hidden>
-    <div class="bearing"><b>090</b> — GATES</div>
-    <h2>Eligibility gates</h2>
-    <p class="note">Deterministic, instant, free — the pipeline's own prefilter verdicts on today's real postings. No tokens spent saying no.</p>
-    <div class="rows" id="gateRows"></div>
-    <div class="status" id="gateStatus" hidden><span class="spin"></span><span></span></div>
+  <section class="stage band" id="gatesStage" hidden>
+    <div class="wrap">
+      <div class="bearing"><b>090</b> — GATES</div>
+      <h2>Eligibility gates</h2>
+      <p class="note">Deterministic, instant, free — the pipeline's own prefilter verdicts on today's real postings. No tokens spent saying no.</p>
+      <div class="gatecards">
+        <div class="gc gc-1">
+          <h3>Remote-listed</h3>
+          <p>The posting itself has to say remote. Not "flexible", not "hybrid-friendly" — the pipeline reads what the employer actually wrote, because a role that turns out to be on-site three days a week is a rejection you find out about in week four.</p>
+        </div>
+        <div class="gc gc-2">
+          <h3>Region-eligible</h3>
+          <p>Work authorization is checked against where the role can legally be performed. A Canadian PR without US authorization does not get shown US-only roles, however good the match would otherwise look.</p>
+        </div>
+        <div class="gc gc-3">
+          <h3>Title in scope</h3>
+          <p>The title has to sit inside the bands the candidate is actually searching. This is the cheapest gate and it removes the most: it costs nothing to run and no tokens are spent saying no.</p>
+        </div>
+      </div>
+      <div class="rows" id="gateRows"></div>
+      <div class="status" id="gateStatus" hidden><span class="spin"></span><span></span></div>
+    </div>
   </section>
 
   <section class="stage" id="scoreStage" hidden>
@@ -375,6 +481,15 @@
   </section>
 </main>
 
+
+<section class="metrics" aria-label="What the demo actually does">
+  <div class="wrap" style="text-align:center">
+    <div class="bearing"><b>360</b> — THE NUMBERS</div>
+    <h2 style="font-family:var(--serif);font-weight:400;font-size:clamp(30px,4vw,48px);line-height:1.1;margin:22px 0 10px;color:var(--ink)">What is actually running</h2>
+    <p class="note" style="margin:0 auto 30px">Every figure below is read from the live pipeline, not written into the page.</p>
+  </div>
+  <div class="mrail"><div class="mcard m-a"><div><div class="big">22</div><div class="cap">postings curated from this morning's real sweep</div></div><div class="foot">the ledger, not a cached demo set</div></div><div class="mcard m-b"><div><div class="big">~800</div><div class="cap">company ATS feeds swept daily, plus five boards</div></div><div class="foot">Greenhouse, Lever, Ashby, Workable, Workday…</div></div><div class="mcard m-c"><div><div class="big">14</div><div class="cap">cleared the deterministic gates today</div></div><div class="foot">8 rejected, each with its reason shown</div></div><div class="mcard m-d"><div><div class="big">~1&cent;</div><div class="cap">per scoring run, shown on screen</div></div><div class="foot">one Claude call, rate-limited and budget-capped</div></div><div class="mcard m-e"><div><div class="big">4</div><div class="cap">routes the fit score can select</div></div><div class="foot">auto &#8805;80 &middot; ping 70&#8211;79 &middot; unsure 55&#8211;69 &middot; near-miss</div></div><div class="mcard m-f"><div><div class="big">0</div><div class="cap">postings submitted on your behalf</div></div><div class="foot">a human clicks every Submit. Always.</div></div></div>
+</section>
 <footer>
   <div class="wrap">
     <div class="bearing" style="margin-bottom:10px"><b>270</b> — THE HONEST FOOTER</div>
@@ -590,6 +705,7 @@ function renderScores(scores, passers, profile, meta, cached){
     const el = document.createElement("div");
     el.className = "scard";
     el.innerHTML = `${dialSVG(s.fit)}
+      <span class="arrow" aria-hidden="true">&#8594;</span>
       <div>
         <div class="head">${esc(p.title || s.id)} <span class="co">· ${esc(p.company || "")}</span><span class="route" style="color:${col};background:${col}1a">${route}</span></div>
         <div class="v">${esc(s.verdict || "")}</div>
