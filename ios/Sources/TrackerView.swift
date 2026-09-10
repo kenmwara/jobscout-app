@@ -50,9 +50,9 @@ struct StageMenu: View {
         } label: {
             Text(stageLabel(stage))
                 .font(.system(size: 12, weight: .semibold))
-                .foregroundColor(violetDeep)
+                .foregroundColor(midnightViolet)
                 .padding(.horizontal, 10).padding(.vertical, 5)
-                .background(violet.opacity(0.12))
+                .background(indigo.opacity(0.12))
                 .cornerRadius(8)
         }
     }
@@ -110,7 +110,7 @@ struct TrackerView: View {
                 StageMenu(stage: t.stage) { vm.setStage(t.id, $0) }
                 if let u = URL(string: t.url), !t.url.isEmpty {
                     Link("View posting ↗", destination: u)
-                        .font(.system(size: 13, weight: .semibold)).foregroundColor(violetDeep)
+                        .font(.system(size: 13, weight: .semibold)).foregroundColor(midnightViolet)
                 }
                 Spacer()
                 Button("Remove", role: .destructive) { vm.untrack(t.id) }

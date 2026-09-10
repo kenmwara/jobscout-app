@@ -2,13 +2,13 @@ import Foundation
 import SwiftUI
 import UniformTypeIdentifiers
 
-// ── Brand kit v1.0 ──────────────────────────────────────────────────────────
-let violet = Color(hex: 0x7C5AFF)
-let violetDeep = Color(hex: 0x5A3CD2)
-let ink = Color(hex: 0x0E0E16)
-let muted = Color(hex: 0x6E6E73)
-let canvasBg = Color(hex: 0xF5F5F7)
-let hairline = Color(hex: 0xE5E5EA)
+// ── Brand kit v2.0 - August Health language ──────────────────────────────────────────────────────────
+let indigo = Color(hex: 0x4865FF)
+let midnightViolet = Color(hex: 0x1B1463)
+let ink = Color(hex: 0x080331)
+let muted = Color(hex: 0x4A4560)
+let canvasBg = Color(hex: 0xF8F3EB)
+let hairline = Color(hex: 0xE7E2DA)
 
 struct Persona: Identifiable {
     let id: String, name: String, desc: String, profile: String
@@ -230,7 +230,7 @@ struct ContentView: View {
                     if vm.gatesShown > feed.rejects.count {
                         Text("✓ \(feed.passers.count) postings cleared the gates → scoring the top \(min(8, feed.passers.count))")
                             .font(.system(size: 14, weight: .semibold))
-                            .foregroundColor(Color(hex: 0x34C759))
+                            .foregroundColor(Color(hex: 0x328A3B))
                     }
                 }
 
@@ -262,13 +262,13 @@ struct ContentView: View {
     private var header: some View {
         VStack(alignment: .leading, spacing: 2) {
             HStack(spacing: 10) {
-                Text("JobScout").font(.system(size: 28, weight: .heavy)).foregroundColor(violetDeep)
-                chip("NATIVE", violet)
+                Text("JobScout").font(.system(size: 28, weight: .heavy)).foregroundColor(midnightViolet)
+                chip("NATIVE", indigo)
                 Spacer()
                 if !vm.tracker.isEmpty {
                     Button("Tracker (\(vm.tracker.count))") { showTracker = true }
                         .font(.system(size: 14, weight: .semibold))
-                        .foregroundColor(violetDeep)
+                        .foregroundColor(midnightViolet)
                 }
             }
             Text(vm.feed?.day != nil
@@ -282,14 +282,14 @@ struct ContentView: View {
     private var ownResumeBox: some View {
         VStack(alignment: .leading, spacing: 8) {
             Button(ownOpen ? "Hide resume box" : "…or upload / paste your own resume") { ownOpen.toggle() }
-                .font(.system(size: 14)).foregroundColor(violetDeep)
+                .font(.system(size: 14)).foregroundColor(midnightViolet)
             if ownOpen {
                 HStack(spacing: 10) {
                     Button("Upload resume (PDF, DOCX, TXT)") { importing = true }
                         .font(.system(size: 14, weight: .semibold))
-                        .foregroundColor(violetDeep)
+                        .foregroundColor(midnightViolet)
                         .disabled(vm.uploading)
-                    if vm.uploading { ProgressView().tint(violet) }
+                    if vm.uploading { ProgressView().tint(indigo) }
                 }
                 if let st = vm.uploadStatus {
                     Text(st).font(.system(size: 12)).foregroundColor(muted)
@@ -307,7 +307,7 @@ struct ContentView: View {
                 }
                 .background(Color.white)
                 .cornerRadius(12)
-                .overlay(RoundedRectangle(cornerRadius: 12).stroke(vm.usingOwn ? violet : hairline, lineWidth: vm.usingOwn ? 2 : 1))
+                .overlay(RoundedRectangle(cornerRadius: 12).stroke(vm.usingOwn ? indigo : hairline, lineWidth: vm.usingOwn ? 2 : 1))
                 Text((vm.usingOwn ? "Using your own resume for this run. " : "") + "Processed in-memory for this one scoring run. Never stored, never logged, never used for anything else. Uploads are extracted in memory and discarded.")
                     .font(.system(size: 12)).foregroundColor(muted)
             }
@@ -333,7 +333,7 @@ struct ContentView: View {
                  : "Run today's real sweep →")
                 .font(.system(size: 16, weight: .semibold))
                 .frame(maxWidth: .infinity, minHeight: 52)
-                .background(violet)
+                .background(indigo)
                 .foregroundColor(.white)
                 .cornerRadius(14)
         }
@@ -345,7 +345,7 @@ struct ContentView: View {
             Text("Grounded cover letter").font(.headline)
             if vm.letterBusy {
                 HStack(spacing: 12) {
-                    ProgressView().tint(violet)
+                    ProgressView().tint(indigo)
                     Text("Drafting from the profile only — it cannot invent experience…")
                 }
             } else {
@@ -359,7 +359,7 @@ struct ContentView: View {
 
     private func sectionLabel(_ t: String) -> some View {
         Text(t).font(.system(size: 12, weight: .bold)).tracking(1.5)
-            .foregroundColor(violetDeep).padding(.top, 12)
+            .foregroundColor(midnightViolet).padding(.top, 12)
     }
 
     private func bannerView(_ t: String) -> some View {
@@ -384,12 +384,12 @@ struct ContentView: View {
         .background(Color.white)
         .cornerRadius(14)
         .overlay(RoundedRectangle(cornerRadius: 14)
-            .stroke(selected ? violet : hairline, lineWidth: selected ? 2 : 1))
+            .stroke(selected ? indigo : hairline, lineWidth: selected ? 2 : 1))
     }
 
     private func gateRow(_ r: Posting) -> some View {
         HStack(alignment: .top, spacing: 10) {
-            Text("✕").fontWeight(.bold).foregroundColor(Color(hex: 0x8E8E93))
+            Text("✕").fontWeight(.bold).foregroundColor(Color(hex: 0x333333))
             VStack(alignment: .leading, spacing: 1) {
                 Text("\(r.title) — \(r.company)").font(.system(size: 13, weight: .medium)).foregroundColor(ink)
                 Text(r.gate.reason).font(.system(size: 12)).foregroundColor(muted)
@@ -415,16 +415,16 @@ struct ContentView: View {
                 }
                 Text(s.verdict).font(.system(size: 13)).foregroundColor(Color(hex: 0x3A3A3C))
                 if !s.strongest.isEmpty {
-                    Text("+ \(s.strongest)").font(.system(size: 12)).foregroundColor(Color(hex: 0x34C759))
+                    Text("+ \(s.strongest)").font(.system(size: 12)).foregroundColor(Color(hex: 0x328A3B))
                 }
                 if !s.weakest.isEmpty {
-                    Text("− \(s.weakest)").font(.system(size: 12)).foregroundColor(Color(hex: 0xFF9500))
+                    Text("− \(s.weakest)").font(.system(size: 12)).foregroundColor(Color(hex: 0xFF6D39))
                 }
                 HStack(spacing: 14) {
                     if let p = posting, !p.url.isEmpty, let u = URL(string: p.url) {
                         Link("View posting ↗", destination: u)
                             .font(.system(size: 13, weight: .semibold))
-                            .foregroundColor(violetDeep)
+                            .foregroundColor(midnightViolet)
                     }
                     StageMenu(stage: vm.tracker[s.id]?.stage ?? "survivor") { vm.setStage(s.id, $0) }
                     Spacer()
@@ -435,7 +435,7 @@ struct ContentView: View {
                         Task { await vm.draftLetter(posting) }
                     }
                     .font(.system(size: 14, weight: .semibold))
-                    .foregroundColor(violetDeep)
+                    .foregroundColor(midnightViolet)
                 }
             }
         }

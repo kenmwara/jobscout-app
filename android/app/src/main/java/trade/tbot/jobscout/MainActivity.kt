@@ -42,14 +42,14 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.time.Instant
 
-// ── Brand kit v1.0 ──────────────────────────────────────────────────────────
-val Violet = Color(0xFF7C5AFF)
-val VioletDeep = Color(0xFF5A3CD2)
-val Ink = Color(0xFF0E0E16)
-val Muted = Color(0xFF6E6E73)
-val CanvasBg = Color(0xFFF5F5F7)
+// ── Brand kit v2.0 - August Health language ──────────────────────────────────────────────────────────
+val Indigo = Color(0xFF4865FF)
+val MidnightViolet = Color(0xFF1B1463)
+val Ink = Color(0xFF080331)
+val Muted = Color(0xFF4A4560)
+val CanvasBg = Color(0xFFF8F3EB)
 val CardBg = Color.White
-val Hairline = Color(0xFFE5E5EA)
+val Hairline = Color(0xFFE7E2DA)
 
 data class Persona(val id: String, val name: String, val desc: String, val profile: String)
 
@@ -226,7 +226,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             MaterialTheme(
                 colorScheme = lightColorScheme(
-                    primary = Violet, onPrimary = Color.White,
+                    primary = Indigo, onPrimary = Color.White,
                     background = CanvasBg, surface = CardBg, onSurface = Ink,
                 )
             ) { DemoScreen() }
@@ -264,7 +264,7 @@ fun DemoScreen(vm: DemoVm = viewModel()) {
         item {
             // Same affordance as the web demo: hidden behind a toggle, processed in memory only.
             TextButton(onClick = { ownOpen = !ownOpen }, contentPadding = PaddingValues(0.dp)) {
-                Text(if (ownOpen) "Hide resume box" else "…or upload / paste your own resume", color = VioletDeep, fontSize = 14.sp)
+                Text(if (ownOpen) "Hide resume box" else "…or upload / paste your own resume", color = MidnightViolet, fontSize = 14.sp)
             }
             if (ownOpen) {
                 // Storage Access Framework picker — no storage permission, the user picks one document.
@@ -274,11 +274,11 @@ fun DemoScreen(vm: DemoVm = viewModel()) {
                 OutlinedButton(
                     onClick = { picker.launch(RESUME_MIMES) },
                     enabled = !ui.uploading,
-                    shape = RoundedCornerShape(12.dp),
+                    shape = RoundedCornerShape(16.dp),
                     modifier = Modifier.padding(bottom = 8.dp),
                 ) {
                     if (ui.uploading) {
-                        CircularProgressIndicator(Modifier.size(16.dp), color = Violet, strokeWidth = 2.dp)
+                        CircularProgressIndicator(Modifier.size(16.dp), color = Indigo, strokeWidth = 2.dp)
                         Spacer(Modifier.width(8.dp))
                     }
                     Text(if (ui.uploading) "Extracting…" else "Upload resume (PDF, DOCX, TXT)")
@@ -290,9 +290,9 @@ fun DemoScreen(vm: DemoVm = viewModel()) {
                     value = ui.resume, onValueChange = vm::setResume,
                     modifier = Modifier.fillMaxWidth(), minLines = 4, maxLines = 8,
                     placeholder = { Text("Paste plain resume text (max 6,000 chars)…", color = Muted) },
-                    shape = RoundedCornerShape(12.dp),
+                    shape = RoundedCornerShape(16.dp),
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = Violet, unfocusedBorderColor = Hairline,
+                        focusedBorderColor = Indigo, unfocusedBorderColor = Hairline,
                         focusedContainerColor = CardBg, unfocusedContainerColor = CardBg),
                 )
                 Text(
@@ -309,7 +309,7 @@ fun DemoScreen(vm: DemoVm = viewModel()) {
                 enabled = feed != null && ui.phase != Phase.GATES && ui.phase != Phase.SCORING,
                 modifier = Modifier.fillMaxWidth().height(52.dp),
                 shape = RoundedCornerShape(14.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Violet),
+                colors = ButtonDefaults.buttonColors(containerColor = Indigo),
             ) {
                 Text(
                     when (ui.phase) {
@@ -333,7 +333,7 @@ fun DemoScreen(vm: DemoVm = viewModel()) {
                 AnimatedVisibility(visible = ui.gatesShown > feed.rejects.size, enter = fadeIn()) {
                     Text(
                         "✓ ${feed.passers.size} postings cleared the gates → scoring the top ${minOf(8, feed.passers.size)}",
-                        color = Color(0xFF34C759), fontSize = 14.sp, fontWeight = FontWeight.SemiBold,
+                        color = Color(0xFF328A3B), fontSize = 14.sp, fontWeight = FontWeight.SemiBold,
                         modifier = Modifier.padding(vertical = 4.dp),
                     )
                 }
@@ -366,11 +366,11 @@ fun DemoScreen(vm: DemoVm = viewModel()) {
     if (ui.letterBusy || ui.letterText != null) {
         AlertDialog(
             onDismissRequest = vm::dismissLetter,
-            confirmButton = { TextButton(onClick = vm::dismissLetter) { Text("Close", color = VioletDeep) } },
+            confirmButton = { TextButton(onClick = vm::dismissLetter) { Text("Close", color = MidnightViolet) } },
             title = { Text("Grounded cover letter", fontWeight = FontWeight.Bold) },
             text = {
                 if (ui.letterBusy) Row(verticalAlignment = Alignment.CenterVertically) {
-                    CircularProgressIndicator(Modifier.size(20.dp), color = Violet, strokeWidth = 2.dp)
+                    CircularProgressIndicator(Modifier.size(20.dp), color = Indigo, strokeWidth = 2.dp)
                     Spacer(Modifier.width(12.dp))
                     Text("Drafting from the profile only — it cannot invent experience…")
                 } else Text(ui.letterText ?: "")
@@ -385,12 +385,12 @@ fun DemoScreen(vm: DemoVm = viewModel()) {
 private fun Header(feed: Feed?, tracked: Int, onTracker: () -> Unit) {
     Column {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Text("JobScout", fontSize = 28.sp, fontWeight = FontWeight.ExtraBold, color = VioletDeep)
+            Text("JobScout", fontSize = 28.sp, fontWeight = FontWeight.ExtraBold, color = MidnightViolet)
             Spacer(Modifier.width(10.dp))
-            Chip("NATIVE", Violet)
+            Chip("NATIVE", Indigo)
             Spacer(Modifier.weight(1f))
             TextButton(onClick = onTracker, contentPadding = PaddingValues(0.dp)) {
-                Text("Tracker ($tracked)", color = VioletDeep, fontWeight = FontWeight.SemiBold)
+                Text("Tracker ($tracked)", color = MidnightViolet, fontWeight = FontWeight.SemiBold)
             }
         }
         Text(
@@ -404,7 +404,7 @@ private fun Header(feed: Feed?, tracked: Int, onTracker: () -> Unit) {
 
 @Composable
 private fun SectionLabel(text: String) {
-    Text(text, color = VioletDeep, fontSize = 12.sp, fontWeight = FontWeight.Bold,
+    Text(text, color = MidnightViolet, fontSize = 12.sp, fontWeight = FontWeight.Bold,
         letterSpacing = 1.5.sp, modifier = Modifier.padding(top = 12.dp))
 }
 
@@ -432,7 +432,7 @@ private fun PersonaCard(p: Persona, selected: Boolean, onClick: () -> Unit) {
             .fillMaxWidth()
             .clickable(onClick = onClick)
             .background(CardBg, RoundedCornerShape(14.dp))
-            .border(if (selected) 2.dp else 1.dp, if (selected) Violet else Hairline, RoundedCornerShape(14.dp))
+            .border(if (selected) 2.dp else 1.dp, if (selected) Indigo else Hairline, RoundedCornerShape(14.dp))
             .padding(14.dp)
     ) {
         Text(p.name, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, color = Ink)
@@ -449,7 +449,7 @@ private fun GateRow(r: Posting) {
             .border(1.dp, Hairline, RoundedCornerShape(10.dp))
             .padding(10.dp)
     ) {
-        Text("✕", color = Color(0xFF8E8E93), fontWeight = FontWeight.Bold)
+        Text("✕", color = Color(0xFF333333), fontWeight = FontWeight.Bold)
         Spacer(Modifier.width(10.dp))
         Column {
             Text("${r.title} — ${r.company}", fontSize = 13.sp, fontWeight = FontWeight.Medium, color = Ink)
@@ -484,12 +484,12 @@ private fun ScoreCard(
                 }
                 Text(s.verdict, fontSize = 13.sp, color = Color(0xFF3A3A3C), modifier = Modifier.padding(top = 4.dp))
                 if (s.strongest.isNotEmpty())
-                    Text("+ ${s.strongest}", fontSize = 12.sp, color = Color(0xFF34C759), modifier = Modifier.padding(top = 6.dp))
+                    Text("+ ${s.strongest}", fontSize = 12.sp, color = Color(0xFF328A3B), modifier = Modifier.padding(top = 6.dp))
                 if (s.weakest.isNotEmpty())
-                    Text("− ${s.weakest}", fontSize = 12.sp, color = Color(0xFFFF9500), modifier = Modifier.padding(top = 2.dp))
+                    Text("− ${s.weakest}", fontSize = 12.sp, color = Color(0xFFFF6D39), modifier = Modifier.padding(top = 2.dp))
                 if (showLetter && posting != null)
                     TextButton(onClick = { onLetter(posting) }, contentPadding = PaddingValues(0.dp)) {
-                        Text("Draft a grounded cover letter →", color = VioletDeep, fontWeight = FontWeight.SemiBold)
+                        Text("Draft a grounded cover letter →", color = MidnightViolet, fontWeight = FontWeight.SemiBold)
                     }
             }
         }
@@ -513,7 +513,7 @@ private fun PostingActions(
         StageChip(stage, onStage)
         if (url.isNotEmpty())
             TextButton(onClick = { runCatching { uriHandler.openUri(url) } }, contentPadding = PaddingValues(0.dp)) {
-                Text("View posting ↗", color = VioletDeep, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                Text("View posting ↗", color = MidnightViolet, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
             }
         Spacer(Modifier.weight(1f))
         trailing()
@@ -545,9 +545,9 @@ private fun TrackerScreen(vm: DemoVm, tracker: Map<String, Tracked>, onClose: ()
         ) {
             item {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("Your pipeline", fontSize = 24.sp, fontWeight = FontWeight.ExtraBold, color = VioletDeep,
+                    Text("Your pipeline", fontSize = 24.sp, fontWeight = FontWeight.ExtraBold, color = MidnightViolet,
                         modifier = Modifier.weight(1f))
-                    TextButton(onClick = onClose) { Text("Close", color = VioletDeep) }
+                    TextButton(onClick = onClose) { Text("Close", color = MidnightViolet) }
                 }
                 Text(
                     "Saved on this device only — nothing is sent anywhere. Applying happens on the employer's site; JobScout never submits for you.",
@@ -575,7 +575,7 @@ private fun TrackerScreen(vm: DemoVm, tracker: Map<String, Tracked>, onClose: ()
             confirmButton = {
                 TextButton(onClick = { vm.clearTracker(); confirmClear = false }) { Text("Clear", color = Color(0xFFFF3B30)) }
             },
-            dismissButton = { TextButton(onClick = { confirmClear = false }) { Text("Cancel", color = VioletDeep) } },
+            dismissButton = { TextButton(onClick = { confirmClear = false }) { Text("Cancel", color = MidnightViolet) } },
             title = { Text("Clear the tracker?", fontWeight = FontWeight.Bold) },
             text = { Text("Removes all ${tracker.size} tracked postings from this device.") },
         )

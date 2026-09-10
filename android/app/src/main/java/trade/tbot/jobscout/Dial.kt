@@ -48,12 +48,12 @@ fun BearingDial(fit: Int, modifier: Modifier = Modifier) {
                 size = arc,
                 style = stroke,
             )
-            seg(0.00f, 0.55f, Color(0xFFD8D8DD))   // near-miss track
-            seg(0.55f, 0.70f, Color(0xFFFF9500))   // unsure
-            seg(0.70f, 0.80f, Color(0xFF007AFF))   // ping
-            seg(0.80f, 1.00f, Color(0xFF34C759))   // auto
+            seg(0.00f, 0.55f, Color(0xFFE6DED0))   // near-miss track
+            seg(0.55f, 0.70f, Color(0xFFFF6D39))   // unsure
+            seg(0.70f, 0.80f, Color(0xFF4865FF))   // ping
+            seg(0.80f, 1.00f, Color(0xFF328A3B))   // auto
 
-            // Two-tone violet kite needle (brand kit), rotated about center.
+            // Two-tone indigo kite needle (brand kit v2.0), rotated about center.
             val c = center
             val u = size.width / 200f  // brand-kit dial is authored on a 200-unit grid
             rotate(needle, pivot = c) {
@@ -66,22 +66,37 @@ fun BearingDial(fit: Int, modifier: Modifier = Modifier) {
                     }
                     p.close(); drawPath(p, color)
                 }
-                kite(100f to 40f, 109f to 102f, 100f to 112f, color = Color(0xFF5A3CD2))
-                kite(100f to 40f, 91f to 102f, 100f to 112f, color = Color(0xFF7C5AFF))
-                kite(100f to 150f, 106f to 98f, 100f to 90f, color = Color(0xFFC9B8FF))
-                kite(100f to 150f, 94f to 98f, 100f to 90f, color = Color(0xFFDDD6FF))
+                kite(100f to 40f, 109f to 102f, 100f to 112f, color = Color(0xFF1B1463))
+                kite(100f to 40f, 91f to 102f, 100f to 112f, color = Color(0xFF4865FF))
+                kite(100f to 150f, 106f to 98f, 100f to 90f, color = Color(0xFFA2BAFF))
+                kite(100f to 150f, 94f to 98f, 100f to 90f, color = Color(0xFFDCE4FB))
             }
-            drawCircle(Color(0xFF0E0E16), radius = 6.5f * u, center = c)
+            drawCircle(Color(0xFF080331), radius = 6.5f * u, center = c)
             drawCircle(Color.White, radius = 6.5f * u, center = c, style = Stroke(2f * u))
         }
         Text("$f", color = bandColor, fontSize = 20.sp, fontWeight = FontWeight.Bold)
     }
 }
 
-/** Score → (route label, band color). Same thresholds as the production pipeline. */
+/**
+ * Score → (route label, TEXT colour). Same thresholds as the production pipeline.
+ *
+ * Every caller uses this for text - the fit number and the route pill - so it returns
+ * the contrast-checked label colour, not the decorative arc fill. Measured on the cream
+ * canvas #F8F3EB: meadow 8.97, midnight 14.33, ember-deep 4.64, stone 11.44. The fills
+ * themselves (forest 3.93, ember 2.54) fail as text and are used only for the arcs.
+ */
 fun bandFor(fit: Int): Pair<String, Color> = when {
-    fit >= 80 -> "auto" to Color(0xFF34C759)
-    fit >= 70 -> "ping" to Color(0xFF007AFF)
-    fit >= 55 -> "unsure" to Color(0xFFFF9500)
-    else -> "near-miss" to Color(0xFF8E8E93)
+    fit >= 80 -> "auto" to Color(0xFF114E0B)      // meadow
+    fit >= 70 -> "ping" to Color(0xFF1B1463)      // midnight violet
+    fit >= 55 -> "unsure" to Color(0xFFCC3600)    // ember deep
+    else -> "near-miss" to Color(0xFF333333)      // stone
+}
+
+/** The decorative fill for each band - arcs and pill grounds only, never text. */
+fun bandFill(fit: Int): Color = when {
+    fit >= 80 -> Color(0xFF328A3B)
+    fit >= 70 -> Color(0xFF4865FF)
+    fit >= 55 -> Color(0xFFFF6D39)
+    else -> Color(0xFFDCE4FB)
 }
