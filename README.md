@@ -19,8 +19,9 @@ prefilter's own reasons, and every score and cover letter is a live Claude call.
    saying no.
 3. **Live scoring.** The survivors go to Claude (Haiku-class) with an honest
    rubric — most postings are a poor fit and the model says so. Each result
-   renders on the brand's bearing dial: **the needle is the score** (fit 0–100
-   sweeps 270°), and the band it lands on selects the route:
+   renders on the brand's **bearing rose** — the mark itself, carrying the data:
+   fit 0–100 lights the eight bearings clockwise, and the band it lands in
+   selects the route:
    `auto ≥80 · ping 70–79 · unsure 55–69 · near-miss <55`.
 4. **Grounded cover letter** for the top match — drafted only from the profile
    shown, never inventing experience.
@@ -74,7 +75,7 @@ re-implement the brand-kit bearing dial in each platform's own graphics layer:
 
 - **`android/`** — Kotlin + Jetpack Compose (Material 3, ViewModel/StateFlow,
   kotlinx-serialization, OkHttp; the dial is a Compose `Canvas` with an
-  animated needle). Built in CI as a debug APK.
+  animated needle — the native apps keep the dial). Built in CI as a debug APK.
 - **`ios/`** — Swift + SwiftUI (async/await, `ObservableObject`, Codable; the
   dial is trimmed-`Circle` band segments plus a `Path` needle under
   `rotationEffect`). The `.xcodeproj` is generated in CI from

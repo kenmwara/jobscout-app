@@ -31,8 +31,9 @@ Design point: never spend AI money to discover what a rule already knows.
 
 **3 · Honest scoring.** The survivors go to Claude with a rubric that anchors a
 clean match near 70 and treats specialties as bonuses, never requirements. The
-result renders on a bearing dial — the needle's angle *is* the score, and the
-color band it lands in *is* the routing decision the real pipeline makes
+result renders on the bearing rose — the eight dots of the mark, lit clockwise
+by the score, and the color band it lands in *is* the routing decision the real
+pipeline makes
 (auto-apply / ping me / unsure / near-miss). Most jobs score low. That is the
 feature: the tool's job is to protect attention, not to flatter.
 

@@ -56,7 +56,7 @@
   .pill:hover{background:var(--lavender)}
   .plink:hover{color:var(--indigo)}
   *{box-sizing:border-box}
-  /* The orbiting discs bleed past the viewport edges, as August's do. Clip rather
+  /* The hero circles bleed past the viewport edges, as August's do. Clip rather
      than scroll - overflow-x:clip does not create a scroll container, so sticky
      positioning on the header keeps working (overflow:hidden would break it). */
   html{overflow-x:clip}
@@ -96,45 +96,30 @@
   .bearing b{color:var(--indigo);font-weight:500}
   h1{font-family:var(--serif);font-weight:400;font-size:clamp(40px,6.4vw,64px);line-height:1.04;
     letter-spacing:-.02em;margin:26px auto 18px;max-width:17ch;text-wrap:balance;color:var(--ink)}
-  /* The discs orbit BEHIND the hero text. Measured: deep-ink over any disc is
-     7.0-11.9:1, so the headline and body stay legible wherever a disc passes.
-     The indigo accent does NOT - 1.6-2.8:1 on every disc colour - so it carries a
-     cream halo that keeps it readable over anything that drifts behind it. */
-  h1 .v{color:var(--indigo);text-shadow:0 0 16px var(--canvas),0 0 7px var(--canvas),0 0 3px var(--canvas)}
+  /* Indigo on cream is 4.15:1 - short of body text, comfortably past the 3:1 a
+     display size needs. It is only ever used at this size. The circles behind it
+     are 1.5px hairlines, which do not move the measurement. */
+  h1 .v{color:var(--indigo)}
   .sub{font-size:19px;color:var(--text2);max-width:58ch;margin:0 auto 12px;line-height:1.6}
   .sweepline{font-size:13px;color:var(--text3);margin:0 0 34px}
   .sweepline b{color:var(--ink);font-weight:500}
 
-  /* decorative circles — August's signature geometry, holding product UI */
-  /* August's signature: circular frames in colour halos, bleeding off the edges.
-     Here they hold cropped product UI rather than portraits — the fit dial and a
-     route verdict — so the decoration says what the product actually does. */
-  /* Circles revolve on an ELLIPSE around the hero centre - wide and short, so they
-     sweep the left and right margins without ever crossing the headline and without
-     disappearing above the fold, which a circular orbit did. The angle is a registered
-     custom property so it can be animated and fed to cos()/sin(). August does not
-     animate these at all; this is a deliberate addition. */
-  @property --t{syntax:'<angle>';inherits:false;initial-value:0deg}
-  .orbit{position:absolute;left:50%;top:250px;width:0;height:0;pointer-events:none;z-index:0;display:none}
-  .halo{position:absolute;border-radius:50%;display:flex;align-items:center;justify-content:center;overflow:hidden;opacity:.92;
-    transform:translate(-50%,-50%)
-      translate(calc(var(--rx) * cos(var(--t) + var(--a))), calc(var(--ry) * sin(var(--t) + var(--a))))}
-  .hchip{font:500 12px/1 var(--sans);letter-spacing:.08em;color:#fff;
-    background:rgba(8,3,49,.26);border-radius:var(--pill);padding:8px 13px}
-  @media (min-width:1240px){
-    .orbit{display:block}
-    .halo-1{width:196px;height:196px;background:var(--tinted); --a:168deg;--rx:600px;--ry:210px}
-    .halo-2{width:126px;height:126px;background:var(--vibrant);--a:14deg; --rx:625px;--ry:190px}
-    .halo-3{width:104px;height:104px;background:var(--forest); --a:196deg;--rx:595px;--ry:250px}
-    .halo-4{width:66px;height:66px;  background:var(--lavender);--a:340deg;--rx:640px;--ry:235px}
-  }
-  @media (min-width:1240px) and (prefers-reduced-motion:no-preference){
-    .halo{animation:revolve 150s linear infinite}
-    .ring{animation:rotate 10s linear infinite;transform-origin:50% 50%}
-  }
-  @keyframes revolve{to{--t:360deg}}
-  @keyframes rotate{from{transform:rotate(0)}to{transform:rotate(360deg)}}
-  @media (min-width:1180px){ .hero>*:not(.halo){position:relative;z-index:1} }
+  /* August's hero geometry, verbatim from the real site: very large circle
+     OUTLINES cropped by the viewport edges. Theirs sit on the indigo ground in
+     saturated strokes; ours sit on the cream one, so the same strokes at the
+     same weight would shout - they run at .5 alpha instead. Pure geometry, no
+     product UI inside them, and no motion: August does not move these. */
+  .rings{position:absolute;left:50%;top:0;width:100vw;height:100%;transform:translateX(-50%);
+    pointer-events:none;z-index:0}
+  /* border-width/style, NOT the `border` shorthand - the shorthand resets
+     border-color, and at this specificity it would beat each circle's own hue. */
+  .rings i{position:absolute;border-radius:50%;border-width:2px;border-style:solid;opacity:.7}
+  .r1{width:43vw;height:43vw;left:-18vw;top:-14vw;border-color:var(--tinted)}
+  .r2{width:49vw;height:49vw;right:-19vw;top:-18vw;border-color:var(--indigo)}
+  .r3{width:39vw;height:39vw;left:-17vw;top:28vw;border-color:var(--forest)}
+  .r4{width:42vw;height:42vw;right:-17vw;top:25vw;border-color:var(--vibrant)}
+  @media (max-width:820px){ .rings{display:none} }
+  @media (min-width:1180px){ .hero>*:not(.rings){position:relative;z-index:1} }
 
   /* ── chooser card ─────────────────────────────────────────────────────── */
   .chooser{background:var(--surface);border:none;border-radius:var(--card);padding:32px;
@@ -211,9 +196,12 @@
   .scard:first-child{box-shadow:0 0 0 3px rgba(72,101,255,.16),var(--sh-card)}
   .scard.in{opacity:1;transform:none}
   @media (prefers-reduced-motion:no-preference){.scard{transition:opacity .5s var(--ease),transform .5s var(--ease)}
-    .needle{transition:transform 1s var(--ease)}}
-  .dial{width:96px;align-self:start}
-  .dial .fitnum{font-family:var(--serif);font-weight:400;font-size:26px;text-anchor:middle}
+    /* the rose blooms one bearing at a time, in the order the score fills them */
+    .rose .lit{transform:scale(.34);transform-origin:center;transform-box:fill-box;opacity:0;
+      transition:transform .42s var(--ease),opacity .42s var(--ease);transition-delay:calc(var(--i) * 70ms)}
+    .scard.in .rose .lit{transform:none;opacity:1}}
+  .rose{width:96px;align-self:start}
+  .rose .fitnum{font-family:var(--serif);font-weight:400;font-size:24px;text-anchor:middle}
   .scard .head{font-weight:500;font-size:17px;color:var(--ink);padding-right:52px}
   .scard .head .co{color:var(--text2);font-weight:400}
   .scard .route{font-size:10.5px;font-weight:500;letter-spacing:.09em;text-transform:uppercase;white-space:nowrap;display:inline-block;
@@ -358,7 +346,7 @@
   @media (max-width:640px){
     .personas{grid-template-columns:1fr}
     .scard{grid-template-columns:78px minmax(0,1fr);padding:22px}
-    .dial{width:72px}
+    .rose{width:76px}
     .chooser{padding:24px}
     header .wrap{padding:10px 12px 10px 16px}
     header nav .hidesm{display:none}
@@ -370,7 +358,7 @@
 
 <header>
   <div class="wrap">
-    <span class="mark" aria-hidden="true"><svg viewBox="0 0 512 512"><circle cx="256" cy="256" r="220" fill="none" stroke="#4865ff" stroke-width="30"/><path d="M256 96 L296 256 L256 416 L216 256 Z" fill="#1b1463"/><path d="M256 96 L296 256 L256 288 L216 256 Z" fill="#4865ff"/><rect x="248" y="36" width="16" height="34" fill="#4865ff"/><rect x="248" y="442" width="16" height="34" fill="#4865ff"/><rect x="36" y="248" width="34" height="16" fill="#4865ff"/><rect x="442" y="248" width="34" height="16" fill="#4865ff"/></svg></span>
+    <span class="mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="#4865ff"><circle cx="12.000" cy="1.000" r="2.300"/><circle cx="19.778" cy="4.222" r="2.593"/><circle cx="23.000" cy="12.000" r="2.886"/><circle cx="19.778" cy="19.778" r="3.179"/><circle cx="12.000" cy="23.000" r="3.471"/><circle cx="4.222" cy="19.778" r="3.764"/><circle cx="1.000" cy="12.000" r="4.057"/><circle cx="4.222" cy="4.222" r="4.350"/></svg></span>
     <span class="brand">JobScout<small>AI job-search copilot</small></span>
     <nav>
       <span class="livechip"><i></i>live · real postings</span>
@@ -384,31 +372,8 @@
 
 <main class="wrap">
   <section class="hero">
-    <span class="orbit" aria-hidden="true">
-      <span class="halo halo-1">
-        <span class="hi"><svg viewBox="0 0 200 230" width="118">
-          <g fill="none" stroke-width="12" stroke-linecap="butt">
-            <path d="M 40.6 159.4 A 84 84 0 0 1 119.6 18.3" stroke="#e6ded0"/>
-            <path d="M 119.6 18.3 A 84 84 0 0 1 168.0 50.6" stroke="#ff6d39"/>
-            <path d="M 168.0 50.6 A 84 84 0 0 1 183.0 86.9" stroke="#4865ff"/>
-            <path d="M 183.0 86.9 A 84 84 0 0 1 159.4 159.4" stroke="#328a3b"/>
-          </g>
-          <g transform="rotate(100 100 100)">
-            <path d="M100 40 L109 102 L100 112 Z" fill="#1b1463"/>
-            <path d="M100 40 L91 102 L100 112 Z" fill="#4865ff"/>
-            <path d="M100 150 L106 98 L100 90 Z" fill="#a2baff"/>
-            <path d="M100 150 L94 98 L100 90 Z" fill="#dce4fb"/>
-          </g>
-          <circle cx="100" cy="100" r="6.5" fill="#080331" stroke="#fff" stroke-width="2"/>
-          <text x="100" y="218" text-anchor="middle" fill="#114e0b"
-                style="font:400 30px 'Newsreader',Georgia,serif">87</text>
-        </svg></span>
-      </span>
-      <span class="halo halo-2"><span class="hi"><b class="hchip">AUTO &#8805;80</b></span></span>
-      <span class="halo halo-3"><span class="hi"><svg class="ring" viewBox="0 0 100 100" width="64" aria-hidden="true"><circle cx="50" cy="50" r="35" fill="none" stroke="#fff" stroke-width="17" stroke-dasharray="19.5 8" stroke-linecap="butt"/></svg></span></span>
-      <span class="halo halo-4"></span>
-    </span>
-    <div class="bearing"><b>000</b> — CANDIDATE · the needle is the score</div>
+    <span class="rings" aria-hidden="true"><i class="r1"></i><i class="r2"></i><i class="r3"></i><i class="r4"></i></span>
+    <div class="bearing"><b>000</b> — CANDIDATE · the rose is the score</div>
     <h1>Watch an <span class="v">LLM</span> read the job market honestly.</h1>
     <p class="sub">Pick a candidate. Real postings from this morning's sweep stream through deterministic eligibility gates, the survivors get scored live by Claude with the reasoning shown — and most jobs are a bad fit, which it says out loud.</p>
     <p class="sweepline" id="sweepline">loading today's sweep…</p>
@@ -466,7 +431,7 @@
   <section class="stage" id="scoreStage" hidden>
     <div class="bearing"><b>180</b> — SCORING</div>
     <h2>Live scoring</h2>
-    <p class="note" id="scoreNote">The gate survivors go to Claude with JobScout's honest rubric. The needle is the score: fit 0–100 sweeps 270°, and the band it lands on selects the route — auto ≥80, ping 70–79, unsure 55–69, near-miss below.</p>
+    <p class="note" id="scoreNote">The gate survivors go to Claude with JobScout's honest rubric. The rose is the score: fit 0–100 lights the eight bearings in turn, and the band it lands in selects the route — auto ≥80, ping 70–79, unsure 55–69, near-miss below.</p>
     <div class="status" id="scoreStatus"><span class="spin"></span><span>scoring with Claude…</span></div>
     <div class="scores" id="scores"></div>
   </section>
@@ -528,26 +493,21 @@ const PERSONAS = [
 
 const BAND = f => f >= 80 ? ["auto","#114e0b"] : f >= 70 ? ["ping","#1b1463"] : f >= 55 ? ["unsure","#cc3600"] : ["near-miss","#333333"];
 
-/* Brand-kit bearing dial: fit 0-100 → needle -135°..+135°. Only the needle turns. */
-function dialSVG(fit){
-  const ang = -135 + 270 * (Math.max(0, Math.min(100, fit)) / 100);
+/* The bearing rose - the brand mark, carrying the score. Eight dots on the same
+   ring as the logo; fit lights them clockwise from bearing 000 and the lit ones
+   bloom. Nothing rotates, so the score reads the same at any size. */
+const ROSE = Array.from({length: 8}, (_, i) => {
+  const th = (-90 + 45 * i) * Math.PI / 180;
+  return [52 + 38 * Math.cos(th), 52 + 38 * Math.sin(th)];
+});
+function roseSVG(fit){
   const [, col] = BAND(fit);
-  return `<svg class="dial" viewBox="0 0 200 230" role="img" aria-label="fit ${fit} of 100">
-    <g fill="none" stroke-width="12" stroke-linecap="butt">
-      <path d="M 40.6 159.4 A 84 84 0 0 1 119.6 18.3" stroke="#e6ded0"/>
-      <path d="M 119.6 18.3 A 84 84 0 0 1 168.0 50.6" stroke="#ff6d39"/>
-      <path d="M 168.0 50.6 A 84 84 0 0 1 183.0 86.9" stroke="#4865ff"/>
-      <path d="M 183.0 86.9 A 84 84 0 0 1 159.4 159.4" stroke="#328a3b"/>
-    </g>
-    <g class="needle" style="transform-origin:100px 100px" transform="rotate(${reduced ? ang : -135} 100 100)" data-ang="${ang}">
-      <path d="M100 40 L109 102 L100 112 Z" fill="#1b1463"/>
-      <path d="M100 40 L91 102 L100 112 Z" fill="#4865ff"/>
-      <path d="M100 150 L106 98 L100 90 Z" fill="#a2baff"/>
-      <path d="M100 150 L94 98 L100 90 Z" fill="#dce4fb"/>
-    </g>
-    <circle cx="100" cy="100" r="6.5" fill="#080331" stroke="#fff" stroke-width="2"/>
-    <text class="fitnum" x="100" y="218" fill="${col}">${fit}</text>
-  </svg>`;
+  const lit = Math.max(1, Math.round(Math.max(0, Math.min(100, fit)) / 100 * 8));
+  const dots = ROSE.map(([x, y], i) => i < lit
+    ? `<circle class="lit" style="--i:${i}" cx="${x.toFixed(2)}" cy="${y.toFixed(2)}" r="13" fill="${col}"/>`
+    : `<circle cx="${x.toFixed(2)}" cy="${y.toFixed(2)}" r="5.5" fill="var(--hair2)"/>`).join("");
+  return `<svg class="rose" viewBox="0 0 104 104" role="img" aria-label="fit ${fit} of 100">
+    ${dots}<text class="fitnum" x="52" y="60.5" fill="${col}">${fit}</text></svg>`;
 }
 
 let feed = null, selected = PERSONAS[0], running = false;
@@ -704,7 +664,7 @@ function renderScores(scores, passers, profile, meta, cached){
     const [route, col] = BAND(s.fit);
     const el = document.createElement("div");
     el.className = "scard";
-    el.innerHTML = `${dialSVG(s.fit)}
+    el.innerHTML = `${roseSVG(s.fit)}
       <span class="arrow" aria-hidden="true">&#8594;</span>
       <div>
         <div class="head">${esc(p.title || s.id)} <span class="co">· ${esc(p.company || "")}</span><span class="route" style="color:${col};background:${col}1a">${route}</span></div>
@@ -713,11 +673,7 @@ function renderScores(scores, passers, profile, meta, cached){
         <div class="act">${i === 0 && !cached ? `<button class="letterbtn" type="button">Draft a grounded cover letter →</button>` : ""}${plink(p.url)}${stageSelect(s.id)}</div>
       </div>`;
     $("#scores").appendChild(el);
-    setTimeout(() => {
-      el.classList.add("in");
-      const n = el.querySelector(".needle");
-      if (n) requestAnimationFrame(() => n.setAttribute("transform", `rotate(${n.dataset.ang} 100 100)`));
-    }, reduced ? 0 : 110 * i);
+    setTimeout(() => el.classList.add("in"), reduced ? 0 : 110 * i);
     if (i === 0 && !cached){
       el.querySelector(".letterbtn").onclick = () => draftLetter(el, p, profile);
     }
