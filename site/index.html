@@ -177,19 +177,27 @@
 
   /* Source ticker - August's own logoTickerClient: translateX(0 -> -100%) over 100s
      linear infinite. The track holds two identical runs so the wrap is seamless. */
+  /* It read as loose words floating on the cream rather than as a strip. Two
+     hairlines and a tinted ground give it edges without adding another white
+     slab under the chooser card, and the fade is pulled in to 4% so more of
+     the run sits at full opacity. */
   .tickerwrap{margin:52px 0 4px;overflow:hidden;position:relative;
-    -webkit-mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent);
-            mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent)}
+    padding:22px 0 24px;background:rgba(255,255,255,.55);
+    border-top:1px solid var(--hair2);border-bottom:1px solid var(--hair2);
+    -webkit-mask-image:linear-gradient(90deg,transparent,#000 4%,#000 96%,transparent);
+            mask-image:linear-gradient(90deg,transparent,#000 4%,#000 96%,transparent)}
   .tickerlead{font-size:12px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;
-    color:var(--text3);text-align:center;margin:0 0 18px}
+    color:var(--text2);text-align:center;margin:0 0 20px}
   .ticker{display:flex;width:max-content;gap:0}
   @media (prefers-reduced-motion:no-preference){.ticker{animation:tick 100s linear infinite}}
   @keyframes tick{from{transform:translateX(0)}to{transform:translateX(-50%)}}
-  .tickrun{display:flex;align-items:center;gap:40px;padding-right:40px;flex:none}
-  .src{display:inline-flex;align-items:baseline;gap:9px;white-space:nowrap;
+  .tickrun{display:flex;align-items:center;gap:44px;padding-right:44px;flex:none}
+  .src{display:inline-flex;align-items:center;gap:10px;white-space:nowrap;
     font-size:15px;font-weight:500;color:var(--text2)}
-  .src b{font-family:var(--serif);font-weight:400;font-size:21px;color:var(--ink)}
-  .src i{font-style:normal;font-size:12px;color:var(--text3)}
+  .src b{font-family:var(--serif);font-weight:400;font-size:24px;color:var(--ink)}
+  /* the source type as a chip, so each entry reads as one object */
+  .src i{font-style:normal;font-size:11px;font-weight:500;letter-spacing:.07em;text-transform:uppercase;
+    color:var(--midnight);background:var(--info);border-radius:var(--pill);padding:4px 10px}
 
   /* ── stages ───────────────────────────────────────────────────────────── */
   .stage{padding:64px 0 0;text-align:center}

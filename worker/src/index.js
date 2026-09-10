@@ -16,7 +16,11 @@ const EXTRACT_MAX_BYTES = 2_000_000;
 const EXTRACT_MAX_CHARS = 6000;
 const FAILED = { fit: 0, verdict: "scoring failed (upstream)", strongest: "", weakest: "",
                  usage: { input_tokens: 0, output_tokens: 0 }, cost: 0 };
-const IP_RUNS_PER_HOUR = 6;
+// 6/hour was throttling the author's own use of his own demo. The per-IP window
+// is anti-abuse pacing, NOT the spend guard - DAILY_BUDGET_USD is, and it is
+// unchanged, so 24/hour cannot cost a cent more than 6/hour could. At ~1c a run
+// the $3/day breaker still stops everything at ~300 runs across all visitors.
+const IP_RUNS_PER_HOUR = 24;
 const DAILY_BUDGET_USD = 3.0;
 // Haiku pricing (USD per MTok) — used for the live cost counter + breaker math.
 const PRICE_IN = 1.0, PRICE_OUT = 5.0;
