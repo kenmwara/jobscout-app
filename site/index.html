@@ -30,7 +30,7 @@
     --text:#080331; --text2:#4a4560; --text3:#6b6780;
     --hair:rgba(8,3,49,.10); --hair2:rgba(8,3,49,.18);
 
-    --serif:"DM Serif Display",Georgia,"Times New Roman",serif;
+    --serif:"Newsreader",Georgia,"Times New Roman",serif;
     --sans:"Inter",-apple-system,system-ui,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
     --mono:"JetBrains Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;
 
@@ -41,8 +41,32 @@
     --sh-btn:rgba(99,91,79,.08) 0 8px 16px 0, rgba(99,91,79,.04) 0 32px 32px 0;
     --ease:cubic-bezier(.22,1,.36,1);
   }
+
+  /* August's measured transitions: background-color .3s, colour .3s, box-shadow .2s.
+     Restrained - no transforms on hover anywhere on the reference. */
+  a,button,.persona,.upl,.letterbtn,.pill,select.stage,.verdict{
+    transition:background-color .3s var(--ease),color .3s var(--ease),
+               border-color .3s var(--ease),box-shadow .2s var(--ease)}
+  .run:hover{filter:none;transform:none;background:var(--midnight);box-shadow:var(--sh-cta)}
+  .persona:hover{background:var(--surface);box-shadow:var(--sh-subtle)}
+  .scard:hover{box-shadow:rgba(75,68,57,.16) 0 48px 56px 0}
+  .row:hover{background:rgba(72,101,255,.035)}
+  header nav a:hover{color:var(--indigo);text-decoration:none}
+  .pill:hover{background:var(--lavender)}
+  .plink:hover{color:var(--indigo)}
   *{box-sizing:border-box}
+  /* The orbiting discs bleed past the viewport edges, as August's do. Clip rather
+     than scroll - overflow-x:clip does not create a scroll container, so sticky
+     positioning on the header keeps working (overflow:hidden would break it). */
+  html{overflow-x:clip}
+  body{overflow-x:clip}
   body{margin:0;background:var(--canvas);color:var(--text);font-family:var(--sans);font-size:16px;line-height:1.6;-webkit-font-smoothing:antialiased}
+  /* the tiny-dot texture. August bakes this into section artwork; a radial-gradient
+     costs nothing, scales to any width, and lets the density be tuned. */
+  .dots{background-image:radial-gradient(rgba(8,3,49,.10) 1px,transparent 1px);background-size:22px 22px}
+  .dots-tight{background-image:radial-gradient(rgba(8,3,49,.13) 1px,transparent 1px);background-size:14px 14px}
+  .dots-light{background-image:radial-gradient(rgba(255,255,255,.16) 1px,transparent 1px);background-size:18px 18px}
+  body{background-image:radial-gradient(rgba(8,3,49,.07) 1px,transparent 1px);background-size:24px 24px;background-attachment:fixed}
   .wrap{max-width:1200px;margin:0 auto;padding:0 24px}
   main.wrap{max-width:1040px}
   a{color:var(--midnight);text-decoration:none}
@@ -71,7 +95,11 @@
   .bearing b{color:var(--indigo);font-weight:500}
   h1{font-family:var(--serif);font-weight:400;font-size:clamp(40px,6.4vw,64px);line-height:1.04;
     letter-spacing:-.02em;margin:26px auto 18px;max-width:17ch;text-wrap:balance;color:var(--ink)}
-  h1 .v{color:var(--indigo)}
+  /* The discs orbit BEHIND the hero text. Measured: deep-ink over any disc is
+     7.0-11.9:1, so the headline and body stay legible wherever a disc passes.
+     The indigo accent does NOT - 1.6-2.8:1 on every disc colour - so it carries a
+     cream halo that keeps it readable over anything that drifts behind it. */
+  h1 .v{color:var(--indigo);text-shadow:0 0 16px var(--canvas),0 0 7px var(--canvas),0 0 3px var(--canvas)}
   .sub{font-size:19px;color:var(--text2);max-width:58ch;margin:0 auto 12px;line-height:1.6}
   .sweepline{font-size:13px;color:var(--text3);margin:0 0 34px}
   .sweepline b{color:var(--ink);font-weight:500}
@@ -80,17 +108,31 @@
   /* August's signature: circular frames in colour halos, bleeding off the edges.
      Here they hold cropped product UI rather than portraits — the fit dial and a
      route verdict — so the decoration says what the product actually does. */
-  .halo{position:absolute;border-radius:50%;pointer-events:none;z-index:0;display:none;
-    align-items:center;justify-content:center;overflow:hidden}
+  /* Circles revolve on an ELLIPSE around the hero centre - wide and short, so they
+     sweep the left and right margins without ever crossing the headline and without
+     disappearing above the fold, which a circular orbit did. The angle is a registered
+     custom property so it can be animated and fed to cos()/sin(). August does not
+     animate these at all; this is a deliberate addition. */
+  @property --t{syntax:'<angle>';inherits:false;initial-value:0deg}
+  .orbit{position:absolute;left:50%;top:250px;width:0;height:0;pointer-events:none;z-index:0;display:none}
+  .halo{position:absolute;border-radius:50%;display:flex;align-items:center;justify-content:center;overflow:hidden;opacity:.92;
+    transform:translate(-50%,-50%)
+      translate(calc(var(--rx) * cos(var(--t) + var(--a))), calc(var(--ry) * sin(var(--t) + var(--a))))}
   .hchip{font:500 12px/1 var(--sans);letter-spacing:.08em;color:#fff;
     background:rgba(8,3,49,.26);border-radius:var(--pill);padding:8px 13px}
-  @media (min-width:1180px){
-    .halo{display:flex}
-    .halo-1{width:196px;height:196px;background:var(--tinted);left:-58px;top:150px}
-    .halo-2{width:126px;height:126px;background:var(--vibrant);right:-40px;top:96px}
-    .halo-3{width:88px;height:88px;background:var(--forest);right:52px;top:330px}
-    .halo-4{width:66px;height:66px;background:var(--lavender);left:96px;top:392px}
+  @media (min-width:1240px){
+    .orbit{display:block}
+    .halo-1{width:196px;height:196px;background:var(--tinted); --a:168deg;--rx:600px;--ry:210px}
+    .halo-2{width:126px;height:126px;background:var(--vibrant);--a:14deg; --rx:625px;--ry:190px}
+    .halo-3{width:104px;height:104px;background:var(--forest); --a:196deg;--rx:595px;--ry:250px}
+    .halo-4{width:66px;height:66px;  background:var(--lavender);--a:340deg;--rx:640px;--ry:235px}
   }
+  @media (min-width:1240px) and (prefers-reduced-motion:no-preference){
+    .halo{animation:revolve 150s linear infinite}
+    .ring{animation:rotate 10s linear infinite;transform-origin:50% 50%}
+  }
+  @keyframes revolve{to{--t:360deg}}
+  @keyframes rotate{from{transform:rotate(0)}to{transform:rotate(360deg)}}
   @media (min-width:1180px){ .hero>*:not(.halo){position:relative;z-index:1} }
 
   /* ── chooser card ─────────────────────────────────────────────────────── */
@@ -123,6 +165,22 @@
   .run:hover{filter:brightness(1.06);transform:translateY(-1px)}
   .run:disabled{background:var(--hair2);color:var(--text3);box-shadow:none;transform:none;cursor:default;filter:none}
   .runnote{font-size:12.5px;color:var(--text3);max-width:38ch;line-height:1.55}
+
+  /* Source ticker - August's own logoTickerClient: translateX(0 -> -100%) over 100s
+     linear infinite. The track holds two identical runs so the wrap is seamless. */
+  .tickerwrap{margin:52px 0 4px;overflow:hidden;position:relative;
+    -webkit-mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent);
+            mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent)}
+  .tickerlead{font-size:12px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--text3);text-align:center;margin:0 0 18px}
+  .ticker{display:flex;width:max-content;gap:0}
+  @media (prefers-reduced-motion:no-preference){.ticker{animation:tick 100s linear infinite}}
+  @keyframes tick{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+  .tickrun{display:flex;align-items:center;gap:40px;padding-right:40px;flex:none}
+  .src{display:inline-flex;align-items:baseline;gap:9px;white-space:nowrap;
+    font-size:15px;font-weight:500;color:var(--text2)}
+  .src b{font-family:var(--serif);font-weight:400;font-size:21px;color:var(--ink)}
+  .src i{font-style:normal;font-size:12px;color:var(--text3)}
 
   /* ── stages ───────────────────────────────────────────────────────────── */
   .stage{padding:64px 0 0;text-align:center}
@@ -236,28 +294,30 @@
 
 <main class="wrap">
   <section class="hero">
-    <span class="halo halo-1" aria-hidden="true">
-      <svg viewBox="0 0 200 230" width="118">
-        <g fill="none" stroke-width="12" stroke-linecap="butt">
-          <path d="M 40.6 159.4 A 84 84 0 0 1 119.6 18.3" stroke="#e6ded0"/>
-          <path d="M 119.6 18.3 A 84 84 0 0 1 168.0 50.6" stroke="#ff6d39"/>
-          <path d="M 168.0 50.6 A 84 84 0 0 1 183.0 86.9" stroke="#4865ff"/>
-          <path d="M 183.0 86.9 A 84 84 0 0 1 159.4 159.4" stroke="#328a3b"/>
-        </g>
-        <g transform="rotate(100 100 100)">
-          <path d="M100 40 L109 102 L100 112 Z" fill="#1b1463"/>
-          <path d="M100 40 L91 102 L100 112 Z" fill="#4865ff"/>
-          <path d="M100 150 L106 98 L100 90 Z" fill="#a2baff"/>
-          <path d="M100 150 L94 98 L100 90 Z" fill="#dce4fb"/>
-        </g>
-        <circle cx="100" cy="100" r="6.5" fill="#080331" stroke="#fff" stroke-width="2"/>
-        <text x="100" y="218" text-anchor="middle" fill="#114e0b"
-              style="font:400 30px 'DM Serif Display',Georgia,serif">87</text>
-      </svg>
+    <span class="orbit" aria-hidden="true">
+      <span class="halo halo-1">
+        <span class="hi"><svg viewBox="0 0 200 230" width="118">
+          <g fill="none" stroke-width="12" stroke-linecap="butt">
+            <path d="M 40.6 159.4 A 84 84 0 0 1 119.6 18.3" stroke="#e6ded0"/>
+            <path d="M 119.6 18.3 A 84 84 0 0 1 168.0 50.6" stroke="#ff6d39"/>
+            <path d="M 168.0 50.6 A 84 84 0 0 1 183.0 86.9" stroke="#4865ff"/>
+            <path d="M 183.0 86.9 A 84 84 0 0 1 159.4 159.4" stroke="#328a3b"/>
+          </g>
+          <g transform="rotate(100 100 100)">
+            <path d="M100 40 L109 102 L100 112 Z" fill="#1b1463"/>
+            <path d="M100 40 L91 102 L100 112 Z" fill="#4865ff"/>
+            <path d="M100 150 L106 98 L100 90 Z" fill="#a2baff"/>
+            <path d="M100 150 L94 98 L100 90 Z" fill="#dce4fb"/>
+          </g>
+          <circle cx="100" cy="100" r="6.5" fill="#080331" stroke="#fff" stroke-width="2"/>
+          <text x="100" y="218" text-anchor="middle" fill="#114e0b"
+                style="font:400 30px 'Newsreader',Georgia,serif">87</text>
+        </svg></span>
+      </span>
+      <span class="halo halo-2"><span class="hi"><b class="hchip">AUTO &#8805;80</b></span></span>
+      <span class="halo halo-3"><span class="hi"><svg class="ring" viewBox="0 0 100 100" width="64" aria-hidden="true"><circle cx="50" cy="50" r="35" fill="none" stroke="#fff" stroke-width="17" stroke-dasharray="19.5 8" stroke-linecap="butt"/></svg></span></span>
+      <span class="halo halo-4"></span>
     </span>
-    <span class="halo halo-2" aria-hidden="true"><b class="hchip">AUTO &#8805;80</b></span>
-    <span class="halo halo-3" aria-hidden="true"></span>
-    <span class="halo halo-4" aria-hidden="true"></span>
     <div class="bearing"><b>000</b> — CANDIDATE · the needle is the score</div>
     <h1>Watch an <span class="v">LLM</span> read the job market honestly.</h1>
     <p class="sub">Pick a candidate. Real postings from this morning's sweep stream through deterministic eligibility gates, the survivors get scored live by Claude with the reasoning shown — and most jobs are a bad fit, which it says out loud.</p>
@@ -282,6 +342,13 @@
     </div>
   </section>
 
+
+  <section class="tickerwrap" aria-label="Sources swept">
+    <p class="tickerlead">Swept every morning &middot; five boards and ~800 company ATS feeds</p>
+    <div class="ticker" aria-hidden="true">
+      <div class="tickrun"><span class="src"><b>Greenhouse</b><i>ATS</i></span><span class="src"><b>Lever</b><i>ATS</i></span><span class="src"><b>Ashby</b><i>ATS</i></span><span class="src"><b>Workable</b><i>ATS</i></span><span class="src"><b>SmartRecruiters</b><i>ATS</i></span><span class="src"><b>Workday</b><i>ATS</i></span><span class="src"><b>BambooHR</b><i>ATS</i></span><span class="src"><b>Recruitee</b><i>ATS</i></span><span class="src"><b>RemoteOK</b><i>board</i></span><span class="src"><b>We Work Remotely</b><i>board</i></span><span class="src"><b>Hacker News</b><i>board</i></span><span class="src"><b>Wellfound</b><i>board</i></span><span class="src"><b>Remotive</b><i>board</i></span></div><div class="tickrun"><span class="src"><b>Greenhouse</b><i>ATS</i></span><span class="src"><b>Lever</b><i>ATS</i></span><span class="src"><b>Ashby</b><i>ATS</i></span><span class="src"><b>Workable</b><i>ATS</i></span><span class="src"><b>SmartRecruiters</b><i>ATS</i></span><span class="src"><b>Workday</b><i>ATS</i></span><span class="src"><b>BambooHR</b><i>ATS</i></span><span class="src"><b>Recruitee</b><i>ATS</i></span><span class="src"><b>RemoteOK</b><i>board</i></span><span class="src"><b>We Work Remotely</b><i>board</i></span><span class="src"><b>Hacker News</b><i>board</i></span><span class="src"><b>Wellfound</b><i>board</i></span><span class="src"><b>Remotive</b><i>board</i></span></div>
+    </div>
+  </section>
   <section class="stage" id="gatesStage" hidden>
     <div class="bearing"><b>090</b> — GATES</div>
     <h2>Eligibility gates</h2>
