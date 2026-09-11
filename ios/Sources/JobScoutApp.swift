@@ -58,8 +58,30 @@ final class DemoVM: ObservableObject {
 
     func load() async {
         loadTracker()
+        error = nil
         do { feed = try await Api.feed() }
-        catch { self.error = "Feed unavailable: \(error.localizedDescription)" }
+        catch { self.error = Self.friendly(error) }
+    }
+
+    /// A phone with no route to the network surfaces a URLError whose description
+    /// names the host - which told the reader nothing except that something
+    /// internal broke. Name the actual condition instead; anything we cannot
+    /// classify keeps its detail, because that one IS worth reporting.
+    static func friendly(_ error: Error) -> String {
+        guard let e = error as? URLError else {
+            return "Feed unavailable: \(error.localizedDescription)"
+        }
+        switch e.code {
+        case .notConnectedToInternet, .cannotFindHost, .cannotConnectToHost,
+             .networkConnectionLost, .dataNotAllowed:
+            return "No internet connection \u{2014} JobScout can't reach the feed."
+        case .timedOut:
+            return "The connection timed out. Try again in a moment."
+        case .secureConnectionFailed, .serverCertificateUntrusted:
+            return "Couldn't establish a secure connection."
+        default:
+            return "Feed unavailable: \(e.localizedDescription)"
+        }
     }
 
     /// Resume file → worker /api/extract → the same text field a paste fills.
@@ -212,7 +234,11 @@ struct ContentView: View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 12) {
                 header
-                if let e = vm.error { bannerView(e) }
+                // Retry path for a failed first load - without this the only fix
+                // is force-quitting the app.
+                if let e = vm.error {
+                    bannerView(e) { Task { await vm.load() } }
+                }
 
                 sectionLabel("000 · CANDIDATE")
                 ForEach(Array(personas.enumerated()), id: \.element.id) { i, p in
@@ -362,10 +388,17 @@ struct ContentView: View {
             .foregroundColor(midnightViolet).padding(.top, 12)
     }
 
-    private func bannerView(_ t: String) -> some View {
-        Text(t).font(.system(size: 13)).foregroundColor(Color(hex: 0x8A6D00))
-            .frame(maxWidth: .infinity, alignment: .leading).padding(12)
-            .background(Color(hex: 0xFFF6DC)).cornerRadius(10)
+    private func bannerView(_ t: String, onRetry: (() -> Void)? = nil) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(t).font(.system(size: 13)).foregroundColor(Color(hex: 0x8A6D00))
+            if let onRetry = onRetry {
+                Button("Try again", action: onRetry)
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundColor(Color(hex: 0x4865FF))
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading).padding(12)
+        .background(Color(hex: 0xFFF6DC)).cornerRadius(10)
     }
 
     private func chip(_ t: String, _ c: Color) -> some View {

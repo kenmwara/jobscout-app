@@ -4,6 +4,10 @@ import android.app.Application
 import android.net.Uri
 import android.os.Bundle
 import android.provider.OpenableColumns
+import java.net.ConnectException
+import java.net.SocketTimeoutException
+import java.net.UnknownHostException
+import javax.net.ssl.SSLException
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
@@ -90,12 +94,32 @@ class DemoVm(app: Application) : AndroidViewModel(app) {
     private val _ui = MutableStateFlow(Ui(tracker = TrackerStore.load(app)))
     val ui = _ui.asStateFlow()
 
-    init {
+    init { loadFeed() }
+
+    /** Retry path for a failed first load - without this the only fix is a force-quit. */
+    fun loadFeed() {
+        _ui.update { it.copy(error = null) }
         viewModelScope.launch {
             runCatching { Api.feed() }
-                .onSuccess { f -> _ui.update { it.copy(feed = f) } }
-                .onFailure { e -> _ui.update { it.copy(error = "Feed unavailable: ${e.message}") } }
+                .onSuccess { f -> _ui.update { it.copy(feed = f, error = null) } }
+                .onFailure { e -> _ui.update { it.copy(error = friendlyError(e)) } }
         }
+    }
+
+    /**
+     * A phone with no route to the network throws UnknownHostException, and its
+     * message is the raw hostname - which told the reader nothing except that
+     * something internal broke. Name the actual condition instead; anything we
+     * cannot classify keeps its detail, because that one IS worth reporting.
+     */
+    private fun friendlyError(e: Throwable): String = when (e) {
+        is UnknownHostException, is ConnectException ->
+            "No internet connection \u2014 JobScout can't reach the feed."
+        is SocketTimeoutException ->
+            "The connection timed out. Try again in a moment."
+        is SSLException ->
+            "Couldn't establish a secure connection."
+        else -> "Feed unavailable: ${e.message ?: e::class.java.simpleName}"
     }
 
     fun pick(i: Int) = _ui.update { it.copy(personaIdx = i) }
@@ -255,7 +279,7 @@ fun DemoScreen(vm: DemoVm = viewModel()) {
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         item { Header(feed, ui.tracker.size) { trackerOpen = true } }
-        ui.error?.let { item { Banner(it) } }
+        ui.error?.let { item { Banner(it, onRetry = { vm.loadFeed() }) } }
 
         item { SectionLabel("000 · CANDIDATE") }
         itemsIndexed(PERSONAS) { i, p ->
@@ -409,12 +433,20 @@ private fun SectionLabel(text: String) {
 }
 
 @Composable
-private fun Banner(text: String) {
-    Text(text, color = Color(0xFF8A6D00), fontSize = 13.sp,
+private fun Banner(text: String, onRetry: (() -> Unit)? = null) {
+    Column(
         modifier = Modifier
             .fillMaxWidth()
             .background(Color(0xFFFFF6DC), RoundedCornerShape(10.dp))
-            .padding(12.dp))
+            .padding(12.dp)
+    ) {
+        Text(text, color = Color(0xFF8A6D00), fontSize = 13.sp)
+        if (onRetry != null) {
+            Spacer(Modifier.height(8.dp))
+            Text("Try again", color = Indigo, fontSize = 13.sp, fontWeight = FontWeight.Medium,
+                modifier = Modifier.clickable { onRetry() })
+        }
+    }
 }
 
 @Composable
