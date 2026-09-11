@@ -57,7 +57,10 @@ workflows:
   android-screens:
     name: JobScout Android (UI screenshots)
     instance_type: mac_mini_m2
-    max_build_duration: 30
+    # 30 was not enough: the APK build alone takes ~3 min and the emulator needs
+    # real time to come up on a shared mac runner. The first attempt was killed
+    # by the cap mid-boot with nothing to show for it.
+    max_build_duration: 45
     environment:
       java: 17
     scripts:
@@ -70,6 +73,7 @@ workflows:
         script: bash tools/native_screens.sh android/app/build/outputs/apk/debug/app-debug.apk
     artifacts:
       - screens/*.png
+      - screens/*.log        # the emulator's own output - the only way to see a failed boot
 
   ios-simulator:
     name: JobScout iOS (simulator build)
