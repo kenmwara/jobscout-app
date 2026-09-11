@@ -132,27 +132,20 @@ final class DemoVM: ObservableObject {
         } catch {
             banner = "Scoring failed: \(error.localizedDescription)"
         }
-        autoTrack()
         phase = .done
     }
 
     // ── Tracker ────────────────────────────────────────────────────────────
-    /// Every scored posting (live or cached) enters as a gate survivor; an
-    /// already-tracked one keeps its stage and only refreshes the details.
-    private func autoTrack() {
-        guard !scores.isEmpty else { return }
-        let byId = Dictionary(uniqueKeysWithValues: (feed?.passers ?? []).map { ($0.id, $0) })
-        let now = nowISO()
-        for s in scores {
-            let p = byId[s.id]
-            let existing = tracker[s.id]
-            var t = existing ?? Tracked(id: s.id, stage: "survivor", updated: now)
-            t.title = p?.title ?? t.title
-            t.company = p?.company ?? t.company
-            t.url = p?.url ?? t.url
-            t.fit = s.fit
-            tracker[s.id] = t
-        }
+    /// Keeps one scored posting. This used to run over EVERY score the moment a
+    /// run finished, so the tracker filled itself with a list nobody asked for
+    /// and nobody could read. Nothing enters it now without a tap.
+    func save(_ s: Score, _ p: Posting?) {
+        var t = tracker[s.id] ?? Tracked(id: s.id, stage: "survivor", updated: nowISO())
+        t.title = p?.title ?? t.title
+        t.company = p?.company ?? t.company
+        t.url = p?.url ?? t.url
+        t.fit = s.fit
+        tracker[s.id] = t
         saveTracker()
     }
 
@@ -459,7 +452,15 @@ struct ContentView: View {
                             .font(.system(size: 13, weight: .semibold))
                             .foregroundColor(midnightViolet)
                     }
-                    StageMenu(stage: vm.tracker[s.id]?.stage ?? "survivor") { vm.setStage(s.id, $0) }
+                    // Untracked postings offer to be SAVED; only once kept do
+                    // they get a stage to move through.
+                    if vm.tracker[s.id] != nil {
+                        StageMenu(stage: vm.tracker[s.id]?.stage ?? "survivor") { vm.setStage(s.id, $0) }
+                    } else {
+                        Button("Save") { vm.save(s, posting) }
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundColor(Color(hex: 0x4865FF))
+                    }
                     Spacer()
                 }
                 .padding(.top, 2)

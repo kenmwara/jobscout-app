@@ -188,12 +188,10 @@ class DemoVm(app: Application) : AndroidViewModel(app) {
                             val cached = r.cached?.scores ?: emptyList()
                             _ui.update { it.copy(phase = Phase.DONE, banner = r.detail,
                                 scores = cached, meta = r.cached?.meta, fromCache = true) }
-                            autoTrack(cached, feed)
                         }
                         r.error != null -> _ui.update { it.copy(phase = Phase.DONE, banner = r.detail ?: r.error) }
                         else -> {
                             _ui.update { it.copy(phase = Phase.DONE, scores = r.scores, meta = r.meta) }
-                            autoTrack(r.scores, feed)
                         }
                     }
                 }
@@ -229,19 +227,6 @@ class DemoVm(app: Application) : AndroidViewModel(app) {
     fun untrack(id: String) = setTracker(_ui.value.tracker - id)
     fun clearTracker() = setTracker(emptyMap())
 
-    /** Every scored posting becomes a survivor unless already tracked — then keep its stage, refresh the rest. */
-    private fun autoTrack(scores: List<Score>, feed: Feed) {
-        if (scores.isEmpty()) return
-        val byId = feed.passers.associateBy { it.id }
-        val now = Instant.now().toString()
-        val merged = _ui.value.tracker.toMutableMap()
-        for (s in scores) {
-            val fresh = trackedFor(s, byId[s.id])
-            val old = merged[s.id]
-            merged[s.id] = if (old == null) fresh.copy(updated = now) else fresh.copy(stage = old.stage, updated = old.updated)
-        }
-        setTracker(merged)
-    }
 }
 
 class MainActivity : ComponentActivity() {
@@ -372,7 +357,8 @@ fun DemoScreen(vm: DemoVm = viewModel()) {
             itemsIndexed(sorted) { i, s ->
                 val p = byId[s.id]
                 val t = ui.tracker[s.id] ?: trackedFor(s, p)
-                ScoreCard(s, p, t, showLetter = i == 0 && !ui.fromCache,
+                ScoreCard(s, p, t, isSaved = ui.tracker.containsKey(s.id),
+                    showLetter = i == 0 && !ui.fromCache,
                     onStage = { vm.setStage(t, it) }) { vm.draftLetter(it) }
             }
             ui.meta?.let { m ->
@@ -492,7 +478,7 @@ private fun GateRow(r: Posting) {
 
 @Composable
 private fun ScoreCard(
-    s: Score, posting: Posting?, tracked: Tracked, showLetter: Boolean,
+    s: Score, posting: Posting?, tracked: Tracked, isSaved: Boolean, showLetter: Boolean,
     onStage: (String) -> Unit, onLetter: (Posting) -> Unit,
 ) {
     val (route, bandColor) = bandFor(s.fit)
@@ -526,7 +512,7 @@ private fun ScoreCard(
             }
         }
         // Opening the posting IS how a user applies — the app never submits anything.
-        PostingActions(tracked.stage, posting?.url.orEmpty(), onStage)
+        PostingActions(tracked.stage, posting?.url.orEmpty(), onStage, tracked = isSaved)
     }
 }
 
@@ -534,6 +520,7 @@ private fun ScoreCard(
 @Composable
 private fun PostingActions(
     stage: String, url: String, onStage: (String) -> Unit,
+    tracked: Boolean = true,
     trailing: @Composable RowScope.() -> Unit = {},
 ) {
     val uriHandler = LocalUriHandler.current
@@ -542,7 +529,13 @@ private fun PostingActions(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        StageChip(stage, onStage)
+        // Untracked postings offer to be SAVED; only once kept do they get a
+        // stage to move through. The tracker used to fill itself with every
+        // scored posting, which made a list nobody asked for.
+        if (tracked) StageChip(stage, onStage)
+        else TextButton(onClick = { onStage("survivor") }, contentPadding = PaddingValues(0.dp)) {
+            Text("Save", color = Indigo, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+        }
         if (url.isNotEmpty())
             TextButton(onClick = { runCatching { uriHandler.openUri(url) } }, contentPadding = PaddingValues(0.dp)) {
                 Text("View posting ↗", color = MidnightViolet, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
