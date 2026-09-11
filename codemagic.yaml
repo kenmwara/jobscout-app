@@ -54,6 +54,23 @@ workflows:
 
   # Portfolio screenshots: build, install on an emulator, drive the real
   # pipeline once, capture each stage (tools/native_screens.sh).
+  #
+  # ⛔ THIS CANNOT RUN ON THE FREE PLAN. Proved 2026-09-11, twice. The Android
+  # emulator needs Hypervisor.framework for acceleration on Apple Silicon, and
+  # the build itself runs inside a VM on mac_mini_m2, so nested virtualisation
+  # is unavailable and QEMU dies on startup:
+  #
+  #     HVF error: HV_UNSUPPORTED
+  #     qemu-system-aarch64-headless: failed to initialize HVF: Invalid argument
+  #
+  # No timeout or flag fixes this. `-accel off` would fall back to pure software
+  # emulation, which will not boot and drive a live pipeline inside any sane cap.
+  # The real fix is a Linux instance with KVM, and the free plan offers only
+  # mac_mini_m2 (linux_x2 returns a billing-plan error).
+  #
+  # Until then, native screenshots come from a REAL PHONE — which is a better
+  # caption anyway. Do not start this workflow expecting images; it will build a
+  # fine APK and then fail at the emulator step.
   android-screens:
     name: JobScout Android (UI screenshots)
     instance_type: mac_mini_m2
