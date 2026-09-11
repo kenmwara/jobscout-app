@@ -294,16 +294,17 @@
      with border-radius:1600px - wider than the viewport, so only the curved
      bottom edge shows. Reproduced here, and the radius relaxes to flat as the
      band scrolls through, via a view() timeline where supported. */
-  /* The band is 132vw so only its curved bottom edge shows. Its .wrap centres
-     inside THAT, not inside the viewport - which is fine at 1440 (the wrap caps
-     at 1040, well inside) but on a 375 phone the wrap became 495px wide and the
-     heading ran 36px off BOTH edges. Cap it to the viewport. */
-  .band .wrap{max-width:min(1040px,100vw)}
   .band{position:relative;margin:72px 0 0;padding:74px 0 96px;background:var(--midnight);
     color:#fff;width:132vw;margin-left:calc(50% - 66vw);border-radius:0 0 1600px 1600px;
     background-image:radial-gradient(rgba(255,255,255,.10) 1px,transparent 1px);
     background-size:20px 20px}
-  .band>.wrap{max-width:1040px}
+  /* The band is 132vw, so its .wrap centres inside THAT, not inside the
+     viewport. Fine at 1440 (1040 sits well inside); on a 375 phone the wrap
+     became 495px and the heading ran 36px off BOTH edges. Capped here rather
+     than in a new rule - an added `.band .wrap` has the SAME specificity as
+     this one and loses to it on order, which is exactly how the first attempt
+     silently did nothing. */
+  .band>.wrap{max-width:min(1040px,100vw)}
   .band .bearing{background:rgba(255,255,255,.12);color:#dce4fb;box-shadow:none}
   .band .bearing b{color:#fff}
   .band h2{color:#fff}
