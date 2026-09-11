@@ -105,11 +105,22 @@ CI is [`codemagic.yaml`](codemagic.yaml), and both workflows build green:
 SwiftUI app compiles and links (device distribution waits on an Apple
 Developer account).
 
-Current native captures come from CI rather than a drawer of stale PNGs: every
-`ios-simulator` build takes a simulator screenshot, and the manual
-`android-screens` workflow boots an emulator and drives the whole pipeline.
-(The previously committed native shots were removed here — they predated the
-parity rewrite and showed a UI the apps no longer have.)
+<p>
+  <img src="docs/img/native/android-01-candidate.jpg" height="470" alt="JobScout on Android — the candidate chooser, each card carrying the mark in its own hue; the chosen one blooms">
+  &nbsp;&nbsp;
+  <img src="docs/img/native/android-02-scoring.jpg" height="470" alt="JobScout on Android — live scoring: the bearing rose lit to each fit, the route band, and the reasoning both ways">
+  &nbsp;&nbsp;
+  <img src="docs/img/native/android-03-gates.jpg" height="470" alt="JobScout on Android — the gate verdicts below the results, six shown with the rest one tap away">
+</p>
+
+*Android on a real phone, on the build in this repo. Left — the candidate
+chooser: one hue per candidate, and the mark blooming in the chosen card's own
+colour. Middle — live scoring, the rose lit to each fit with the reasoning for
+and against. Right — the gate verdicts, sitting below the results as receipts.*
+
+Captured by hand rather than in CI: the `android-screens` workflow cannot run on
+the free plan (the emulator needs Hypervisor.framework and `mac_mini_m2` is
+itself a VM, so QEMU cannot start). A real device is the better caption anyway.
 
 ## Deploying
 
