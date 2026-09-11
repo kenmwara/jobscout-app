@@ -2,7 +2,7 @@
 
 **Live demo: [www.jobscout.tbot.trade](https://www.jobscout.tbot.trade)** — real job
 postings, scored live by an LLM against a real candidate profile, with the reasoning
-shown and the costs on the screen.
+shown.
 
 Built from the private pipeline that has run the author's own job search in
 production since July 2026. The demo is not a mock: the postings are that
@@ -13,19 +13,23 @@ prefilter's own reasons, and every score and cover letter is a live Claude call.
 
 1. **Pick a candidate** (three personas) or paste your own resume text —
    processed in-memory for one run, never stored or logged.
-2. **Eligibility gates.** Today's postings stream past with the pipeline's
-   deterministic verdicts: region-eligibility for the candidate, fake-remote
-   detection, title scope. Rejections show their reason. No tokens are spent
-   saying no.
-3. **Live scoring.** The survivors go to Claude (Haiku-class) with an honest
-   rubric — most postings are a poor fit and the model says so. Each result
-   renders on the brand's **bearing rose** — the mark itself, carrying the data:
-   fit 0–100 lights the eight bearings clockwise, and the band it lands in
-   selects the route:
+2. **Live scoring.** The gate survivors go to Claude (Haiku-class) with an
+   honest rubric — most postings are a poor fit and the model says so. Each
+   result renders on the brand's **bearing rose** — the mark itself, carrying
+   the data: fit 0–100 lights the eight bearings clockwise, and the band it
+   lands in selects the route:
    `auto ≥80 · ping 70–79 · unsure 55–69 · near-miss <55`.
+3. **Why those, and not the rest.** Underneath the results, the deterministic
+   verdicts on every posting the sweep looked at: region-eligibility,
+   fake-remote detection, title scope. Six stream and the rest sit behind a
+   click. No tokens are spent saying no.
 4. **Grounded cover letter** for the top match — drafted only from the profile
    shown, never inventing experience.
-5. **The honest footer**: model, per-run cost, today's spend against the budget.
+5. **Save what's worth keeping.** A posting enters your saved list only when
+   you say so, and only on your own device.
+
+The results come first on purpose. The gate list is the receipts, not the
+opening act — and prices are not quoted at the reader on any surface.
 
 ## Architecture
 
@@ -53,8 +57,12 @@ A public AI endpoint with no auth is an invitation. The demo's answer is layered
 and visible: Haiku-class model only, tight token caps, server-side prompts, a
 per-visitor rate limit, and a global daily budget breaker that **degrades
 honestly** — when the budget is spent it says so and serves a cached (real,
-labeled) run rather than pretending. The cost telemetry in the footer is the
-same discipline the parent pipeline applies to itself.
+labeled) run rather than pretending.
+
+The two guards are not the same guard, and it is worth being precise: the
+per-IP window is **pacing** (anti-abuse), while `DAILY_BUDGET_USD` is the
+**spend** ceiling. Raising the first cannot cost a cent more than leaving it
+alone; only the second bounds money.
 
 ## Principles inherited from the parent pipeline
 
@@ -69,34 +77,63 @@ same discipline the parent pipeline applies to itself.
 ## Native apps (Kotlin + Swift)
 
 The same demo, built fully native — no webview, no cross-platform wrapper.
-Both apps speak to the same guarded worker API, keep feature parity with the web
-demo (personas or your own pasted resume, processed in memory only), and
-re-implement the brand-kit bearing dial in each platform's own graphics layer:
+Both apps speak to the same guarded worker API and now carry the **full web
+design language**, not just its palette — the bearing rose, results before
+gates, collapsed lists, one hue per candidate:
 
 - **`android/`** — Kotlin + Jetpack Compose (Material 3, ViewModel/StateFlow,
-  kotlinx-serialization, OkHttp; the dial is a Compose `Canvas` with an
-  animated needle — the native apps keep the dial). Built in CI as a debug APK.
+  kotlinx-serialization, OkHttp; the rose is a Compose `Canvas` in
+  [`Rose.kt`](android/app/src/main/java/trade/tbot/jobscout/Rose.kt)).
+  Built in CI as a debug APK.
 - **`ios/`** — Swift + SwiftUI (async/await, `ObservableObject`, Codable; the
-  dial is trimmed-`Circle` band segments plus a `Path` needle under
-  `rotationEffect`). The `.xcodeproj` is generated in CI from
-  [`project.yml`](ios/project.yml) (XcodeGen) — only sources are committed.
+  rose is composed `Circle`s in [`RoseView.swift`](ios/Sources/RoseView.swift)).
+  The `.xcodeproj` is generated in CI from [`project.yml`](ios/project.yml)
+  (XcodeGen) — only sources are committed.
+
+All three surfaces draw the rose from the **same geometry** — a 104-unit box,
+eight dots on a ring of r=38 at 45° steps from bearing 000 — so the glyph is
+identical on the web, on Android and on iOS. Nothing rotates in it, which is
+deliberate: the dial it replaced turned a needle, and a rotation is the one
+thing that can land off-canvas when its pivot is wrong.
 
 **Try it on Android:** [download the APK](https://github.com/kenmwara/jobscout-app/releases/latest/download/JobScout-debug.apk) (debug build, Android 8+, sideload; SHA-256 in the release notes) — the link always serves the newest build.
 
-Both apps carry the full v0.4 feature set: upload a resume (PDF/DOCX/TXT) instead of typing it, open the original posting from any score card, and track the search on the device (gate survivor → applied → pending → responded → interviewed → callback). Nothing is sent anywhere and the app never submits an application.
+Both apps carry the full feature set: upload a resume (PDF/DOCX/TXT) instead of typing it, open the original posting from any score card, and keep the ones worth keeping — **Save** puts a posting in your list, and only then does it get a stage to move through (applied → pending → responded → interviewed → callback). Nothing is sent anywhere and the app never submits an application.
 
 CI is [`codemagic.yaml`](codemagic.yaml), and both workflows build green:
 `android-debug` produces an installable APK; `ios-simulator` proves the
 SwiftUI app compiles and links (device distribution waits on an Apple
 Developer account).
 
-<p>
-  <img src="docs/img/native/android-02-gates.jpg" height="480" alt="JobScout on Android — today's real sweep streaming the eligibility gates, 14 passers cleared, scoring live">
-  &nbsp;&nbsp;
-  <img src="docs/img/native/ios-01-candidate.png" height="480" alt="JobScout on iOS (simulator, captured in CI) — the candidate chooser with the day's real feed loaded">
-</p>
+Current native captures come from CI rather than a drawer of stale PNGs: every
+`ios-simulator` build takes a simulator screenshot, and the manual
+`android-screens` workflow boots an emulator and drives the whole pipeline.
+(The previously committed native shots were removed here — they predated the
+parity rewrite and showed a UI the apps no longer have.)
 
-*Left — Android on a real phone: the day's sweep streaming the deterministic gates with the pipeline's own reject reasons, then live scoring. Right — iOS, captured by the CI simulator step: the candidate chooser with the real feed already loaded.*
+## Deploying
+
+Both halves deploy from a push to `main`, and neither needs a command run by hand.
+
+| what | trigger | mechanism |
+|---|---|---|
+| `site/**` | push | GitHub Action → `wrangler pages deploy` |
+| `android/**`, `ios/**` | push | GitHub webhook → Codemagic |
+| `worker/**` | manual | `cd worker && wrangler deploy` |
+
+The site's Pages project is **direct upload**, and Cloudflare cannot convert one
+to a Git-connected project — *"If you choose Direct Upload, you cannot switch to
+Git integration later."* Converting would mean a new project, a new
+`.pages.dev` subdomain and re-pointing the custom domain, so
+[`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) runs the same
+wrangler command instead. It needs one repository secret, `CLOUDFLARE_API_TOKEN`.
+
+Codemagic triggering lives in [`codemagic.yaml`](codemagic.yaml): `triggering:`
+picks the event and `when.changeset` decides whether it actually runs, so an
+Android commit does not spend an iOS build. The two are **parallel**
+workflow-level keys — `when` is not nested inside `triggering`. It also needs a
+repository webhook pointing at `https://api.codemagic.io/hooks/<appId>`; without
+one the YAML is correct and simply never fires.
 
 ## Stack
 

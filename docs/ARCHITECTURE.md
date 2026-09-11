@@ -12,7 +12,7 @@
         Cloudflare Pages (site/) — the demo UI
                         │  POST /api/score  · GET /api/feed
         Cloudflare Worker (worker/) — the AI edge
-          ├─ guard 1: per-IP rate limit (D1 sliding window)
+          ├─ guard 1: per-IP rate limit (D1 sliding window) — PACING, not spend
           ├─ guard 2: global daily budget breaker (D1 counter;
           │            over cap → serve cached showcase results)
           ├─ Claude (Haiku-class) — scoring w/ the honest rubric
