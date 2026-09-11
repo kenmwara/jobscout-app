@@ -55,6 +55,13 @@ val CanvasBg = Color(0xFFF8F3EB)
 val CardBg = Color.White
 val Hairline = Color(0xFFE7E2DA)
 
+/** One hue per candidate (border + rose) and its card ground, same as the web. */
+val PERSONA_HUES = listOf(
+    Color(0xFF328A3B) to Color(0xFFF2F7F1),   // forest
+    Color(0xFFCC3600) to Color(0xFFFDF3EE),   // ember deep
+    Color(0xFF4865FF) to Color(0xFFF1F3FD),   // indigo
+)
+
 data class Persona(val id: String, val name: String, val desc: String, val profile: String)
 
 // Same three personas as the web demo — one candidate lens per run.
@@ -71,6 +78,12 @@ val PERSONAS = listOf(
 )
 
 enum class Phase { IDLE, GATES, SCORING, DONE }
+
+/** How many gate verdicts stream before the rest go behind a tap. Matches the web. */
+const val GATE_STREAM = 6
+
+/** How many saved jobs list before the rest go behind a tap. Matches the web. */
+const val SAVED_SHOWN = 4
 
 data class Ui(
     val feed: Feed? = null,
@@ -175,7 +188,7 @@ class DemoVm(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch {
             _ui.update { it.copy(phase = Phase.GATES, gatesShown = 0, scores = emptyList(),
                                  meta = null, banner = null, fromCache = false) }
-            repeat(feed.rejects.size + 1) {
+            repeat(minOf(feed.rejects.size, GATE_STREAM) + 1) {
                 delay(160)
                 _ui.update { s -> s.copy(gatesShown = s.gatesShown + 1) }
             }
@@ -256,6 +269,7 @@ fun DemoScreen(vm: DemoVm = viewModel()) {
     val feed = ui.feed
     var ownOpen by remember { mutableStateOf(false) }
     var trackerOpen by remember { mutableStateOf(false) }
+    var gatesOpen by remember { mutableStateOf(false) }
     val usingOwn = ui.resume.trim().length > 40
 
     LazyColumn(
@@ -266,14 +280,14 @@ fun DemoScreen(vm: DemoVm = viewModel()) {
         item { Header(feed, ui.tracker.size) { trackerOpen = true } }
         ui.error?.let { item { Banner(it, onRetry = { vm.loadFeed() }) } }
 
-        item { SectionLabel("000 · CANDIDATE") }
+        item { SectionLabel("000 · WHO'S LOOKING?") }
         itemsIndexed(PERSONAS) { i, p ->
-            PersonaCard(p, selected = i == ui.personaIdx && !usingOwn) { vm.pick(i) }
+            PersonaCard(p, index = i, selected = i == ui.personaIdx && !usingOwn) { vm.pick(i) }
         }
         item {
             // Same affordance as the web demo: hidden behind a toggle, processed in memory only.
             TextButton(onClick = { ownOpen = !ownOpen }, contentPadding = PaddingValues(0.dp)) {
-                Text(if (ownOpen) "Hide resume box" else "…or upload / paste your own resume", color = MidnightViolet, fontSize = 14.sp)
+                Text(if (ownOpen) "Hide resume box" else "or use your own resume", color = MidnightViolet, fontSize = 14.sp)
             }
             if (ownOpen) {
                 // Storage Access Framework picker — no storage permission, the user picks one document.
@@ -306,8 +320,7 @@ fun DemoScreen(vm: DemoVm = viewModel()) {
                 )
                 Text(
                     (if (usingOwn) "Using your own resume for this run. " else "") +
-                        "Processed in-memory for this one scoring run. Never stored, never logged, never used for anything else. " +
-                        "Uploads are extracted in memory and discarded.",
+                        "Processed in memory for this run only. Never stored, never logged.",
                     color = Muted, fontSize = 12.sp, modifier = Modifier.padding(top = 6.dp),
                 )
             }
@@ -324,33 +337,15 @@ fun DemoScreen(vm: DemoVm = viewModel()) {
                     when (ui.phase) {
                         Phase.GATES -> "Running the gates…"
                         Phase.SCORING -> "Scoring live with Claude…"
-                        else -> "Run today's real sweep →"
+                        else -> "Run the pipeline"
                     },
                     fontSize = 16.sp, fontWeight = FontWeight.SemiBold,
                 )
             }
         }
 
-        if (ui.phase != Phase.IDLE && feed != null) {
-            item { SectionLabel("090 · GATES BEFORE TOKENS") }
-            itemsIndexed(feed.rejects) { i, r ->
-                AnimatedVisibility(visible = i < ui.gatesShown, enter = fadeIn() + slideInVertically { it / 3 }) {
-                    GateRow(r)
-                }
-            }
-            item {
-                AnimatedVisibility(visible = ui.gatesShown > feed.rejects.size, enter = fadeIn()) {
-                    Text(
-                        "✓ ${feed.passers.size} postings cleared the gates → scoring the top ${minOf(8, feed.passers.size)}",
-                        color = Color(0xFF328A3B), fontSize = 14.sp, fontWeight = FontWeight.SemiBold,
-                        modifier = Modifier.padding(vertical = 4.dp),
-                    )
-                }
-            }
-        }
-
         if (ui.scores.isNotEmpty() || ui.banner != null) {
-            item { SectionLabel("180 · HONEST SCORES") }
+            item { SectionLabel("090 · LIVE SCORING") }
             ui.banner?.let { item { Banner(it) } }
             val byId = feed?.passers?.associateBy { it.id } ?: emptyMap()
             val sorted = ui.scores.sortedByDescending { it.fit }
@@ -361,12 +356,25 @@ fun DemoScreen(vm: DemoVm = viewModel()) {
                     showLetter = i == 0 && !ui.fromCache,
                     onStage = { vm.setStage(t, it) }) { vm.draftLetter(it) }
             }
-            ui.meta?.let { m ->
-                item {
+        }
+
+        if (ui.phase != Phase.IDLE && feed != null) {
+            item { SectionLabel("180 · WHY THOSE, AND NOT THE REST") }
+            // Six stream; the rest sit behind a tap. The full list is a wall,
+            // and the point of this section lands in the first handful.
+            val shown = if (gatesOpen) feed.rejects else feed.rejects.take(GATE_STREAM)
+            itemsIndexed(shown) { i, r ->
+                AnimatedVisibility(
+                    visible = gatesOpen || i < ui.gatesShown,
+                    enter = fadeIn() + slideInVertically { it / 3 },
+                ) { GateRow(r) }
+            }
+            if (feed.rejects.size > GATE_STREAM) item {
+                TextButton(onClick = { gatesOpen = !gatesOpen }, contentPadding = PaddingValues(0.dp)) {
                     Text(
-                        "model ${m.model.ifEmpty { "haiku" }} · this run $${"%.4f".format(m.cost_usd)} · " +
-                        "today $${"%.2f".format(m.day_spend_usd)} of $${"%.2f".format(m.day_budget_usd)} budget",
-                        color = Muted, fontSize = 12.sp,
+                        if (gatesOpen) "hide them again"
+                        else "show the other ${feed.rejects.size - GATE_STREAM} verdicts",
+                        color = Indigo, fontSize = 14.sp, fontWeight = FontWeight.SemiBold,
                     )
                 }
             }
@@ -400,12 +408,12 @@ private fun Header(feed: Feed?, tracked: Int, onTracker: () -> Unit) {
             Chip("NATIVE", Indigo)
             Spacer(Modifier.weight(1f))
             TextButton(onClick = onTracker, contentPadding = PaddingValues(0.dp)) {
-                Text("Tracker ($tracked)", color = MidnightViolet, fontWeight = FontWeight.SemiBold)
+                Text("Saved ($tracked)", color = MidnightViolet, fontWeight = FontWeight.SemiBold)
             }
         }
         Text(
             if (feed?.day != null)
-                "Real sweep · ${feed.day} · ${feed.passers.size} passers, ${feed.rejects.size} instructive rejects"
+                "Real postings, scored live by Claude, with the reasoning shown."
             else "Loading today's sweep…",
             color = Muted, fontSize = 13.sp,
         )
@@ -444,15 +452,17 @@ private fun Chip(text: String, color: Color) {
 }
 
 @Composable
-private fun PersonaCard(p: Persona, selected: Boolean, onClick: () -> Unit) {
+private fun PersonaCard(p: Persona, index: Int, selected: Boolean, onClick: () -> Unit) {
+    val (hue, ground) = PERSONA_HUES[index % PERSONA_HUES.size]
     Column(
         Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick)
-            .background(CardBg, RoundedCornerShape(14.dp))
-            .border(if (selected) 2.dp else 1.dp, if (selected) Indigo else Hairline, RoundedCornerShape(14.dp))
+            .background(ground, RoundedCornerShape(14.dp))
+            .border(if (selected) 2.dp else 1.dp, if (selected) hue else Hairline, RoundedCornerShape(14.dp))
             .padding(14.dp)
     ) {
+        MiniRose(selected = selected, tint = hue, modifier = Modifier.padding(bottom = 10.dp))
         Text(p.name, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, color = Ink)
         Text(p.desc, color = Muted, fontSize = 13.sp)
     }
@@ -490,7 +500,7 @@ private fun ScoreCard(
             .padding(14.dp)
     ) {
         Row {
-            BearingDial(s.fit, Modifier.padding(end = 14.dp, top = 4.dp))
+            BearingRose(s.fit, Modifier.padding(end = 14.dp, top = 2.dp), diameter = 76.dp)
             Column(Modifier.weight(1f)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
@@ -562,6 +572,7 @@ private fun StageChip(stage: String, onStage: (String) -> Unit) {
 @Composable
 private fun TrackerScreen(vm: DemoVm, tracker: Map<String, Tracked>, onClose: () -> Unit) {
     var confirmClear by remember { mutableStateOf(false) }
+    var savedOpen by remember { mutableStateOf(false) }
     Dialog(onDismissRequest = onClose, properties = DialogProperties(usePlatformDefaultWidth = false)) {
         LazyColumn(
             Modifier.fillMaxSize().background(CanvasBg),
@@ -570,22 +581,28 @@ private fun TrackerScreen(vm: DemoVm, tracker: Map<String, Tracked>, onClose: ()
         ) {
             item {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("Your pipeline", fontSize = 24.sp, fontWeight = FontWeight.ExtraBold, color = MidnightViolet,
+                    Text("Saved jobs", fontSize = 24.sp, fontWeight = FontWeight.ExtraBold, color = MidnightViolet,
                         modifier = Modifier.weight(1f))
                     TextButton(onClick = onClose) { Text("Close", color = MidnightViolet) }
                 }
                 Text(
-                    "Saved on this device only — nothing is sent anywhere. Applying happens on the employer's site; JobScout never submits for you.",
+                    "Kept on this device only. You click Apply — JobScout never does.",
                     color = Muted, fontSize = 12.sp,
                 )
             }
             if (tracker.isEmpty())
-                item { Text("Nothing tracked yet — run a sweep and the gate survivors land here.", color = Muted, fontSize = 14.sp) }
-            STAGES.forEach { (id, label) ->
-                val rows = tracker.values.filter { it.stage == id }.sortedByDescending { it.fit }
-                if (rows.isNotEmpty()) {
-                    item { SectionLabel("${label.uppercase()} · ${rows.size}") }
-                    items(rows, key = { it.id }) { t -> TrackedRow(t, vm) }
+                item { Text("Nothing saved yet — tap Save on a score to keep it.", color = Muted, fontSize = 14.sp) }
+            // A few, then the rest behind a tap - an unbounded saved list is
+            // the thing that made this unreadable in the first place.
+            val all = tracker.values.sortedByDescending { it.fit }
+            val rows = if (savedOpen) all else all.take(SAVED_SHOWN)
+            items(rows, key = { it.id }) { t -> TrackedRow(t, vm) }
+            if (all.size > SAVED_SHOWN) item {
+                TextButton(onClick = { savedOpen = !savedOpen }, contentPadding = PaddingValues(0.dp)) {
+                    Text(
+                        if (savedOpen) "show fewer" else "show the other ${all.size - SAVED_SHOWN}",
+                        color = Indigo, fontWeight = FontWeight.SemiBold,
+                    )
                 }
             }
             if (tracker.isNotEmpty())
@@ -601,8 +618,8 @@ private fun TrackerScreen(vm: DemoVm, tracker: Map<String, Tracked>, onClose: ()
                 TextButton(onClick = { vm.clearTracker(); confirmClear = false }) { Text("Clear", color = Color(0xFFFF3B30)) }
             },
             dismissButton = { TextButton(onClick = { confirmClear = false }) { Text("Cancel", color = MidnightViolet) } },
-            title = { Text("Clear the tracker?", fontWeight = FontWeight.Bold) },
-            text = { Text("Removes all ${tracker.size} tracked postings from this device.") },
+            title = { Text("Clear saved jobs?", fontWeight = FontWeight.Bold) },
+            text = { Text("Removes all ${tracker.size} saved postings from this device.") },
         )
     }
 }

@@ -10,6 +10,18 @@ let muted = Color(hex: 0x4A4560)
 let canvasBg = Color(hex: 0xF8F3EB)
 let hairline = Color(hex: 0xE7E2DA)
 
+/// One hue per candidate (border + rose) and its card ground.
+let personaHues: [(Color, Color)] = [
+    (Color(hex: 0x328A3B), Color(hex: 0xF2F7F1)),   // forest
+    (Color(hex: 0xCC3600), Color(hex: 0xFDF3EE)),   // ember deep
+    (Color(hex: 0x4865FF), Color(hex: 0xF1F3FD)),   // indigo
+]
+
+/// How many gate verdicts stream before the rest go behind a tap. Matches the web.
+let gateStream = 6
+/// How many saved jobs list before the rest go behind a tap. Matches the web.
+let savedShown = 4
+
 struct Persona: Identifiable {
     let id: String, name: String, desc: String, profile: String
 }
@@ -222,6 +234,7 @@ struct ContentView: View {
     @State private var ownOpen = false
     @State private var importing = false
     @State private var showTracker = false
+    @State private var gatesOpen = false
 
     var body: some View {
         ScrollView {
@@ -233,37 +246,39 @@ struct ContentView: View {
                     bannerView(e) { Task { await vm.load() } }
                 }
 
-                sectionLabel("000 · CANDIDATE")
+                sectionLabel("000 · WHO'S LOOKING?")
                 ForEach(Array(personas.enumerated()), id: \.element.id) { i, p in
-                    personaCard(p, selected: i == vm.personaIdx && !vm.usingOwn)
+                    personaCard(p, index: i, selected: i == vm.personaIdx && !vm.usingOwn)
                         .onTapGesture { vm.personaIdx = i }
                 }
                 ownResumeBox
                 runButton
 
-                if vm.phase != .idle, let feed = vm.feed {
-                    sectionLabel("090 · GATES BEFORE TOKENS")
-                    ForEach(Array(feed.rejects.enumerated()), id: \.element.id) { i, r in
-                        if i < vm.gatesShown { gateRow(r) }
-                    }
-                    if vm.gatesShown > feed.rejects.count {
-                        Text("✓ \(feed.passers.count) postings cleared the gates → scoring the top \(min(8, feed.passers.count))")
-                            .font(.system(size: 14, weight: .semibold))
-                            .foregroundColor(Color(hex: 0x328A3B))
-                    }
-                }
-
                 if !vm.scores.isEmpty || vm.banner != nil {
-                    sectionLabel("180 · HONEST SCORES")
+                    sectionLabel("090 · LIVE SCORING")
                     if let b = vm.banner { bannerView(b) }
                     let byId = Dictionary(uniqueKeysWithValues: (vm.feed?.passers ?? []).map { ($0.id, $0) })
                     let sorted = vm.scores.sorted { $0.fit > $1.fit }
                     ForEach(Array(sorted.enumerated()), id: \.element.id) { i, s in
                         scoreCard(s, posting: byId[s.id], showLetter: i == 0 && !vm.fromCache)
                     }
-                    if let m = vm.meta {
-                        Text("model \(m.model.isEmpty ? "haiku" : m.model) · this run $\(String(format: "%.4f", m.cost_usd)) · today $\(String(format: "%.2f", m.day_spend_usd)) of $\(String(format: "%.2f", m.day_budget_usd)) budget")
-                            .font(.system(size: 12)).foregroundColor(muted)
+                }
+
+                // The receipts, after the results. Six stream; the rest sit
+                // behind a tap, because the full list is a wall.
+                if vm.phase != .idle, let feed = vm.feed {
+                    sectionLabel("180 · WHY THOSE, AND NOT THE REST")
+                    let shown = gatesOpen ? feed.rejects : Array(feed.rejects.prefix(gateStream))
+                    ForEach(Array(shown.enumerated()), id: \.element.id) { i, r in
+                        if gatesOpen || i < vm.gatesShown { gateRow(r) }
+                    }
+                    if feed.rejects.count > gateStream {
+                        Button(gatesOpen ? "hide them again"
+                                         : "show the other \(feed.rejects.count - gateStream) verdicts") {
+                            gatesOpen.toggle()
+                        }
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(indigo)
                     }
                 }
             }
@@ -285,14 +300,14 @@ struct ContentView: View {
                 chip("NATIVE", indigo)
                 Spacer()
                 if !vm.tracker.isEmpty {
-                    Button("Tracker (\(vm.tracker.count))") { showTracker = true }
+                    Button("Saved (\(vm.tracker.count))") { showTracker = true }
                         .font(.system(size: 14, weight: .semibold))
                         .foregroundColor(midnightViolet)
                 }
             }
-            Text(vm.feed?.day != nil
-                 ? "Real sweep · \(vm.feed!.day!) · \(vm.feed!.passers.count) passers, \(vm.feed!.rejects.count) instructive rejects"
-                 : "Loading today's sweep…")
+            Text(vm.feed == nil
+                 ? "Loading today's sweep…"
+                 : "Real postings, scored live by Claude, with the reasoning shown.")
                 .font(.system(size: 13)).foregroundColor(muted)
         }
     }
@@ -300,7 +315,7 @@ struct ContentView: View {
     // Same affordance as the web demo: hidden behind a toggle, processed in memory only.
     private var ownResumeBox: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Button(ownOpen ? "Hide resume box" : "…or upload / paste your own resume") { ownOpen.toggle() }
+            Button(ownOpen ? "Hide resume box" : "or use your own resume") { ownOpen.toggle() }
                 .font(.system(size: 14)).foregroundColor(midnightViolet)
             if ownOpen {
                 HStack(spacing: 10) {
@@ -349,7 +364,7 @@ struct ContentView: View {
         } label: {
             Text(vm.phase == .gates ? "Running the gates…"
                  : vm.phase == .scoring ? "Scoring live with Claude…"
-                 : "Run today's real sweep →")
+                 : "Run the pipeline")
                 .font(.system(size: 16, weight: .semibold))
                 .frame(maxWidth: .infinity, minHeight: 52)
                 .background(indigo)
@@ -400,17 +415,19 @@ struct ContentView: View {
             .background(c.opacity(0.12)).cornerRadius(6)
     }
 
-    private func personaCard(_ p: Persona, selected: Bool) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
+    private func personaCard(_ p: Persona, index: Int, selected: Bool) -> some View {
+        let (hue, ground) = personaHues[index % personaHues.count]
+        return VStack(alignment: .leading, spacing: 2) {
+            MiniRose(selected: selected, tint: hue).padding(.bottom, 8)
             Text(p.name).font(.system(size: 15, weight: .semibold)).foregroundColor(ink)
             Text(p.desc).font(.system(size: 13)).foregroundColor(muted)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(14)
-        .background(Color.white)
+        .background(ground)
         .cornerRadius(14)
         .overlay(RoundedRectangle(cornerRadius: 14)
-            .stroke(selected ? indigo : hairline, lineWidth: selected ? 2 : 1))
+            .stroke(selected ? hue : hairline, lineWidth: selected ? 2 : 1))
     }
 
     private func gateRow(_ r: Posting) -> some View {
@@ -431,7 +448,7 @@ struct ContentView: View {
     private func scoreCard(_ s: Score, posting: Posting?, showLetter: Bool) -> some View {
         let (route, bandColor) = band(s.fit)
         return HStack(alignment: .top, spacing: 14) {
-            BearingDial(fit: s.fit).padding(.top, 4)
+            BearingRose(fit: s.fit).padding(.top, 2)
             VStack(alignment: .leading, spacing: 4) {
                 HStack {
                     Text("\(posting?.title ?? s.id) · \(posting?.company ?? "")")

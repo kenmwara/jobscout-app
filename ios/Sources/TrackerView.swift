@@ -62,28 +62,33 @@ struct TrackerView: View {
     @ObservedObject var vm: DemoVM
     @Environment(\.dismiss) private var dismiss
     @State private var confirmClear = false
+    @State private var savedOpen = false
 
     var body: some View {
         NavigationStack {
             List {
                 Section {
-                    Text("Saved on this device only — nothing is sent anywhere. Applying happens on the employer's site; JobScout never submits for you.")
+                    Text("Kept on this device only. You click Apply — JobScout never does.")
                         .font(.system(size: 12)).foregroundColor(muted)
                 }
                 if vm.tracker.isEmpty {
-                    Text("Nothing tracked yet — run a sweep and the scored postings land here.")
+                    Text("Nothing saved yet — tap Save on a score to keep it.")
                         .font(.system(size: 13)).foregroundColor(muted)
                 }
-                ForEach(stages) { st in
-                    let items = vm.tracker.values.filter { $0.stage == st.id }.sorted { $0.fit > $1.fit }
-                    if !items.isEmpty {
-                        Section("\(st.label) (\(items.count))") {
-                            ForEach(items) { row($0) }
-                        }
+                // A few, then the rest behind a tap - an unbounded saved list
+                // is the thing that made this unreadable in the first place.
+                let all = vm.tracker.values.sorted { $0.fit > $1.fit }
+                ForEach(savedOpen ? all : Array(all.prefix(savedShown))) { row($0) }
+                if all.count > savedShown {
+                    Button(savedOpen ? "show fewer" : "show the other \(all.count - savedShown)") {
+                        savedOpen.toggle()
                     }
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundColor(indigo)
+                    .buttonStyle(.borderless)   // else the List row swallows the tap
                 }
             }
-            .navigationTitle("Your pipeline")
+            .navigationTitle("Saved jobs")
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Done") { dismiss() }
@@ -93,7 +98,7 @@ struct TrackerView: View {
                         .disabled(vm.tracker.isEmpty)
                 }
             }
-            .confirmationDialog("Clear the tracker?", isPresented: $confirmClear, titleVisibility: .visible) {
+            .confirmationDialog("Clear saved jobs?", isPresented: $confirmClear, titleVisibility: .visible) {
                 Button("Clear all", role: .destructive) { vm.clearTracker() }
                 Button("Cancel", role: .cancel) {}
             }
