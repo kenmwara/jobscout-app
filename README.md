@@ -102,8 +102,8 @@ Developer account).
 
 Cloudflare Pages + Workers + D1 · Anthropic Claude (Haiku) · Python (feed
 publisher) · vanilla JS, one self-contained page · Kotlin/Jetpack Compose
-(Android) · Swift/SwiftUI (iOS) · Codemagic CI · JobScout Brand Kit v1.0
-(the bearing dial, the violet system, Inter/JetBrains embedded).
+(Android) · Swift/SwiftUI (iOS) · Codemagic CI · JobScout Brand Kit v2.1
+(the bearing rose, the cream/indigo system, Newsreader + Inter embedded).
 
 ---
 *Author: Ken Kariuki — [tbot.trade/portfolio](https://tbot.trade/portfolio) · ken@tbot.trade*
