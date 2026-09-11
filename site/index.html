@@ -405,8 +405,11 @@
 
   @media (max-width:640px){
     .personas{grid-template-columns:1fr}
-    .scard{grid-template-columns:78px minmax(0,1fr);padding:22px}
-    .rose{width:76px}
+    /* Side by side, the rose left a ~200px text column and titles broke over
+       five lines. Stacked, the text gets the full width. */
+    .scard{grid-template-columns:minmax(0,1fr);padding:20px 22px;gap:14px}
+    .rose{width:66px}
+    .scard .head{padding-right:46px}
     .chooser{padding:24px}
     header .wrap{padding:10px 12px 10px 16px}
     header nav .hidesm{display:none}
