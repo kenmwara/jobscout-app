@@ -322,7 +322,7 @@
      band scrolls through, via a view() timeline where supported. */
   .band{position:relative;margin:72px 0 0;padding:74px 0 96px;background:var(--midnight);
     color:#fff;width:132vw;margin-left:calc(50% - 66vw);border-radius:0 0 1600px 1600px;
-    background-image:radial-gradient(rgba(255,255,255,.10) 1px,transparent 1px);
+    background-image:radial-gradient(rgba(255,255,255,.045) 1px,transparent 1px);
     background-size:20px 20px}
   /* The band is 132vw, so its .wrap centres inside THAT, not inside the
      viewport. Capped here rather than in a new rule - an added `.band .wrap`
@@ -331,7 +331,7 @@
   .band .bearing{background:rgba(255,255,255,.12);color:#dce4fb;box-shadow:none}
   .band .bearing b{color:#fff}
   .band h2{color:#fff}
-  .band .note{color:#c9d3ff}
+  .band .note{color:#e9edff;font-weight:450}
   @supports (animation-timeline: view()){
     @media (prefers-reduced-motion:no-preference){
       .band{animation:flatten linear both;animation-timeline:view();animation-range:exit 0% exit 90%}
@@ -347,8 +347,8 @@
   .gc{border-radius:var(--card);padding:26px 30px;display:grid;gap:6px 28px;
     grid-template-columns:minmax(0,1fr);text-align:left;color:var(--ink)}
   .gc h3{font-family:var(--serif);font-weight:480;font-size:27px;line-height:1.15;margin:0}
-  .gc p{margin:0;font-size:15px;line-height:1.6;color:rgba(8,3,49,.8)}
-  .gc-1{background:var(--forest);color:#fff} .gc-1 p{color:rgba(255,255,255,.9)}
+  .gc p{margin:0;font-size:15.5px;line-height:1.6;font-weight:500;color:var(--ink)}
+  .gc-1{background:var(--forest);color:#fff} .gc-1 p{color:#fff}
   .gc-2{background:var(--ember)}
   .gc-3{background:var(--blossom)}
   @media (prefers-reduced-motion:no-preference){
@@ -372,9 +372,9 @@
     border:1px solid rgba(255,255,255,.14)}
   .band .row{border-bottom-color:rgba(255,255,255,.1)}
   .band .row:hover{background:rgba(255,255,255,.05)}
-  .band .row .t{color:#fff} .band .row .t .co{color:#c9d3ff}
-  .band .row .m,.band .row .gatereason{color:#a8b6e8}
-  .band .row.rej .t{color:#8f9ccc;background-image:linear-gradient(#8f9ccc,#8f9ccc)}
+  .band .row .t{color:#fff} .band .row .t .co{color:#d6dcff}
+  .band .row .m,.band .row .gatereason{color:#d0d8ff;font-weight:450}
+  .band .row.rej .t{color:#aab5e6;background-image:linear-gradient(#aab5e6,#aab5e6)}
   .band .verdict.pass{color:#d6ffd9;background:rgba(50,138,59,.42)}
   .band .verdict.reject{color:#c9d3ff;background:rgba(255,255,255,.12)}
   .band .status{color:#c9d3ff}
