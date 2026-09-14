@@ -11,10 +11,12 @@ import javax.net.ssl.SSLException
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.slideInVertically
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -22,15 +24,22 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
@@ -45,22 +54,8 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.time.Instant
-
-// ── Brand kit v2.0 - August Health language ──────────────────────────────────────────────────────────
-val Indigo = Color(0xFF4865FF)
-val MidnightViolet = Color(0xFF1B1463)
-val Ink = Color(0xFF080331)
-val Muted = Color(0xFF4A4560)
-val CanvasBg = Color(0xFFF8F3EB)
-val CardBg = Color.White
-val Hairline = Color(0xFFE7E2DA)
-
-/** One hue per candidate (border + rose) and its card ground, same as the web. */
-val PERSONA_HUES = listOf(
-    Color(0xFF328A3B) to Color(0xFFF2F7F1),   // forest
-    Color(0xFFCC3600) to Color(0xFFFDF3EE),   // ember deep
-    Color(0xFF4865FF) to Color(0xFFF1F3FD),   // indigo
-)
+import kotlin.math.cos
+import kotlin.math.sin
 
 data class Persona(val id: String, val name: String, val desc: String, val profile: String)
 
@@ -127,7 +122,7 @@ class DemoVm(app: Application) : AndroidViewModel(app) {
      */
     private fun friendlyError(e: Throwable): String = when (e) {
         is UnknownHostException, is ConnectException ->
-            "No internet connection \u2014 JobScout can't reach the feed."
+            "No internet connection — JobScout can't reach the feed."
         is SocketTimeoutException ->
             "The connection timed out. Try again in a moment."
         is SSLException ->
@@ -244,15 +239,11 @@ class DemoVm(app: Application) : AndroidViewModel(app) {
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
+        // targetSdk 35 is edge-to-edge whether we ask or not; asking makes the
+        // status bar transparent over the cream instead of a black strip.
+        enableEdgeToEdge()
         super.onCreate(savedInstanceState)
-        setContent {
-            MaterialTheme(
-                colorScheme = lightColorScheme(
-                    primary = Indigo, onPrimary = Color.White,
-                    background = CanvasBg, surface = CardBg, onSurface = Ink,
-                )
-            ) { DemoScreen() }
-        }
+        setContent { JobScoutTheme { DemoScreen() } }
     }
 }
 
@@ -271,111 +262,125 @@ fun DemoScreen(vm: DemoVm = viewModel()) {
     var trackerOpen by remember { mutableStateOf(false) }
     var gatesOpen by remember { mutableStateOf(false) }
     val usingOwn = ui.resume.trim().length > 40
+    val ins = WindowInsets.safeDrawing.asPaddingValues()
 
-    LazyColumn(
-        Modifier.fillMaxSize().background(CanvasBg),
-        contentPadding = PaddingValues(16.dp, 24.dp, 16.dp, 40.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        item { Header(feed, ui.tracker.size) { trackerOpen = true } }
-        ui.error?.let { item { Banner(it, onRetry = { vm.loadFeed() }) } }
+    Box(Modifier.fillMaxSize().background(CanvasBg).dots()) {
+        LazyColumn(
+            Modifier.fillMaxSize(),
+            // Content scrolls under the transparent bars; the padding keeps the first
+            // and last items clear of them.
+            contentPadding = PaddingValues(16.dp, ins.calculateTopPadding() + 12.dp, 16.dp, ins.calculateBottomPadding() + 40.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            item { Header(feed, ui.tracker.size) { trackerOpen = true } }
+            ui.error?.let { item { Banner(it, onRetry = { vm.loadFeed() }) } }
 
-        item { SectionLabel("000 · WHO'S LOOKING?") }
-        itemsIndexed(PERSONAS) { i, p ->
-            PersonaCard(p, index = i, selected = i == ui.personaIdx && !usingOwn) { vm.pick(i) }
-        }
-        item {
-            // Same affordance as the web demo: hidden behind a toggle, processed in memory only.
-            TextButton(onClick = { ownOpen = !ownOpen }, contentPadding = PaddingValues(0.dp)) {
-                Text(if (ownOpen) "Hide resume box" else "or use your own resume", color = MidnightViolet, fontSize = 14.sp)
+            item { Hero(feed) }
+
+            item { Stage("000", "CANDIDATE", "Who's looking?") }
+            itemsIndexed(PERSONAS) { i, p ->
+                PersonaCard(p, index = i, selected = i == ui.personaIdx && !usingOwn) { vm.pick(i) }
             }
-            if (ownOpen) {
-                // Storage Access Framework picker — no storage permission, the user picks one document.
-                val picker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
-                    uri?.let(vm::importResume)
-                }
-                OutlinedButton(
-                    onClick = { picker.launch(RESUME_MIMES) },
-                    enabled = !ui.uploading,
-                    shape = RoundedCornerShape(16.dp),
-                    modifier = Modifier.padding(bottom = 8.dp),
-                ) {
-                    if (ui.uploading) {
-                        CircularProgressIndicator(Modifier.size(16.dp), color = Indigo, strokeWidth = 2.dp)
-                        Spacer(Modifier.width(8.dp))
+            item {
+                // Same affordance as the web demo: hidden behind a toggle, processed in memory only.
+                Column {
+                    LinkText(if (ownOpen) "Hide resume box" else "or use your own resume") { ownOpen = !ownOpen }
+                    if (ownOpen) {
+                        // Storage Access Framework picker — no storage permission, the user picks one document.
+                        val picker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+                            uri?.let(vm::importResume)
+                        }
+                        Spacer(Modifier.height(8.dp))
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            if (ui.uploading) {
+                                CircularProgressIndicator(Modifier.size(16.dp), color = Indigo, strokeWidth = 2.dp)
+                                Spacer(Modifier.width(10.dp))
+                            }
+                            PillButton(if (ui.uploading) "Extracting…" else "Upload resume (PDF, DOCX, TXT)",
+                                enabled = !ui.uploading) { picker.launch(RESUME_MIMES) }
+                        }
+                        ui.uploadStatus?.let {
+                            Text(it, color = Muted, fontSize = 12.sp, modifier = Modifier.padding(top = 8.dp))
+                        }
+                        Spacer(Modifier.height(10.dp))
+                        OutlinedTextField(
+                            value = ui.resume, onValueChange = vm::setResume,
+                            modifier = Modifier.fillMaxWidth(), minLines = 4, maxLines = 8,
+                            placeholder = { Text("Paste plain resume text (max 6,000 chars)…", color = Text3) },
+                            shape = Card,
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = Indigo, unfocusedBorderColor = Hair2,
+                                focusedContainerColor = CardBg, unfocusedContainerColor = CardBg),
+                        )
+                        Text(
+                            (if (usingOwn) "Using your own resume for this run. " else "") +
+                                "Processed in memory for this run only. Never stored, never logged.",
+                            color = Text3, fontSize = 12.sp, modifier = Modifier.padding(top = 6.dp),
+                        )
                     }
-                    Text(if (ui.uploading) "Extracting…" else "Upload resume (PDF, DOCX, TXT)")
                 }
-                ui.uploadStatus?.let {
-                    Text(it, color = Muted, fontSize = 12.sp, modifier = Modifier.padding(bottom = 6.dp))
-                }
-                OutlinedTextField(
-                    value = ui.resume, onValueChange = vm::setResume,
-                    modifier = Modifier.fillMaxWidth(), minLines = 4, maxLines = 8,
-                    placeholder = { Text("Paste plain resume text (max 6,000 chars)…", color = Muted) },
-                    shape = RoundedCornerShape(16.dp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = Indigo, unfocusedBorderColor = Hairline,
-                        focusedContainerColor = CardBg, unfocusedContainerColor = CardBg),
-                )
-                Text(
-                    (if (usingOwn) "Using your own resume for this run. " else "") +
-                        "Processed in memory for this run only. Never stored, never logged.",
-                    color = Muted, fontSize = 12.sp, modifier = Modifier.padding(top = 6.dp),
-                )
             }
-        }
-        item {
-            Button(
-                onClick = vm::run,
-                enabled = feed != null && ui.phase != Phase.GATES && ui.phase != Phase.SCORING,
-                modifier = Modifier.fillMaxWidth().height(52.dp),
-                shape = RoundedCornerShape(14.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Indigo),
-            ) {
-                Text(
-                    when (ui.phase) {
-                        Phase.GATES -> "Running the gates…"
-                        Phase.SCORING -> "Scoring live with Claude…"
-                        else -> "Run the pipeline"
-                    },
-                    fontSize = 16.sp, fontWeight = FontWeight.SemiBold,
-                )
-            }
-        }
-
-        if (ui.scores.isNotEmpty() || ui.banner != null) {
-            item { SectionLabel("090 · LIVE SCORING") }
-            ui.banner?.let { item { Banner(it) } }
-            val byId = feed?.passers?.associateBy { it.id } ?: emptyMap()
-            val sorted = ui.scores.sortedByDescending { it.fit }
-            itemsIndexed(sorted) { i, s ->
-                val p = byId[s.id]
-                val t = ui.tracker[s.id] ?: trackedFor(s, p)
-                ScoreCard(s, p, t, isSaved = ui.tracker.containsKey(s.id),
-                    showLetter = i == 0 && !ui.fromCache,
-                    onStage = { vm.setStage(t, it) }) { vm.draftLetter(it) }
-            }
-        }
-
-        if (ui.phase != Phase.IDLE && feed != null) {
-            item { SectionLabel("180 · WHY THOSE, AND NOT THE REST") }
-            // Six stream; the rest sit behind a tap. The full list is a wall,
-            // and the point of this section lands in the first handful.
-            val shown = if (gatesOpen) feed.rejects else feed.rejects.take(GATE_STREAM)
-            itemsIndexed(shown) { i, r ->
-                AnimatedVisibility(
-                    visible = gatesOpen || i < ui.gatesShown,
-                    enter = fadeIn() + slideInVertically { it / 3 },
-                ) { GateRow(r) }
-            }
-            if (feed.rejects.size > GATE_STREAM) item {
-                TextButton(onClick = { gatesOpen = !gatesOpen }, contentPadding = PaddingValues(0.dp)) {
+            item {
+                Button(
+                    onClick = vm::run,
+                    enabled = feed != null && ui.phase != Phase.GATES && ui.phase != Phase.SCORING,
+                    modifier = Modifier.fillMaxWidth().height(54.dp).warmShadow(12.dp, Pill),
+                    shape = Pill,
+                    colors = ButtonDefaults.buttonColors(containerColor = Indigo, disabledContainerColor = Lavender,
+                        disabledContentColor = MidnightViolet),
+                ) {
                     Text(
-                        if (gatesOpen) "hide them again"
-                        else "show the other ${feed.rejects.size - GATE_STREAM} verdicts",
-                        color = Indigo, fontSize = 14.sp, fontWeight = FontWeight.SemiBold,
+                        when (ui.phase) {
+                            Phase.GATES -> "Running the gates…"
+                            Phase.SCORING -> "Scoring live with Claude…"
+                            else -> "Run the pipeline"
+                        },
+                        fontSize = 16.sp, fontWeight = FontWeight.Medium,
                     )
+                }
+            }
+
+            if (ui.scores.isNotEmpty() || ui.banner != null) {
+                item { Stage("090", "SCORING", "Live scoring", "Fit 0–100 lights the rose. The band it lands in picks the route.") }
+                ui.banner?.let { item { Banner(it) } }
+                val byId = feed?.passers?.associateBy { it.id } ?: emptyMap()
+                val sorted = ui.scores.sortedByDescending { it.fit }
+                itemsIndexed(sorted) { i, s ->
+                    val p = byId[s.id]
+                    val t = ui.tracker[s.id] ?: trackedFor(s, p)
+                    ScoreCard(s, p, t, isSaved = ui.tracker.containsKey(s.id), first = i == 0,
+                        showLetter = i == 0 && !ui.fromCache,
+                        onStage = { vm.setStage(t, it) }) { vm.draftLetter(it) }
+                }
+            }
+
+            if (ui.phase != Phase.IDLE && feed != null) {
+                item { Stage("180", "GATES", "Why those, and not the rest",
+                    "Every posting this morning's sweep looked at, and the prefilter's own verdict on each. Free, instant, and it spends nothing to say no.") }
+                // Six stream; the rest sit behind a tap. The full list is a wall,
+                // and the point of this section lands in the first handful.
+                item {
+                    val shown = if (gatesOpen) feed.rejects else feed.rejects.take(GATE_STREAM)
+                    Column(Modifier.fillMaxWidth().warmShadow(10.dp, Card).background(CardBg, Card).clip(Card)) {
+                        shown.forEachIndexed { i, r ->
+                            AnimatedVisibility(
+                                visible = gatesOpen || i < ui.gatesShown,
+                                enter = fadeIn() + slideInVertically { it / 3 },
+                            ) {
+                                Column {
+                                    if (i > 0) HorizontalDivider(color = Hairline, thickness = 1.dp)
+                                    GateRow(r)
+                                }
+                            }
+                        }
+                    }
+                    if (feed.rejects.size > GATE_STREAM) {
+                        Spacer(Modifier.height(12.dp))
+                        PillButton(
+                            if (gatesOpen) "hide them again"
+                            else "show the other ${feed.rejects.size - GATE_STREAM} verdicts",
+                        ) { gatesOpen = !gatesOpen }
+                    }
                 }
             }
         }
@@ -384,14 +389,15 @@ fun DemoScreen(vm: DemoVm = viewModel()) {
     if (ui.letterBusy || ui.letterText != null) {
         AlertDialog(
             onDismissRequest = vm::dismissLetter,
+            containerColor = CardBg, shape = Card,
             confirmButton = { TextButton(onClick = vm::dismissLetter) { Text("Close", color = MidnightViolet) } },
-            title = { Text("Grounded cover letter", fontWeight = FontWeight.Bold) },
+            title = { Text("Grounded cover letter", style = H2, fontSize = 24.sp) },
             text = {
                 if (ui.letterBusy) Row(verticalAlignment = Alignment.CenterVertically) {
                     CircularProgressIndicator(Modifier.size(20.dp), color = Indigo, strokeWidth = 2.dp)
                     Spacer(Modifier.width(12.dp))
-                    Text("Drafting from the profile only — it cannot invent experience…")
-                } else Text(ui.letterText ?: "")
+                    Text("Drafting from the profile only — it cannot invent experience…", color = Muted)
+                } else Text(ui.letterText ?: "", color = Ink, fontSize = 15.sp, lineHeight = 24.sp)
             },
         )
     }
@@ -399,56 +405,130 @@ fun DemoScreen(vm: DemoVm = viewModel()) {
     if (trackerOpen) TrackerScreen(vm, ui.tracker) { trackerOpen = false }
 }
 
+// ── the brand mark: August's geometry (8 dots, ring r=11 in a 24 box, cropped by
+//    the square) with OUR one difference — radii graduate 2.30 → 4.35 clockwise
+//    from bearing 000, so it reads as a sweep, not a wheel.
+@Composable
+private fun Mark(dp: Dp = 28.dp, tint: Color = Indigo) {
+    Canvas(Modifier.size(dp).clip(RoundedCornerShape(6.dp))) {
+        val u = size.width / 24f
+        val c = center
+        for (i in 0 until 8) {
+            val th = Math.toRadians((-90 + 45 * i).toDouble())
+            val r = (2.30f + (4.35f - 2.30f) * i / 7f) * u
+            drawCircle(tint, r, Offset(c.x + 11f * u * cos(th).toFloat(), c.y + 11f * u * sin(th).toFloat()))
+        }
+    }
+}
+
+/** The floating pill navigation: mark, wordmark, live chip, saved. */
 @Composable
 private fun Header(feed: Feed?, tracked: Int, onTracker: () -> Unit) {
-    Column {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text("JobScout", fontSize = 28.sp, fontWeight = FontWeight.ExtraBold, color = MidnightViolet)
-            Spacer(Modifier.width(10.dp))
-            Chip("NATIVE", Indigo)
-            Spacer(Modifier.weight(1f))
-            TextButton(onClick = onTracker, contentPadding = PaddingValues(0.dp)) {
-                Text("Saved ($tracked)", color = MidnightViolet, fontWeight = FontWeight.SemiBold)
-            }
+    Row(
+        Modifier.fillMaxWidth().warmShadow(8.dp, Pill).background(CardBg, Pill)
+            .padding(start = 16.dp, end = 8.dp, top = 8.dp, bottom = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Mark()
+        Spacer(Modifier.width(10.dp))
+        Text("JobScout", fontFamily = Serif, fontSize = 21.sp, color = Ink, letterSpacing = (-0.01).em)
+        Spacer(Modifier.width(10.dp))
+        if (feed != null) LiveChip()
+        Spacer(Modifier.weight(1f))
+        TextButton(onClick = onTracker) {
+            Text("Saved ($tracked)", color = MidnightViolet, fontWeight = FontWeight.Medium, fontSize = 14.sp)
         }
-        Text(
-            if (feed?.day != null)
-                "Real postings, scored live by Claude, with the reasoning shown."
-            else "Loading today's sweep…",
-            color = Muted, fontSize = 13.sp,
-        )
     }
 }
 
 @Composable
-private fun SectionLabel(text: String) {
-    Text(text, color = MidnightViolet, fontSize = 12.sp, fontWeight = FontWeight.Bold,
-        letterSpacing = 1.5.sp, modifier = Modifier.padding(top = 12.dp))
+private fun LiveChip() {
+    Row(
+        Modifier.background(Forest.copy(alpha = .14f), Pill).padding(horizontal = 11.dp, vertical = 5.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(Modifier.size(6.dp).background(Forest, Pill))
+        Spacer(Modifier.width(6.dp))
+        Text("live", color = Meadow, fontSize = 12.sp, fontWeight = FontWeight.Medium)
+    }
+}
+
+@Composable
+private fun Hero(feed: Feed?) {
+    Column(Modifier.fillMaxWidth().padding(top = 14.dp, bottom = 4.dp)) {
+        Text(buildAnnotatedString {
+            append("Watch an ")
+            withStyle(SpanStyle(color = Indigo)) { append("LLM") }
+            append(" read the job market honestly.")
+        }, style = H1)
+        Spacer(Modifier.height(10.dp))
+        Text("Real postings, scored live by Claude, with the reasoning shown.", color = Muted, fontSize = 16.sp, lineHeight = 24.sp)
+        Spacer(Modifier.height(6.dp))
+        Text(
+            if (feed?.day != null) "today's sweep · ${feed.passers.size} passed the gates · ${feed.rejects.size} did not"
+            else "loading today's sweep…",
+            color = Text3, fontSize = 13.sp,
+        )
+    }
+}
+
+/** A stage heading: the bearing pill, the serif title, the note. */
+@Composable
+private fun Stage(bearing: String, label: String, title: String, note: String? = null) {
+    Column(Modifier.padding(top = 22.dp)) {
+        Row(
+            Modifier.warmShadow(6.dp, Pill).background(CardBg, Pill).padding(horizontal = 16.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(bearing, color = Indigo, fontSize = 12.sp, fontWeight = FontWeight.Medium, letterSpacing = 0.1.em)
+            Text(" — $label", color = Text3, fontSize = 12.sp, fontWeight = FontWeight.Medium, letterSpacing = 0.1.em)
+        }
+        Spacer(Modifier.height(14.dp))
+        Text(title, style = H2)
+        if (note != null) {
+            Spacer(Modifier.height(6.dp))
+            Text(note, color = Muted, fontSize = 14.sp, lineHeight = 21.sp)
+        }
+    }
 }
 
 @Composable
 private fun Banner(text: String, onRetry: (() -> Unit)? = null) {
     Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(Color(0xFFFFF6DC), RoundedCornerShape(10.dp))
-            .padding(12.dp)
+        modifier = Modifier.fillMaxWidth().background(Color(0xFFFFF6DC), Card).padding(14.dp)
     ) {
-        Text(text, color = Color(0xFF8A6D00), fontSize = 13.sp)
+        Text(text, color = Color(0xFF8A6D00), fontSize = 13.sp, lineHeight = 19.sp)
         if (onRetry != null) {
-            Spacer(Modifier.height(8.dp))
-            Text("Try again", color = Indigo, fontSize = 13.sp, fontWeight = FontWeight.Medium,
-                modifier = Modifier.clickable { onRetry() })
+            Spacer(Modifier.height(10.dp))
+            PillButton("Try again", onClick = onRetry)
         }
     }
 }
 
+/** Small uppercase pill — route bands, gate verdicts. */
 @Composable
-private fun Chip(text: String, color: Color) {
-    Text(text, color = color, fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp,
+private fun Chip(text: String, color: Color, ground: Color = color.copy(alpha = 0.16f)) {
+    Text(text, color = color, fontSize = 10.5.sp, fontWeight = FontWeight.Medium, letterSpacing = 0.09.em,
+        maxLines = 1,
+        modifier = Modifier.background(ground, Pill).padding(horizontal = 11.dp, vertical = 4.dp))
+}
+
+/** August's outlined pill; `filled` is the info-tinted state (saved, letter). */
+@Composable
+private fun PillButton(text: String, color: Color = MidnightViolet, filled: Boolean = false, enabled: Boolean = true,
+                       onClick: () -> Unit) {
+    Text(text, color = if (enabled) color else Text3, fontSize = 13.5.sp, fontWeight = FontWeight.Medium, maxLines = 1,
         modifier = Modifier
-            .background(color.copy(alpha = 0.12f), RoundedCornerShape(6.dp))
-            .padding(horizontal = 8.dp, vertical = 3.dp))
+            .clip(Pill)
+            .then(if (filled) Modifier.background(Info) else Modifier.border(1.5.dp, Hair2, Pill))
+            .clickable(enabled = enabled, onClick = onClick)
+            .padding(horizontal = 17.dp, vertical = 9.dp))
+}
+
+@Composable
+private fun LinkText(text: String, onClick: () -> Unit) {
+    Text(text, color = MidnightViolet, fontSize = 14.sp, fontWeight = FontWeight.Medium,
+        modifier = Modifier.clip(Pill).clickable(onClick = onClick).padding(vertical = 6.dp, horizontal = 2.dp))
 }
 
 @Composable
@@ -457,85 +537,85 @@ private fun PersonaCard(p: Persona, index: Int, selected: Boolean, onClick: () -
     Column(
         Modifier
             .fillMaxWidth()
+            .then(if (selected) Modifier.warmShadow(8.dp, Card) else Modifier)
+            .background(if (selected) ground else CardBg, Card)
+            .border(if (selected) 1.5.dp else 1.dp, if (selected) hue else Hairline, Card)
+            .clip(Card)
             .clickable(onClick = onClick)
-            .background(ground, RoundedCornerShape(14.dp))
-            .border(if (selected) 2.dp else 1.dp, if (selected) hue else Hairline, RoundedCornerShape(14.dp))
-            .padding(14.dp)
+            .padding(16.dp)
     ) {
         MiniRose(selected = selected, tint = hue, modifier = Modifier.padding(bottom = 10.dp))
-        Text(p.name, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, color = Ink)
-        Text(p.desc, color = Muted, fontSize = 13.sp)
+        Text(p.name, fontWeight = FontWeight.Medium, fontSize = 15.sp, color = Ink)
+        Spacer(Modifier.height(2.dp))
+        Text(p.desc, color = Muted, fontSize = 13.sp, lineHeight = 19.sp)
     }
 }
 
 @Composable
 private fun GateRow(r: Posting) {
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .background(CardBg, RoundedCornerShape(10.dp))
-            .border(1.dp, Hairline, RoundedCornerShape(10.dp))
-            .padding(10.dp)
-    ) {
-        Text("✕", color = Color(0xFF333333), fontWeight = FontWeight.Bold)
-        Spacer(Modifier.width(10.dp))
-        Column {
-            Text("${r.title} — ${r.company}", fontSize = 13.sp, fontWeight = FontWeight.Medium, color = Ink)
-            Text(r.gate.reason, fontSize = 12.sp, color = Muted)
+    Row(Modifier.fillMaxWidth().padding(horizontal = 18.dp, vertical = 13.dp), verticalAlignment = Alignment.CenterVertically) {
+        Column(Modifier.weight(1f)) {
+            Text(buildAnnotatedString {
+                append(r.title)
+                withStyle(SpanStyle(fontWeight = FontWeight.Normal)) { append(" · ${r.company}") }
+            }, fontSize = 14.sp, fontWeight = FontWeight.Medium, color = Text3,
+                textDecoration = TextDecoration.LineThrough)
+            Spacer(Modifier.height(2.dp))
+            Text(r.gate.reason, fontSize = 12.5.sp, color = Text3, lineHeight = 18.sp)
         }
+        Spacer(Modifier.width(12.dp))
+        Chip("REJECT", Stone, ground = Info)
     }
 }
 
 @Composable
 private fun ScoreCard(
-    s: Score, posting: Posting?, tracked: Tracked, isSaved: Boolean, showLetter: Boolean,
+    s: Score, posting: Posting?, tracked: Tracked, isSaved: Boolean, first: Boolean, showLetter: Boolean,
     onStage: (String) -> Unit, onLetter: (Posting) -> Unit,
 ) {
     val (route, bandColor) = bandFor(s.fit)
     Column(
         Modifier
             .fillMaxWidth()
-            .background(CardBg, RoundedCornerShape(16.dp))
-            .border(1.dp, Hairline, RoundedCornerShape(16.dp))
-            .padding(14.dp)
+            .warmShadow(10.dp, Card)
+            // the top card carries the indigo ring the web gives its first score
+            .then(if (first) Modifier.border(3.dp, Indigo.copy(alpha = .16f), Card) else Modifier)
+            .background(CardBg, Card)
+            .padding(18.dp)
     ) {
         Row {
-            BearingRose(s.fit, Modifier.padding(end = 14.dp, top = 2.dp), diameter = 76.dp)
+            BearingRose(s.fit, Modifier.padding(end = 14.dp, top = 2.dp), diameter = 84.dp)
             Column(Modifier.weight(1f)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        "${posting?.title ?: s.id} · ${posting?.company ?: ""}",
-                        fontWeight = FontWeight.SemiBold, fontSize = 15.sp, color = Ink,
-                        modifier = Modifier.weight(1f),
-                    )
-                    Chip(route.uppercase(), bandColor)
-                }
-                Text(s.verdict, fontSize = 13.sp, color = Color(0xFF3A3A3C), modifier = Modifier.padding(top = 4.dp))
+                Text(buildAnnotatedString {
+                    append(posting?.title ?: s.id)
+                    withStyle(SpanStyle(color = Muted, fontWeight = FontWeight.Normal)) { append(" · ${posting?.company ?: ""}") }
+                }, fontWeight = FontWeight.Medium, fontSize = 16.sp, lineHeight = 22.sp, color = Ink)
+                Spacer(Modifier.height(6.dp))
+                Chip(route.uppercase(), bandColor, ground = bandFill(s.fit).copy(alpha = .18f))
+                Text(s.verdict, fontSize = 14.sp, lineHeight = 21.sp, color = Muted, modifier = Modifier.padding(top = 6.dp))
                 if (s.strongest.isNotEmpty())
-                    Text("+ ${s.strongest}", fontSize = 12.sp, color = Color(0xFF328A3B), modifier = Modifier.padding(top = 6.dp))
+                    Text("+ ${s.strongest}", fontSize = 13.sp, color = Meadow, fontWeight = FontWeight.Medium, modifier = Modifier.padding(top = 8.dp))
                 if (s.weakest.isNotEmpty())
-                    Text("− ${s.weakest}", fontSize = 12.sp, color = Color(0xFFFF6D39), modifier = Modifier.padding(top = 2.dp))
-                if (showLetter && posting != null)
-                    TextButton(onClick = { onLetter(posting) }, contentPadding = PaddingValues(0.dp)) {
-                        Text("Draft a grounded cover letter →", color = MidnightViolet, fontWeight = FontWeight.SemiBold)
-                    }
+                    Text("− ${s.weakest}", fontSize = 13.sp, color = EmberDeep, fontWeight = FontWeight.Medium, modifier = Modifier.padding(top = 2.dp))
             }
         }
         // Opening the posting IS how a user applies — the app never submits anything.
-        PostingActions(tracked.stage, posting?.url.orEmpty(), onStage, tracked = isSaved)
+        PostingActions(tracked.stage, posting?.url.orEmpty(), onStage, tracked = isSaved) {
+            if (showLetter && posting != null) PillButton("Draft a letter", filled = true) { onLetter(posting) }
+        }
     }
 }
 
-/** Stage chip + "View posting" link, shared by score cards and tracker rows. */
+/** Save / stage chip + "View posting" link, shared by score cards and tracker rows. */
 @Composable
 private fun PostingActions(
     stage: String, url: String, onStage: (String) -> Unit,
     tracked: Boolean = true,
-    trailing: @Composable RowScope.() -> Unit = {},
+    trailing: @Composable () -> Unit = {},
 ) {
     val uriHandler = LocalUriHandler.current
     Row(
-        Modifier.fillMaxWidth().padding(top = 8.dp),
+        Modifier.fillMaxWidth().padding(top = 14.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
@@ -543,14 +623,8 @@ private fun PostingActions(
         // stage to move through. The tracker used to fill itself with every
         // scored posting, which made a list nobody asked for.
         if (tracked) StageChip(stage, onStage)
-        else TextButton(onClick = { onStage("survivor") }, contentPadding = PaddingValues(0.dp)) {
-            Text("Save", color = Indigo, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
-        }
-        if (url.isNotEmpty())
-            TextButton(onClick = { runCatching { uriHandler.openUri(url) } }, contentPadding = PaddingValues(0.dp)) {
-                Text("View posting ↗", color = MidnightViolet, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
-            }
-        Spacer(Modifier.weight(1f))
+        else PillButton("Save", color = Muted) { onStage("survivor") }
+        if (url.isNotEmpty()) PillButton("View posting ↗") { runCatching { uriHandler.openUri(url) } }
         trailing()
     }
 }
@@ -559,10 +633,10 @@ private fun PostingActions(
 private fun StageChip(stage: String, onStage: (String) -> Unit) {
     var open by remember { mutableStateOf(false) }
     Box {
-        AssistChip(onClick = { open = true }, label = { Text(stageLabel(stage), fontSize = 12.sp) })
-        DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
+        PillButton(stageLabel(stage) + " ▾", filled = true) { open = true }
+        DropdownMenu(expanded = open, onDismissRequest = { open = false }, containerColor = CardBg) {
             STAGES.forEach { (id, label) ->
-                DropdownMenuItem(text = { Text(label) }, onClick = { open = false; onStage(id) })
+                DropdownMenuItem(text = { Text(label, color = Ink) }, onClick = { open = false; onStage(id) })
             }
         }
     }
@@ -574,52 +648,52 @@ private fun TrackerScreen(vm: DemoVm, tracker: Map<String, Tracked>, onClose: ()
     var confirmClear by remember { mutableStateOf(false) }
     var savedOpen by remember { mutableStateOf(false) }
     Dialog(onDismissRequest = onClose, properties = DialogProperties(usePlatformDefaultWidth = false)) {
-        LazyColumn(
-            Modifier.fillMaxSize().background(CanvasBg),
-            contentPadding = PaddingValues(16.dp, 24.dp, 16.dp, 40.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            item {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("Saved jobs", fontSize = 24.sp, fontWeight = FontWeight.ExtraBold, color = MidnightViolet,
-                        modifier = Modifier.weight(1f))
-                    TextButton(onClick = onClose) { Text("Close", color = MidnightViolet) }
-                }
-                Text(
-                    "Kept on this device only. You click Apply — JobScout never does.",
-                    color = Muted, fontSize = 12.sp,
-                )
-            }
-            if (tracker.isEmpty())
-                item { Text("Nothing saved yet — tap Save on a score to keep it.", color = Muted, fontSize = 14.sp) }
-            // A few, then the rest behind a tap - an unbounded saved list is
-            // the thing that made this unreadable in the first place.
-            val all = tracker.values.sortedByDescending { it.fit }
-            val rows = if (savedOpen) all else all.take(SAVED_SHOWN)
-            items(rows, key = { it.id }) { t -> TrackedRow(t, vm) }
-            if (all.size > SAVED_SHOWN) item {
-                TextButton(onClick = { savedOpen = !savedOpen }, contentPadding = PaddingValues(0.dp)) {
-                    Text(
-                        if (savedOpen) "show fewer" else "show the other ${all.size - SAVED_SHOWN}",
-                        color = Indigo, fontWeight = FontWeight.SemiBold,
-                    )
-                }
-            }
-            if (tracker.isNotEmpty())
+        Box(Modifier.fillMaxSize().background(CanvasBg).dots()) {
+            LazyColumn(
+                Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(16.dp, 20.dp, 16.dp, 40.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
                 item {
-                    TextButton(onClick = { confirmClear = true }, contentPadding = PaddingValues(0.dp)) {
-                        Text("Clear all", color = Color(0xFFFF3B30))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Row(
+                            Modifier.warmShadow(6.dp, Pill).background(CardBg, Pill).padding(horizontal = 16.dp, vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text("270", color = Indigo, fontSize = 12.sp, fontWeight = FontWeight.Medium, letterSpacing = 0.1.em)
+                            Text(" — SAVED", color = Text3, fontSize = 12.sp, fontWeight = FontWeight.Medium, letterSpacing = 0.1.em)
+                        }
+                        Spacer(Modifier.weight(1f))
+                        PillButton("Close", onClick = onClose)
                     }
+                    Spacer(Modifier.height(14.dp))
+                    Text("Saved jobs", style = H2)
+                    Spacer(Modifier.height(6.dp))
+                    Text("Kept on this device only. You click Apply — JobScout never does.", color = Muted, fontSize = 14.sp, lineHeight = 21.sp)
                 }
+                if (tracker.isEmpty())
+                    item { Text("Nothing saved yet — tap Save on a score to keep it.", color = Text3, fontSize = 14.sp) }
+                // A few, then the rest behind a tap - an unbounded saved list is
+                // the thing that made this unreadable in the first place.
+                val all = tracker.values.sortedByDescending { it.fit }
+                val rows = if (savedOpen) all else all.take(SAVED_SHOWN)
+                items(rows, key = { it.id }) { t -> TrackedRow(t, vm) }
+                if (all.size > SAVED_SHOWN) item {
+                    PillButton(if (savedOpen) "show fewer" else "show the other ${all.size - SAVED_SHOWN}") { savedOpen = !savedOpen }
+                }
+                if (tracker.isNotEmpty())
+                    item { LinkText("Clear all") { confirmClear = true } }
+            }
         }
         if (confirmClear) AlertDialog(
             onDismissRequest = { confirmClear = false },
+            containerColor = CardBg, shape = Card,
             confirmButton = {
-                TextButton(onClick = { vm.clearTracker(); confirmClear = false }) { Text("Clear", color = Color(0xFFFF3B30)) }
+                TextButton(onClick = { vm.clearTracker(); confirmClear = false }) { Text("Clear", color = EmberDeep) }
             },
             dismissButton = { TextButton(onClick = { confirmClear = false }) { Text("Cancel", color = MidnightViolet) } },
-            title = { Text("Clear saved jobs?", fontWeight = FontWeight.Bold) },
-            text = { Text("Removes all ${tracker.size} saved postings from this device.") },
+            title = { Text("Clear saved jobs?", style = H2, fontSize = 24.sp) },
+            text = { Text("Removes all ${tracker.size} saved postings from this device.", color = Muted) },
         )
     }
 }
@@ -627,21 +701,18 @@ private fun TrackerScreen(vm: DemoVm, tracker: Map<String, Tracked>, onClose: ()
 @Composable
 private fun TrackedRow(t: Tracked, vm: DemoVm) {
     Column(
-        Modifier
-            .fillMaxWidth()
-            .background(CardBg, RoundedCornerShape(14.dp))
-            .border(1.dp, Hairline, RoundedCornerShape(14.dp))
-            .padding(14.dp)
+        Modifier.fillMaxWidth().warmShadow(8.dp, Card).background(CardBg, Card).padding(16.dp)
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Text("${t.title} · ${t.company}", fontWeight = FontWeight.SemiBold, fontSize = 15.sp, color = Ink,
-                modifier = Modifier.weight(1f))
-            Text("${t.fit}", color = bandFor(t.fit).second, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+            Text(buildAnnotatedString {
+                append(t.title)
+                withStyle(SpanStyle(color = Muted, fontWeight = FontWeight.Normal)) { append(" · ${t.company}") }
+            }, fontWeight = FontWeight.Medium, fontSize = 15.sp, lineHeight = 21.sp, color = Ink, modifier = Modifier.weight(1f))
+            Spacer(Modifier.width(12.dp))
+            Text("${t.fit}", color = bandFor(t.fit).second, fontFamily = Serif, fontSize = 24.sp)
         }
         PostingActions(t.stage, t.url, onStage = { vm.setStage(t, it) }) {
-            TextButton(onClick = { vm.untrack(t.id) }, contentPadding = PaddingValues(0.dp)) {
-                Text("remove ×", color = Muted, fontSize = 13.sp)
-            }
+            LinkText("remove ×") { vm.untrack(t.id) }
         }
     }
 }

@@ -73,9 +73,10 @@ fun BearingRose(fit: Int, modifier: Modifier = Modifier, diameter: Dp = 84.dp) {
                 drawCircle(if (on) col else PaleDot, radius = r, center = dotCentre(i, c, u))
             }
         }
+        // The web's .fitnum: serif at weight 400, 24 units of the 104 box.
         Text(
-            "$f", color = col, fontWeight = FontWeight.Bold,
-            fontSize = (diameter.value * 22f / BOX).sp,
+            "$f", color = col, fontFamily = Serif, fontWeight = FontWeight.Normal,
+            fontSize = (diameter.value * 24f / BOX).sp,
         )
     }
 }
