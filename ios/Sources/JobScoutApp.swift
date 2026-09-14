@@ -234,7 +234,8 @@ struct ContentView: View {
 
                 hero
 
-                StageHeading(bearing: "000", label: "CANDIDATE", title: "Who's looking?")
+                StageHeading(bearing: "000", label: "THE CANDIDATE", title: "Start with a candidate.",
+                             note: "Three profiles or your own resume. Same jobs, different scores.")
                 ForEach(Array(personas.enumerated()), id: \.element.id) { i, p in
                     personaCard(p, index: i, selected: i == vm.personaIdx && !vm.usingOwn)
                         .onTapGesture { vm.personaIdx = i }
@@ -243,8 +244,8 @@ struct ContentView: View {
                 runButton
 
                 if !vm.scores.isEmpty || vm.banner != nil {
-                    StageHeading(bearing: "090", label: "SCORING", title: "Live scoring",
-                                 note: "Fit 0–100 lights the rose. The band it lands in picks the route.")
+                    StageHeading(bearing: "090", label: "SCORING", title: "What Claude makes of them",
+                                 note: "A fit from 0 to 100, a verdict in plain words, the strongest point and the weakest. The rose lights with the score.")
                     if let b = vm.banner { bannerView(b) }
                     let byId = Dictionary(uniqueKeysWithValues: (vm.feed?.passers ?? []).map { ($0.id, $0) })
                     let sorted = vm.scores.sorted { $0.fit > $1.fit }
@@ -257,7 +258,7 @@ struct ContentView: View {
                 // behind a tap, because the full list is a wall.
                 if vm.phase != .idle, let feed = vm.feed {
                     StageHeading(bearing: "180", label: "GATES", title: "Why those, and not the rest",
-                                 note: "Every posting this morning's sweep looked at, and the prefilter's own verdict on each. Free, instant, and it spends nothing to say no.")
+                                 note: "Before Claude sees anything, three deterministic checks read every posting. They cost nothing, and each rejection carries its reason.")
                     let shown = gatesOpen ? feed.rejects : Array(feed.rejects.prefix(gateStream))
                     VStack(spacing: 0) {
                         ForEach(Array(shown.enumerated()), id: \.element.id) { i, r in
@@ -321,7 +322,7 @@ struct ContentView: View {
             (Text("Watch an ") + Text("LLM").foregroundColor(indigo) + Text(" read the job market honestly."))
                 .font(serif(34)).foregroundColor(ink).tracking(-0.5)
                 .fixedSize(horizontal: false, vertical: true)
-            Text("Real postings, scored live by Claude, with the reasoning shown.")
+            Text("Real postings, scored live by Claude. Every reason shown.")
                 .font(sans(16)).foregroundColor(muted).lineSpacing(4)
             Text(vm.feed == nil ? "loading today's sweep…"
                  : "today's sweep · \(vm.feed?.passers.count ?? 0) passed the gates · \(vm.feed?.rejects.count ?? 0) did not")

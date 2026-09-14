@@ -282,7 +282,7 @@ fun DemoScreen(vm: DemoVm = viewModel()) {
 
             item { Hero(feed) }
 
-            item { Stage("000", "CANDIDATE", "Who's looking?") }
+            item { Stage("000", "THE CANDIDATE", "Start with a candidate.", "Three profiles or your own resume. Same jobs, different scores.") }
             itemsIndexed(PERSONAS) { i, p ->
                 PersonaCard(p, index = i, selected = i == ui.personaIdx && !usingOwn) { vm.pick(i) }
             }
@@ -346,7 +346,7 @@ fun DemoScreen(vm: DemoVm = viewModel()) {
             }
 
             if (ui.scores.isNotEmpty() || ui.banner != null) {
-                item { Stage("090", "SCORING", "Live scoring", "Fit 0–100 lights the rose. The band it lands in picks the route.") }
+                item { Stage("090", "SCORING", "What Claude makes of them", "A fit from 0 to 100, a verdict in plain words, the strongest point and the weakest. The rose lights with the score.") }
                 ui.banner?.let { item { Banner(it) } }
                 val byId = feed?.passers?.associateBy { it.id } ?: emptyMap()
                 val sorted = ui.scores.sortedByDescending { it.fit }
@@ -361,7 +361,7 @@ fun DemoScreen(vm: DemoVm = viewModel()) {
 
             if (ui.phase != Phase.IDLE && feed != null) {
                 item { Stage("180", "GATES", "Why those, and not the rest",
-                    "Every posting this morning's sweep looked at, and the prefilter's own verdict on each. Free, instant, and it spends nothing to say no.") }
+                    "Before Claude sees anything, three deterministic checks read every posting. They cost nothing, and each rejection carries its reason.") }
                 // Six stream; the rest sit behind a tap. The full list is a wall,
                 // and the point of this section lands in the first handful.
                 item {
@@ -467,7 +467,7 @@ private fun Hero(feed: Feed?) {
             append(" read the job market honestly.")
         }, style = H1)
         Spacer(Modifier.height(10.dp))
-        Text("Real postings, scored live by Claude, with the reasoning shown.", color = Muted, fontSize = 16.sp, lineHeight = 24.sp)
+        Text("Real postings, scored live by Claude. Every reason shown.", color = Muted, fontSize = 16.sp, lineHeight = 24.sp)
         Spacer(Modifier.height(6.dp))
         Text(
             if (feed?.day != null) "today's sweep · ${feed.passers.size} passed the gates · ${feed.rejects.size} did not"

@@ -13,13 +13,13 @@
 <link rel="canonical" href="https://jobscout.page/">
 <meta property="og:site_name" content="JobScout">
 <meta property="og:title" content="JobScout — watch an LLM read the job market honestly">
-<meta property="og:description" content="This morning's real postings, scored live by Claude, with every reason shown.">
+<meta property="og:description" content="Real postings, scored live by Claude. Every reason shown.">
 <meta property="og:image" content="https://jobscout.page/og.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="JobScout — an LLM reads the job market honestly">
-<meta name="twitter:description" content="This morning's real postings, scored live by Claude, with every reason shown.">
+<meta name="twitter:description" content="Real postings, scored live by Claude. Every reason shown.">
 <meta name="twitter:image" content="https://jobscout.page/og.png">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-180.png">
@@ -159,7 +159,7 @@
       radial-gradient(20% 30% at 40% 90%,rgba(240,152,215,.30),transparent 70%);
     filter:blur(28px)}
   .chooser h2{font-family:var(--serif);font-weight:480;font-size:30px;letter-spacing:-.015em;line-height:1.15;margin:0 0 4px;color:var(--ink)}
-  .chooser .lead{font-size:16px;color:var(--text2);margin:0 0 22px;max-width:60ch}
+  .chooser .lead{font-size:16px;color:var(--text2);margin:0 0 22px;max-width:72ch}
   .chooser .lead b{color:var(--ink);font-weight:500}
   .personas{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;align-items:stretch}
   /* glass over the cream and the rings; hovering a card lifts it, tints it its
@@ -540,12 +540,12 @@
   <section class="hero">
     <span class="rings" aria-hidden="true"><i class="r2"></i><i class="r3"></i></span>
     <h1>Watch an <span class="v">LLM</span> read the job market honestly.</h1>
-    <p class="sub">This morning's real postings, scored live by Claude, with every reason shown.</p>
+    <p class="sub">Real postings, scored live by Claude. Every reason shown.</p>
 
     <div class="chooser">
       <div class="bearing"><b>000</b> — THE CANDIDATE</div>
       <h2>Start with a candidate.</h2>
-      <p class="lead" id="sweepline">Three real profiles, or your own resume. The same postings score differently for each of them — that is the point.</p>
+      <p class="lead" id="sweepline">Three profiles or your own resume, against this morning's postings. Same jobs, different scores.</p>
       <div class="personas" id="personas"></div>
       <div class="runwrap">
         <button class="run" id="runBtn" type="button">Run the pipeline</button>
@@ -804,9 +804,9 @@ async function loadFeed(){
   try{
     const r = await fetch(API + "/api/feed"); feed = await r.json();
     const c = feed.counts || {};
-    $("#sweepline").innerHTML = `Three real profiles, or your own resume, against this morning's <b>${feed.postings.length}</b> postings (${feed.day}). The same postings score differently for each of them — that is the point.`;
+    $("#sweepline").innerHTML = `Three profiles or your own resume, against this morning's <b>${feed.postings.length}</b> postings. Same jobs, different scores.`;
   }catch(e){
-    $("#sweepline").textContent = "The feed is unreachable right now — the page can still explain itself, but scoring needs the API.";
+    $("#sweepline").textContent = "The feed is unreachable right now. Scoring needs the API.";
   }
   renderMetrics(feed);
 }
