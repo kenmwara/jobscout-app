@@ -1,6 +1,11 @@
+// Font(variationSettings = …) is still behind ExperimentalTextApi; it is the only
+// way to pick a weight/optical size out of a variable TTF.
+@file:OptIn(ExperimentalTextApi::class)
+
 package trade.tbot.jobscout
 
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.text.ExperimentalTextApi
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Shapes
 import androidx.compose.material3.Typography
