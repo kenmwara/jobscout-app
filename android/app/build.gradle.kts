@@ -7,12 +7,12 @@ plugins {
 
 android {
     namespace = "trade.tbot.jobscout"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "trade.tbot.jobscout"
         minSdk = 26
-        targetSdk = 35
+        targetSdk = 36
         // Play rejects any upload whose versionCode is not higher than the last —
         // Codemagic's BUILD_NUMBER only ever goes up, so it IS the versionCode.
         versionCode = System.getenv("BUILD_NUMBER")?.toIntOrNull() ?: 1
