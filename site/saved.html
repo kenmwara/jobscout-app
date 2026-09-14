@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Saved jobs — JobScout</title>
+<meta name="description" content="The postings you kept from JobScout's live scoring. This browser only — nothing leaves the device.">
+<meta name="robots" content="noindex">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+<link rel="stylesheet" href="fonts-embedded.css">
+<style>
+  :root{--indigo:#4865ff;--ink:#080331;--midnight:#1b1463;--canvas:#f8f3eb;--surface:#fff;
+    --text:#080331;--text2:#4a4560;--text3:#6b6780;--hair:rgba(8,3,49,.10);--hair2:rgba(8,3,49,.18);--info:#dce4fb;
+    --serif:"Newsreader",Georgia,serif;--sans:"Inter",-apple-system,system-ui,sans-serif;--ease:cubic-bezier(.22,1,.36,1);
+    --sh:rgba(75,68,57,.05) 0 4px 4px 0,rgba(75,68,57,.08) 0 32px 16px 0;--sh-card:rgba(75,68,57,.1) 0 48px 48px 0}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--canvas);color:var(--text);font-family:var(--sans);font-size:16px;line-height:1.6;
+    background-image:radial-gradient(rgba(8,3,49,.07) 1px,transparent 1px);background-size:24px 24px;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:860px;margin:0 auto;padding:0 20px 80px}
+  header{padding:14px 0 0}
+  header .pill{display:flex;align-items:center;gap:12px;background:var(--surface);border-radius:1600px;box-shadow:var(--sh);padding:12px 18px}
+  .brand{font-family:var(--serif);font-weight:450;font-size:21px;letter-spacing:-.01em;color:var(--ink);text-decoration:none}
+  header nav{margin-left:auto;font-size:14px;font-weight:500;display:flex;gap:18px}
+  header nav a{color:var(--text2);text-decoration:none}
+  header nav a:hover{color:var(--indigo)}
+  .bearing{display:inline-block;margin-top:44px;font-size:12px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);
+    background:var(--surface);border-radius:1600px;padding:9px 18px;box-shadow:var(--sh)}
+  .bearing b{color:var(--indigo);font-weight:500}
+  h1{font-family:var(--serif);font-weight:450;font-size:clamp(34px,6vw,46px);line-height:1.08;letter-spacing:-.02em;margin:18px 0 8px;text-wrap:balance}
+  .sub{color:var(--text2);font-size:17px;margin:0 0 30px}
+  .rows{background:var(--surface);border-radius:16px;overflow:hidden;box-shadow:var(--sh-card)}
+  .row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 18px;padding:18px 24px;border-bottom:1px solid var(--hair);align-items:center}
+  .row:last-child{border-bottom:0}
+  .row .t{font-weight:500;font-size:16px}
+  .row .t .co{color:var(--text2);font-weight:400}
+  .row .m{font-size:13.5px;color:var(--text2)}
+  .fit{font-family:var(--serif);font-weight:450;font-size:28px;line-height:1;grid-row:1/3;align-self:center}
+  .ctl{grid-column:1/-1;display:flex;gap:10px 14px;align-items:center;flex-wrap:wrap;margin-top:8px}
+  .plink{font-size:14px;font-weight:500;color:var(--midnight);text-decoration:none;border:1.5px solid var(--hair2);border-radius:1600px;padding:8px 17px;
+    transition:border-color .2s var(--ease),background .2s var(--ease),color .2s var(--ease)}
+  .plink:hover{background:var(--indigo);border-color:var(--indigo);color:#fff}
+  .rm{background:none;border:none;color:var(--text3);padding:6px 4px;font:500 14px var(--sans);cursor:pointer}
+  .rm:hover{color:#cc3600}
+  .foot{margin-top:22px;display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+  .btn{font:500 14px var(--sans);color:var(--midnight);background:var(--info);border:none;border-radius:1600px;padding:10px 20px;cursor:pointer}
+  .btn:hover{background:#a2baff}
+  .btn[hidden]{display:none}
+  .empty{background:var(--surface);border-radius:16px;box-shadow:var(--sh-card);padding:34px 28px;color:var(--text2)}
+  .empty a{color:var(--midnight)}
+  .fine{font-size:13px;color:var(--text3);margin-top:26px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header><div class="pill">
+  <svg width="26" height="26" viewBox="0 0 24 24" aria-hidden="true"><g fill="#4865ff">
+    <circle cx="12" cy="1" r="2.3"/><circle cx="19.78" cy="4.22" r="2.59"/><circle cx="23" cy="12" r="2.89"/><circle cx="19.78" cy="19.78" r="3.18"/>
+    <circle cx="12" cy="23" r="3.47"/><circle cx="4.22" cy="19.78" r="3.76"/><circle cx="1" cy="12" r="4.06"/><circle cx="4.22" cy="4.22" r="4.35"/></g></svg>
+  <a class="brand" href="./">JobScout</a>
+  <nav><a href="./">← back to the demo</a></nav>
+</div></header>
+
+<main>
+  <div class="bearing"><b>270</b> — SAVED</div>
+  <h1>The ones you kept.</h1>
+  <p class="sub">Kept in this browser only. You click Apply — JobScout never does.</p>
+  <div id="list"></div>
+  <div class="foot">
+    <button class="btn" id="more" type="button" hidden></button>
+    <button class="btn" id="clear" type="button" hidden>Clear saved</button>
+  </div>
+  <p class="fine">Saved jobs live in this browser's storage and never leave the device. Clearing your site data clears them too.</p>
+</main>
+</div>
+<script>
+const $ = s => document.querySelector(s);
+const TKEY = "jobscout.tracker", SHOWN = 6;
+let tracker = {}, open = false;
+try{ tracker = JSON.parse(localStorage.getItem(TKEY) || "{}").items || {}; }catch(e){ tracker = {}; }
+function save(){ try{ localStorage.setItem(TKEY, JSON.stringify({ v:2, items: tracker })); }catch(e){} }
+function esc(s){ return String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+function render(){
+  const items = Object.values(tracker).sort((x, y) => (y.fit||0) - (x.fit||0));
+  $("#clear").hidden = !items.length;
+  if (!items.length){
+    $("#list").innerHTML = `<div class="empty">Nothing saved yet. <a href="./">Run the pipeline</a> and tap <b>Save</b> on a score to keep it here.</div>`;
+    $("#more").hidden = true; return;
+  }
+  const shown = open ? items : items.slice(0, SHOWN);
+  $("#list").innerHTML = `<div class="rows">` + shown.map(t => `
+    <div class="row">
+      <div class="t">${esc(t.title)}${t.company ? ` <span class="co">· ${esc(t.company)}</span>` : ""}</div>
+      <div class="fit">${esc(t.fit ?? "—")}</div>
+      <div class="m">${t.saved ? "saved " + esc(t.saved) : "saved"}</div>
+      <div class="ctl">${t.url ? `<a class="plink" href="${esc(t.url)}" target="_blank" rel="noopener">View posting ↗</a>` : ""}
+        <button class="rm" type="button" data-id="${esc(t.id)}">remove ×</button></div>
+    </div>`).join("") + `</div>`;
+  const rest = items.length - SHOWN;
+  $("#more").hidden = rest <= 0;
+  $("#more").textContent = open ? "show fewer" : `show the other ${rest}`;
+}
+$("#list").addEventListener("click", e => {
+  const b = e.target.closest(".rm"); if (!b) return;
+  delete tracker[b.dataset.id]; save(); render();
+});
+$("#more").onclick = () => { open = !open; render(); };
+$("#clear").onclick = () => { if (confirm("Clear your saved jobs? This only affects this browser.")){ tracker = {}; save(); render(); } };
+render();
+</script>
+</body>
+</html>
