@@ -8,12 +8,15 @@ targets:
   JobScout:
     type: application
     platform: iOS
-    sources: [Sources]
+    # Resources/ holds the two variable TTFs (google/fonts, OFL) the site embeds and
+    # Android bundles; XcodeGen files them under Copy Bundle Resources by extension.
+    sources: [Sources, Resources]
     info:
       path: Info.plist
       properties:
         CFBundleDisplayName: JobScout
         UILaunchScreen: {}
+        UIAppFonts: [newsreader.ttf, inter.ttf]
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: trade.tbot.jobscout

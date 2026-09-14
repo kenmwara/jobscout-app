@@ -50,8 +50,9 @@ struct BearingRose: View {
                     // Staggered, so the rose fills in the order the score fills it.
                     .animation(.easeOut(duration: 0.42).delay(Double(i) * 0.07), value: bloom)
             }
+            // The web's .fitnum: serif at weight 400, 24 units of the 104 box.
             Text("\(f)")
-                .font(.system(size: side * 22 / roseBox, weight: .bold))
+                .font(serif(side * 24 / roseBox))
                 .foregroundColor(band(f).1)
         }
         .frame(width: side, height: side)

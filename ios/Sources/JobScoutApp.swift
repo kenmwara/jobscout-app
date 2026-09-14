@@ -2,21 +2,6 @@ import Foundation
 import SwiftUI
 import UniformTypeIdentifiers
 
-// ── Brand kit v2.0 - August Health language ──────────────────────────────────────────────────────────
-let indigo = Color(hex: 0x4865FF)
-let midnightViolet = Color(hex: 0x1B1463)
-let ink = Color(hex: 0x080331)
-let muted = Color(hex: 0x4A4560)
-let canvasBg = Color(hex: 0xF8F3EB)
-let hairline = Color(hex: 0xE7E2DA)
-
-/// One hue per candidate (border + rose) and its card ground.
-let personaHues: [(Color, Color)] = [
-    (Color(hex: 0x328A3B), Color(hex: 0xF2F7F1)),   // forest
-    (Color(hex: 0xCC3600), Color(hex: 0xFDF3EE)),   // ember deep
-    (Color(hex: 0x4865FF), Color(hex: 0xF1F3FD)),   // indigo
-]
-
 /// How many gate verdicts stream before the rest go behind a tap. Matches the web.
 let gateStream = 6
 /// How many saved jobs list before the rest go behind a tap. Matches the web.
@@ -231,6 +216,7 @@ struct JobScoutApp: App {
 
 struct ContentView: View {
     @StateObject private var vm = DemoVM()
+    @Environment(\.openURL) private var openURL
     @State private var ownOpen = false
     @State private var importing = false
     @State private var showTracker = false
@@ -246,7 +232,9 @@ struct ContentView: View {
                     bannerView(e) { Task { await vm.load() } }
                 }
 
-                sectionLabel("000 · WHO'S LOOKING?")
+                hero
+
+                StageHeading(bearing: "000", label: "CANDIDATE", title: "Who's looking?")
                 ForEach(Array(personas.enumerated()), id: \.element.id) { i, p in
                     personaCard(p, index: i, selected: i == vm.personaIdx && !vm.usingOwn)
                         .onTapGesture { vm.personaIdx = i }
@@ -255,36 +243,46 @@ struct ContentView: View {
                 runButton
 
                 if !vm.scores.isEmpty || vm.banner != nil {
-                    sectionLabel("090 · LIVE SCORING")
+                    StageHeading(bearing: "090", label: "SCORING", title: "Live scoring",
+                                 note: "Fit 0–100 lights the rose. The band it lands in picks the route.")
                     if let b = vm.banner { bannerView(b) }
                     let byId = Dictionary(uniqueKeysWithValues: (vm.feed?.passers ?? []).map { ($0.id, $0) })
                     let sorted = vm.scores.sorted { $0.fit > $1.fit }
                     ForEach(Array(sorted.enumerated()), id: \.element.id) { i, s in
-                        scoreCard(s, posting: byId[s.id], showLetter: i == 0 && !vm.fromCache)
+                        scoreCard(s, posting: byId[s.id], first: i == 0, showLetter: i == 0 && !vm.fromCache)
                     }
                 }
 
                 // The receipts, after the results. Six stream; the rest sit
                 // behind a tap, because the full list is a wall.
                 if vm.phase != .idle, let feed = vm.feed {
-                    sectionLabel("180 · WHY THOSE, AND NOT THE REST")
+                    StageHeading(bearing: "180", label: "GATES", title: "Why those, and not the rest",
+                                 note: "Every posting this morning's sweep looked at, and the prefilter's own verdict on each. Free, instant, and it spends nothing to say no.")
                     let shown = gatesOpen ? feed.rejects : Array(feed.rejects.prefix(gateStream))
-                    ForEach(Array(shown.enumerated()), id: \.element.id) { i, r in
-                        if gatesOpen || i < vm.gatesShown { gateRow(r) }
+                    VStack(spacing: 0) {
+                        ForEach(Array(shown.enumerated()), id: \.element.id) { i, r in
+                            if gatesOpen || i < vm.gatesShown {
+                                if i > 0 { Divider().overlay(hairline) }
+                                gateRow(r)
+                                    .transition(.opacity.combined(with: .move(edge: .bottom)))
+                            }
+                        }
                     }
+                    .background(cardBg)
+                    .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                    .warmShadow()
+                    .animation(.easeOut(duration: 0.45), value: vm.gatesShown)
                     if feed.rejects.count > gateStream {
-                        Button(gatesOpen ? "hide them again"
-                                         : "show the other \(feed.rejects.count - gateStream) verdicts") {
+                        PillButton(text: gatesOpen ? "hide them again"
+                                              : "show the other \(feed.rejects.count - gateStream) verdicts") {
                             gatesOpen.toggle()
                         }
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundColor(indigo)
                     }
                 }
             }
-            .padding(16)
+            .padding(.horizontal, 16).padding(.top, 12).padding(.bottom, 40)
         }
-        .background(canvasBg.ignoresSafeArea())
+        .background(ZStack { canvasBg; Dots() }.ignoresSafeArea())
         .sheet(isPresented: $showTracker) { TrackerView(vm: vm) }
         .task { await vm.load() }
         .sheet(isPresented: .init(get: { vm.letterBusy || vm.letterText != nil },
@@ -293,57 +291,77 @@ struct ContentView: View {
         }
     }
 
+    /// The floating pill navigation: mark, wordmark, live chip, saved.
     private var header: some View {
-        VStack(alignment: .leading, spacing: 2) {
-            HStack(spacing: 10) {
-                Text("JobScout").font(.system(size: 28, weight: .heavy)).foregroundColor(midnightViolet)
-                chip("NATIVE", indigo)
-                Spacer()
-                if !vm.tracker.isEmpty {
-                    Button("Saved (\(vm.tracker.count))") { showTracker = true }
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundColor(midnightViolet)
-                }
-            }
-            Text(vm.feed == nil
-                 ? "Loading today's sweep…"
-                 : "Real postings, scored live by Claude, with the reasoning shown.")
-                .font(.system(size: 13)).foregroundColor(muted)
+        HStack(spacing: 10) {
+            Mark()
+            Text("JobScout").font(serif(21)).foregroundColor(ink).tracking(-0.2)
+            if vm.feed != nil { liveChip }
+            Spacer()
+            Button("Saved (\(vm.tracker.count))") { showTracker = true }
+                .font(sans(14, .medium)).foregroundColor(midnightViolet)
+                .buttonStyle(.plain)
         }
+        .padding(.leading, 16).padding(.trailing, 16).padding(.vertical, 12)
+        .background(cardBg).clipShape(Capsule())
+        .warmShadow(16, y: 8)
+    }
+
+    private var liveChip: some View {
+        HStack(spacing: 6) {
+            Circle().fill(forest).frame(width: 6, height: 6)
+            Text("live").font(sans(12, .medium)).foregroundColor(meadow)
+        }
+        .padding(.horizontal, 11).padding(.vertical, 5)
+        .background(forest.opacity(0.14)).clipShape(Capsule())
+    }
+
+    private var hero: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            (Text("Watch an ") + Text("LLM").foregroundColor(indigo) + Text(" read the job market honestly."))
+                .font(serif(34)).foregroundColor(ink).tracking(-0.5)
+                .fixedSize(horizontal: false, vertical: true)
+            Text("Real postings, scored live by Claude, with the reasoning shown.")
+                .font(sans(16)).foregroundColor(muted).lineSpacing(4)
+            Text(vm.feed == nil ? "loading today's sweep…"
+                 : "today's sweep · \(vm.feed?.passers.count ?? 0) passed the gates · \(vm.feed?.rejects.count ?? 0) did not")
+                .font(sans(13)).foregroundColor(text3)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.top, 14).padding(.bottom, 4)
     }
 
     // Same affordance as the web demo: hidden behind a toggle, processed in memory only.
     private var ownResumeBox: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Button(ownOpen ? "Hide resume box" : "or use your own resume") { ownOpen.toggle() }
-                .font(.system(size: 14)).foregroundColor(midnightViolet)
+            LinkText(text: ownOpen ? "Hide resume box" : "or use your own resume") { ownOpen.toggle() }
             if ownOpen {
                 HStack(spacing: 10) {
-                    Button("Upload resume (PDF, DOCX, TXT)") { importing = true }
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundColor(midnightViolet)
-                        .disabled(vm.uploading)
                     if vm.uploading { ProgressView().tint(indigo) }
+                    PillButton(text: vm.uploading ? "Extracting…" : "Upload resume (PDF, DOCX, TXT)",
+                               enabled: !vm.uploading) { importing = true }
                 }
                 if let st = vm.uploadStatus {
-                    Text(st).font(.system(size: 12)).foregroundColor(muted)
+                    Text(st).font(sans(12)).foregroundColor(muted)
                 }
                 ZStack(alignment: .topLeading) {
                     if vm.resume.isEmpty {
-                        Text("Paste plain resume text (max 6,000 chars)…").foregroundColor(muted)
+                        Text("Paste plain resume text (max 6,000 chars)…").font(sans(15)).foregroundColor(text3)
                             .padding(.horizontal, 14).padding(.vertical, 12)
                     }
                     TextEditor(text: $vm.resume)
+                        .font(sans(15))
                         .scrollContentBackground(.hidden)
                         .padding(.horizontal, 10).padding(.vertical, 6)
                         .frame(minHeight: 120)
                         .onChange(of: vm.resume) { v in if v.count > 6000 { vm.resume = String(v.prefix(6000)) } }
                 }
-                .background(Color.white)
-                .cornerRadius(12)
-                .overlay(RoundedRectangle(cornerRadius: 12).stroke(vm.usingOwn ? indigo : hairline, lineWidth: vm.usingOwn ? 2 : 1))
-                Text((vm.usingOwn ? "Using your own resume for this run. " : "") + "Processed in-memory for this one scoring run. Never stored, never logged, never used for anything else. Uploads are extracted in memory and discarded.")
-                    .font(.system(size: 12)).foregroundColor(muted)
+                .background(cardBg)
+                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .stroke(vm.usingOwn ? indigo : hair2, lineWidth: vm.usingOwn ? 2 : 1))
+                Text((vm.usingOwn ? "Using your own resume for this run. " : "") + "Processed in memory for this run only. Never stored, never logged.")
+                    .font(sans(12)).foregroundColor(text3)
             }
         }
         .fileImporter(isPresented: $importing,
@@ -359,140 +377,131 @@ struct ContentView: View {
     }
 
     private var runButton: some View {
-        Button {
+        let busy = vm.feed == nil || vm.phase == .gates || vm.phase == .scoring
+        return Button {
             Task { await vm.run() }
         } label: {
             Text(vm.phase == .gates ? "Running the gates…"
                  : vm.phase == .scoring ? "Scoring live with Claude…"
                  : "Run the pipeline")
-                .font(.system(size: 16, weight: .semibold))
-                .frame(maxWidth: .infinity, minHeight: 52)
-                .background(indigo)
-                .foregroundColor(.white)
-                .cornerRadius(14)
+                .font(sans(16, .medium))
+                .frame(maxWidth: .infinity, minHeight: 54)
+                .background(busy ? lavender : indigo)
+                .foregroundColor(busy ? midnightViolet : .white)
+                .clipShape(Capsule())
         }
-        .disabled(vm.feed == nil || vm.phase == .gates || vm.phase == .scoring)
+        .buttonStyle(.plain)
+        .disabled(busy)
+        .warmShadow(24, y: 12)
     }
 
     private var letterSheet: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Text("Grounded cover letter").font(.headline)
+            Text("Grounded cover letter").font(serif(24)).foregroundColor(ink)
             if vm.letterBusy {
                 HStack(spacing: 12) {
                     ProgressView().tint(indigo)
                     Text("Drafting from the profile only — it cannot invent experience…")
+                        .font(sans(15)).foregroundColor(muted)
                 }
             } else {
-                ScrollView { Text(vm.letterText ?? "").font(.system(size: 15)) }
+                ScrollView { Text(vm.letterText ?? "").font(sans(15)).foregroundColor(ink).lineSpacing(6) }
             }
             Spacer()
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
         .padding(20)
+        .background(canvasBg)
         .presentationDetents([.medium, .large])
     }
 
-    private func sectionLabel(_ t: String) -> some View {
-        Text(t).font(.system(size: 12, weight: .bold)).tracking(1.5)
-            .foregroundColor(midnightViolet).padding(.top, 12)
-    }
-
     private func bannerView(_ t: String, onRetry: (() -> Void)? = nil) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(t).font(.system(size: 13)).foregroundColor(Color(hex: 0x8A6D00))
+        VStack(alignment: .leading, spacing: 10) {
+            Text(t).font(sans(13)).foregroundColor(Color(hex: 0x8A6D00)).lineSpacing(3)
             if let onRetry = onRetry {
-                Button("Try again", action: onRetry)
-                    .font(.system(size: 13, weight: .medium))
-                    .foregroundColor(Color(hex: 0x4865FF))
+                PillButton(text: "Try again", action: onRetry)
             }
         }
-        .frame(maxWidth: .infinity, alignment: .leading).padding(12)
-        .background(Color(hex: 0xFFF6DC)).cornerRadius(10)
-    }
-
-    private func chip(_ t: String, _ c: Color) -> some View {
-        Text(t).font(.system(size: 10, weight: .bold)).tracking(1)
-            .foregroundColor(c).padding(.horizontal, 8).padding(.vertical, 3)
-            .background(c.opacity(0.12)).cornerRadius(6)
+        .frame(maxWidth: .infinity, alignment: .leading).padding(14)
+        .background(Color(hex: 0xFFF6DC))
+        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
     }
 
     private func personaCard(_ p: Persona, index: Int, selected: Bool) -> some View {
         let (hue, ground) = personaHues[index % personaHues.count]
         return VStack(alignment: .leading, spacing: 2) {
             MiniRose(selected: selected, tint: hue).padding(.bottom, 8)
-            Text(p.name).font(.system(size: 15, weight: .semibold)).foregroundColor(ink)
-            Text(p.desc).font(.system(size: 13)).foregroundColor(muted)
+            Text(p.name).font(sans(15, .medium)).foregroundColor(ink)
+            Text(p.desc).font(sans(13)).foregroundColor(muted).lineSpacing(3)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(14)
-        .background(ground)
-        .cornerRadius(14)
-        .overlay(RoundedRectangle(cornerRadius: 14)
-            .stroke(selected ? hue : hairline, lineWidth: selected ? 2 : 1))
+        .padding(16)
+        .background(selected ? ground : cardBg)
+        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous)
+            .stroke(selected ? hue : hairline, lineWidth: selected ? 1.5 : 1))
+        .warmShadow(selected ? 16 : 0, y: selected ? 8 : 0)
+        .contentShape(Rectangle())
     }
 
     private func gateRow(_ r: Posting) -> some View {
-        HStack(alignment: .top, spacing: 10) {
-            Text("✕").fontWeight(.bold).foregroundColor(Color(hex: 0x333333))
-            VStack(alignment: .leading, spacing: 1) {
-                Text("\(r.title) — \(r.company)").font(.system(size: 13, weight: .medium)).foregroundColor(ink)
-                Text(r.gate.reason).font(.system(size: 12)).foregroundColor(muted)
+        HStack(alignment: .center, spacing: 12) {
+            VStack(alignment: .leading, spacing: 2) {
+                (Text(r.title).fontWeight(.medium) + Text(" · \(r.company)"))
+                    .font(sans(14)).foregroundColor(text3).strikethrough(true, color: hair2)
+                Text(r.gate.reason).font(sans(12.5)).foregroundColor(text3).lineSpacing(2)
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            Chip(text: "REJECT", color: stone, ground: info)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(10)
-        .background(Color.white)
-        .cornerRadius(10)
-        .overlay(RoundedRectangle(cornerRadius: 10).stroke(hairline, lineWidth: 1))
+        .padding(.horizontal, 18).padding(.vertical, 13)
     }
 
-    private func scoreCard(_ s: Score, posting: Posting?, showLetter: Bool) -> some View {
+    private func scoreCard(_ s: Score, posting: Posting?, first: Bool, showLetter: Bool) -> some View {
         let (route, bandColor) = band(s.fit)
-        return HStack(alignment: .top, spacing: 14) {
-            BearingRose(fit: s.fit).padding(.top, 2)
-            VStack(alignment: .leading, spacing: 4) {
-                HStack {
-                    Text("\(posting?.title ?? s.id) · \(posting?.company ?? "")")
-                        .font(.system(size: 15, weight: .semibold)).foregroundColor(ink)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                    chip(route.uppercased(), bandColor)
-                }
-                Text(s.verdict).font(.system(size: 13)).foregroundColor(Color(hex: 0x3A3A3C))
-                if !s.strongest.isEmpty {
-                    Text("+ \(s.strongest)").font(.system(size: 12)).foregroundColor(Color(hex: 0x328A3B))
-                }
-                if !s.weakest.isEmpty {
-                    Text("− \(s.weakest)").font(.system(size: 12)).foregroundColor(Color(hex: 0xFF6D39))
-                }
-                HStack(spacing: 14) {
-                    if let p = posting, !p.url.isEmpty, let u = URL(string: p.url) {
-                        Link("View posting ↗", destination: u)
-                            .font(.system(size: 13, weight: .semibold))
-                            .foregroundColor(midnightViolet)
+        return VStack(alignment: .leading, spacing: 0) {
+            HStack(alignment: .top, spacing: 14) {
+                BearingRose(fit: s.fit, side: 84).padding(.top, 2)
+                VStack(alignment: .leading, spacing: 6) {
+                    (Text(posting?.title ?? s.id).fontWeight(.medium)
+                        + Text(" · \(posting?.company ?? "")").foregroundColor(muted))
+                        .font(sans(16)).foregroundColor(ink).lineSpacing(3)
+                    Chip(text: route.uppercased(), color: bandColor, ground: bandFill(s.fit).opacity(0.18))
+                    Text(s.verdict).font(sans(14)).foregroundColor(muted).lineSpacing(4)
+                    if !s.strongest.isEmpty {
+                        Text("+ \(s.strongest)").font(sans(13, .medium)).foregroundColor(meadow).padding(.top, 2)
                     }
-                    // Untracked postings offer to be SAVED; only once kept do
-                    // they get a stage to move through.
-                    if vm.tracker[s.id] != nil {
-                        StageMenu(stage: vm.tracker[s.id]?.stage ?? "survivor") { vm.setStage(s.id, $0) }
-                    } else {
-                        Button("Save") { vm.save(s, posting) }
-                            .font(.system(size: 13, weight: .semibold))
-                            .foregroundColor(Color(hex: 0x4865FF))
+                    if !s.weakest.isEmpty {
+                        Text("− \(s.weakest)").font(sans(13, .medium)).foregroundColor(emberDeep)
                     }
-                    Spacer()
                 }
-                .padding(.top, 2)
-                if showLetter, let posting {
-                    Button("Draft a grounded cover letter →") {
-                        Task { await vm.draftLetter(posting) }
-                    }
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundColor(midnightViolet)
-                }
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
+            // Opening the posting IS how a user applies — the app never submits anything.
+            HStack(spacing: 8) {
+                // Untracked postings offer to be SAVED; only once kept do
+                // they get a stage to move through.
+                if vm.tracker[s.id] != nil {
+                    StageMenu(stage: vm.tracker[s.id]?.stage ?? "survivor") { vm.setStage(s.id, $0) }
+                } else {
+                    PillButton(text: "Save", color: muted) { vm.save(s, posting) }
+                }
+                if let p = posting, !p.url.isEmpty, let u = URL(string: p.url) {
+                    PillButton(text: "View posting ↗") { openURL(u) }
+                }
+                if showLetter, let posting {
+                    PillButton(text: "Draft a letter", filled: true) { Task { await vm.draftLetter(posting) } }
+                }
+                Spacer(minLength: 0)
+            }
+            .padding(.top, 14)
         }
-        .padding(14)
-        .background(Color.white)
-        .cornerRadius(16)
-        .overlay(RoundedRectangle(cornerRadius: 16).stroke(hairline, lineWidth: 1))
+        .padding(18)
+        .background(cardBg)
+        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        // the top card carries the indigo ring the web gives its first score
+        .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous)
+            .stroke(indigo.opacity(first ? 0.16 : 0), lineWidth: 3))
+        .warmShadow()
     }
 }
