@@ -10,44 +10,55 @@
 <link rel="stylesheet" href="fonts-embedded.css">
 <style>
   :root{--indigo:#4865ff;--ink:#080331;--midnight:#1b1463;--canvas:#f8f3eb;--surface:#fff;
-    --text:#080331;--text2:#4a4560;--text3:#6b6780;--hair:rgba(8,3,49,.10);--hair2:rgba(8,3,49,.18);--info:#dce4fb;
+    --text:#080331;--text2:#4a4560;--text3:#6b6780;--hair:rgba(8,3,49,.10);--hair2:rgba(8,3,49,.18);--info:#dce4fb;--lavender:#a2baff;
     --serif:"Newsreader",Georgia,serif;--sans:"Inter",-apple-system,system-ui,sans-serif;--ease:cubic-bezier(.22,1,.36,1);
     --sh:rgba(75,68,57,.05) 0 4px 4px 0,rgba(75,68,57,.08) 0 32px 16px 0;--sh-card:rgba(75,68,57,.1) 0 48px 48px 0}
   *{box-sizing:border-box}
   body{margin:0;background:var(--canvas);color:var(--text);font-family:var(--sans);font-size:16px;line-height:1.6;
     background-image:radial-gradient(rgba(8,3,49,.07) 1px,transparent 1px);background-size:24px 24px;-webkit-font-smoothing:antialiased}
-  .wrap{max-width:860px;margin:0 auto;padding:0 20px 80px}
-  header{padding:14px 0 0}
+  .wrap{max-width:900px;margin:0 auto;padding:0 20px 90px}
+  header{padding:14px 0 0;position:sticky;top:0;z-index:5}
   header .pill{display:flex;align-items:center;gap:12px;background:var(--surface);border-radius:1600px;box-shadow:var(--sh);padding:12px 18px}
   .brand{font-family:var(--serif);font-weight:450;font-size:21px;letter-spacing:-.01em;color:var(--ink);text-decoration:none}
   header nav{margin-left:auto;font-size:14px;font-weight:500;display:flex;gap:18px}
-  header nav a{color:var(--text2);text-decoration:none}
+  header nav a{color:var(--text2);text-decoration:none;white-space:nowrap}
   header nav a:hover{color:var(--indigo)}
   .bearing{display:inline-block;margin-top:44px;font-size:12px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);
     background:var(--surface);border-radius:1600px;padding:9px 18px;box-shadow:var(--sh)}
   .bearing b{color:var(--indigo);font-weight:500}
-  h1{font-family:var(--serif);font-weight:450;font-size:clamp(34px,6vw,46px);line-height:1.08;letter-spacing:-.02em;margin:18px 0 8px;text-wrap:balance}
-  .sub{color:var(--text2);font-size:17px;margin:0 0 30px}
-  .rows{background:var(--surface);border-radius:16px;overflow:hidden;box-shadow:var(--sh-card)}
-  .row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 18px;padding:18px 24px;border-bottom:1px solid var(--hair);align-items:center}
+  h1{font-family:var(--serif);font-weight:480;font-size:clamp(34px,6vw,48px);line-height:1.08;letter-spacing:-.02em;margin:18px 0 8px;text-wrap:balance}
+  h1 .n{color:var(--indigo)}
+  .sub{color:var(--text2);font-size:17px;margin:0 0 34px;max-width:56ch}
+  /* one group per fit band, in the order the pipeline ranks them */
+  .group{margin-top:34px}
+  .group h2{font-family:var(--serif);font-weight:480;font-size:24px;letter-spacing:-.01em;margin:0 0 4px;display:flex;align-items:baseline;gap:12px}
+  .group h2 small{font-family:var(--sans);font-size:13px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:var(--text3)}
+  .group p{margin:0 0 14px;font-size:14.5px;color:var(--text2)}
+  .rows{background:var(--surface);border-radius:18px;overflow:hidden;box-shadow:var(--sh-card)}
+  .row{display:grid;grid-template-columns:64px minmax(0,1fr);gap:2px 18px;padding:18px 22px;border-bottom:1px solid var(--hair);align-items:center}
   .row:last-child{border-bottom:0}
-  .row .t{font-weight:500;font-size:16px}
+  .rose{width:64px;grid-row:1/4;align-self:center}
+  .rose .fitnum{font-family:var(--serif);font-weight:480;font-size:26px;text-anchor:middle}
+  .row .t{font-weight:500;font-size:16px;line-height:1.35}
   .row .t .co{color:var(--text2);font-weight:400}
-  .row .m{font-size:13.5px;color:var(--text2)}
-  .fit{font-family:var(--serif);font-weight:450;font-size:28px;line-height:1;grid-row:1/3;align-self:center}
-  .ctl{grid-column:1/-1;display:flex;gap:10px 14px;align-items:center;flex-wrap:wrap;margin-top:8px}
+  .row .m{font-size:13px;color:var(--text3)}
+  .ctl{display:flex;gap:10px 12px;align-items:center;flex-wrap:wrap;margin-top:8px}
   .plink{font-size:14px;font-weight:500;color:var(--midnight);text-decoration:none;border:1.5px solid var(--hair2);border-radius:1600px;padding:8px 17px;
     transition:border-color .2s var(--ease),background .2s var(--ease),color .2s var(--ease)}
   .plink:hover{background:var(--indigo);border-color:var(--indigo);color:#fff}
   .rm{background:none;border:none;color:var(--text3);padding:6px 4px;font:500 14px var(--sans);cursor:pointer}
   .rm:hover{color:#cc3600}
-  .foot{margin-top:22px;display:flex;gap:14px;align-items:center;flex-wrap:wrap}
-  .btn{font:500 14px var(--sans);color:var(--midnight);background:var(--info);border:none;border-radius:1600px;padding:10px 20px;cursor:pointer}
-  .btn:hover{background:#a2baff}
+  .foot{margin-top:34px;display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+  .btn{font:500 14.5px var(--sans);color:var(--midnight);background:var(--info);border:none;border-radius:1600px;padding:11px 22px;cursor:pointer;text-decoration:none;display:inline-block}
+  .btn:hover{background:var(--lavender)}
+  .btn.quiet{background:transparent;border:1.5px solid var(--hair2);color:var(--text2)}
+  .btn.quiet:hover{border-color:#cc3600;color:#cc3600;background:transparent}
   .btn[hidden]{display:none}
-  .empty{background:var(--surface);border-radius:16px;box-shadow:var(--sh-card);padding:34px 28px;color:var(--text2)}
-  .empty a{color:var(--midnight)}
-  .fine{font-size:13px;color:var(--text3);margin-top:26px}
+  .empty{background:var(--surface);border-radius:18px;box-shadow:var(--sh-card);padding:44px 32px;text-align:center}
+  .empty .big{font-family:var(--serif);font-weight:480;font-size:28px;letter-spacing:-.01em;margin:0 0 8px}
+  .empty p{color:var(--text2);margin:0 0 22px}
+  .fine{font-size:13px;color:var(--text3);margin-top:30px;max-width:60ch}
+  @media (max-width:560px){ .row{grid-template-columns:52px minmax(0,1fr);padding:16px} .rose{width:52px} }
 </style>
 </head>
 <body>
@@ -62,48 +73,66 @@
 
 <main>
   <div class="bearing"><b>270</b> — SAVED</div>
-  <h1>The ones you kept.</h1>
-  <p class="sub">Kept in this browser only. You click Apply — JobScout never does.</p>
+  <h1 id="h1">The ones you kept.</h1>
+  <p class="sub">Grouped by how well they fit, best first. Kept in this browser only — you click Apply, JobScout never does.</p>
   <div id="list"></div>
   <div class="foot">
-    <button class="btn" id="more" type="button" hidden></button>
-    <button class="btn" id="clear" type="button" hidden>Clear saved</button>
+    <a class="btn" href="./">Score more postings</a>
+    <button class="btn quiet" id="clear" type="button" hidden>Clear all saved</button>
   </div>
   <p class="fine">Saved jobs live in this browser's storage and never leave the device. Clearing your site data clears them too.</p>
 </main>
 </div>
 <script>
 const $ = s => document.querySelector(s);
-const TKEY = "jobscout.tracker", SHOWN = 6;
-let tracker = {}, open = false;
+const TKEY = "jobscout.tracker";
+let tracker = {};
 try{ tracker = JSON.parse(localStorage.getItem(TKEY) || "{}").items || {}; }catch(e){ tracker = {}; }
 function save(){ try{ localStorage.setItem(TKEY, JSON.stringify({ v:2, items: tracker })); }catch(e){} }
 function esc(s){ return String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+
+// same bands and the same rose as the demo page, so a saved score reads the same here
+const BAND = f => f >= 80 ? ["auto","#114e0b"] : f >= 70 ? ["ping","#1b1463"] : f >= 55 ? ["unsure","#cc3600"] : ["near-miss","#333333"];
+const ROSE = Array.from({length: 8}, (_, i) => { const th = (-90 + 45 * i) * Math.PI / 180; return [52 + 38 * Math.cos(th), 52 + 38 * Math.sin(th)]; });
+function roseSVG(fit){
+  const f = Math.max(0, Math.min(100, +fit || 0)), [, col] = BAND(f);
+  const lit = Math.max(1, Math.round(f / 100 * 8));
+  return `<svg class="rose" viewBox="0 0 104 104" role="img" aria-label="fit ${f} of 100">` +
+    ROSE.map(([x, y], i) => `<circle cx="${x.toFixed(2)}" cy="${y.toFixed(2)}" r="${i < lit ? 13 : 5.5}" fill="${i < lit ? col : "rgba(8,3,49,.18)"}"/>`).join("") +
+    `<text class="fitnum" x="52" y="61" fill="${col}">${f}</text></svg>`;
+}
+const GROUPS = [
+  { min: 70, title: "Strong fit", tag: "auto & ping · 70+", note: "Worth applying to today." },
+  { min: 55, title: "Worth a look", tag: "unsure · 55–69", note: "Real gaps, real upside. Read the verdict before you decide." },
+  { min: 0,  title: "Near-miss", tag: "below 55", note: "Kept for a reason only you know." },
+];
 function render(){
   const items = Object.values(tracker).sort((x, y) => (y.fit||0) - (x.fit||0));
   $("#clear").hidden = !items.length;
+  $("#h1").innerHTML = items.length ? `The <span class="n">${items.length}</span> you kept.` : "Nothing kept yet.";
   if (!items.length){
-    $("#list").innerHTML = `<div class="empty">Nothing saved yet. <a href="./">Run the pipeline</a> and tap <b>Save</b> on a score to keep it here.</div>`;
-    $("#more").hidden = true; return;
+    $("#list").innerHTML = `<div class="empty"><p class="big">Your shortlist starts on the demo page.</p>
+      <p>Run the pipeline, then tap <b>Save</b> on any score to keep it here.</p><a class="btn" href="./">Run the pipeline</a></div>`;
+    return;
   }
-  const shown = open ? items : items.slice(0, SHOWN);
-  $("#list").innerHTML = `<div class="rows">` + shown.map(t => `
-    <div class="row">
-      <div class="t">${esc(t.title)}${t.company ? ` <span class="co">· ${esc(t.company)}</span>` : ""}</div>
-      <div class="fit">${esc(t.fit ?? "—")}</div>
-      <div class="m">${t.saved ? "saved " + esc(t.saved) : "saved"}</div>
-      <div class="ctl">${t.url ? `<a class="plink" href="${esc(t.url)}" target="_blank" rel="noopener">View posting ↗</a>` : ""}
-        <button class="rm" type="button" data-id="${esc(t.id)}">remove ×</button></div>
-    </div>`).join("") + `</div>`;
-  const rest = items.length - SHOWN;
-  $("#more").hidden = rest <= 0;
-  $("#more").textContent = open ? "show fewer" : `show the other ${rest}`;
+  let used = [];
+  $("#list").innerHTML = GROUPS.map(g => {
+    const rows = items.filter(t => (t.fit||0) >= g.min && !used.includes(t));
+    used = used.concat(rows);
+    if (!rows.length) return "";
+    return `<section class="group"><h2>${g.title}<small>${g.tag}</small></h2><p>${g.note}</p><div class="rows">` + rows.map(t => `
+      <div class="row">${roseSVG(t.fit)}
+        <div class="t">${esc(t.title)}${t.company ? ` <span class="co">· ${esc(t.company)}</span>` : ""}</div>
+        <div class="m">${t.saved ? "saved " + esc(t.saved) : "saved"}</div>
+        <div class="ctl">${t.url ? `<a class="plink" href="${esc(t.url)}" target="_blank" rel="noopener">View posting ↗</a>` : ""}
+          <button class="rm" type="button" data-id="${esc(t.id)}">remove ×</button></div>
+      </div>`).join("") + `</div></section>`;
+  }).join("");
 }
 $("#list").addEventListener("click", e => {
   const b = e.target.closest(".rm"); if (!b) return;
   delete tracker[b.dataset.id]; save(); render();
 });
-$("#more").onclick = () => { open = !open; render(); };
 $("#clear").onclick = () => { if (confirm("Clear your saved jobs? This only affects this browser.")){ tracker = {}; save(); render(); } };
 render();
 </script>
