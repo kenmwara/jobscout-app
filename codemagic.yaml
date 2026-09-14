@@ -86,8 +86,14 @@ workflows:
           ./gradlew --no-daemon bundleRelease assembleRelease
           mv app/build/outputs/bundle/release/app-release.aab "app/build/outputs/bundle/release/JobScout-$BUILD_NUMBER.aab"
           mv app/build/outputs/apk/release/app-release.apk app/build/outputs/apk/release/JobScout-release.apk
-          # the fingerprint to paste into Play Console → Android developer verification
-          keytool -printcert -jarfile app/build/outputs/apk/release/JobScout-release.apk | grep -E 'SHA256|SHA1' > app/build/outputs/apk/release/signing-fingerprints.txt
+          # The fingerprint to paste into Play Console → Android developer verification.
+          # apksigner, not keytool: with minSdk 26 the APK carries only a v2/v3
+          # signature block, and `keytool -printcert -jarfile` sees no JAR
+          # signature at all (that is what failed build #1 after a green Gradle).
+          # Never fatal — the artifacts are the point; the file says what happened.
+          BT="$ANDROID_SDK_ROOT/build-tools/$(ls "$ANDROID_SDK_ROOT/build-tools" | sort -V | tail -1)"
+          "$BT/apksigner" verify --print-certs app/build/outputs/apk/release/JobScout-release.apk \
+            > app/build/outputs/apk/release/signing-fingerprints.txt 2>&1 || true
     artifacts:
       - android/app/build/outputs/bundle/release/*.aab
       - android/app/build/outputs/apk/release/*.apk
