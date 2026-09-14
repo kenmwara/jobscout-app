@@ -9,6 +9,7 @@ import java.net.SocketTimeoutException
 import java.net.UnknownHostException
 import javax.net.ssl.SSLException
 import androidx.activity.ComponentActivity
+import androidx.activity.SystemBarStyle
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -241,8 +242,11 @@ class DemoVm(app: Application) : AndroidViewModel(app) {
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         // targetSdk 35 is edge-to-edge whether we ask or not; asking makes the
-        // status bar transparent over the cream instead of a black strip.
-        enableEdgeToEdge()
+        // bars transparent over the cream. The style is pinned to LIGHT (dark
+        // icons) because the app is always cream — the default guesses from the
+        // phone's dark-mode setting and painted the clock white on cream.
+        val bars = SystemBarStyle.light(android.graphics.Color.TRANSPARENT, android.graphics.Color.TRANSPARENT)
+        enableEdgeToEdge(statusBarStyle = bars, navigationBarStyle = bars)
         super.onCreate(savedInstanceState)
         setContent { JobScoutTheme { DemoScreen() } }
     }
