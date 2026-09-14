@@ -10,6 +10,7 @@ import java.net.UnknownHostException
 import javax.net.ssl.SSLException
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -43,8 +44,6 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -278,6 +277,7 @@ fun DemoScreen(vm: DemoVm = viewModel()) {
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             item { Header(feed, ui.tracker.size) { trackerOpen = true } }
+            // (the Saved overlay is composed after this list, at the end of the Box)
             ui.error?.let { item { Banner(it, onRetry = { vm.loadFeed() }) } }
 
             item { Hero(feed) }
@@ -389,6 +389,7 @@ fun DemoScreen(vm: DemoVm = viewModel()) {
                 }
             }
         }
+        if (trackerOpen) TrackerScreen(vm, ui.tracker) { trackerOpen = false }
     }
 
     if (ui.letterBusy || ui.letterText != null) {
@@ -407,7 +408,6 @@ fun DemoScreen(vm: DemoVm = viewModel()) {
         )
     }
 
-    if (trackerOpen) TrackerScreen(vm, ui.tracker) { trackerOpen = false }
 }
 
 // ── the brand mark: August's geometry (8 dots, ring r=11 in a 24 box, cropped by
@@ -652,11 +652,16 @@ private fun StageChip(stage: String, onStage: (String) -> Unit) {
 private fun TrackerScreen(vm: DemoVm, tracker: Map<String, Tracked>, onClose: () -> Unit) {
     var confirmClear by remember { mutableStateOf(false) }
     var savedOpen by remember { mutableStateOf(false) }
-    Dialog(onDismissRequest = onClose, properties = DialogProperties(usePlatformDefaultWidth = false)) {
+    // An overlay in the activity's own window, not a Dialog: a Dialog gets its own
+    // window, which never received the light system-bar style, so Saved jobs
+    // opened under a grey status bar with white icons. Back closes it.
+    BackHandler(onBack = onClose)
+    val ins = WindowInsets.safeDrawing.asPaddingValues()
+    run {
         Box(Modifier.fillMaxSize().background(CanvasBg).dots()) {
             LazyColumn(
                 Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(16.dp, 20.dp, 16.dp, 40.dp),
+                contentPadding = PaddingValues(16.dp, ins.calculateTopPadding() + 12.dp, 16.dp, ins.calculateBottomPadding() + 40.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 item {
