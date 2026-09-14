@@ -59,8 +59,9 @@ workflows:
   #
   # Runs on a `v*` tag, never on plain pushes — a release is a decision.
   # Needs ONE thing set in the Codemagic UI: Team settings → Code signing
-  # identities → Android keystores → upload the .jks with reference name
-  # `jobscout_upload`. Codemagic then exports CM_KEYSTORE_PATH/_PASSWORD,
+  # identities → Android keystores → the existing reference
+  # `tbot_keystore` (the one T BOT already uses — Play allows one upload key
+  # across apps, and one key is one backup). Codemagic then exports CM_KEYSTORE_PATH/_PASSWORD,
   # CM_KEY_ALIAS/_PASSWORD, which app/build.gradle.kts reads.
   android-release:
     name: JobScout Android (signed AAB + APK)
@@ -76,7 +77,7 @@ workflows:
     environment:
       java: 17
       android_signing:
-        - jobscout_upload
+        - tbot_keystore
     scripts:
       - name: Build signed release
         script: |
