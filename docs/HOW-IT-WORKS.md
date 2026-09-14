@@ -1,7 +1,7 @@
 # JobScout — how it works (the two-minute version)
 <!-- Employer-facing brief. Plain language on purpose. 2026-09-03 -->
 
-**Try it: [www.jobscout.tbot.trade](https://www.jobscout.tbot.trade) · source: [github.com/kenmwara/jobscout-app](https://github.com/kenmwara/jobscout-app)**
+**Try it: [jobscout.page](https://jobscout.page) · source: [github.com/kenmwara/jobscout-app](https://github.com/kenmwara/jobscout-app)**
 
 ## What you're looking at
 

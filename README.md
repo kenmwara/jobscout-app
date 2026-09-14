@@ -1,6 +1,6 @@
 # JobScout — AI job-search copilot
 
-**Live demo: [www.jobscout.tbot.trade](https://www.jobscout.tbot.trade)** — real job
+**Live demo: [jobscout.page](https://jobscout.page)** — real job
 postings, scored live by an LLM against a real candidate profile, with the reasoning
 shown.
 

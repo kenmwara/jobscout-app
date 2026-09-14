@@ -9,17 +9,18 @@
      LinkedIn refused it outright ("We couldn't generate a preview for this link") and
      every other platform posted a bare grey link. og:image MUST be an absolute URL. -->
 <meta property="og:type" content="website">
-<meta property="og:url" content="https://www.jobscout.tbot.trade/">
+<meta property="og:url" content="https://jobscout.page/">
+<link rel="canonical" href="https://jobscout.page/">
 <meta property="og:site_name" content="JobScout">
 <meta property="og:title" content="JobScout — watch an LLM read the job market honestly">
 <meta property="og:description" content="This morning's real postings, scored live by Claude, with every reason shown.">
-<meta property="og:image" content="https://www.jobscout.tbot.trade/og.png">
+<meta property="og:image" content="https://jobscout.page/og.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="JobScout — an LLM reads the job market honestly">
 <meta name="twitter:description" content="This morning's real postings, scored live by Claude, with every reason shown.">
-<meta name="twitter:image" content="https://www.jobscout.tbot.trade/og.png">
+<meta name="twitter:image" content="https://jobscout.page/og.png">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-180.png">
 <link rel="stylesheet" href="fonts-embedded.css">
@@ -625,6 +626,8 @@
 </section>
 
 <script>
+// the old host and the www form both land on the canonical apex, path intact
+if (/(^www\.jobscout\.page$|jobscout\.tbot\.trade$)/.test(location.hostname)) location.replace("https://jobscout.page" + location.pathname + location.search);
 const API = "https://jobscout-app-api.kenmwara.workers.dev";
 const $ = s => document.querySelector(s);
 const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
