@@ -40,6 +40,10 @@ def dots(canvas):
 
 def compose(src, dst, key):
     shot = Image.open(src).convert("RGB")
+    # drop the phone's own status bar and the three-button nav: the listing shows
+    # the app, not the clock, and a Dialog-era grey bar cannot sneak in
+    top, bottom = round(shot.height * 58 / 1280), round(shot.height * 68 / 1280)
+    shot = shot.crop((0, top, shot.width, shot.height - bottom))
     canvas = Image.new("RGB", (W, H), CREAM); dots(canvas)
     d = ImageDraw.Draw(canvas)
     title, sub = CAPTIONS.get(key, (key.title(), ""))
@@ -70,5 +74,6 @@ if __name__ == "__main__":
     files = sorted(p for p in src.iterdir() if p.suffix.lower() in (".jpg", ".jpeg", ".png"))
     for i, p in enumerate(files, 1):
         key = next((k for k in CAPTIONS if k in p.stem.lower()), p.stem)
-        dst = out / f"play-{i:02d}-{key}.png"
+        order = {"candidate": 1, "scoring": 2, "gates": 3, "saved": 4}
+        dst = out / f"play-{order.get(key, i):02d}-{key}.png"
         print(dst.name, compose(p, dst, key))
