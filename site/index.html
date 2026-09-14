@@ -108,7 +108,9 @@
   .livechip i{width:6px;height:6px;border-radius:50%;background:var(--forest)}
 
   /* ── hero ─────────────────────────────────────────────────────────────── */
-  .hero{padding:34px 0 8px;text-align:center;position:relative}
+  .hero{padding:44px 0 8px;text-align:center;position:relative}
+  /* the chooser's own bearing sits left, over the heading, not centred in the hero */
+  .chooser .bearing{margin-bottom:14px}
   .bearing{font-size:12px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);
     background:var(--surface);border-radius:var(--pill);padding:9px 18px;display:inline-block;box-shadow:var(--sh-subtle)}
   .bearing b{color:var(--indigo);font-weight:500}
@@ -118,8 +120,6 @@
      display size needs. It is only ever used at this size. */
   h1 .v{color:var(--indigo)}
   .sub{font-size:19px;color:var(--text2);max-width:56ch;margin:0 auto 10px;line-height:1.5}
-  .sweepline{font-size:14px;color:var(--text2);margin:0 0 30px}
-  .sweepline b{color:var(--ink);font-weight:500}
 
   /* August's hero geometry, verbatim from the real site: very large circle
      OUTLINES cropped by the viewport edges. */
@@ -127,7 +127,8 @@
     pointer-events:none;z-index:0}
   /* border-width/style, NOT the `border` shorthand - the shorthand resets
      border-color, and at this specificity it would beat each circle's own hue. */
-  .rings i{position:absolute;border-radius:50%;border-width:2px;border-style:solid;opacity:.7}
+  /* two rings, not four, and quieter - the hero had too much going on */
+  .rings i{position:absolute;border-radius:50%;border-width:2px;border-style:solid;opacity:.45}
   .r1{width:43vw;height:43vw;left:-18vw;top:-14vw;border-color:var(--tinted)}
   .r2{width:49vw;height:49vw;right:-19vw;top:-18vw;border-color:var(--indigo)}
   .r3{width:39vw;height:39vw;left:-17vw;top:28vw;border-color:var(--forest)}
@@ -147,24 +148,38 @@
      Three cards; the chosen one carries its hue, the mark blooms large in it,
      and its description shows. The other two sit lower and quieter, so the
      choice reads from across the room. Hovering a quiet card previews it. */
-  .chooser{text-align:left;max-width:1040px;margin:0 auto;position:relative;z-index:1}
+  .chooser{text-align:left;max-width:1040px;margin:26px auto 0;position:relative;z-index:1}
+  /* soft colour behind the cards, so the glass has something to refract - three
+     blurred pools in the candidates' own hues, one under each column */
+  .chooser::before{content:"";position:absolute;inset:60px -60px -40px;z-index:-1;pointer-events:none;
+    background:
+      radial-gradient(38% 55% at 16% 60%,rgba(50,138,59,.30),transparent 70%),
+      radial-gradient(34% 50% at 50% 40%,rgba(255,109,57,.28),transparent 70%),
+      radial-gradient(38% 55% at 84% 62%,rgba(72,101,255,.30),transparent 70%),
+      radial-gradient(20% 30% at 40% 90%,rgba(240,152,215,.30),transparent 70%);
+    filter:blur(28px)}
   .chooser h2{font-family:var(--serif);font-weight:480;font-size:30px;letter-spacing:-.015em;line-height:1.15;margin:0 0 4px;color:var(--ink)}
   .chooser .lead{font-size:16px;color:var(--text2);margin:0 0 22px;max-width:60ch}
+  .chooser .lead b{color:var(--ink);font-weight:500}
   .personas{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;align-items:stretch}
   /* glass over the cream and the rings; hovering a card lifts it, tints it its
      own hue, blooms the mark and reveals the description - a full preview of
      being chosen, so the click only confirms what the hand already saw */
-  .persona{position:relative;border:1px solid rgba(255,255,255,.65);border-radius:24px;padding:26px 26px 24px;
-    background:rgba(255,255,255,.34);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);text-align:left;
+  /* frosted glass: a thin white fill over a strong blur, a bright top edge, a
+     faint sheen - the colour pools and the rings show through, softened */
+  .persona{position:relative;border:1px solid rgba(255,255,255,.75);border-radius:24px;padding:26px 26px 24px;
+    background:linear-gradient(160deg,rgba(255,255,255,.42),rgba(255,255,255,.12));
+    -webkit-backdrop-filter:blur(22px) saturate(1.5);backdrop-filter:blur(22px) saturate(1.5);text-align:left;
     color:var(--ink);display:flex;flex-direction:column;min-height:330px;margin-top:44px;cursor:pointer;
-    box-shadow:rgba(75,68,57,.06) 0 6px 14px 0;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.9),rgba(75,68,57,.08) 0 10px 24px 0;
     transition:background .4s var(--ease),box-shadow .4s var(--ease),margin-top .45s var(--ease),transform .45s var(--ease),border-color .4s var(--ease)}
-  .persona:nth-child(1){--pc:#328a3b;--pg:rgba(220,239,223,.82)}
-  .persona:nth-child(2){--pc:#cc3600;--pg:rgba(251,227,214,.85)}
-  .persona:nth-child(3){--pc:#4865ff;--pg:rgba(220,228,251,.85)}
-  .persona:hover{background:var(--pg);border-color:transparent;transform:translateY(-12px) scale(1.025);
-    box-shadow:rgba(75,68,57,.22) 0 36px 64px 0}
-  .persona.sel{background:var(--pg);border-color:transparent;box-shadow:var(--sh-card);margin-top:0}
+  .persona:nth-child(1){--pc:#328a3b;--pg:linear-gradient(160deg,rgba(220,239,223,.72),rgba(220,239,223,.32))}
+  .persona:nth-child(2){--pc:#cc3600;--pg:linear-gradient(160deg,rgba(251,227,214,.74),rgba(251,227,214,.34))}
+  .persona:nth-child(3){--pc:#4865ff;--pg:linear-gradient(160deg,rgba(220,228,251,.74),rgba(220,228,251,.34))}
+  .persona:hover{background:var(--pg);border-color:rgba(255,255,255,.9);transform:translateY(-12px) scale(1.025);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.9),rgba(75,68,57,.22) 0 36px 64px 0}
+  .persona.sel{background:var(--pg);border-color:rgba(255,255,255,.9);margin-top:0;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.9),var(--sh-card)}
   .persona.sel:hover{transform:translateY(-6px) scale(1.01)}
   .persona .pn{font-family:var(--serif);font-weight:480;font-size:25px;line-height:1.12;letter-spacing:-.01em;margin:0}
   .persona .pn small{display:block;font-family:var(--sans);font-weight:500;font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--text2);margin-top:6px}
@@ -523,15 +538,14 @@
 
 <main class="wrap">
   <section class="hero">
-    <span class="rings" aria-hidden="true"><i class="r1"></i><i class="r2"></i><i class="r3"></i><i class="r4"></i></span>
-    <div class="bearing"><b>000</b> — THE CANDIDATE</div>
+    <span class="rings" aria-hidden="true"><i class="r2"></i><i class="r3"></i></span>
     <h1>Watch an <span class="v">LLM</span> read the job market honestly.</h1>
     <p class="sub">This morning's real postings, scored live by Claude, with every reason shown.</p>
-    <p class="sweepline" id="sweepline">loading this morning's sweep…</p>
 
     <div class="chooser">
+      <div class="bearing"><b>000</b> — THE CANDIDATE</div>
       <h2>Start with a candidate.</h2>
-      <p class="lead">Three real profiles, or your own resume. The same postings score differently for each of them — that is the point.</p>
+      <p class="lead" id="sweepline">Three real profiles, or your own resume. The same postings score differently for each of them — that is the point.</p>
       <div class="personas" id="personas"></div>
       <div class="runwrap">
         <button class="run" id="runBtn" type="button">Run the pipeline</button>
@@ -790,9 +804,9 @@ async function loadFeed(){
   try{
     const r = await fetch(API + "/api/feed"); feed = await r.json();
     const c = feed.counts || {};
-    $("#sweepline").innerHTML = `this morning's sweep · <b>${feed.postings.length}</b> postings · <b>${c.pass ?? "?"}</b> cleared the gates · <b>${c.reject ?? "?"}</b> rejected, each with its reason · ${feed.day}`;
+    $("#sweepline").innerHTML = `Three real profiles, or your own resume, against this morning's <b>${feed.postings.length}</b> postings (${feed.day}). The same postings score differently for each of them — that is the point.`;
   }catch(e){
-    $("#sweepline").textContent = "feed unreachable — the page can still explain itself, but scoring needs the API";
+    $("#sweepline").textContent = "The feed is unreachable right now — the page can still explain itself, but scoring needs the API.";
   }
   renderMetrics(feed);
 }

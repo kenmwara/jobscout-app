@@ -28,7 +28,7 @@
   .bearing b{color:var(--indigo);font-weight:500}
   h1{font-family:var(--serif);font-weight:480;font-size:clamp(34px,6vw,48px);line-height:1.08;letter-spacing:-.02em;margin:18px 0 8px;text-wrap:balance}
   h1 .n{color:var(--indigo)}
-  .sub{color:var(--text2);font-size:17px;margin:0 0 34px;max-width:56ch}
+  .sub{color:var(--text2);font-size:17px;margin:0 0 34px;max-width:56ch;text-wrap:pretty}
   /* one group per fit band, in the order the pipeline ranks them */
   .group{margin-top:34px}
   .group h2{font-family:var(--serif);font-weight:480;font-size:24px;letter-spacing:-.01em;margin:0 0 4px;display:flex;align-items:baseline;gap:12px}
@@ -57,7 +57,7 @@
   .empty{background:var(--surface);border-radius:18px;box-shadow:var(--sh-card);padding:44px 32px;text-align:center}
   .empty .big{font-family:var(--serif);font-weight:480;font-size:28px;letter-spacing:-.01em;margin:0 0 8px}
   .empty p{color:var(--text2);margin:0 0 22px}
-  .fine{font-size:13px;color:var(--text3);margin-top:30px;max-width:60ch}
+  .fine{font-size:13px;color:var(--text3);margin-top:30px;line-height:1.7}
   @media (max-width:560px){ .row{grid-template-columns:52px minmax(0,1fr);padding:16px} .rose{width:52px} }
 </style>
 </head>
@@ -74,13 +74,13 @@
 <main>
   <div class="bearing"><b>270</b> — SAVED</div>
   <h1 id="h1">The ones you kept.</h1>
-  <p class="sub">Grouped by how well they fit, best first. Kept in this browser only — you click Apply, JobScout never does.</p>
+  <p class="sub">Sorted by fit, best first. Applying is always your click.</p>
   <div id="list"></div>
   <div class="foot">
     <a class="btn" href="./">Score more postings</a>
     <button class="btn quiet" id="clear" type="button" hidden>Clear all saved</button>
   </div>
-  <p class="fine">Saved jobs live in this browser's storage and never leave the device. Clearing your site data clears them too.</p>
+  <p class="fine">Saved jobs are stored in this browser only and never leave your device.<br>Clearing the site's data removes them.</p>
 </main>
 </div>
 <script>
