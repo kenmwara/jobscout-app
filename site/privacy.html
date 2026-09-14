@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Privacy — JobScout</title>
+<meta name="description" content="What JobScout processes, what it keeps, and what it never touches.">
+<meta name="robots" content="index,follow">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+<link rel="stylesheet" href="fonts-embedded.css">
+<style>
+  :root{--indigo:#4865ff;--ink:#080331;--midnight:#1b1463;--canvas:#f8f3eb;--surface:#fff;
+    --text:#080331;--text2:#4a4560;--text3:#6b6780;--hair:rgba(8,3,49,.10);--info:#dce4fb;--meadow:#114e0b;
+    --serif:"Newsreader",Georgia,serif;--sans:"Inter",-apple-system,system-ui,sans-serif;
+    --sh:rgba(75,68,57,.05) 0 4px 4px 0,rgba(75,68,57,.08) 0 32px 16px 0}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--canvas);color:var(--text);font-family:var(--sans);font-size:16px;line-height:1.6;
+    background-image:radial-gradient(rgba(8,3,49,.07) 1px,transparent 1px);background-size:24px 24px;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:720px;margin:0 auto;padding:0 20px 80px}
+  header{padding:14px 0 0}
+  header .pill{display:flex;align-items:center;gap:12px;background:var(--surface);border-radius:1600px;box-shadow:var(--sh);padding:12px 18px 12px 18px}
+  .brand{font-family:var(--serif);font-weight:400;font-size:21px;letter-spacing:-.01em;color:var(--ink);text-decoration:none}
+  header nav{margin-left:auto;font-size:14px;font-weight:500}
+  header nav a{color:var(--text2);text-decoration:none}
+  header nav a:hover{color:var(--indigo)}
+  .bearing{display:inline-block;margin-top:44px;font-size:12px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);
+    background:var(--surface);border-radius:1600px;padding:9px 18px;box-shadow:var(--sh)}
+  .bearing b{color:var(--indigo);font-weight:500}
+  h1{font-family:var(--serif);font-weight:400;font-size:clamp(34px,6vw,46px);line-height:1.08;letter-spacing:-.02em;margin:18px 0 8px;text-wrap:balance}
+  .sub{color:var(--text2);font-size:17px;margin:0 0 34px}
+  h2{font-family:var(--serif);font-weight:400;font-size:27px;letter-spacing:-.015em;margin:40px 0 8px}
+  p,li{color:var(--text2)}
+  li{margin:6px 0}
+  b{color:var(--ink);font-weight:500}
+  a{color:var(--midnight)}
+  .card{background:var(--surface);border-radius:16px;box-shadow:var(--sh);padding:22px 24px;margin:18px 0}
+  .card p{margin:0}
+  .never{display:flex;flex-wrap:wrap;gap:9px;margin:14px 0 0;padding:0;list-style:none}
+  .never li{margin:0;font-size:13px;font-weight:500;color:var(--midnight);background:var(--info);border-radius:1600px;padding:6px 14px}
+  .foot{margin-top:56px;padding-top:18px;border-top:1px solid var(--hair);font-size:13px;color:var(--text3)}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header><div class="pill">
+  <svg width="26" height="26" viewBox="0 0 24 24" aria-hidden="true"><g fill="#4865ff">
+    <circle cx="12" cy="1" r="2.3"/><circle cx="19.78" cy="4.22" r="2.59"/><circle cx="23" cy="12" r="2.89"/><circle cx="19.78" cy="19.78" r="3.18"/>
+    <circle cx="12" cy="23" r="3.47"/><circle cx="4.22" cy="19.78" r="3.76"/><circle cx="1" cy="12" r="4.06"/><circle cx="4.22" cy="4.22" r="4.35"/></g></svg>
+  <a class="brand" href="./">JobScout</a>
+  <nav><a href="./">← back to the demo</a></nav>
+</div></header>
+
+<main>
+  <div class="bearing"><b>000</b> — PRIVACY</div>
+  <h1>What JobScout processes, and what it never keeps.</h1>
+  <p class="sub">This covers the web demo at jobscout.tbot.trade and the JobScout Android and iOS apps. Same backend, same rules. Effective 14 September 2026.</p>
+
+  <div class="card">
+    <p><b>The short version.</b> JobScout has no accounts, no analytics, no ads, and no third-party SDKs. The only network calls it makes are to its own API. Resume text you paste or upload is used for one scoring run and then discarded. Nothing you type is ever written to a database or a log.</p>
+    <ul class="never">
+      <li>no accounts</li><li>no analytics</li><li>no ads</li><li>no tracking SDKs</li><li>no resume storage</li><li>no selling of anything</li>
+    </ul>
+  </div>
+
+  <h2>What you give it, and where it goes</h2>
+  <p><b>A candidate profile.</b> Either one of the three built-in personas, or text you paste, or a PDF / DOCX / TXT you upload. That text travels over HTTPS to JobScout's API on Cloudflare, which passes it, together with the day's job postings, to Anthropic's Claude API to produce the scores and the cover letter. It is held in memory for the length of that request and not written anywhere by JobScout. Anthropic processes it under its <a href="https://www.anthropic.com/legal/commercial-terms" rel="noopener">API commercial terms</a>, which by default do not use API inputs to train models.</p>
+  <p><b>An uploaded file.</b> The file's bytes are converted to plain text in memory and the text is returned to your device for you to review. The file is not stored. Files over 2 MB are refused before they are read.</p>
+  <p><b>Saved jobs.</b> Postings you tap <b>Save</b> on, and the stage you set, live only on your device: your browser's local storage on the web, app-private storage on Android and iOS. They never leave the device. <b>Clear all</b> in Saved jobs deletes them; uninstalling the app does too.</p>
+
+  <h2>What the server records</h2>
+  <p>Two things, both to keep a free public demo from being abused:</p>
+  <ul>
+    <li><b>A salted SHA-256 hash of your IP address</b>, the time, and the token count and cost of each scoring run. The hash enforces a per-hour cap on runs and cannot be turned back into your address. No profile text, no resume text, no scores are stored with it.</li>
+    <li><b>A running total of the day's spend</b>, so the demo can stop calling Claude when its daily budget is used up and serve a cached showcase run instead. The cached run is one the operator seeded, not anyone's live input.</li>
+  </ul>
+  <p>Cloudflare, which hosts the API and this site, keeps its own standard request logs under <a href="https://www.cloudflare.com/privacypolicy/" rel="noopener">its privacy policy</a>.</p>
+
+  <h2>The job postings</h2>
+  <p>The feed is public job postings gathered by JobScout's own pipeline from public job boards and company career pages. It contains no personal data about you. <b>View posting</b> opens the employer's own site in your browser; from there, their privacy policy applies. JobScout never submits an application on your behalf.</p>
+
+  <h2>Permissions</h2>
+  <p>The Android app asks for one permission: <b>Internet</b>. Uploading a resume uses the system file picker, so the app never gets access to your files beyond the one you choose. It does not read contacts, location, the camera, or anything else.</p>
+
+  <h2>Children</h2>
+  <p>JobScout is a job-search tool for adults and is not directed at anyone under 16.</p>
+
+  <h2>Your choices</h2>
+  <ul>
+    <li>Use a built-in persona instead of your own resume, and nothing about you reaches the API at all.</li>
+    <li>Delete saved jobs at any time with <b>Clear all</b>, or by uninstalling.</li>
+    <li>Questions or a deletion request: <a href="mailto:ken@tbot.trade">ken@tbot.trade</a>. Since no profile text is stored, there is nothing to delete server-side, but ask anyway and you'll get a straight answer.</li>
+  </ul>
+
+  <h2>Changes</h2>
+  <p>If this policy changes, the new version is posted here with a new effective date. The code that makes these claims true is public at <a href="https://github.com/kenmwara/jobscout-app" rel="noopener">github.com/kenmwara/jobscout-app</a>.</p>
+
+  <div class="foot">JobScout is a portfolio project by Ken Mwara, Vancouver BC. Built on Cloudflare Workers, D1 and Pages, scored by Claude.</div>
+</main>
+</div>
+</body>
+</html>

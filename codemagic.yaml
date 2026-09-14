@@ -52,6 +52,46 @@ workflows:
     artifacts:
       - android/app/build/outputs/apk/debug/*.apk
 
+  # Store build: a signed AAB for Google Play plus a signed APK for the GitHub
+  # Release, both under the same upload key so the key fingerprint registered
+  # with Android developer verification covers every copy in the wild and an
+  # installed APK updates in place instead of demanding an uninstall.
+  #
+  # Runs on a `v*` tag, never on plain pushes — a release is a decision.
+  # Needs ONE thing set in the Codemagic UI: Team settings → Code signing
+  # identities → Android keystores → upload the .jks with reference name
+  # `jobscout_upload`. Codemagic then exports CM_KEYSTORE_PATH/_PASSWORD,
+  # CM_KEY_ALIAS/_PASSWORD, which app/build.gradle.kts reads.
+  android-release:
+    name: JobScout Android (signed AAB + APK)
+    triggering:
+      events:
+        - tag
+      tag_patterns:
+        - pattern: 'v*'
+          include: true
+      cancel_previous_builds: true
+    instance_type: mac_mini_m2
+    max_build_duration: 30
+    environment:
+      java: 17
+      android_signing:
+        - jobscout_upload
+    scripts:
+      - name: Build signed release
+        script: |
+          cd android
+          gradle wrapper --gradle-version 8.9 --no-daemon
+          ./gradlew --no-daemon bundleRelease assembleRelease
+          mv app/build/outputs/bundle/release/app-release.aab "app/build/outputs/bundle/release/JobScout-$BUILD_NUMBER.aab"
+          mv app/build/outputs/apk/release/app-release.apk app/build/outputs/apk/release/JobScout-release.apk
+          # the fingerprint to paste into Play Console → Android developer verification
+          keytool -printcert -jarfile app/build/outputs/apk/release/JobScout-release.apk | grep -E 'SHA256|SHA1' > app/build/outputs/apk/release/signing-fingerprints.txt
+    artifacts:
+      - android/app/build/outputs/bundle/release/*.aab
+      - android/app/build/outputs/apk/release/*.apk
+      - android/app/build/outputs/apk/release/signing-fingerprints.txt
+
   # Portfolio screenshots: build, install on an emulator, drive the real
   # pipeline once, capture each stage (tools/native_screens.sh).
   #

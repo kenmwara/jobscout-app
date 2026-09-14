@@ -13,13 +13,30 @@ android {
         applicationId = "trade.tbot.jobscout"
         minSdk = 26
         targetSdk = 35
-        versionCode = 1
-        versionName = "1.0"
+        // Play rejects any upload whose versionCode is not higher than the last —
+        // Codemagic's BUILD_NUMBER only ever goes up, so it IS the versionCode.
+        versionCode = System.getenv("BUILD_NUMBER")?.toIntOrNull() ?: 1
+        versionName = "0.5.0"
+    }
+
+    // Codemagic injects CM_KEYSTORE_* from the `android_signing` reference in
+    // codemagic.yaml. Absent (a local or debug build) the config is empty and
+    // only assembleRelease/bundleRelease would notice.
+    signingConfigs {
+        create("release") {
+            System.getenv("CM_KEYSTORE_PATH")?.let { ks ->
+                storeFile = file(ks)
+                storePassword = System.getenv("CM_KEYSTORE_PASSWORD")
+                keyAlias = System.getenv("CM_KEY_ALIAS")
+                keyPassword = System.getenv("CM_KEY_PASSWORD")
+            }
+        }
     }
 
     buildTypes {
         release {
             isMinifyEnabled = false
+            signingConfig = signingConfigs.getByName("release")
         }
     }
     compileOptions {
