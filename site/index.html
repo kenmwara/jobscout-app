@@ -440,6 +440,10 @@
   .spin{width:14px;height:14px;border:2px solid var(--info);border-top-color:var(--indigo);border-radius:50%;flex:none}
   @media (prefers-reduced-motion:no-preference){.spin{animation:sp .7s linear infinite}}
   @keyframes sp{to{transform:rotate(360deg)}}
+  /* while Claude scores, Claude's own mark breathes in place of the spinner */
+  .cmark{width:22px;height:22px;border-radius:50%;flex:none}
+  @media (prefers-reduced-motion:no-preference){.cmark{animation:breathe 1.4s ease-in-out infinite}}
+  @keyframes breathe{50%{transform:scale(.82);opacity:.6}}
   .banner{border-radius:var(--card);padding:15px 18px;font-size:14.5px;margin:16px auto 0;text-align:left;max-width:1040px}
   .banner.warn{background:rgba(255,109,57,.12);border:1px solid rgba(204,54,0,.3);color:var(--ember-deep)}
   .banner.err{background:rgba(204,54,0,.1);border:1px solid rgba(204,54,0,.35);color:var(--ember-deep)}
@@ -571,7 +575,7 @@
     <div class="bearing"><b>090</b> — SCORING</div>
     <h2>What Claude makes of them</h2>
     <p class="note" id="scoreNote">A fit from 0 to 100, a verdict in plain words, the strongest point and the weakest. The rose lights with the score; the top match gets a cover letter grounded in the profile alone.</p>
-    <div class="status" id="scoreStatus"><span class="spin"></span><span>scoring with Claude…</span></div>
+    <div class="status" id="scoreStatus"><img class="cmark" src="claude-mark.png" alt="" width="22" height="22"><span>scoring with Claude…</span></div>
     <div class="scores" id="scores"></div>
   </section>
 
