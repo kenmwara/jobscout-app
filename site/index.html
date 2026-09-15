@@ -929,7 +929,7 @@ async function draftLetter(card, posting, profile){
       div.textContent = d.letter;
       const lm = document.createElement("div");
       lm.className = "lm";
-      lm.textContent = `grounded only in the profile shown · ${d.meta?.model}`;
+      lm.textContent = "grounded only in the profile shown";
       div.appendChild(lm);
       card.appendChild(div);
       btn.remove();
