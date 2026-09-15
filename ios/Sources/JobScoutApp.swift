@@ -194,21 +194,11 @@ final class DemoVM: ObservableObject {
             let r = try await Api.tailor(profile: profileText, posting: posting)
             if r.breaker || r.error != nil { letterText = r.detail ?? "Unavailable." } else {
                 var t = r.summary
-                if !r.bullets.isEmpty { t += "
-
-EXPERIENCE, AIMED AT THIS POSTING
-" + r.bullets.map { "• " + $0 }.joined(separator: "
-") }
-                t += "
-
-WHAT THE POSTING ASKS FOR THAT THE PROFILE DOES NOT SAY
-"
+                if !r.bullets.isEmpty { t += "\n\nEXPERIENCE, AIMED AT THIS POSTING\n" + r.bullets.map { "• " + $0 }.joined(separator: "\n") }
+                t += "\n\nWHAT THE POSTING ASKS FOR THAT THE PROFILE DOES NOT SAY\n"
                 t += r.gaps.isEmpty ? "Nothing — the profile covers what the posting asks for."
-                                    : r.gaps.map { "– \($0.asks): \($0.note)" }.joined(separator: "
-")
-                t += "
-
-Reworded from the profile only, nothing added. The gaps are yours to fill, and only if true."
+                                    : r.gaps.map { "– \($0.asks): \($0.note)" }.joined(separator: "\n")
+                t += "\n\nReworded from the profile only, nothing added. The gaps are yours to fill, and only if true."
                 letterText = t
             }
         } catch {

@@ -973,8 +973,7 @@ async function tailorResume(card, posting, profile){
           d.gaps.map(g => `<li><b>${esc(g.asks)}</b> — ${esc(g.note)}</li>`).join("")}</ul>` : "<h4>Gaps</h4><p>Nothing the posting asks for is missing from the profile.</p>"}
         <div class="lm">reworded from the profile above, nothing added — the gaps are yours to fill, and only if true<a>copy</a></div>`;
       div.querySelector(".lm a").onclick = async ev => {
-        const text = [d.summary, "", ...(d.bullets || []).map(b => "• " + b)].join("
-");
+        const text = [d.summary, "", ...(d.bullets || []).map(b => "• " + b)].join("\n");
         try{ await navigator.clipboard.writeText(text); ev.target.textContent = "copied"; }catch{ ev.target.textContent = "select and copy"; }
       };
       card.appendChild(div);

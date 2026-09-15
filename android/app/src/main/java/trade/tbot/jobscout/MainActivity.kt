@@ -231,20 +231,11 @@ class DemoVm(app: Application) : AndroidViewModel(app) {
                 .onSuccess { r ->
                     val text = if (r.breaker || r.error != null) (r.detail ?: "Unavailable.") else buildString {
                         append(r.summary)
-                        if (r.bullets.isNotEmpty()) { append("
-
-EXPERIENCE, AIMED AT THIS POSTING
-"); r.bullets.forEach { append("• ").append(it).append('
-') } }
-                        append("
-WHAT THE POSTING ASKS FOR THAT THE PROFILE DOES NOT SAY
-")
-                        if (r.gaps.isEmpty()) append("Nothing — the profile covers what the posting asks for.
-")
-                        r.gaps.forEach { append("– ").append(it.asks).append(": ").append(it.note).append('
-') }
-                        append("
-Reworded from the profile only, nothing added. The gaps are yours to fill, and only if true.")
+                        if (r.bullets.isNotEmpty()) { append("\n\nEXPERIENCE, AIMED AT THIS POSTING\n"); r.bullets.forEach { append("• ").append(it).append('\n') } }
+                        append("\nWHAT THE POSTING ASKS FOR THAT THE PROFILE DOES NOT SAY\n")
+                        if (r.gaps.isEmpty()) append("Nothing — the profile covers what the posting asks for.\n")
+                        r.gaps.forEach { append("– ").append(it.asks).append(": ").append(it.note).append('\n') }
+                        append("\nReworded from the profile only, nothing added. The gaps are yours to fill, and only if true.")
                     }
                     _ui.update { it.copy(letterBusy = false, letterText = text) }
                 }
