@@ -72,7 +72,7 @@ operated by one person.
 The same demo also ships as **fully native mobile apps** — Kotlin/Jetpack
 Compose on Android and Swift/SwiftUI on iOS, no webview — built green in
 Codemagic CI against the same guarded API. The Android app installs on any phone today —
-**download: [github.com/kenmwara/jobscout-app/releases/latest](https://github.com/kenmwara/jobscout-app/releases/latest/download/JobScout-debug.apk)**
+**download: [github.com/kenmwara/jobscout-app/releases/latest](https://github.com/kenmwara/jobscout-app/releases/latest/download/JobScout-release.apk)**
 (sideload, Android 8+; checksum in the release notes); iOS device distribution
 awaits an Apple Developer account.
 

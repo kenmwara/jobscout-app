@@ -96,7 +96,7 @@ identical on the web, on Android and on iOS. Nothing rotates in it, which is
 deliberate: the dial it replaced turned a needle, and a rotation is the one
 thing that can land off-canvas when its pivot is wrong.
 
-**Try it on Android:** [download the APK](https://github.com/kenmwara/jobscout-app/releases/latest/download/JobScout-debug.apk) (debug build, Android 8+, sideload; SHA-256 in the release notes) — the link always serves the newest build.
+**Try it on Android:** [download the APK](https://github.com/kenmwara/jobscout-app/releases/latest/download/JobScout-release.apk) (signed build, Android 8+, sideload; SHA-256 in the release notes) — the link always serves the newest build.
 
 Both apps carry the full feature set: upload a resume (PDF/DOCX/TXT) instead of typing it, open the original posting from any score card, and keep the ones worth keeping — **Save** puts a posting in your list, and only then does it get a stage to move through (applied → pending → responded → interviewed → callback). Nothing is sent anywhere and the app never submits an application.
 
