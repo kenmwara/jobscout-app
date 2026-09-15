@@ -24,12 +24,29 @@ let personas = [
         profile: "Data scientist in Berlin, Germany (EU work authorization only). 5 years: Python, pandas, scikit-learn, PyTorch, SQL, dbt; production ML for churn and pricing at a marketplace. Strong experimentation/causal inference. Looking for: senior data science or ML engineer roles, remote within EU or hybrid Berlin. No relocation."),
 ]
 
+// The Kenya market (2026-09-15): the same sweep re-gated for a hire based in Kenya,
+// its own candidates and rubric. One app, one bundle; the market is a switch.
+let personasKE = [
+    Persona(id: "wanjiru", name: "Wanjiru — Software Developer (graduate)",
+        desc: "Nairobi · BSc CS 2025 · Ajira-trained · Python/JS/SQL",
+        profile: "Software developer in Nairobi, Kenya (Kenyan citizen; remote-only; East Africa Time, UTC+3). BSc Computer Science 2025, University of Nairobi. Ajira Digital web-development track. Two internships: Django/PostgreSQL back-end at a fintech startup, React front-end at a digital agency. Python, JavaScript, SQL, Git, basic AWS. Looking for: junior or entry-level software, QA or support-engineering roles, fully remote, contractor or employee."),
+    Persona(id: "brian", name: "Brian — Customer Support Specialist",
+        desc: "Nakuru · 3 yrs remote support · Zendesk/Intercom · English + Swahili",
+        profile: "Customer support specialist in Nakuru, Kenya (remote-only; East Africa Time, UTC+3). 3 years of remote support for a US SaaS company via Upwork and for a Kenyan BPO: Zendesk, Intercom, HubSpot; email, chat and phone; CSAT 96%. Ajira Digital certified virtual assistant. Fluent English and Swahili. Looking for: remote customer support, customer success or virtual-assistant roles covering EMEA or US-morning hours."),
+    Persona(id: "amina", name: "Amina — Accountant",
+        desc: "Mombasa · CPA-K · QuickBooks/Xero · remote bookkeeping",
+        profile: "Accountant in Mombasa, Kenya (CPA-K; remote-only; East Africa Time, UTC+3). 6 years: bookkeeping, month-end close, payroll, VAT and tax filings; QuickBooks Online, Xero, Excel, Google Sheets. Two years of remote bookkeeping for UK and Kenyan small businesses. Looking for: remote accounting, bookkeeping or finance-operations roles; contractor arrangements are fine."),
+]
+let markets = [("ca", "Canada"), ("ke", "Kenya")]
+func personasFor(_ market: String) -> [Persona] { market == "ke" ? personasKE : personas }
+
 enum Phase { case idle, gates, scoring, done }
 
 @MainActor
 final class DemoVM: ObservableObject {
     @Published var feed: Feed?
     @Published var personaIdx = 0
+    @Published var market = "ca"
     @Published var resume = ""          // pasted resume text — in-memory only, never persisted
     @Published var phase = Phase.idle
     @Published var gatesShown = 0
@@ -51,13 +68,13 @@ final class DemoVM: ObservableObject {
     var usingOwn: Bool { resume.trimmingCharacters(in: .whitespacesAndNewlines).count > 40 }
     var profileText: String {
         let own = resume.trimmingCharacters(in: .whitespacesAndNewlines)
-        return own.count > 40 ? own : personas[personaIdx].profile
+        return own.count > 40 ? own : personasFor(market)[personaIdx].profile
     }
 
     func load() async {
         loadTracker()
         error = nil
-        do { feed = try await Api.feed() }
+        do { feed = try await Api.feed(market: market) }
         catch { self.error = Self.friendly(error) }
     }
 
@@ -105,6 +122,13 @@ final class DemoVM: ObservableObject {
         uploading = false
     }
 
+    /// Switching market swaps the feed, the candidates and the rubric; a run in progress is left alone.
+    func setMarket(_ m: String) async {
+        guard m != market, phase != .gates, phase != .scoring else { return }
+        market = m; personaIdx = 0; feed = nil; phase = .idle; scores = []; banner = nil
+        await load()
+    }
+
     func run() async {
         guard let feed, phase != .gates, phase != .scoring else { return }
         phase = .gates; gatesShown = 0; scores = []; meta = nil; banner = nil; fromCache = false
@@ -115,7 +139,7 @@ final class DemoVM: ObservableObject {
         phase = .scoring
         do {
             let r = try await Api.score(profile: profileText,
-                                        postings: Array(feed.passers.prefix(8)))
+                                        postings: Array(feed.passers.prefix(8)), market: market)
             if r.breaker {
                 banner = r.detail
                 scores = r.cached?.scores ?? []
@@ -257,7 +281,13 @@ struct ContentView: View {
 
                 StageHeading(bearing: "000", label: "THE CANDIDATE", title: "Start with a candidate.",
                              note: "Three profiles or your own resume. Same jobs, different scores.")
-                ForEach(Array(personas.enumerated()), id: \.element.id) { i, p in
+                HStack(spacing: 8) {
+                    ForEach(markets, id: \.0) { id, label in
+                        PillButton(text: label, filled: id == vm.market) { Task { await vm.setMarket(id) } }
+                    }
+                    Spacer(minLength: 0)
+                }
+                ForEach(Array(personasFor(vm.market).enumerated()), id: \.element.id) { i, p in
                     personaCard(p, index: i, selected: i == vm.personaIdx && !vm.usingOwn)
                         .onTapGesture { vm.personaIdx = i }
                 }

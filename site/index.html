@@ -655,10 +655,22 @@
 // the old host and the www form both land on the canonical apex, path intact
 if (/(^www\.jobscout\.page$|jobscout\.tbot\.trade$)/.test(location.hostname)) location.replace("https://jobscout.page" + location.pathname + location.search);
 const API = "https://jobscout-app-api.kenmwara.workers.dev";
+/* Markets: "ca" is the operator's own hunt; "ke" is the Kenya market — the same
+   sweep re-gated for a hire based in Kenya, its own personas and rubric.
+   nairobi.jobscout.page opens on it; ?market=ke does too, for testing. */
+const MARKET = (new URLSearchParams(location.search).get("market") || (/^(nairobi|ke)\./.test(location.hostname) ? "ke" : "ca")).toLowerCase() === "ke" ? "ke" : "ca";
 const $ = s => document.querySelector(s);
 const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-const PERSONAS = [
+const PERSONAS_KE = [
+  { id:"wanjiru", name:"Wanjiru", role:"Software Developer (graduate)", desc:"Nairobi · BSc CS 2025 · Ajira-trained · Python/JS/SQL",
+    profile:"Software developer in Nairobi, Kenya (Kenyan citizen; remote-only; East Africa Time, UTC+3). BSc Computer Science 2025, University of Nairobi. Ajira Digital web-development track. Two internships: Django/PostgreSQL back-end at a fintech startup, React front-end at a digital agency. Python, JavaScript, SQL, Git, basic AWS. Looking for: junior or entry-level software, QA or support-engineering roles, fully remote, contractor or employee." },
+  { id:"brian", name:"Brian", role:"Customer Support Specialist", desc:"Nakuru · 3 yrs remote support · Zendesk/Intercom · English + Swahili",
+    profile:"Customer support specialist in Nakuru, Kenya (remote-only; East Africa Time, UTC+3). 3 years of remote support for a US SaaS company via Upwork and for a Kenyan BPO: Zendesk, Intercom, HubSpot; email, chat and phone; CSAT 96%. Ajira Digital certified virtual assistant. Fluent English and Swahili. Looking for: remote customer support, customer success or virtual-assistant roles covering EMEA or US-morning hours." },
+  { id:"amina", name:"Amina", role:"Accountant", desc:"Mombasa · CPA-K · QuickBooks/Xero · remote bookkeeping",
+    profile:"Accountant in Mombasa, Kenya (CPA-K; remote-only; East Africa Time, UTC+3). 6 years: bookkeeping, month-end close, payroll, VAT and tax filings; QuickBooks Online, Xero, Excel, Google Sheets. Two years of remote bookkeeping for UK and Kenyan small businesses. Looking for: remote accounting, bookkeeping or finance-operations roles; contractor arrangements are fine." }
+];
+const PERSONAS_CA = [
   { id:"maya", name:"Maya", role:"Senior Platform Engineer", desc:"Vancouver · Canadian PR · remote-only · Python/TypeScript, Cloudflare, LLM orchestration",
     profile:"Senior platform engineer in Vancouver, BC (Canadian PR; no US work authorization — US roles must allow remote-from-Canada). 8 years: Python, TypeScript, Cloudflare Workers/D1, DigitalOcean, FastAPI, nginx. Builds and operates LLM-orchestrated production systems (Claude API) end-to-end solo: trading platform, audit pipelines, edge APIs. Wants: senior/staff platform or AI-infrastructure roles, fully remote." },
   { id:"dev", name:"Dev", role:"New-grad SWE", desc:"Toronto · React/Node internships · hybrid OK · first full-time role",
@@ -666,6 +678,8 @@ const PERSONAS = [
   { id:"ingrid", name:"Ingrid", role:"Data Scientist", desc:"Berlin · EU work auth · Python/ML · remote EU or hybrid Berlin",
     profile:"Data scientist in Berlin, Germany (EU work authorization only). 5 years: Python, pandas, scikit-learn, PyTorch, SQL, dbt; production ML for churn and pricing at a marketplace. Strong experimentation/causal inference. Looking for: senior data science or ML engineer roles, remote within EU or hybrid Berlin. No relocation." },
 ];
+const PERSONAS = MARKET === "ke" ? PERSONAS_KE : PERSONAS_CA;
+if (MARKET === "ke") document.querySelector(".brand small").textContent = "for job seekers in Kenya";
 
 const BAND = f => f >= 80 ? ["auto","#114e0b"] : f >= 70 ? ["ping","#1b1463"] : f >= 55 ? ["unsure","#cc3600"] : ["near-miss","#333333"];
 
@@ -814,7 +828,7 @@ function renderTiles(){
 
 async function loadFeed(){
   try{
-    const r = await fetch(API + "/api/feed"); feed = await r.json();
+    const r = await fetch(API + "/api/feed?market=" + MARKET); feed = await r.json();
     const c = feed.counts || {};
     $("#sweepline").innerHTML = `Three profiles or your own resume, against this morning's <b>${feed.postings.length}</b> postings. Same jobs, different scores.`;
   }catch(e){
@@ -874,7 +888,7 @@ async function runPipeline(){
   try{
     const r = await fetch(API + "/api/score", {
       method: "POST", headers: { "content-type": "application/json" },
-      body: JSON.stringify({ profile, postings: passers }),
+      body: JSON.stringify({ profile, postings: passers, market: MARKET }),
     });
     data = await r.json();
     if (r.status === 429) { banner("warn", "Rate limit reached for this hour — the guard is doing its job. Try again in a bit."); finish(); return; }

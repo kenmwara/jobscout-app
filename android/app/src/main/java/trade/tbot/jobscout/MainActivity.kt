@@ -73,6 +73,23 @@ val PERSONAS = listOf(
         "Data scientist in Berlin, Germany (EU work authorization only). 5 years: Python, pandas, scikit-learn, PyTorch, SQL, dbt; production ML for churn and pricing at a marketplace. Strong experimentation/causal inference. Looking for: senior data science or ML engineer roles, remote within EU or hybrid Berlin. No relocation."),
 )
 
+// The Kenya market (2026-09-15): the same sweep re-gated for a hire based in Kenya,
+// its own candidates and rubric. One app, one package; the market is a switch.
+val PERSONAS_KE = listOf(
+    Persona("wanjiru", "Wanjiru — Software Developer (graduate)",
+        "Nairobi · BSc CS 2025 · Ajira-trained · Python/JS/SQL",
+        "Software developer in Nairobi, Kenya (Kenyan citizen; remote-only; East Africa Time, UTC+3). BSc Computer Science 2025, University of Nairobi. Ajira Digital web-development track. Two internships: Django/PostgreSQL back-end at a fintech startup, React front-end at a digital agency. Python, JavaScript, SQL, Git, basic AWS. Looking for: junior or entry-level software, QA or support-engineering roles, fully remote, contractor or employee."),
+    Persona("brian", "Brian — Customer Support Specialist",
+        "Nakuru · 3 yrs remote support · Zendesk/Intercom · English + Swahili",
+        "Customer support specialist in Nakuru, Kenya (remote-only; East Africa Time, UTC+3). 3 years of remote support for a US SaaS company via Upwork and for a Kenyan BPO: Zendesk, Intercom, HubSpot; email, chat and phone; CSAT 96%. Ajira Digital certified virtual assistant. Fluent English and Swahili. Looking for: remote customer support, customer success or virtual-assistant roles covering EMEA or US-morning hours."),
+    Persona("amina", "Amina — Accountant",
+        "Mombasa · CPA-K · QuickBooks/Xero · remote bookkeeping",
+        "Accountant in Mombasa, Kenya (CPA-K; remote-only; East Africa Time, UTC+3). 6 years: bookkeeping, month-end close, payroll, VAT and tax filings; QuickBooks Online, Xero, Excel, Google Sheets. Two years of remote bookkeeping for UK and Kenyan small businesses. Looking for: remote accounting, bookkeeping or finance-operations roles; contractor arrangements are fine."),
+)
+
+val MARKETS = listOf("ca" to "Canada", "ke" to "Kenya")
+fun personasFor(market: String) = if (market == "ke") PERSONAS_KE else PERSONAS
+
 enum class Phase { IDLE, GATES, SCORING, DONE }
 
 /** How many gate verdicts stream before the rest go behind a tap. Matches the web. */
@@ -84,6 +101,7 @@ const val SAVED_SHOWN = 4
 data class Ui(
     val feed: Feed? = null,
     val personaIdx: Int = 0,
+    val market: String = "ca",
     val resume: String = "",          // pasted/extracted resume text — in-memory only, never persisted
     val uploading: Boolean = false,
     val uploadStatus: String? = null,
@@ -110,7 +128,7 @@ class DemoVm(app: Application) : AndroidViewModel(app) {
     fun loadFeed() {
         _ui.update { it.copy(error = null) }
         viewModelScope.launch {
-            runCatching { Api.feed() }
+            runCatching { Api.feed(_ui.value.market) }
                 .onSuccess { f -> _ui.update { it.copy(feed = f, error = null) } }
                 .onFailure { e -> _ui.update { it.copy(error = friendlyError(e)) } }
         }
@@ -133,12 +151,19 @@ class DemoVm(app: Application) : AndroidViewModel(app) {
     }
 
     fun pick(i: Int) = _ui.update { it.copy(personaIdx = i) }
+
+    /** Switching market swaps the feed, the candidates and the rubric; a run in progress is left alone. */
+    fun setMarket(m: String) {
+        if (m == _ui.value.market) return
+        _ui.update { it.copy(market = m, personaIdx = 0, feed = null, phase = Phase.IDLE, scores = emptyList(), banner = null) }
+        loadFeed()
+    }
     fun setResume(s: String) = _ui.update { it.copy(resume = s.take(6000)) }
 
     /** Same rule as the web demo: pasted text wins once it is longer than 40 chars, else the persona. */
     private fun profileText(): String {
         val own = _ui.value.resume.trim()
-        return if (own.length > 40) own else PERSONAS[_ui.value.personaIdx].profile
+        return if (own.length > 40) own else personasFor(_ui.value.market)[_ui.value.personaIdx].profile
     }
 
     /** Storage Access Framework pick → worker /api/extract → resume text. Bytes live in memory only. */
@@ -191,7 +216,7 @@ class DemoVm(app: Application) : AndroidViewModel(app) {
             }
             _ui.update { it.copy(phase = Phase.SCORING) }
             val profile = profileText()
-            runCatching { Api.score(profile, feed.passers.take(8)) }
+            runCatching { Api.score(profile, feed.passers.take(8), _ui.value.market) }
                 .onSuccess { r ->
                     when {
                         r.breaker -> {
@@ -305,7 +330,12 @@ fun DemoScreen(vm: DemoVm = viewModel()) {
             item { Hero(feed) }
 
             item { Stage("000", "THE CANDIDATE", "Start with a candidate.", "Three profiles or your own resume. Same jobs, different scores.") }
-            itemsIndexed(PERSONAS) { i, p ->
+            item {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    MARKETS.forEach { (id, label) -> PillButton(label, filled = id == ui.market) { vm.setMarket(id) } }
+                }
+            }
+            itemsIndexed(personasFor(ui.market)) { i, p ->
                 PersonaCard(p, index = i, selected = i == ui.personaIdx && !usingOwn) { vm.pick(i) }
             }
             item {

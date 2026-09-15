@@ -111,7 +111,7 @@ data class ExtractResponse(
     val detail: String? = null,
 )
 
-@Serializable private data class ScoreBody(val profile: String, val postings: List<Posting>)
+@Serializable private data class ScoreBody(val profile: String, val postings: List<Posting>, val market: String)
 @Serializable private data class LetterBody(val profile: String, val posting: Posting)
 
 object Api {
@@ -135,13 +135,13 @@ object Api {
         }
     }
 
-    suspend fun feed(): Feed =
-        json.decodeFromString(call(Request.Builder().url("$API_BASE/api/feed").build()))
+    suspend fun feed(market: String = "ca"): Feed =
+        json.decodeFromString(call(Request.Builder().url("$API_BASE/api/feed?market=$market").build()))
 
-    suspend fun score(profile: String, postings: List<Posting>): ScoreResponse =
+    suspend fun score(profile: String, postings: List<Posting>, market: String = "ca"): ScoreResponse =
         json.decodeFromString(call(
             Request.Builder().url("$API_BASE/api/score")
-                .post(json.encodeToString(ScoreBody(profile, postings)).toRequestBody(jsonMedia))
+                .post(json.encodeToString(ScoreBody(profile, postings, market)).toRequestBody(jsonMedia))
                 .build()
         ))
 

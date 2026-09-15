@@ -66,13 +66,29 @@ async function recordRun(env, key, tokensIn, tokensOut, costUsd) {
   ).bind(key, Date.now(), day, tokensIn, tokensOut, costUsd).run();
 }
 
-async function scoreOne(env, profile, posting) {
+// Markets: the same guarded pipeline, a different sweep and rubric. "ca" is the
+// operator's own hunt; "ke" is the Kenya market (2026-09-15).
+const MARKETS = new Set(["ca", "ke"]);
+const market = m => (MARKETS.has(String(m || "").toLowerCase()) ? String(m).toLowerCase() : "ca");
+
+// What changes in the rubric for a Kenya-based candidate: eligibility to be
+// hired from Kenya comes first, graduates are scored against entry-level
+// expectations, and training counts as evidence. Nothing else is softened.
+const RUBRIC_KE =
+  "MARKET: Kenya. The candidate is based in Kenya (East Africa Time, UTC+3, a full working-day overlap with Europe). " +
+  "First question: can this employer hire someone based in Kenya (worldwide, EMEA, Africa, or contractor-friendly)? " +
+  "A US-only, EU-only or single-country lock elsewhere is a hard no however strong the profile — say so plainly. " +
+  "Score a graduate or entry-level candidate against entry-level expectations, not senior ones; certificates, " +
+  "bootcamps and programme training (e.g. Ajira Digital) count as evidence of skill. The EMEA timezone overlap is an asset. ";
+
+async function scoreOne(env, profile, posting, m = "ca") {
   const system = [
     "You are JobScout's scoring rubric. Score fit 0-100 for THIS candidate profile",
     "against THIS posting. Anchors: clean title+seniority+remote-eligibility match",
     "baselines ~70; niche alignment is a +5..15 bonus, never a requirement;",
     "unspecified salary is neutral. Be honest — most postings are a poor fit and",
     "should score low, with the reason stated plainly.",
+    m === "ke" ? RUBRIC_KE : "",
     'Reply ONLY with JSON: {"fit": <int>, "verdict": "<one sentence>",',
     '"strongest": "<the single best alignment>", "weakest": "<the single biggest gap>"}',
   ].join(" ");
@@ -196,9 +212,13 @@ export default {
     }
 
     if (url.pathname === "/api/feed") {
+      // ponytail: markets share the `feed` table by suffixing the day key ("2026-09-15#ke");
+      // a market column would need a new primary key. Upgrade path: (day, market) PK.
+      const m = market(url.searchParams.get("market"));
       const { results } = await env.DB.prepare(
-        "SELECT payload FROM feed ORDER BY day DESC LIMIT 1"
-      ).all();
+        m === "ca" ? "SELECT payload FROM feed WHERE day NOT LIKE '%#%' ORDER BY day DESC LIMIT 1"
+                   : "SELECT payload FROM feed WHERE day LIKE ? ORDER BY day DESC LIMIT 1"
+      ).bind(...(m === "ca" ? [] : [`%#${m}`])).all();
       if (!results?.length) return json(200, { day: null, postings: [] });
       return json(200, JSON.parse(results[0].payload));
     }
@@ -223,11 +243,12 @@ export default {
       const body = await request.json().catch(() => ({}));
       const profile = String(body.profile || "").slice(0, 6000);
       const postings = Array.isArray(body.postings) ? body.postings.slice(0, 8) : [];
+      const m = market(body.market);
       if (!profile || !postings.length)
         return json(400, { error: "bad_request", detail: "profile + postings[] required" });
 
       // concurrent: 8 sequential Haiku calls were 16-40 s of silence → client read timeouts
-      const results = await Promise.all(postings.map(p => scoreOne(env, profile, p).catch(() => FAILED)));
+      const results = await Promise.all(postings.map(p => scoreOne(env, profile, p, m).catch(() => FAILED)));
       // Honest degradation: a per-posting failure is a fit-0 row, but if EVERY call failed the run
       // did not happen — say so rather than returning eight confident zeroes.
       if (results.length && results.every(s => s === FAILED))
@@ -320,11 +341,12 @@ export default {
       if (request.headers.get("x-feed-secret") !== env.FEED_SECRET)
         return json(401, { error: "unauthorized" });
       const payload = await request.text();
-      const day = new Date().toISOString().slice(0, 10);
+      const m = market(url.searchParams.get("market"));
+      const day = new Date().toISOString().slice(0, 10) + (m === "ca" ? "" : `#${m}`);
       await env.DB.prepare(
         "INSERT OR REPLACE INTO feed (day, payload) VALUES (?,?)"
       ).bind(day, payload).run();
-      return json(200, { ok: true, day });
+      return json(200, { ok: true, day, market: m });
     }
 
     return json(404, { error: "not_found" });

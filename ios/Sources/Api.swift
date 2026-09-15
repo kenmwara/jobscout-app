@@ -98,14 +98,15 @@ enum Api {
         return try JSONDecoder().decode(R.self, from: data)
     }
 
-    static func feed() async throws -> Feed {
-        let (data, _) = try await URLSession.shared.data(from: apiBase.appendingPathComponent("api/feed"))
+    static func feed(market: String = "ca") async throws -> Feed {
+        let url = URL(string: "api/feed?market=\(market)", relativeTo: apiBase)!
+        let (data, _) = try await URLSession.shared.data(from: url)
         return try JSONDecoder().decode(Feed.self, from: data)
     }
 
-    static func score(profile: String, postings: [Posting]) async throws -> ScoreResponse {
-        struct Body: Encodable { let profile: String; let postings: [Posting] }
-        return try await post("api/score", Body(profile: profile, postings: postings))
+    static func score(profile: String, postings: [Posting], market: String = "ca") async throws -> ScoreResponse {
+        struct Body: Encodable { let profile: String; let postings: [Posting]; let market: String }
+        return try await post("api/score", Body(profile: profile, postings: postings, market: market))
     }
 
     static func letter(profile: String, posting: Posting) async throws -> LetterResponse {
