@@ -280,7 +280,7 @@ export default {
         "the bullet names the skill and stops. " +
         "gaps: up to 5 things the posting asks for that the profile does not cover; asks = the requirement in the posting's words; " +
         "note = one sentence: what to add ONLY if it is true of them — or, where the profile says outright that they lack it, " +
-        "say that plainly and do not suggest adding it. Empty arrays are fine.",
+        "say that plainly and do not suggest adding it. The posting summary may be cut short; a truncated description is never a gap. Empty arrays are fine.",
         `PROFILE:\n${profile}\n\nPOSTING:\n${postingText(p)}`);
       if (d instanceof Response) return d;
       const out = parseJson(d.text);
