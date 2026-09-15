@@ -84,7 +84,8 @@ gates, collapsed lists, one hue per candidate:
 - **`android/`** — Kotlin + Jetpack Compose (Material 3, ViewModel/StateFlow,
   kotlinx-serialization, OkHttp; the rose is a Compose `Canvas` in
   [`Rose.kt`](android/app/src/main/java/trade/tbot/jobscout/Rose.kt)).
-  Built in CI as a debug APK.
+  Built in CI as a debug APK on every push, and as a signed AAB + APK on a
+  `v*` tag for Google Play and the GitHub release.
 - **`ios/`** — Swift + SwiftUI (async/await, `ObservableObject`, Codable; the
   rose is composed `Circle`s in [`RoseView.swift`](ios/Sources/RoseView.swift)).
   The `.xcodeproj` is generated in CI from [`project.yml`](ios/project.yml)
@@ -100,10 +101,15 @@ thing that can land off-canvas when its pivot is wrong.
 
 Both apps carry the full feature set: upload a resume (PDF/DOCX/TXT) instead of typing it, open the original posting from any score card, and keep the ones worth keeping — **Save** puts a posting in your list, and only then does it get a stage to move through (applied → pending → responded → interviewed → callback). Nothing is sent anywhere and the app never submits an application.
 
-CI is [`codemagic.yaml`](codemagic.yaml), and both workflows build green:
-`android-debug` produces an installable APK; `ios-simulator` proves the
-SwiftUI app compiles and links (device distribution waits on an Apple
-Developer account).
+CI is [`codemagic.yaml`](codemagic.yaml), and all three workflows build green:
+`android-debug` produces an installable APK on every Android push;
+`android-release` runs on a `v*` tag and signs an AAB for Google Play plus the
+APK the GitHub release carries, both under the same upload key, so a
+sideloaded copy updates in place when the Play version lands; `ios-simulator`
+proves the SwiftUI app compiles and links (device distribution waits on an
+Apple Developer account). The Play listing is in **closed testing** (Play's
+gate for a new personal account: 12 testers over 14 days before production);
+the app targets Android 16 (API 36), which Play requires of new apps.
 
 <p>
   <img src="docs/img/native/android-01-candidate.jpg" height="470" alt="JobScout on Android — the candidate chooser, each card carrying the mark in its own hue; the chosen one blooms">
@@ -130,6 +136,7 @@ Both halves deploy from a push to `main`, and neither needs a command run by han
 |---|---|---|
 | `site/**` | push | GitHub Action → `wrangler pages deploy` |
 | `android/**`, `ios/**` | push | GitHub webhook → Codemagic |
+| signed AAB + APK | `v*` tag (a GitHub release creates one) | Codemagic `android-release`, `tbot_keystore` |
 | `worker/**` | manual | `cd worker && wrangler deploy` |
 
 The site's Pages project is **direct upload**, and Cloudflare cannot convert one

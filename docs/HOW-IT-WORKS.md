@@ -20,7 +20,7 @@ Claude call.
 **1 · Candidate.** You pick one of three personas (or paste a resume, which is
 processed in memory and never stored). This is the profile the AI reads against.
 
-<img src="img/01-candidate.png" alt="Persona chooser" width="520">
+<img src="img/native/01-candidate.png" alt="Persona chooser" width="520">
 
 **2 · Why those, and not the rest.** Every posting first passes deterministic
 checks — is it genuinely remote, is the candidate's region actually eligible,
@@ -30,7 +30,7 @@ die. Design point: never spend AI money to discover what a rule already knows.
 On the page this sits *below* the results, as the receipts. The scores are what
 the reader came for.
 
-<img src="img/02-gates.png" alt="The gate verdicts, shown under the results as the receipts" width="520">
+<img src="img/native/02-gates.png" alt="The gate verdicts, shown under the results as the receipts" width="520">
 
 **3 · Honest scoring.** The survivors go to Claude with a rubric that anchors a
 clean match near 70 and treats specialties as bonuses, never requirements. The
@@ -40,7 +40,7 @@ pipeline makes
 (auto-apply / ping me / unsure / near-miss). Most jobs score low. That is the
 feature: the tool's job is to protect attention, not to flatter.
 
-<img src="img/03-score-rose.png" alt="Score card with the bearing rose" width="520">
+<img src="img/native/03-score-rose.png" alt="Score card with the bearing rose" width="520">
 
 **4 · The letter.** One click drafts a short cover letter grounded only in the
 profile on screen — it cannot invent experience, by prompt design.
@@ -73,11 +73,10 @@ The same demo also ships as **fully native mobile apps** — Kotlin/Jetpack
 Compose on Android and Swift/SwiftUI on iOS, no webview — built green in
 Codemagic CI against the same guarded API. The Android app installs on any phone today —
 **download: [github.com/kenmwara/jobscout-app/releases/latest](https://github.com/kenmwara/jobscout-app/releases/latest/download/JobScout-release.apk)**
-(sideload, Android 8+; checksum in the release notes); iOS device distribution
-awaits an Apple Developer account.
+(signed, sideload, Android 8+; checksum in the release notes) — and is in
+closed testing on Google Play ahead of a public listing; iOS device
+distribution awaits an Apple Developer account.
 
-<img src="img/native/android-02-gates.jpg" width="230" alt="JobScout on Android — the real sweep streaming the gates">
-
-<img src="img/native/ios-01-candidate.png" width="230" alt="JobScout on iOS — the candidate chooser with the real feed loaded">
+<img src="img/native/android-02-scoring.jpg" width="230" alt="JobScout on Android — live scoring, the bearing rose lit to each fit">
 
 — Ken Kariuki · ken@tbot.trade · [tbot.trade/portfolio](https://tbot.trade/portfolio)
