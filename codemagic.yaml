@@ -147,7 +147,11 @@ workflows:
       branch_patterns:
         - pattern: main
           include: true
-      cancel_previous_builds: true
+      # false on purpose (2026-09-15): with true, ANY newer push on main cancelled
+      # the in-flight iOS build — including docs-only pushes that never rebuild
+      # it — so two iOS commits in a row went unverified. Android is fast enough
+      # to keep cancelling; this one takes 8-10 minutes and has to finish.
+      cancel_previous_builds: false
     when:
       changeset:
         includes:
