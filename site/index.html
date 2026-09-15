@@ -67,7 +67,7 @@
 
   /* August's measured transitions: background-color .3s, colour .3s, box-shadow .2s.
      Restrained - no transforms on hover anywhere on the reference. */
-  a,button,.upl,.letterbtn,.pill,select.stage,.verdict{
+  a,button,.upl,.letterbtn,.tailorbtn,.pill,select.stage,.verdict{
     transition:background-color .3s var(--ease),color .3s var(--ease),
                border-color .3s var(--ease),box-shadow .2s var(--ease)}
   .run:hover{filter:none;transform:none;background:var(--midnight);box-shadow:var(--sh-cta)}
@@ -307,13 +307,21 @@
     transition:background .2s var(--ease)}
   .gatetoggle button:hover{background:rgba(255,255,255,.2)}
   .gatetoggle button[hidden]{display:none}
-  .letterbtn{background:var(--info);color:var(--midnight);border:none;border-radius:var(--pill);
+  .letterbtn,.tailorbtn{background:var(--info);color:var(--midnight);border:none;border-radius:var(--pill);
     padding:10px 20px;font-size:14px;font-weight:500;transition:background .2s}
-  .letterbtn:hover{background:var(--lavender)}
+  .letterbtn:hover,.tailorbtn:hover{background:var(--lavender)}
   .letter{grid-column:1/-1;margin-top:16px;background:var(--canvas);border:none;
     border-left:3px solid var(--indigo);border-radius:var(--card);padding:20px 22px;
     font-size:15.5px;line-height:1.7;white-space:pre-wrap;color:var(--ink)}
   .letter .lm{font-size:12px;color:var(--text2);margin-top:14px;white-space:normal}
+  .letter.tailored{white-space:normal}
+  .letter.tailored h4{font-family:var(--sans);font-size:11.5px;font-weight:500;letter-spacing:.09em;text-transform:uppercase;color:var(--text3);margin:18px 0 6px}
+  .letter.tailored h4:first-child{margin-top:0}
+  .letter.tailored p{margin:0}
+  .letter.tailored ul{margin:0;padding-left:18px}
+  .letter.tailored li{margin:4px 0}
+  .letter.tailored .gaps li b{font-weight:500;color:var(--ink)}
+  .letter .lm a{color:var(--indigo);cursor:pointer;margin-left:8px}
 
   /* ── the indigo band, August's "care-obsessed operators" page ───────────
      THE CURVE IS NOT AN SVG. August's home-hero_background is a 1668px-wide box
@@ -898,13 +906,14 @@ function renderScores(scores, passers, profile, meta, cached){
         <div class="head">${esc(p.title || s.id)} <span class="co">· ${esc(p.company || "")}</span><span class="route" style="color:${col};background:${col}1a">${route}</span></div>
         <div class="v">${esc(s.verdict || "")}</div>
         <div class="sw"><b>+</b> ${esc(s.strongest || "—")} &nbsp; <i>−</i> ${esc(s.weakest || "—")}</div>
-        <div class="act">${i === 0 && !cached ? `<button class="letterbtn" type="button">Draft a grounded cover letter →</button>` : ""}${plink(p.url)}${saveBtn(s.id)}</div>
+        <div class="act">${i === 0 && !cached ? `<button class="letterbtn" type="button">Draft a grounded cover letter →</button><button class="tailorbtn" type="button">Tailor the resume →</button>` : ""}${plink(p.url)}${saveBtn(s.id)}</div>
       </div>`;
     $("#scores").appendChild(el);
     setTimeout(() => el.classList.add("in"), reduced ? 0 : 130 * i);
     el.querySelector("[data-save]").onclick = () => toggleSave(s.id, p, s.fit);
     if (i === 0 && !cached){
       el.querySelector(".letterbtn").onclick = () => draftLetter(el, p, profile);
+      el.querySelector(".tailorbtn").onclick = () => tailorResume(el, p, profile);
     }
   });
   if (meta?.model && meta.model !== model){ model = meta.model; renderMetrics(feed); }
@@ -939,6 +948,43 @@ async function draftLetter(card, posting, profile){
       fail(d.detail || d.error || "Letter drafting is unavailable right now.");
     }
   }catch(e){ fail("Letter API unreachable: " + e); }
+}
+
+/* The resume helper: the profile reworded toward the posting, and the gaps the
+   candidate fills only if true. Same guards and the same grounding as the letter. */
+async function tailorResume(card, posting, profile){
+  const btn = card.querySelector(".tailorbtn");
+  const label = btn.textContent;
+  const fail = msg => { banner("warn", msg); btn.disabled = false; btn.textContent = label; };
+  btn.disabled = true; btn.textContent = "tailoring…";
+  try{
+    const r = await fetch(API + "/api/tailor", {
+      method: "POST", headers: { "content-type": "application/json" },
+      body: JSON.stringify({ profile, posting }),
+    });
+    const d = await r.json();
+    if (d.summary){
+      const li = xs => xs.map(x => `<li>${esc(x)}</li>`).join("");
+      const div = document.createElement("div");
+      div.className = "letter tailored";
+      div.innerHTML = `<h4>Summary</h4><p>${esc(d.summary)}</p>
+        ${d.bullets?.length ? `<h4>Experience, aimed at this posting</h4><ul>${li(d.bullets)}</ul>` : ""}
+        ${d.gaps?.length ? `<h4>What the posting asks for that the profile does not say</h4><ul class="gaps">${
+          d.gaps.map(g => `<li><b>${esc(g.asks)}</b> — ${esc(g.note)}</li>`).join("")}</ul>` : "<h4>Gaps</h4><p>Nothing the posting asks for is missing from the profile.</p>"}
+        <div class="lm">reworded from the profile above, nothing added — the gaps are yours to fill, and only if true<a>copy</a></div>`;
+      div.querySelector(".lm a").onclick = async ev => {
+        const text = [d.summary, "", ...(d.bullets || []).map(b => "• " + b)].join("
+");
+        try{ await navigator.clipboard.writeText(text); ev.target.textContent = "copied"; }catch{ ev.target.textContent = "select and copy"; }
+      };
+      card.appendChild(div);
+      btn.remove();
+    } else if (r.status === 429){
+      fail((d.detail || "Demo cap reached.") + " The per-visitor limit is the guard working — it resumes next hour.");
+    } else {
+      fail(d.detail || d.error || "Resume tailoring is unavailable right now.");
+    }
+  }catch(e){ fail("Tailor API unreachable: " + e); }
 }
 
 /* Every early exit routes through here, so the spinner is stopped here too. */

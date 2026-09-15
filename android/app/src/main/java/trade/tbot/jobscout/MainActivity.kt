@@ -95,6 +95,7 @@ data class Ui(
     val banner: String? = null,
     val letterText: String? = null,
     val letterBusy: Boolean = false,
+    val letterTitle: String = "Grounded cover letter",
     val error: String? = null,
     val tracker: Map<String, Tracked> = emptyMap(),   // per-device pipeline — the only thing persisted
 )
@@ -211,13 +212,43 @@ class DemoVm(app: Application) : AndroidViewModel(app) {
     fun draftLetter(posting: Posting) {
         val profile = profileText()
         viewModelScope.launch {
-            _ui.update { it.copy(letterBusy = true, letterText = null) }
+            _ui.update { it.copy(letterBusy = true, letterText = null, letterTitle = "Grounded cover letter") }
             runCatching { Api.letter(profile, posting) }
                 .onSuccess { r ->
                     _ui.update { it.copy(letterBusy = false,
                         letterText = if (r.breaker || r.error != null) (r.detail ?: "Unavailable.") else r.letter) }
                 }
                 .onFailure { e -> _ui.update { it.copy(letterBusy = false, letterText = "Letter failed: ${e.message}") } }
+        }
+    }
+
+    /** The resume helper shares the letter sheet: same guards, same grounding, one more section. */
+    fun tailorResume(posting: Posting) {
+        val profile = profileText()
+        viewModelScope.launch {
+            _ui.update { it.copy(letterBusy = true, letterText = null, letterTitle = "Tailored resume") }
+            runCatching { Api.tailor(profile, posting) }
+                .onSuccess { r ->
+                    val text = if (r.breaker || r.error != null) (r.detail ?: "Unavailable.") else buildString {
+                        append(r.summary)
+                        if (r.bullets.isNotEmpty()) { append("
+
+EXPERIENCE, AIMED AT THIS POSTING
+"); r.bullets.forEach { append("• ").append(it).append('
+') } }
+                        append("
+WHAT THE POSTING ASKS FOR THAT THE PROFILE DOES NOT SAY
+")
+                        if (r.gaps.isEmpty()) append("Nothing — the profile covers what the posting asks for.
+")
+                        r.gaps.forEach { append("– ").append(it.asks).append(": ").append(it.note).append('
+') }
+                        append("
+Reworded from the profile only, nothing added. The gaps are yours to fill, and only if true.")
+                    }
+                    _ui.update { it.copy(letterBusy = false, letterText = text) }
+                }
+                .onFailure { e -> _ui.update { it.copy(letterBusy = false, letterText = "Tailoring failed: ${e.message}") } }
         }
     }
 
@@ -355,7 +386,7 @@ fun DemoScreen(vm: DemoVm = viewModel()) {
                     val t = ui.tracker[s.id] ?: trackedFor(s, p)
                     ScoreCard(s, p, t, isSaved = ui.tracker.containsKey(s.id), first = i == 0,
                         showLetter = i == 0 && !ui.fromCache,
-                        onStage = { vm.setStage(t, it) }) { vm.draftLetter(it) }
+                        onStage = { vm.setStage(t, it) }, onTailor = { vm.tailorResume(it) }) { vm.draftLetter(it) }
                 }
             }
 
@@ -397,7 +428,7 @@ fun DemoScreen(vm: DemoVm = viewModel()) {
             onDismissRequest = vm::dismissLetter,
             containerColor = CardBg, shape = Card,
             confirmButton = { TextButton(onClick = vm::dismissLetter) { Text("Close", color = MidnightViolet) } },
-            title = { Text("Grounded cover letter", style = H2, fontSize = 24.sp) },
+            title = { Text(ui.letterTitle, style = H2, fontSize = 24.sp) },
             text = {
                 if (ui.letterBusy) Row(verticalAlignment = Alignment.CenterVertically) {
                     CircularProgressIndicator(Modifier.size(20.dp), color = Indigo, strokeWidth = 2.dp)
@@ -576,7 +607,7 @@ private fun GateRow(r: Posting) {
 @Composable
 private fun ScoreCard(
     s: Score, posting: Posting?, tracked: Tracked, isSaved: Boolean, first: Boolean, showLetter: Boolean,
-    onStage: (String) -> Unit, onLetter: (Posting) -> Unit,
+    onStage: (String) -> Unit, onTailor: (Posting) -> Unit, onLetter: (Posting) -> Unit,
 ) {
     val (route, bandColor) = bandFor(s.fit)
     Column(
@@ -605,8 +636,11 @@ private fun ScoreCard(
             }
         }
         // Opening the posting IS how a user applies — the app never submits anything.
-        PostingActions(tracked.stage, posting?.url.orEmpty(), onStage, tracked = isSaved) {
-            if (showLetter && posting != null) PillButton("Draft a letter", filled = true) { onLetter(posting) }
+        PostingActions(tracked.stage, posting?.url.orEmpty(), onStage, tracked = isSaved)
+        // The two Claude drafts get their own row: four pills do not fit a phone's width.
+        if (showLetter && posting != null) Row(Modifier.padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            PillButton("Draft a letter", filled = true) { onLetter(posting) }
+            PillButton("Tailor the resume", filled = true) { onTailor(posting) }
         }
     }
 }

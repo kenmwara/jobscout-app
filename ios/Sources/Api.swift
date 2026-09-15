@@ -65,6 +65,18 @@ struct LetterResponse: Codable {
     var detail: String?
 }
 
+/// /api/tailor — the profile reworded toward one posting, plus the gaps to fill only if true.
+struct Gap: Codable { var asks = ""; var note = "" }
+struct TailorResponse: Codable {
+    var summary = ""
+    var bullets: [String] = []
+    var gaps: [Gap] = []
+    var meta: Meta?
+    var breaker = false
+    var error: String?
+    var detail: String?
+}
+
 /// /api/extract — every field optional because the error shapes (413/415/422)
 /// carry only error+detail.
 struct ExtractResponse: Codable {
@@ -99,6 +111,11 @@ enum Api {
     static func letter(profile: String, posting: Posting) async throws -> LetterResponse {
         struct Body: Encodable { let profile: String; let posting: Posting }
         return try await post("api/letter", Body(profile: profile, posting: posting))
+    }
+
+    static func tailor(profile: String, posting: Posting) async throws -> TailorResponse {
+        struct Body: Encodable { let profile: String; let posting: Posting }
+        return try await post("api/tailor", Body(profile: profile, posting: posting))
     }
 
     /// Raw file bytes as the request body — the worker extracts text in memory and stores nothing.

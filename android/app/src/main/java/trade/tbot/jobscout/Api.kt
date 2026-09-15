@@ -86,6 +86,21 @@ data class LetterResponse(
     val detail: String? = null,
 )
 
+/** /api/tailor — the profile reworded toward one posting, plus the gaps to fill only if true. */
+@Serializable
+data class Gap(val asks: String = "", val note: String = "")
+
+@Serializable
+data class TailorResponse(
+    val summary: String = "",
+    val bullets: List<String> = emptyList(),
+    val gaps: List<Gap> = emptyList(),
+    val meta: Meta? = null,
+    val breaker: Boolean = false,
+    val error: String? = null,
+    val detail: String? = null,
+)
+
 /** /api/extract — resume file → text. `chars` is the length before the 6,000 cap. */
 @Serializable
 data class ExtractResponse(
@@ -133,6 +148,13 @@ object Api {
     suspend fun letter(profile: String, posting: Posting): LetterResponse =
         json.decodeFromString(call(
             Request.Builder().url("$API_BASE/api/letter")
+                .post(json.encodeToString(LetterBody(profile, posting)).toRequestBody(jsonMedia))
+                .build()
+        ))
+
+    suspend fun tailor(profile: String, posting: Posting): TailorResponse =
+        json.decodeFromString(call(
+            Request.Builder().url("$API_BASE/api/tailor")
                 .post(json.encodeToString(LetterBody(profile, posting)).toRequestBody(jsonMedia))
                 .build()
         ))

@@ -39,6 +39,7 @@ final class DemoVM: ObservableObject {
     @Published var banner: String?
     @Published var letterText: String?
     @Published var letterBusy = false
+    @Published var letterTitle = "Grounded cover letter"
     @Published var error: String?
     @Published var uploading = false
     @Published var uploadStatus: String?
@@ -176,12 +177,42 @@ final class DemoVM: ObservableObject {
     }
 
     func draftLetter(_ posting: Posting) async {
-        letterBusy = true; letterText = nil
+        letterBusy = true; letterText = nil; letterTitle = "Grounded cover letter"
         do {
             let r = try await Api.letter(profile: profileText, posting: posting)
             letterText = (r.breaker || r.error != nil) ? (r.detail ?? "Unavailable.") : r.letter
         } catch {
             letterText = "Letter failed: \(error.localizedDescription)"
+        }
+        letterBusy = false
+    }
+
+    /// The resume helper shares the letter sheet: same guards, same grounding, one more section.
+    func tailorResume(_ posting: Posting) async {
+        letterBusy = true; letterText = nil; letterTitle = "Tailored resume"
+        do {
+            let r = try await Api.tailor(profile: profileText, posting: posting)
+            if r.breaker || r.error != nil { letterText = r.detail ?? "Unavailable." } else {
+                var t = r.summary
+                if !r.bullets.isEmpty { t += "
+
+EXPERIENCE, AIMED AT THIS POSTING
+" + r.bullets.map { "• " + $0 }.joined(separator: "
+") }
+                t += "
+
+WHAT THE POSTING ASKS FOR THAT THE PROFILE DOES NOT SAY
+"
+                t += r.gaps.isEmpty ? "Nothing — the profile covers what the posting asks for."
+                                    : r.gaps.map { "– \($0.asks): \($0.note)" }.joined(separator: "
+")
+                t += "
+
+Reworded from the profile only, nothing added. The gaps are yours to fill, and only if true."
+                letterText = t
+            }
+        } catch {
+            letterText = "Tailoring failed: \(error.localizedDescription)"
         }
         letterBusy = false
     }
@@ -398,7 +429,7 @@ struct ContentView: View {
 
     private var letterSheet: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Text("Grounded cover letter").font(serif(24)).foregroundColor(ink)
+            Text(vm.letterTitle).font(serif(24)).foregroundColor(ink)
             if vm.letterBusy {
                 HStack(spacing: 12) {
                     ProgressView().tint(indigo)
@@ -490,12 +521,18 @@ struct ContentView: View {
                 if let p = posting, !p.url.isEmpty, let u = URL(string: p.url) {
                     PillButton(text: "View posting ↗") { openURL(u) }
                 }
-                if showLetter, let posting {
-                    PillButton(text: "Draft a letter", filled: true) { Task { await vm.draftLetter(posting) } }
-                }
                 Spacer(minLength: 0)
             }
             .padding(.top, 14)
+            // The two Claude drafts get their own row: four pills do not fit a phone's width.
+            if showLetter, let posting {
+                HStack(spacing: 8) {
+                    PillButton(text: "Draft a letter", filled: true) { Task { await vm.draftLetter(posting) } }
+                    PillButton(text: "Tailor the resume", filled: true) { Task { await vm.tailorResume(posting) } }
+                    Spacer(minLength: 0)
+                }
+                .padding(.top, 8)
+            }
         }
         .padding(18)
         .background(cardBg)

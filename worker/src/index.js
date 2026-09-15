@@ -138,6 +138,54 @@ async function extractResume(kind, buf) {
   return new TextDecoder().decode(buf);
 }
 
+
+// ── shared by the drafting routes (letter, tailor) ───────────────────────────
+// Both guards, then the body: {key, spent, profile, p} or the Response to return.
+async function guarded(request, env, breakerNote) {
+  const key = await ipKey(request);
+  if (await rateLimited(env, key))
+    return json(429, { error: "rate_limited", detail: `Demo cap: ${IP_RUNS_PER_HOUR} runs/hour.` });
+  const spent = await todaySpendUsd(env);
+  if (spent >= DAILY_BUDGET_USD)
+    return json(200, { breaker: true, detail: `Today's live-demo budget is spent — ${breakerNote}.` });
+  const body = await request.json().catch(() => ({}));
+  const profile = String(body.profile || "").slice(0, 6000);
+  const p = body.posting || {};
+  if (!profile || !p.title)
+    return json(400, { error: "bad_request", detail: "profile + posting required" });
+  return { key, spent, profile, p };
+}
+
+const postingText = p =>
+  `${p.title} — ${p.company}\n${p.location || ""} · ${p.remote_policy || ""}\n${p.summary || ""}`;
+
+// One Haiku call: {text, usage, cost} or the 502 Response.
+async function draft(env, max_tokens, system, content) {
+  const r = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: { "x-api-key": env.ANTHROPIC_API_KEY, "anthropic-version": "2023-06-01", "content-type": "application/json" },
+    body: JSON.stringify({ model: MODEL, max_tokens, temperature: 0.3, system, messages: [{ role: "user", content }] }),
+  });
+  if (!r.ok) return json(502, { error: "upstream", detail: `anthropic ${r.status}` });
+  const data = await r.json();
+  const usage = data.usage || { input_tokens: 0, output_tokens: 0 };
+  return { text: data.content?.[0]?.text ?? "", usage,
+           cost: (usage.input_tokens * PRICE_IN + usage.output_tokens * PRICE_OUT) / 1_000_000 };
+}
+
+const squash = t => String(t).toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+const inProfile = (profile, phrase) => phrase.trim().length >= 8 && squash(profile).includes(squash(phrase));
+
+const meta = (d, spent) => ({ model: MODEL, cost_usd: +d.cost.toFixed(5),
+  day_spend_usd: +(spent + d.cost).toFixed(4), day_budget_usd: DAILY_BUDGET_USD });
+
+// The model is told "JSON only"; this forgives a code fence or a lead-in sentence.
+function parseJson(text) {
+  const m = String(text).match(/\{[\s\S]*\}/);
+  if (!m) return null;
+  try { return JSON.parse(m[0]); } catch { return null; }
+}
+
 export default {
   async fetch(request, env) {
     if (request.method === "OPTIONS") return new Response(null, { headers: CORS });
@@ -199,49 +247,55 @@ export default {
     }
 
     if (url.pathname === "/api/letter" && request.method === "POST") {
-      const key = await ipKey(request);
-      if (await rateLimited(env, key))
-        return json(429, { error: "rate_limited", detail: `Demo cap: ${IP_RUNS_PER_HOUR} runs/hour.` });
-      const spent = await todaySpendUsd(env);
-      if (spent >= DAILY_BUDGET_USD)
-        return json(200, { breaker: true, detail: "Today's live-demo budget is spent — letter drafting resumes tomorrow." });
+      const g = await guarded(request, env, "letter drafting resumes tomorrow");
+      if (g instanceof Response) return g;
+      const { profile, p } = g;
+      const d = await draft(env, 550,
+        "Draft a short, specific cover letter (150-200 words) grounded ONLY in the " +
+        "candidate profile provided — never invent experience, credentials, or claims. " +
+        "Plain professional voice, no flattery padding, no 'I am writing to express'. " +
+        "Open with the single strongest genuine alignment. Sign off as 'the candidate'.",
+        `PROFILE:\n${profile}\n\nPOSTING:\n${postingText(p)}`);
+      if (d instanceof Response) return d;
+      await recordRun(env, g.key, d.usage.input_tokens, d.usage.output_tokens, d.cost);
+      return json(200, { letter: d.text, meta: meta(d, g.spent) });
+    }
 
-      const body = await request.json().catch(() => ({}));
-      const profile = String(body.profile || "").slice(0, 6000);
-      const p = body.posting || {};
-      if (!profile || !p.title)
-        return json(400, { error: "bad_request", detail: "profile + posting required" });
-
-      const r = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST",
-        headers: {
-          "x-api-key": env.ANTHROPIC_API_KEY,
-          "anthropic-version": "2023-06-01",
-          "content-type": "application/json",
-        },
-        body: JSON.stringify({
-          model: MODEL,
-          max_tokens: 550,
-          system:
-            "Draft a short, specific cover letter (150-200 words) grounded ONLY in the " +
-            "candidate profile provided — never invent experience, credentials, or claims. " +
-            "Plain professional voice, no flattery padding, no 'I am writing to express'. " +
-            "Open with the single strongest genuine alignment. Sign off as 'the candidate'.",
-          messages: [{
-            role: "user",
-            content: `PROFILE:\n${profile}\n\nPOSTING:\n${p.title} — ${p.company}\n${p.location || ""} · ${p.remote_policy || ""}\n${p.summary || ""}`,
-          }],
-        }),
-      });
-      if (!r.ok) return json(502, { error: "upstream", detail: `anthropic ${r.status}` });
-      const data = await r.json();
-      const usage = data.usage || { input_tokens: 0, output_tokens: 0 };
-      const cost = (usage.input_tokens * PRICE_IN + usage.output_tokens * PRICE_OUT) / 1_000_000;
-      await recordRun(env, key, usage.input_tokens, usage.output_tokens, cost);
+    // Resume helper: the profile rephrased toward one posting, plus the honest
+    // part — what the posting asks for that the profile never mentions. It
+    // reorders and rewords; it never adds a skill. The gap list is the tailoring
+    // the candidate does themselves, and only if it is true.
+    if (url.pathname === "/api/tailor" && request.method === "POST") {
+      const g = await guarded(request, env, "resume tailoring resumes tomorrow");
+      if (g instanceof Response) return g;
+      const { profile, p } = g;
+      const d = await draft(env, 900,
+        "You tailor a candidate's resume toward one job posting using ONLY what the profile contains. " +
+        "Return JSON only, no prose, no code fence: " +
+        '{"summary": string, "bullets": [{"text": string, "from": string}], "gaps": [{"asks": string, "note": string}]}. ' +
+        "summary: two sentences a recruiter reads first, built from the profile's own facts and aimed at this posting. " +
+        "bullets: 4-6 resume bullets, ordered by relevance to the posting. Each has `from`: a phrase copied VERBATIM from the profile, " +
+        "and `text`: that phrase reworded toward the posting in at most 18 words, claiming nothing beyond `from` — no task, tool, " +
+        "responsibility, employer, number or credential the phrase does not contain. If the profile names a skill without describing work, " +
+        "the bullet names the skill and stops. " +
+        "gaps: up to 5 things the posting asks for that the profile does not cover; asks = the requirement in the posting's words; " +
+        "note = one sentence: what to add ONLY if it is true of them — or, where the profile says outright that they lack it, " +
+        "say that plainly and do not suggest adding it. Empty arrays are fine.",
+        `PROFILE:\n${profile}\n\nPOSTING:\n${postingText(p)}`);
+      if (d instanceof Response) return d;
+      const out = parseJson(d.text);
+      if (!out || typeof out.summary !== "string")
+        return json(502, { error: "upstream", detail: "The model did not return a usable draft. Nothing was charged to you." });
+      await recordRun(env, g.key, d.usage.input_tokens, d.usage.output_tokens, d.cost);
       return json(200, {
-        letter: data.content?.[0]?.text ?? "",
-        meta: { model: MODEL, cost_usd: +cost.toFixed(5),
-                day_spend_usd: +(spent + cost).toFixed(4), day_budget_usd: DAILY_BUDGET_USD },
+        summary: out.summary,
+        // The guard that prose could not enforce: a bullet survives only if its cited phrase really is in the profile.
+        bullets: Array.isArray(out.bullets)
+          ? out.bullets.filter(b => b && typeof b.text === "string" && typeof b.from === "string" && inProfile(profile, b.from))
+              .map(b => b.text).slice(0, 6) : [],
+        gaps: Array.isArray(out.gaps) ? out.gaps.filter(x => x && typeof x.asks === "string").slice(0, 5)
+                .map(x => ({ asks: x.asks, note: typeof x.note === "string" ? x.note : "" })) : [],
+        meta: meta(d, g.spent),
       });
     }
 
