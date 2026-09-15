@@ -24,18 +24,38 @@ prefilter's own reasons, and every score and cover letter is a live Claude call.
    fake-remote detection, title scope. Six stream and the rest sit behind a
    click. No tokens are spent saying no.
 4. **Grounded cover letter** for the top match — drafted only from the profile
-   shown, never inventing experience.
+   shown, never inventing experience. Beside it, **Tailor the resume**: the
+   profile's own experience reworded toward the posting, plus the honest part —
+   what the posting asks for that the profile never mentions, for the candidate
+   to add only if it is true. Every bullet must cite a phrase that is actually
+   in the profile, and the worker drops any that cannot; prose alone could not
+   stop the model padding.
 5. **Save what's worth keeping.** A posting enters your saved list only when
    you say so, and only on your own device.
 
 The results come first on purpose. The gate list is the receipts, not the
 opening act — and prices are not quoted at the reader on any surface.
 
+## Markets
+
+One pipeline, two markets. **`ca`** is the default: the author's own hunt, the
+private pipeline's verdicts as they are. **`ke`** is the Kenya market, live at
+**[nairobi.jobscout.page](https://nairobi.jobscout.page)** (or `?market=ke`):
+the same daily sweep re-gated for a hire based in Kenya — worldwide, EMEA and
+Africa-open postings pass, a named place elsewhere rejects with the reason, no
+remote word rejects, and any posting that asks the applicant for money rejects
+hard. Three Kenyan candidates, and a rubric block that puts eligibility to be
+hired from Kenya first, scores graduates against entry-level expectations and
+counts programme training as evidence. The native apps carry a Canada/Kenya
+switch above the candidates; one app, one package. What the Kenya market still
+lacks is Kenya-relevant sources — the sweep is tuned to the author's boards, so
+its eligible postings today skew senior and technical.
+
 ## Architecture
 
 ```
 visitor ── Cloudflare Pages (site/)
-              │  /api/feed · /api/score · /api/letter
+              │  /api/feed?market · /api/score · /api/letter · /api/tailor
          Cloudflare Worker (worker/)
               ├─ guard 1 · per-IP sliding-window rate limit (D1)
               ├─ guard 2 · global daily budget breaker (D1) — over cap,

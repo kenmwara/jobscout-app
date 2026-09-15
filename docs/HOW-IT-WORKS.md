@@ -42,8 +42,18 @@ feature: the tool's job is to protect attention, not to flatter.
 
 <img src="img/native/03-score-rose.png" alt="Score card with the bearing rose" width="520">
 
-**4 · The letter.** One click drafts a short cover letter grounded only in the
-profile on screen — it cannot invent experience, by prompt design.
+**4 · The letter, and the resume.** One click drafts a short cover letter
+grounded only in the profile on screen — it cannot invent experience, by prompt
+design. Another rewords the profile's own experience toward the posting and
+lists what the posting asks for that the profile never mentions, for the
+candidate to add only if true. A bullet survives only if it cites a phrase
+that is really in the profile.
+
+**A second market.** The same pipeline runs for Kenya at
+[nairobi.jobscout.page](https://nairobi.jobscout.page): the day's sweep
+re-gated for a hire based in Kenya, three Kenyan candidates, and a rubric that
+asks first whether the employer can hire from Kenya at all — the question most
+"remote" postings answer only after a week of applying.
 
 ## The engineering underneath
 
