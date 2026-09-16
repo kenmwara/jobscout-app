@@ -102,6 +102,7 @@ data class Ui(
     val feed: Feed? = null,
     val personaIdx: Int = 0,
     val market: String = "ca",
+    val update: LatestRelease? = null,   // a newer GitHub release, sideloaded copies only
     val resume: String = "",          // pasted/extracted resume text — in-memory only, never persisted
     val uploading: Boolean = false,
     val uploadStatus: String? = null,
@@ -122,7 +123,27 @@ class DemoVm(app: Application) : AndroidViewModel(app) {
     private val _ui = MutableStateFlow(Ui(tracker = TrackerStore.load(app)))
     val ui = _ui.asStateFlow()
 
-    init { loadFeed() }
+    init { loadFeed(); checkForUpdate() }
+
+    /**
+     * Sideloaded copies have no store to update them, so the app asks GitHub for
+     * the latest release once per launch and offers the download when it is newer.
+     * A copy installed from Google Play is updated by Play and never sees this.
+     * Any failure here is silent — an update check must never cost the user anything.
+     */
+    private fun checkForUpdate() {
+        val app = getApplication<Application>()
+        val installer = runCatching {
+            if (android.os.Build.VERSION.SDK_INT >= 30) app.packageManager.getInstallSourceInfo(app.packageName).installingPackageName
+            else @Suppress("DEPRECATION") app.packageManager.getInstallerPackageName(app.packageName)
+        }.getOrNull()
+        if (installer == "com.android.vending") return
+        viewModelScope.launch {
+            runCatching { Api.latestRelease() }.onSuccess { r ->
+                if (isNewer(r.tag_name, BuildConfig.VERSION_NAME)) _ui.update { it.copy(update = r) }
+            }
+        }
+    }
 
     /** Retry path for a failed first load - without this the only fix is a force-quit. */
     fun loadFeed() {
@@ -326,6 +347,7 @@ fun DemoScreen(vm: DemoVm = viewModel()) {
             item { Header(feed, ui.tracker.size) { trackerOpen = true } }
             // (the Saved overlay is composed after this list, at the end of the Box)
             ui.error?.let { item { Banner(it, onRetry = { vm.loadFeed() }) } }
+            ui.update?.let { r -> item { UpdateBar(r) } }
 
             item { Hero(feed) }
 
@@ -560,6 +582,33 @@ private fun Banner(text: String, onRetry: (() -> Unit)? = null) {
             PillButton("Try again", onClick = onRetry)
         }
     }
+}
+
+/** "0.7.0 is available" with one tap to the release — shown only when GitHub's tag beats the installed version. */
+@Composable
+private fun UpdateBar(r: LatestRelease) {
+    val uri = LocalUriHandler.current
+    Row(
+        Modifier.fillMaxWidth().background(Color(0xFFDCE4FB), Card).padding(14.dp),
+        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween,
+    ) {
+        Text("JobScout ${r.tag_name.removePrefix("v")} is available.", color = Ink, fontSize = 13.sp)
+        PillButton("Download", filled = true) { uri.openUri(r.html_url) }
+    }
+}
+
+/** "v0.7.0" vs "0.6.0": numeric, part by part; anything unparsable is never newer. */
+fun isNewer(tag: String, installed: String): Boolean {
+    fun parts(v: String): List<Int>? {
+        return v.removePrefix("v").split('.').map { it.takeWhile(Char::isDigit).toIntOrNull() ?: return null }
+    }
+    val a = parts(tag) ?: return false
+    val b = parts(installed) ?: return false
+    for (i in 0 until maxOf(a.size, b.size)) {
+        val x = a.getOrElse(i) { 0 }; val y = b.getOrElse(i) { 0 }
+        if (x != y) return x > y
+    }
+    return false
 }
 
 /** Small uppercase pill — route bands, gate verdicts. */

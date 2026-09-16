@@ -101,6 +101,10 @@ data class TailorResponse(
     val detail: String? = null,
 )
 
+/** GitHub's latest release — the update check for sideloaded copies. Public API, no auth. */
+@Serializable
+data class LatestRelease(val tag_name: String = "", val html_url: String = "")
+
 /** /api/extract — resume file → text. `chars` is the length before the 6,000 cap. */
 @Serializable
 data class ExtractResponse(
@@ -157,6 +161,12 @@ object Api {
             Request.Builder().url("$API_BASE/api/tailor")
                 .post(json.encodeToString(LetterBody(profile, posting)).toRequestBody(jsonMedia))
                 .build()
+        ))
+
+    suspend fun latestRelease(): LatestRelease =
+        json.decodeFromString(call(
+            Request.Builder().url("https://api.github.com/repos/kenmwara/jobscout-app/releases/latest")
+                .header("accept", "application/vnd.github+json").build()
         ))
 
     /** Raw file bytes in, extracted text out. The worker never stores or logs the content. */
