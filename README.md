@@ -50,7 +50,7 @@ counts programme training as evidence. The native apps carry a Canada/Kenya
 switch above the candidates; one app, one package. Its sources, on top of the
 shared sweep: JobWebKenya's feed, M-KOPA's Nairobi roles, and the boards that
 hire worldwide or across EMEA and Africa (Canonical, Remote, Andela, Oyster);
-ReliefWeb's jobs API is wired and waits on an approved app name. Kenya-only
+ReliefWeb's jobs API, the UN and NGO sector Nairobi is a hub for, approved and live since 2026-09-15. Kenya-only
 rows are marked at the source and the author's own pipeline rejects them on
 sight, so they cost it nothing. BrighterMonday and Fuzu expose no feed or API.
 
