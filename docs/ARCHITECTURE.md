@@ -38,6 +38,17 @@
 - Global: daily spend cap in D1; breaker flips the demo to cached precomputed results with an honest "live budget spent for today" banner — the breaker itself is a showcase feature (screenshot-worthy).
 - Pasted resumes: in-memory only, size-capped, stripped to text, never logged, never stored — privacy note inline.
 
+## Markets
+
+One worker, one site, one app; the market is a parameter. `ca` is the default and the
+pipeline's own verdicts. `ke` (the Kenya market, nairobi.jobscout.page) is the same daily
+sweep re-gated by the publisher for a hire based in Kenya, published to the same D1 `feed`
+table under a suffixed day key, served by `/api/feed?market=ke`, and scored with a Kenya
+rubric block when `/api/score` receives `market: "ke"`. The site picks the market from the
+hostname; the apps from a switch. Kenya-only sources are marked at the sweep and never reach
+the operator's own pipeline. Adding a market is a gate function, a persona set and a rubric
+block — nothing structural.
+
 ## Repo conventions
 
 - `site/` — Pages app, single self-contained build (design pass: Impeccable, JobScout purple-compass brand).
