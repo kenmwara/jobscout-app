@@ -54,6 +54,13 @@ ReliefWeb's jobs API is wired and waits on an approved app name. Kenya-only
 rows are marked at the source and the author's own pipeline rejects them on
 sight, so they cost it nothing. BrighterMonday and Fuzu expose no feed or API.
 
+<p>
+  <a href="https://jobscout.page"><img src="docs/img/web-canada.png" width="49%" alt="jobscout.page — the default market: indigo, three Canadian candidates"></a>
+  <a href="https://nairobi.jobscout.page"><img src="docs/img/web-kenya.png" width="49%" alt="nairobi.jobscout.page — the Kenya market: green, a KENYA chip, three Kenyan candidates"></a>
+</p>
+
+*The same page in its two markets: jobscout.page on the left, nairobi.jobscout.page on the right.*
+
 ## Architecture
 
 ```
