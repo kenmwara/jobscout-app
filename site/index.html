@@ -721,6 +721,12 @@ if (MARKET === "ke"){
   document.title = "JobScout Kenya — an LLM reads the job market honestly";
   document.querySelector(".hero .sub").textContent = "Real postings, open to a hire based in Kenya. Every reason shown.";
   const nm = document.querySelector("#navMarket"); nm.textContent = "Canada"; nm.href = "https://jobscout.page";
+  // the Kenya gates are different gates: say what they actually check
+  const gc = document.querySelectorAll("#gatecards .gc");
+  [["In Kenya, or open to it", "A role located in Kenya passes. So does one open worldwide, across EMEA or Africa."],
+   ["No named place elsewhere", "\"Remote\" beside a country or city that is not Kenya is a lock, and the reason says which."],
+   ["Never asks for money", "A fee, a deposit, a paid training — any posting that asks the applicant to pay is rejected outright."]]
+   .forEach(([h, t], i) => { if (gc[i]){ gc[i].querySelector("h3").textContent = h; gc[i].querySelector("p").textContent = t; } });
 }
 
 const BAND = f => f >= 80 ? ["auto","#114e0b"] : f >= 70 ? ["ping","#1b1463"] : f >= 55 ? ["unsure","#cc3600"] : ["near-miss","#333333"];

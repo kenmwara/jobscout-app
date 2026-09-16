@@ -47,9 +47,12 @@ remote word rejects, and any posting that asks the applicant for money rejects
 hard. Three Kenyan candidates, and a rubric block that puts eligibility to be
 hired from Kenya first, scores graduates against entry-level expectations and
 counts programme training as evidence. The native apps carry a Canada/Kenya
-switch above the candidates; one app, one package. What the Kenya market still
-lacks is Kenya-relevant sources — the sweep is tuned to the author's boards, so
-its eligible postings today skew senior and technical.
+switch above the candidates; one app, one package. Its sources, on top of the
+shared sweep: JobWebKenya's feed, M-KOPA's Nairobi roles, and the boards that
+hire worldwide or across EMEA and Africa (Canonical, Remote, Andela, Oyster);
+ReliefWeb's jobs API is wired and waits on an approved app name. Kenya-only
+rows are marked at the source and the author's own pipeline rejects them on
+sight, so they cost it nothing. BrighterMonday and Fuzu expose no feed or API.
 
 ## Architecture
 
