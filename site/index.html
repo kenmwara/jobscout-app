@@ -105,6 +105,11 @@
   header nav a:hover{color:var(--ink)}
   header nav a.getapp{background:var(--ink);color:#fff;border-radius:var(--pill);padding:9px 16px}
   header nav a.getapp:hover{background:var(--midnight);color:#fff}
+  /* the other market, in Kenya's green, beside the app button so it cannot be missed */
+  header nav a.market{background:#0b7a3b;color:#fff;border-radius:var(--pill);padding:9px 16px}
+  header nav a.market:hover{background:#0b2e1f;color:#fff}
+  html[data-market="ke"] header nav a.market{background:var(--info);color:var(--ink)}
+  html[data-market="ke"] header nav a.market:hover{background:var(--lavender)}
   .livechip{font-size:12px;font-weight:500;color:var(--meadow);background:rgba(50,138,59,.14);border-radius:var(--pill);padding:6px 13px;display:inline-flex;align-items:center;gap:7px}
   .livechip i{width:6px;height:6px;border-radius:50%;background:var(--forest)}
 
@@ -564,9 +569,9 @@
     <nav>
       <span class="livechip"><i></i>live</span>
       <a href="saved" id="navTrack">saved (0)</a>
-      <a class="hidesm" id="navMarket" href="https://nairobi.jobscout.page">Kenya</a>
       <a class="hidesm" href="https://github.com/kenmwara/jobscout-app/blob/main/docs/HOW-IT-WORKS.md" target="_blank" rel="noopener">how it works</a>
       <a class="hidesm" href="https://github.com/kenmwara/jobscout-app" target="_blank" rel="noopener">source</a>
+      <a class="market" id="navMarket" href="https://nairobi.jobscout.page">Kenya</a>
       <a class="getapp" href="#getapp">get the app</a>
     </nav>
   </div>
