@@ -24,6 +24,7 @@
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-180.png">
 <link rel="stylesheet" href="fonts-embedded.css">
+<script>if(/^(nairobi|ke)\./.test(location.hostname)||/[?&]market=ke\b/.test(location.search))document.documentElement.dataset.market="ke";</script>
 <style>
   /* ── JobScout v2.2 — August Health language ──────────────────────────────
      Cream canvas, indigo ink, editorial serif against Inter, pill geometry,
@@ -106,6 +107,28 @@
   header nav a.getapp:hover{background:var(--midnight);color:#fff}
   .livechip{font-size:12px;font-weight:500;color:var(--meadow);background:rgba(50,138,59,.14);border-radius:var(--pill);padding:6px 13px;display:inline-flex;align-items:center;gap:7px}
   .livechip i{width:6px;height:6px;border-radius:50%;background:var(--forest)}
+
+  /* ── the Kenya market (nairobi.jobscout.page): the same page in its own
+     colour — the indigo becomes a Kenya green, the band goes deep green, and a
+     chip in the header names the market. Everything else is shared. ── */
+  html[data-market="ke"]{--indigo:#0b7a3b;--midnight:#0b2e1f;--lavender:#9fd9b4;--info:#dcf2e4;
+    --ping:#0b2e1f;--ping-fill:#0b7a3b}
+  html[data-market="ke"] .mark svg{fill:#0b7a3b}
+  html[data-market="ke"] .brand small{display:none}
+  .marketchip{display:none;font-family:var(--sans);font-size:11.5px;font-weight:500;letter-spacing:.09em;text-transform:uppercase;
+    color:#fff;background:#0b7a3b;border-radius:var(--pill);padding:6px 12px;margin-left:12px;vertical-align:middle}
+  html[data-market="ke"] .marketchip{display:inline-block}
+  html[data-market="ke"] #kenyaStage{display:none}
+
+  /* ── the Kenya section on the main page ── */
+  .kenya{padding:64px 0 28px;text-align:center}
+  .kenya h2{font-family:var(--serif);font-weight:480;font-size:clamp(30px,4vw,48px);line-height:1.1;margin:22px auto 12px;max-width:16ch;text-wrap:balance;color:var(--ink)}
+  .kenya .note{margin:0 auto 24px;max-width:62ch;font-size:16.5px;line-height:1.6;color:var(--text2)}
+  .kfacts{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin:0 0 28px}
+  .kfact{background:var(--surface);border-radius:var(--pill);padding:10px 16px;font-size:14px;color:var(--text2);box-shadow:var(--sh-subtle)}
+  .kfact b{color:#0b7a3b;font-weight:500}
+  .kcta{display:inline-block;background:#0b7a3b;color:#fff;border-radius:var(--pill);padding:14px 26px;font-size:16px;font-weight:500;transition:background .2s}
+  .kcta:hover{background:#0b2e1f;color:#fff}
 
   /* ── hero ─────────────────────────────────────────────────────────────── */
   .hero{padding:44px 0 8px;text-align:center;position:relative}
@@ -537,10 +560,11 @@
 <header>
   <div class="wrap">
     <span class="mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="#4865ff"><circle cx="12.000" cy="1.000" r="2.300"/><circle cx="19.778" cy="4.222" r="2.593"/><circle cx="23.000" cy="12.000" r="2.886"/><circle cx="19.778" cy="19.778" r="3.179"/><circle cx="12.000" cy="23.000" r="3.471"/><circle cx="4.222" cy="19.778" r="3.764"/><circle cx="1.000" cy="12.000" r="4.057"/><circle cx="4.222" cy="4.222" r="4.350"/></svg></span>
-    <span class="brand">JobScout<small>an LLM reads the job market</small></span>
+    <span class="brand">JobScout<small>an LLM reads the job market</small><span class="marketchip">Kenya</span></span>
     <nav>
       <span class="livechip"><i></i>live</span>
       <a href="saved" id="navTrack">saved (0)</a>
+      <a class="hidesm" id="navMarket" href="https://nairobi.jobscout.page">Kenya</a>
       <a class="hidesm" href="https://github.com/kenmwara/jobscout-app/blob/main/docs/HOW-IT-WORKS.md" target="_blank" rel="noopener">how it works</a>
       <a class="hidesm" href="https://github.com/kenmwara/jobscout-app" target="_blank" rel="noopener">source</a>
       <a class="getapp" href="#getapp">get the app</a>
@@ -628,6 +652,20 @@
   </div>
 </section>
 
+<section class="kenya" id="kenyaStage" aria-label="The Kenya market">
+  <div class="wrap">
+    <div class="bearing"><b>315</b> — KENYA</div>
+    <h2>The same pipeline, for Kenya.</h2>
+    <p class="note">Tens of thousands of qualified people, and postings that say remote but mean somewhere else. The Kenya market asks the first question first: can this employer hire someone based in Kenya? Worldwide, EMEA and Africa-open roles pass. A named place elsewhere is rejected, with the reason. Anything that asks the applicant for money is rejected outright.</p>
+    <div class="kfacts">
+      <span class="kfact"><b>Eligibility first</b> — the gate answers it before anyone applies</span>
+      <span class="kfact"><b>Graduates scored as graduates</b> — entry-level roles against entry-level expectations</span>
+      <span class="kfact"><b>Free to the job seeker</b> — always</span>
+    </div>
+    <a class="kcta" href="https://nairobi.jobscout.page">Open the Kenya market →</a>
+  </div>
+</section>
+
 <section class="endpage" id="getapp">
   <div class="tiles" id="tiles" aria-hidden="true"></div>
   <div class="inner">
@@ -679,7 +717,11 @@ const PERSONAS_CA = [
     profile:"Data scientist in Berlin, Germany (EU work authorization only). 5 years: Python, pandas, scikit-learn, PyTorch, SQL, dbt; production ML for churn and pricing at a marketplace. Strong experimentation/causal inference. Looking for: senior data science or ML engineer roles, remote within EU or hybrid Berlin. No relocation." },
 ];
 const PERSONAS = MARKET === "ke" ? PERSONAS_KE : PERSONAS_CA;
-if (MARKET === "ke") document.querySelector(".brand small").textContent = "for job seekers in Kenya";
+if (MARKET === "ke"){
+  document.title = "JobScout Kenya — an LLM reads the job market honestly";
+  document.querySelector(".hero .sub").textContent = "Real postings, open to a hire based in Kenya. Every reason shown.";
+  const nm = document.querySelector("#navMarket"); nm.textContent = "Canada"; nm.href = "https://jobscout.page";
+}
 
 const BAND = f => f >= 80 ? ["auto","#114e0b"] : f >= 70 ? ["ping","#1b1463"] : f >= 55 ? ["unsure","#cc3600"] : ["near-miss","#333333"];
 
