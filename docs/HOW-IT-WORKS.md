@@ -6,7 +6,7 @@
 ## What you're looking at
 
 I built an autonomous job-search pipeline for my own search in July 2026 — it sweeps
-~1,400 postings a day from five job boards plus about 800 company career feeds,
+~1,800 postings a day from five job boards, about 800 company career feeds and two Kenyan sources,
 filters them deterministically, scores the survivors with an LLM against my profile,
 and hands me the judgment calls on Telegram. It found the interviews I'm in now.
 
@@ -20,7 +20,7 @@ Claude call.
 **1 · Candidate.** You pick one of three personas (or paste a resume, which is
 processed in memory and never stored). This is the profile the AI reads against.
 
-<img src="img/native/01-candidate.png" alt="Persona chooser" width="520">
+<img src="img/web-candidate.png" alt="Persona chooser" width="520">
 
 **2 · Why those, and not the rest.** Every posting first passes deterministic
 checks — is it genuinely remote, is the candidate's region actually eligible,
@@ -30,7 +30,7 @@ die. Design point: never spend AI money to discover what a rule already knows.
 On the page this sits *below* the results, as the receipts. The scores are what
 the reader came for.
 
-<img src="img/native/02-gates.png" alt="The gate verdicts, shown under the results as the receipts" width="520">
+<img src="img/web-gates.png" alt="The gate verdicts, shown under the results as the receipts" width="520">
 
 **3 · Honest scoring.** The survivors go to Claude with a rubric that anchors a
 clean match near 70 and treats specialties as bonuses, never requirements. The
@@ -40,7 +40,7 @@ pipeline makes
 (auto-apply / ping me / unsure / near-miss). Most jobs score low. That is the
 feature: the tool's job is to protect attention, not to flatter.
 
-<img src="img/native/03-score-rose.png" alt="Score card with the bearing rose" width="520">
+<img src="img/web-score-rose.png" alt="Score card with the bearing rose" width="520">
 
 **4 · The letter, and the resume.** One click drafts a short cover letter
 grounded only in the profile on screen — it cannot invent experience, by prompt

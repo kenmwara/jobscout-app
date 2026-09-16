@@ -51,7 +51,7 @@ block — nothing structural.
 
 ## Repo conventions
 
-- `site/` — Pages app, single self-contained build (design pass: Impeccable, JobScout purple-compass brand).
+- `site/` — Pages app, single self-contained build (Brand Kit v2.2: the indigo bearing rose on cream, tokens in the private repo).
 - `worker/` — the API Worker (wrangler), D1-backed guards.
 - `tools/` — droplet-side feed publisher (Python, runs beside the private pipeline; publishes sanitized JSON only).
 - This repo goes **public** at polish time — code quality is part of the exhibit.
