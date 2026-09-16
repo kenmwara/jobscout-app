@@ -21,3 +21,4 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: trade.tbot.jobscout
         TARGETED_DEVICE_FAMILY: "1"
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
