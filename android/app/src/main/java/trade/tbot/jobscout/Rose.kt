@@ -104,3 +104,26 @@ fun MiniRose(selected: Boolean, tint: Color, modifier: Modifier = Modifier, diam
         }
     }
 }
+
+/*
+ * The four fit bands. Every caller uses bandFor() for TEXT, so it returns the
+ * contrast-checked label colour, not the decorative fill. Measured on the cream
+ * canvas #F8F3EB: meadow 8.97, midnight 14.33, ember-deep 4.64, stone 11.44. The
+ * fills (forest 3.93, ember 2.54) fail as text and are used only for dots and
+ * pill grounds. (Lived in Dial.kt until the needle dial was retired.)
+ */
+fun bandFor(fit: Int): Pair<String, Color> = when {
+    fit >= 80 -> "auto" to Color(0xFF114E0B)      // meadow
+    fit >= 70 -> "ping" to Color(0xFF1B1463)      // midnight violet
+    fit >= 55 -> "unsure" to Color(0xFFCC3600)    // ember deep
+    else -> "near-miss" to Color(0xFF333333)      // stone
+}
+
+/** The decorative fill for each band - dots and pill grounds only, never text. */
+fun bandFill(fit: Int): Color = when {
+    fit >= 80 -> Color(0xFF328A3B)
+    fit >= 70 -> Color(0xFF4865FF)
+    fit >= 55 -> Color(0xFFFF6D39)
+    else -> Color(0xFFDCE4FB)
+}
+

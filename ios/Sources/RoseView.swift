@@ -82,3 +82,38 @@ struct MiniRose: View {
         .frame(width: side, height: side)
     }
 }
+
+/// The four fit bands. Every caller uses this for text, so it returns the
+/// contrast-checked label colour rather than the decorative fill. Measured on
+/// cream #F8F3EB: meadow 8.97, midnight 14.33, ember-deep 4.64, stone 11.44. The
+/// fills (forest 3.93, ember 2.54) fail as text and are used only for dots and
+/// pill grounds. (Lived in DialView.swift until the needle dial was retired.)
+func band(_ fit: Int) -> (String, Color) {
+    switch fit {
+    case 80...: return ("auto", Color(hex: 0x114E0B))
+    case 70...: return ("ping", Color(hex: 0x1B1463))
+    case 55...: return ("unsure", Color(hex: 0xCC3600))
+    default: return ("near-miss", Color(hex: 0x333333))
+    }
+}
+
+/// The decorative fill for each band - dots and pill grounds only, never text.
+func bandFill(_ fit: Int) -> Color {
+    switch fit {
+    case 80...: return Color(hex: 0x328A3B)
+    case 70...: return Color(hex: 0x4865FF)
+    case 55...: return Color(hex: 0xFF6D39)
+    default: return Color(hex: 0xDCE4FB)
+    }
+}
+
+extension Color {
+    init(hex: UInt32) {
+        self.init(
+            red: Double((hex >> 16) & 0xFF) / 255,
+            green: Double((hex >> 8) & 0xFF) / 255,
+            blue: Double(hex & 0xFF) / 255
+        )
+    }
+}
+
