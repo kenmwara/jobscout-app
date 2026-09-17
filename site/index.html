@@ -921,9 +921,16 @@ async function runPipeline(){
   $("#scoreStage").hidden = true; $("#scores").innerHTML = "";
 
   // Only the first few stream. Twenty-two verdicts at once is a wall, and the
-  // point of this section lands in the first handful.
+  // point of this section lands in the first handful — so the handful is the
+  // profile's own sector (2026-09-17: a banker was shown six ReliefWeb consultancies
+  // as "the receipts" because they happened to lead the feed). Sector first, then the
+  // rejects (the instructive part), then everything else behind the toggle.
   const GATE_SHOWN = 6;
-  const rows = feed.postings.map((p, i) => {
+  const gateSector = sectorOf(profile, feed.lexicon || {});
+  const gateOrder = [...feed.postings.filter(p => p.sector === gateSector && p.gate?.verdict !== "reject"),
+                     ...feed.postings.filter(p => p.gate?.verdict === "reject"),
+                     ...feed.postings.filter(p => p.sector !== gateSector && p.gate?.verdict !== "reject")];
+  const rows = gateOrder.map((p, i) => {
     const rej = p.gate?.verdict === "reject";
     const el = document.createElement("div");
     el.className = "row" + (rej ? " rej" : "");
@@ -1013,15 +1020,15 @@ function sectorOf(profile, lex){
     }
     scores[sec] = [th, bh];
   }
-  const secs = Object.keys(scores);
-  const byTitle = secs.some(s => scores[s][0] > 0);
-  let best = "other", bestKey = [0, 0];
-  for (const s of secs){
-    const key = byTitle ? scores[s] : [scores[s][1], 0];
-    if (key[0] > bestKey[0] || (key[0] === bestKey[0] && key[1] > bestKey[1])){ best = s; bestKey = key; }
+  // Profile mode (tools/sector.py mode="profile"): a resume's first 300 characters are a
+  // name, a phone number and a generic objective — the sector lives in the body. Headline
+  // weighs 3x, but the whole text decides, and fewer than 3 points is not a sector.
+  let best = "other", bestScore = 0;
+  for (const s of Object.keys(scores)){
+    const total = 3 * scores[s][0] + scores[s][1];
+    if (total > bestScore){ best = s; bestScore = total; }
   }
-  // body-only needs real weight (BODY_MIN 3 in tools/sector.py): one stray word is not a sector
-  return bestKey[0] >= (byTitle ? 1 : 3) ? best : "other";
+  return bestScore >= 3 ? best : "other";
 }
 
 function renderScores(scores, passers, profile, meta, cached){
