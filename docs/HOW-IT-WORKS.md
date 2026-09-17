@@ -27,8 +27,9 @@ processed in memory and never stored). This is the profile the AI reads against.
 checks — is it genuinely remote, is the candidate's region actually eligible,
 does it ask the applicant for money. This is free and instant, and it's where
 most postings die. Design point: never spend AI money to discover what a rule
-already knows. The survivors carry a sector tag (twelve sectors, from a keyword
-lexicon the feed ships with itself); the page reads the profile with the same
+already knows. The survivors carry a sector tag (eighteen sectors, from a keyword
+lexicon the feed ships with itself, tuned against a 66-profile regression harness);
+the page reads the profile with the same
 lexicon, ranks that sector's postings by the profile's own words, and sends only
 the nearest eight to Claude, so a banker meets banking postings and an engineer
 meets engineering ones, at the same cost.
