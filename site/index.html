@@ -1008,7 +1008,8 @@ function sectorOf(profile, lex){
     let th = 0, bh = 0;
     for (const ph of phrases){
       const rx = new RegExp("(?<![a-z0-9])" + rxEsc(ph) + "(?![a-z0-9])");
-      if (rx.test(t)) th++; else if (rx.test(b)) bh++;
+      const w = ph.trim().split(/\s+/).length;   // a phrase weighs its word count, as in tools/sector.py
+      if (rx.test(t)) th += w; else if (rx.test(b)) bh += w;
     }
     scores[sec] = [th, bh];
   }
