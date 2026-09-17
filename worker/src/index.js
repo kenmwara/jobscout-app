@@ -35,7 +35,9 @@ const CORS = {
 const json = (status, body) =>
   new Response(JSON.stringify(body), {
     status,
-    headers: { "content-type": "application/json", ...CORS },
+    // no-store: the feed changes on every publish and the page must never run a
+    // stale pool (a browser kept the pre-Workday feed for hours on 2026-09-16)
+    headers: { "content-type": "application/json", "cache-control": "no-store", ...CORS },
   });
 
 async function ipKey(request) {
