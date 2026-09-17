@@ -6,7 +6,8 @@
 ## What you're looking at
 
 I built an autonomous job-search pipeline for my own search in July 2026 — it sweeps
-~1,800 postings a day from five job boards, about 800 company career feeds and two Kenyan sources,
+~1,800 postings a day from five job boards, about 800 company career feeds, five Canadian
+banks and insurers via Workday, and two Kenyan sources,
 filters them deterministically, scores the survivors with an LLM against my profile,
 and hands me the judgment calls on Telegram. It found the interviews I'm in now.
 
@@ -28,8 +29,9 @@ does it ask the applicant for money. This is free and instant, and it's where
 most postings die. Design point: never spend AI money to discover what a rule
 already knows. The survivors carry a sector tag (twelve sectors, from a keyword
 lexicon the feed ships with itself); the page reads the profile with the same
-lexicon and sends only that sector's postings to Claude, so a banker meets
-banking postings and an engineer meets engineering ones, at the same cost.
+lexicon, ranks that sector's postings by the profile's own words, and sends only
+the nearest eight to Claude, so a banker meets banking postings and an engineer
+meets engineering ones, at the same cost.
 
 On the page this sits *below* the results, as the receipts. The scores are what
 the reader came for.
