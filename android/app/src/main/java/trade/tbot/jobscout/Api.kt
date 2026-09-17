@@ -29,6 +29,7 @@ data class Posting(
     val summary: String = "",
     val source: String = "",
     val gate: Gate = Gate(),
+    val sector: String = "",          // from the feed's lexicon (tools/sector.py)
 )
 
 @Serializable
@@ -42,6 +43,8 @@ data class Feed(
     // gate.verdict of "pass"/"reject". Split it client-side, same as the web demo.
     val postings: List<Posting> = emptyList(),
     val counts: Counts = Counts(),
+    val lexicon: Map<String, List<String>> = emptyMap(),   // sector -> phrases; classifies the profile client-side
+    val labels: Map<String, String> = emptyMap(),
 ) {
     val passers: List<Posting> get() = postings.filter { it.gate.verdict != "reject" }
     val rejects: List<Posting> get() = postings.filter { it.gate.verdict == "reject" }
@@ -116,7 +119,7 @@ data class ExtractResponse(
 )
 
 @Serializable private data class ScoreBody(val profile: String, val postings: List<Posting>, val market: String)
-@Serializable private data class LetterBody(val profile: String, val posting: Posting)
+@Serializable private data class LetterBody(val profile: String, val posting: Posting, val fit: Int)   // the worker refuses fit < FIT_FLOOR
 
 object Api {
     private val json = Json { ignoreUnknownKeys = true; encodeDefaults = true }
@@ -149,17 +152,17 @@ object Api {
                 .build()
         ))
 
-    suspend fun letter(profile: String, posting: Posting): LetterResponse =
+    suspend fun letter(profile: String, posting: Posting, fit: Int): LetterResponse =
         json.decodeFromString(call(
             Request.Builder().url("$API_BASE/api/letter")
-                .post(json.encodeToString(LetterBody(profile, posting)).toRequestBody(jsonMedia))
+                .post(json.encodeToString(LetterBody(profile, posting, fit)).toRequestBody(jsonMedia))
                 .build()
         ))
 
-    suspend fun tailor(profile: String, posting: Posting): TailorResponse =
+    suspend fun tailor(profile: String, posting: Posting, fit: Int): TailorResponse =
         json.decodeFromString(call(
             Request.Builder().url("$API_BASE/api/tailor")
-                .post(json.encodeToString(LetterBody(profile, posting)).toRequestBody(jsonMedia))
+                .post(json.encodeToString(LetterBody(profile, posting, fit)).toRequestBody(jsonMedia))
                 .build()
         ))
 

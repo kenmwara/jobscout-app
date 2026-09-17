@@ -54,6 +54,7 @@ final class DemoVM: ObservableObject {
     @Published var meta: Meta?
     @Published var fromCache = false
     @Published var banner: String?
+    @Published var selection: Selection?   // which postings met Claude, and why (sector + counts)
     @Published var letterText: String?
     @Published var letterBusy = false
     @Published var letterTitle = "Grounded cover letter"
@@ -137,6 +138,8 @@ final class DemoVM: ObservableObject {
     func run() async {
         guard let feed, phase != .gates, phase != .scoring else { return }
         guard let profile = profileText else { banner = Self.noCandidate; return }
+        let sel = select(profile: profile, feed: feed)
+        selection = sel
         phase = .gates; gatesShown = 0; scores = []; meta = nil; banner = nil; fromCache = false
         for _ in 0...feed.rejects.count {
             try? await Task.sleep(nanoseconds: 160_000_000)
@@ -144,8 +147,7 @@ final class DemoVM: ObservableObject {
         }
         phase = .scoring
         do {
-            let r = try await Api.score(profile: profile,
-                                        postings: Array(feed.passers.prefix(8)), market: market)
+            let r = try await Api.score(profile: profile, postings: sel.postings, market: market)
             if r.breaker {
                 banner = r.detail
                 scores = r.cached?.scores ?? []
@@ -210,7 +212,8 @@ final class DemoVM: ObservableObject {
         guard let profile = profileText else { return }
         letterBusy = true; letterText = nil; letterTitle = "Grounded cover letter"
         do {
-            let r = try await Api.letter(profile: profile, posting: posting)
+            let fit = scores.first { $0.id == posting.id }?.fit ?? 0
+            let r = try await Api.letter(profile: profile, posting: posting, fit: fit)
             letterText = (r.breaker || r.error != nil) ? (r.detail ?? "Unavailable.") : r.letter
         } catch {
             letterText = "Letter failed: \(error.localizedDescription)"
@@ -223,7 +226,8 @@ final class DemoVM: ObservableObject {
         guard let profile = profileText else { return }
         letterBusy = true; letterText = nil; letterTitle = "Tailored resume"
         do {
-            let r = try await Api.tailor(profile: profile, posting: posting)
+            let fit = scores.first { $0.id == posting.id }?.fit ?? 0
+            let r = try await Api.tailor(profile: profile, posting: posting, fit: fit)
             if r.breaker || r.error != nil { letterText = r.detail ?? "Unavailable." } else {
                 var t = r.summary
                 if !r.bullets.isEmpty { t += "\n\nEXPERIENCE, AIMED AT THIS POSTING\n" + r.bullets.map { "• " + $0 }.joined(separator: "\n") }
@@ -304,12 +308,16 @@ struct ContentView: View {
 
                 if !vm.scores.isEmpty || vm.banner != nil {
                     StageHeading(bearing: "090", label: "SCORING", title: "What Claude makes of them",
-                                 note: "A fit from 0 to 100, a verdict in plain words, the strongest point and the weakest. The rose lights with the score.")
+                                 note: vm.selection?.note ?? "A fit from 0 to 100, a verdict in plain words, the strongest point and the weakest. The rose lights with the score.")
                     if let b = vm.banner { bannerView(b) }
                     let byId = Dictionary(uniqueKeysWithValues: (vm.feed?.passers ?? []).map { ($0.id, $0) })
                     let sorted = vm.scores.sorted { $0.fit > $1.fit }
+                    // Below the floor nothing is recommended: say so, name the nearest, and draft nothing.
+                    if let top = sorted.first, top.fit < fitFloor {
+                        bannerView(nofitNote(fit: top.fit, posting: byId[top.id], id: top.id))
+                    }
                     ForEach(Array(sorted.enumerated()), id: \.element.id) { i, s in
-                        scoreCard(s, posting: byId[s.id], first: i == 0, showLetter: i == 0 && !vm.fromCache)
+                        scoreCard(s, posting: byId[s.id], first: i == 0, showLetter: i == 0 && !vm.fromCache && s.fit >= fitFloor)
                     }
                 }
 

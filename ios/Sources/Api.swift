@@ -16,6 +16,7 @@ struct Posting: Codable, Identifiable {
     var summary = ""
     var source = ""
     var gate = Gate()
+    var sector: String?          // from the feed's lexicon (tools/sector.py); optional so an older feed still decodes
 }
 
 struct Counts: Codable { var pass = 0; var reject = 0 }
@@ -27,6 +28,8 @@ struct Feed: Codable {
     // gate.verdict of "pass"/"reject". Split it client-side, same as the web demo.
     var postings: [Posting] = []
     var counts = Counts()
+    var lexicon: [String: [String]]?   // sector -> phrases; classifies the profile client-side
+    var labels: [String: String]?
     var passers: [Posting] { postings.filter { $0.gate.verdict != "reject" } }
     var rejects: [Posting] { postings.filter { $0.gate.verdict == "reject" } }
 }
@@ -109,14 +112,15 @@ enum Api {
         return try await post("api/score", Body(profile: profile, postings: postings, market: market))
     }
 
-    static func letter(profile: String, posting: Posting) async throws -> LetterResponse {
-        struct Body: Encodable { let profile: String; let posting: Posting }
-        return try await post("api/letter", Body(profile: profile, posting: posting))
+    // The worker refuses fit < fitFloor, so the fit travels with the request.
+    static func letter(profile: String, posting: Posting, fit: Int) async throws -> LetterResponse {
+        struct Body: Encodable { let profile: String; let posting: Posting; let fit: Int }
+        return try await post("api/letter", Body(profile: profile, posting: posting, fit: fit))
     }
 
-    static func tailor(profile: String, posting: Posting) async throws -> TailorResponse {
-        struct Body: Encodable { let profile: String; let posting: Posting }
-        return try await post("api/tailor", Body(profile: profile, posting: posting))
+    static func tailor(profile: String, posting: Posting, fit: Int) async throws -> TailorResponse {
+        struct Body: Encodable { let profile: String; let posting: Posting; let fit: Int }
+        return try await post("api/tailor", Body(profile: profile, posting: posting, fit: fit))
     }
 
     /// Raw file bytes as the request body — the worker extracts text in memory and stores nothing.

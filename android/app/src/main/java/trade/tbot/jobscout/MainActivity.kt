@@ -111,6 +111,7 @@ data class Ui(
     val uploading: Boolean = false,
     val uploadStatus: String? = null,
     val phase: Phase = Phase.IDLE,
+    val selection: Selection? = null,   // which postings met Claude, and why (sector + counts)
     val gatesShown: Int = 0,
     val scores: List<Score> = emptyList(),
     val meta: Meta? = null,
@@ -235,15 +236,16 @@ class DemoVm(app: Application) : AndroidViewModel(app) {
         val profile = profileText() ?: run {
             _ui.update { it.copy(banner = NO_CANDIDATE) }; return
         }
+        val sel = select(profile, feed)
         viewModelScope.launch {
             _ui.update { it.copy(phase = Phase.GATES, gatesShown = 0, scores = emptyList(),
-                                 meta = null, banner = null, fromCache = false) }
+                                 meta = null, banner = null, fromCache = false, selection = sel) }
             repeat(minOf(feed.rejects.size, GATE_STREAM) + 1) {
                 delay(160)
                 _ui.update { s -> s.copy(gatesShown = s.gatesShown + 1) }
             }
             _ui.update { it.copy(phase = Phase.SCORING) }
-            runCatching { Api.score(profile, feed.passers.take(8), _ui.value.market) }
+            runCatching { Api.score(profile, sel.postings, _ui.value.market) }
                 .onSuccess { r ->
                     when {
                         r.breaker -> {
@@ -264,8 +266,9 @@ class DemoVm(app: Application) : AndroidViewModel(app) {
     fun draftLetter(posting: Posting) {
         val profile = profileText() ?: return
         viewModelScope.launch {
+            val fit = _ui.value.scores.firstOrNull { it.id == posting.id }?.fit ?: 0
             _ui.update { it.copy(letterBusy = true, letterText = null, letterTitle = "Grounded cover letter") }
-            runCatching { Api.letter(profile, posting) }
+            runCatching { Api.letter(profile, posting, fit) }
                 .onSuccess { r ->
                     _ui.update { it.copy(letterBusy = false,
                         letterText = if (r.breaker || r.error != null) (r.detail ?: "Unavailable.") else r.letter) }
@@ -278,8 +281,9 @@ class DemoVm(app: Application) : AndroidViewModel(app) {
     fun tailorResume(posting: Posting) {
         val profile = profileText() ?: return
         viewModelScope.launch {
+            val fit = _ui.value.scores.firstOrNull { it.id == posting.id }?.fit ?: 0
             _ui.update { it.copy(letterBusy = true, letterText = null, letterTitle = "Tailored resume") }
-            runCatching { Api.tailor(profile, posting) }
+            runCatching { Api.tailor(profile, posting, fit) }
                 .onSuccess { r ->
                     val text = if (r.breaker || r.error != null) (r.detail ?: "Unavailable.") else buildString {
                         append(r.summary)
@@ -426,15 +430,18 @@ fun DemoScreen(vm: DemoVm = viewModel()) {
             }
 
             if (ui.scores.isNotEmpty() || ui.banner != null) {
-                item { Stage("090", "SCORING", "What Claude makes of them", "A fit from 0 to 100, a verdict in plain words, the strongest point and the weakest. The rose lights with the score.") }
+                item { Stage("090", "SCORING", "What Claude makes of them",
+                    ui.selection?.note() ?: "A fit from 0 to 100, a verdict in plain words, the strongest point and the weakest. The rose lights with the score.") }
                 ui.banner?.let { item { Banner(it) } }
                 val byId = feed?.passers?.associateBy { it.id } ?: emptyMap()
                 val sorted = ui.scores.sortedByDescending { it.fit }
+                // Below the floor nothing is recommended: say so, name the nearest, and draft nothing.
+                sorted.firstOrNull()?.takeIf { it.fit < FIT_FLOOR }?.let { top -> item { Banner(nofitNote(top.fit, byId[top.id], top.id)) } }
                 itemsIndexed(sorted) { i, s ->
                     val p = byId[s.id]
                     val t = ui.tracker[s.id] ?: trackedFor(s, p)
                     ScoreCard(s, p, t, isSaved = ui.tracker.containsKey(s.id), first = i == 0,
-                        showLetter = i == 0 && !ui.fromCache,
+                        showLetter = i == 0 && !ui.fromCache && s.fit >= FIT_FLOOR,
                         onStage = { vm.setStage(t, it) }, onTailor = { vm.tailorResume(it) }) { vm.draftLetter(it) }
                 }
             }
