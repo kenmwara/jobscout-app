@@ -235,7 +235,10 @@ export default {
 
     if (url.pathname === "/api/score" && request.method === "POST") {
       const key = await ipKey(request);
-      if (await rateLimited(env, key))
+      // The regression harness (tools/demo_eval.py) presents the feed secret and skips the
+      // per-IP cap only; the daily budget breaker below still applies to it (2026-09-17).
+      const trusted = !!env.FEED_SECRET && request.headers.get("x-feed-secret") === env.FEED_SECRET;
+      if (!trusted && await rateLimited(env, key))
         return json(429, { error: "rate_limited", detail: `Demo cap: ${IP_RUNS_PER_HOUR} runs/hour.` });
 
       const spent = await todaySpendUsd(env);
