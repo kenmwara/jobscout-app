@@ -98,9 +98,13 @@ const val GATE_STREAM = 6
 /** How many saved jobs list before the rest go behind a tap. Matches the web. */
 const val SAVED_SHOWN = 4
 
+/** Run with nothing chosen. Same words as the web page. */
+const val NO_CANDIDATE = "Choose a candidate above, or upload your resume, and the pipeline scores this morning's postings against it."
+
+
 data class Ui(
     val feed: Feed? = null,
-    val personaIdx: Int = 0,
+    val personaIdx: Int = -1,           // nothing chosen on open (2026-09-17); -1 = no persona
     val market: String = "ca",
     val update: LatestRelease? = null,   // a newer GitHub release, sideloaded copies only
     val resume: String = "",          // pasted/extracted resume text — in-memory only, never persisted
@@ -176,15 +180,15 @@ class DemoVm(app: Application) : AndroidViewModel(app) {
     /** Switching market swaps the feed, the candidates and the rubric; a run in progress is left alone. */
     fun setMarket(m: String) {
         if (m == _ui.value.market) return
-        _ui.update { it.copy(market = m, personaIdx = 0, feed = null, phase = Phase.IDLE, scores = emptyList(), banner = null) }
+        _ui.update { it.copy(market = m, personaIdx = -1, feed = null, phase = Phase.IDLE, scores = emptyList(), banner = null) }
         loadFeed()
     }
     fun setResume(s: String) = _ui.update { it.copy(resume = s.take(6000)) }
 
     /** Same rule as the web demo: pasted text wins once it is longer than 40 chars, else the persona. */
-    private fun profileText(): String {
+    private fun profileText(): String? {
         val own = _ui.value.resume.trim()
-        return if (own.length > 40) own else personasFor(_ui.value.market)[_ui.value.personaIdx].profile
+        return if (own.length > 40) own else personasFor(_ui.value.market).getOrNull(_ui.value.personaIdx)?.profile
     }
 
     /** Storage Access Framework pick → worker /api/extract → resume text. Bytes live in memory only. */
@@ -228,6 +232,9 @@ class DemoVm(app: Application) : AndroidViewModel(app) {
     fun run() {
         val feed = _ui.value.feed ?: return
         if (_ui.value.phase == Phase.GATES || _ui.value.phase == Phase.SCORING) return
+        val profile = profileText() ?: run {
+            _ui.update { it.copy(banner = NO_CANDIDATE) }; return
+        }
         viewModelScope.launch {
             _ui.update { it.copy(phase = Phase.GATES, gatesShown = 0, scores = emptyList(),
                                  meta = null, banner = null, fromCache = false) }
@@ -236,7 +243,6 @@ class DemoVm(app: Application) : AndroidViewModel(app) {
                 _ui.update { s -> s.copy(gatesShown = s.gatesShown + 1) }
             }
             _ui.update { it.copy(phase = Phase.SCORING) }
-            val profile = profileText()
             runCatching { Api.score(profile, feed.passers.take(8), _ui.value.market) }
                 .onSuccess { r ->
                     when {
@@ -256,7 +262,7 @@ class DemoVm(app: Application) : AndroidViewModel(app) {
     }
 
     fun draftLetter(posting: Posting) {
-        val profile = profileText()
+        val profile = profileText() ?: return
         viewModelScope.launch {
             _ui.update { it.copy(letterBusy = true, letterText = null, letterTitle = "Grounded cover letter") }
             runCatching { Api.letter(profile, posting) }
@@ -270,7 +276,7 @@ class DemoVm(app: Application) : AndroidViewModel(app) {
 
     /** The resume helper shares the letter sheet: same guards, same grounding, one more section. */
     fun tailorResume(posting: Posting) {
-        val profile = profileText()
+        val profile = profileText() ?: return
         viewModelScope.launch {
             _ui.update { it.copy(letterBusy = true, letterText = null, letterTitle = "Tailored resume") }
             runCatching { Api.tailor(profile, posting) }

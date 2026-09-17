@@ -45,7 +45,7 @@ enum Phase { case idle, gates, scoring, done }
 @MainActor
 final class DemoVM: ObservableObject {
     @Published var feed: Feed?
-    @Published var personaIdx = 0
+    @Published var personaIdx = -1          // nothing chosen on open (2026-09-17); -1 = no persona
     @Published var market = "ca"
     @Published var resume = ""          // pasted resume text — in-memory only, never persisted
     @Published var phase = Phase.idle
@@ -66,10 +66,15 @@ final class DemoVM: ObservableObject {
 
     /// Same rule as the web demo: pasted text wins once it is longer than 40 chars, else the persona.
     var usingOwn: Bool { resume.trimmingCharacters(in: .whitespacesAndNewlines).count > 40 }
-    var profileText: String {
+    var profileText: String? {
         let own = resume.trimmingCharacters(in: .whitespacesAndNewlines)
-        return own.count > 40 ? own : personasFor(market)[personaIdx].profile
+        if own.count > 40 { return own }
+        let ps = personasFor(market)
+        return ps.indices.contains(personaIdx) ? ps[personaIdx].profile : nil
     }
+    /// Run with nothing chosen. Same words as the web page.
+    static let noCandidate = "Choose a candidate above, or upload your resume, and the pipeline scores this morning's postings against it."
+
 
     func load() async {
         loadTracker()
@@ -125,12 +130,13 @@ final class DemoVM: ObservableObject {
     /// Switching market swaps the feed, the candidates and the rubric; a run in progress is left alone.
     func setMarket(_ m: String) async {
         guard m != market, phase != .gates, phase != .scoring else { return }
-        market = m; personaIdx = 0; feed = nil; phase = .idle; scores = []; banner = nil
+        market = m; personaIdx = -1; feed = nil; phase = .idle; scores = []; banner = nil
         await load()
     }
 
     func run() async {
         guard let feed, phase != .gates, phase != .scoring else { return }
+        guard let profile = profileText else { banner = Self.noCandidate; return }
         phase = .gates; gatesShown = 0; scores = []; meta = nil; banner = nil; fromCache = false
         for _ in 0...feed.rejects.count {
             try? await Task.sleep(nanoseconds: 160_000_000)
@@ -138,7 +144,7 @@ final class DemoVM: ObservableObject {
         }
         phase = .scoring
         do {
-            let r = try await Api.score(profile: profileText,
+            let r = try await Api.score(profile: profile,
                                         postings: Array(feed.passers.prefix(8)), market: market)
             if r.breaker {
                 banner = r.detail
@@ -201,9 +207,10 @@ final class DemoVM: ObservableObject {
     }
 
     func draftLetter(_ posting: Posting) async {
+        guard let profile = profileText else { return }
         letterBusy = true; letterText = nil; letterTitle = "Grounded cover letter"
         do {
-            let r = try await Api.letter(profile: profileText, posting: posting)
+            let r = try await Api.letter(profile: profile, posting: posting)
             letterText = (r.breaker || r.error != nil) ? (r.detail ?? "Unavailable.") : r.letter
         } catch {
             letterText = "Letter failed: \(error.localizedDescription)"
@@ -213,9 +220,10 @@ final class DemoVM: ObservableObject {
 
     /// The resume helper shares the letter sheet: same guards, same grounding, one more section.
     func tailorResume(_ posting: Posting) async {
+        guard let profile = profileText else { return }
         letterBusy = true; letterText = nil; letterTitle = "Tailored resume"
         do {
-            let r = try await Api.tailor(profile: profileText, posting: posting)
+            let r = try await Api.tailor(profile: profile, posting: posting)
             if r.breaker || r.error != nil { letterText = r.detail ?? "Unavailable." } else {
                 var t = r.summary
                 if !r.bullets.isEmpty { t += "\n\nEXPERIENCE, AIMED AT THIS POSTING\n" + r.bullets.map { "• " + $0 }.joined(separator: "\n") }
