@@ -999,18 +999,27 @@ const FIT_FLOOR = 55;   // the "unsure" band. Below it nothing is recommended an
 /* The profile's sector, by the feed's own lexicon (tools/sector.py mirrored): the first
    300 characters count as the headline (3x), the rest as body (1x). Zero hits → other. */
 function sectorOf(profile, lex){
+  // Headline first, like the feed: if the first 300 characters name a sector, they
+  // decide (the body breaks ties); only a headline with no hit falls back to the body.
   const t = profile.slice(0, 300).toLowerCase(), b = profile.slice(300, 2800).toLowerCase();
   const rxEsc = s => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  let best = "other", bestScore = 0;
+  const scores = {};
   for (const [sec, phrases] of Object.entries(lex)){
-    let score = 0;
+    let th = 0, bh = 0;
     for (const ph of phrases){
       const rx = new RegExp("(?<![a-z0-9])" + rxEsc(ph) + "(?![a-z0-9])");
-      if (rx.test(t)) score += 3; else if (rx.test(b)) score += 1;
+      if (rx.test(t)) th++; else if (rx.test(b)) bh++;
     }
-    if (score > bestScore){ best = sec; bestScore = score; }
+    scores[sec] = [th, bh];
   }
-  return best;
+  const secs = Object.keys(scores);
+  const byTitle = secs.some(s => scores[s][0] > 0);
+  let best = "other", bestKey = [0, 0];
+  for (const s of secs){
+    const key = byTitle ? scores[s] : [scores[s][1], 0];
+    if (key[0] > bestKey[0] || (key[0] === bestKey[0] && key[1] > bestKey[1])){ best = s; bestKey = key; }
+  }
+  return bestKey[0] > 0 ? best : "other";
 }
 
 function renderScores(scores, passers, profile, meta, cached){
