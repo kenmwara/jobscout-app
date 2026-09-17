@@ -610,7 +610,7 @@
       </div>
       <div id="ownBox" hidden>
         <label class="upl"><input type="file" id="ownFile" accept=".pdf,.docx,.txt,.md,application/pdf" hidden> Upload resume (PDF, DOCX, TXT)</label><span class="uplstat" id="uplStatus"></span>
-        <textarea id="ownText" maxlength="6000" placeholder="Paste plain resume text (max 6,000 chars)…"></textarea>
+        <textarea id="ownText" maxlength="6000" autocomplete="off" placeholder="Paste plain resume text (max 6,000 chars)…"></textarea>
         <p class="privacy">Processed in memory for this one scoring run. Never stored, never logged. Uploads are read once and discarded — <a href="privacy">privacy</a>.</p>
       </div>
       <div id="banner"></div>
@@ -776,7 +776,9 @@ const miniRose = () => `<svg class="prose" viewBox="0 0 104 104" aria-hidden="tr
   ROSE.map(([x, y], i) => `<circle style="--i:${i}" cx="${x.toFixed(2)}" cy="${y.toFixed(2)}" r="11"/>`).join("") +
   `</svg>`;
 
-let feed = null, selected = PERSONAS[0], running = false;
+// Nothing is chosen on open (2026-09-17: on a phone the collapsed cards hid that
+// Maya was pre-selected, and a run with no resume read as "the app remembered me").
+let feed = null, selected = null, running = false;
 
 /* ── Saved jobs: per-browser, localStorage only, key jobscout.tracker.
    The list itself lives on saved.html now; this page only saves and counts. ── */
@@ -829,7 +831,7 @@ function renderPersonas(){
 
 function profileText(){
   const own = $("#ownText").value.trim();
-  return own.length > 40 ? own : selected.profile;
+  return own.length > 40 ? own : selected?.profile || null;
 }
 
 function banner(kind, text){
@@ -913,8 +915,13 @@ function sleep(ms){ return new Promise(r => setTimeout(r, reduced ? 0 : ms)); }
 
 async function runPipeline(){
   if (running || !feed?.postings?.length) return;
-  running = true; $("#runBtn").disabled = true; banner("", "");
   const profile = profileText();
+  if (!profile){
+    banner("warn", "Choose a candidate above, or upload your resume, and the pipeline scores this morning's postings against it.");
+    $("#ownBox").hidden = false; $("#ownText").focus();
+    return;
+  }
+  running = true; $("#runBtn").disabled = true; banner("", "");
 
   $("#gatesStage").hidden = false;
   $("#gateRows").innerHTML = ""; $("#gateMore").innerHTML = ""; $("#gateMore").hidden = true;
@@ -1171,6 +1178,16 @@ $("#runBtn").onclick = runPipeline;
 new IntersectionObserver((es, io) => es.forEach(e => {
   if (e.isIntersecting){ e.target.classList.add("in"); io.unobserve(e.target); }
 }), { threshold: .25 }).observe($("#gatecards"));
+
+// A resume never survives a reload: browsers restore textarea contents on
+// reload/back, and a tab left open overnight would otherwise run yesterday's
+// page. Fresh state on every open, full stop.
+$("#ownText").value = ""; $("#uplStatus").textContent = "";
+const OPENED = Date.now();
+addEventListener("pageshow", e => { if (e.persisted) location.reload(); });
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible" && !running && Date.now() - OPENED > 6 * 3600e3) location.reload();
+});
 
 renderPersonas();
 renderTiles();
