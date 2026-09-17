@@ -24,8 +24,12 @@ processed in memory and never stored). This is the profile the AI reads against.
 
 **2 · Why those, and not the rest.** Every posting first passes deterministic
 checks — is it genuinely remote, is the candidate's region actually eligible,
-is the title in scope. This is free and instant, and it's where most postings
-die. Design point: never spend AI money to discover what a rule already knows.
+does it ask the applicant for money. This is free and instant, and it's where
+most postings die. Design point: never spend AI money to discover what a rule
+already knows. The survivors carry a sector tag (twelve sectors, from a keyword
+lexicon the feed ships with itself); the page reads the profile with the same
+lexicon and sends only that sector's postings to Claude, so a banker meets
+banking postings and an engineer meets engineering ones, at the same cost.
 
 On the page this sits *below* the results, as the receipts. The scores are what
 the reader came for.
@@ -37,7 +41,10 @@ clean match near 70 and treats specialties as bonuses, never requirements. The
 result renders on the bearing rose — the eight dots of the mark, lit clockwise
 by the score, and the color band it lands in *is* the routing decision the real
 pipeline makes
-(auto-apply / ping me / unsure / near-miss). Most jobs score low. That is the
+(auto-apply / ping me / unsure / near-miss). The top card is highlighted and
+offered a cover letter or a tailored resume only from 55 up, and the API refuses
+both below that; otherwise the page says nothing clears the bar and names the
+nearest score. Most jobs score low. That is the
 feature: the tool's job is to protect attention, not to flatter.
 
 <img src="img/web-score-rose.png" alt="Score card with the bearing rose" width="520">
