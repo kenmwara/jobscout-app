@@ -971,7 +971,11 @@ async function runPipeline(){
   // tax analysts. Deterministic and free; Claude still does the judging.
   const STOP = new Set(["experience","looking","remote","years","strong","skills","working","across","within","roles","based","including","ability","seeking","professional","currently","business","company","canada","canadian","kenya","kenyan"]);
   const words = [...new Set(profile.toLowerCase().match(/[a-z][a-z&-]{4,}/g) || [])].filter(w => !STOP.has(w)).slice(0, 80);
-  const rel = p => { const t = (p.title || "").toLowerCase(), s = (p.summary || "").toLowerCase(); let n = 0; for (const w of words){ if (t.includes(w)) n += 3; else if (s.includes(w)) n += 1; } return n; };
+  // Inverse document frequency over the feed: "senior", "manager", "services" sit in most
+  // postings and must not outrank "advisor" or "mortgage" (mirrors tools/demo_eval.py).
+  const docs = eligible.map(p => ((p.title || "") + " " + (p.summary || "")).toLowerCase());
+  const idf = Object.fromEntries(words.map(w => [w, 1 / Math.log(2 + docs.filter(d => d.includes(w)).length)]));
+  const rel = p => { const t = (p.title || "").toLowerCase(), s = (p.summary || "").toLowerCase(); let n = 0; for (const w of words){ n += (t.includes(w) ? 3 : s.includes(w) ? 1 : 0) * idf[w]; } return n; };
   const ranked = pool => [...pool].sort((a, b) => rel(b) - rel(a));
   const passers = (inSector.length >= 4 ? ranked(inSector) : ranked(inSector).concat(ranked(eligible.filter(p => p.sector !== sector)))).slice(0, 8);
   const label = (feed.labels || {})[sector] || sector;
