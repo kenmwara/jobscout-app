@@ -21,6 +21,7 @@ const FAILED = { fit: 0, verdict: "scoring failed (upstream)", strongest: "", we
 // unchanged, so 24/hour cannot cost a cent more than 6/hour could. At ~1c a run
 // the $3/day breaker still stops everything at ~300 runs across all visitors.
 const IP_RUNS_PER_HOUR = 24;
+const FIT_FLOOR = 55;   // the page's "unsure" band; letter/tailor refuse below it
 const DAILY_BUDGET_USD = 3.0;
 // Haiku pricing (USD per MTok) — used for the live cost counter + breaker math.
 const PRICE_IN = 1.0, PRICE_OUT = 5.0;
@@ -169,7 +170,14 @@ async function guarded(request, env, breakerNote) {
   const p = body.posting || {};
   if (!profile || !p.title)
     return json(400, { error: "bad_request", detail: "profile + posting required" });
-  return { key, spent, profile, p };
+  // 2026-09-16: no drafting below the "unsure" band. The page only offers the buttons
+  // from FIT_FLOOR up; this is the same rule enforced where the money is spent, so the
+  // API cannot be used to write a letter for a job the profile does not fit.
+  const fit = Number(body.fit);
+  if (!Number.isFinite(fit) || fit < FIT_FLOOR)
+    return json(400, { error: "below_floor",
+      detail: `Drafting is only offered for a fit of ${FIT_FLOOR} or better; this posting scored ${Number.isFinite(fit) ? fit : "unknown"}.` });
+  return { key, spent, profile, p, fit };
 }
 
 const postingText = p =>

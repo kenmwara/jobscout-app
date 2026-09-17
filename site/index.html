@@ -302,7 +302,9 @@
   .scard{background:var(--surface);border:none;border-radius:var(--card);padding:26px 28px;
     display:grid;grid-template-columns:104px minmax(0,1fr);gap:6px 24px;opacity:0;
     transform:translateY(28px) scale(.975);box-shadow:var(--sh-card)}
-  .scard:first-child{box-shadow:0 0 0 3px rgba(72,101,255,.16),var(--sh-card)}
+  .scard.top{box-shadow:0 0 0 3px rgba(72,101,255,.16),var(--sh-card)}
+  .nofit{grid-column:1/-1;background:var(--info);border-radius:var(--card);padding:22px 26px;font-size:15.5px;color:var(--text2);line-height:1.6}
+  .nofit b{color:var(--ink);font-weight:500}
   .scard.in{opacity:1;transform:none}
   @media (prefers-reduced-motion:no-preference){
     .scard{transition:opacity .55s var(--ease),transform .55s var(--ease),box-shadow .35s var(--ease)}
@@ -897,7 +899,10 @@ async function loadFeed(){
   try{
     const r = await fetch(API + "/api/feed?market=" + MARKET); feed = await r.json();
     const c = feed.counts || {};
-    $("#sweepline").innerHTML = `Three profiles or your own resume, against this morning's <b>${feed.postings.length}</b> postings. Same jobs, different scores.`;
+    const secs = Object.keys(feed.sectors || {}).length;
+    $("#sweepline").innerHTML = secs
+      ? `Three profiles or your own resume, against this morning's <b>${feed.postings.length}</b> postings across <b>${secs}</b> sectors. The profile picks the sector; Claude scores that sector's postings.`
+      : `Three profiles or your own resume, against this morning's <b>${feed.postings.length}</b> postings. Same jobs, different scores.`;
   }catch(e){
     $("#sweepline").textContent = "The feed is unreachable right now. Scoring needs the API.";
   }
@@ -947,9 +952,18 @@ async function runPipeline(){
   $("#scoreStage").scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "start" });
   for (const el of rows.slice(0, GATE_SHOWN)){ await sleep(140); el.classList.add("in"); }
 
-  const passers = feed.postings.filter(p => p.gate?.verdict !== "reject").slice(0, 8);
+  // 2026-09-16: score the sector the profile reads as, not the first eight eligible.
+  // The feed carries ~12 postings per sector and the lexicon that tagged them; the same
+  // lexicon classifies the profile here, so a banker meets banking postings. Fewer than
+  // four in the sector → top up with the rest, and the floor rule below says so honestly.
+  const eligible = feed.postings.filter(p => p.gate?.verdict !== "reject");
+  const sector = sectorOf(profile, feed.lexicon || {});
+  const inSector = eligible.filter(p => p.sector === sector);
+  const passers = (inSector.length >= 4 ? inSector : inSector.concat(eligible.filter(p => p.sector !== sector))).slice(0, 8);
+  const label = (feed.labels || {})[sector] || sector;
+  $("#scoreNote").innerHTML = `A fit from 0 to 100, a verdict in plain words, the strongest point and the weakest. This profile reads as <b>${esc(label)}</b>: ${inSector.length} of today's ${eligible.length} eligible postings are in that sector, and ${passers.length} go to Claude. A cover letter or a tailored resume is offered only when the top match scores ${FIT_FLOOR} or better.`;
   await sleep(300);
-  $("#scoreStatus").lastElementChild.textContent = `scoring ${passers.length} eligible postings with Claude…`;
+  $("#scoreStatus").lastElementChild.textContent = `scoring ${passers.length} ${esc(label)} postings with Claude…`;
 
   let data;
   try{
@@ -973,34 +987,64 @@ async function runPipeline(){
   finish();
 }
 
+const FIT_FLOOR = 55;   // the "unsure" band. Below it nothing is recommended and nothing is drafted.
+
+/* The profile's sector, by the feed's own lexicon (tools/sector.py mirrored): the first
+   300 characters count as the headline (3x), the rest as body (1x). Zero hits → other. */
+function sectorOf(profile, lex){
+  const t = profile.slice(0, 300).toLowerCase(), b = profile.slice(300, 2800).toLowerCase();
+  const rxEsc = s => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  let best = "other", bestScore = 0;
+  for (const [sec, phrases] of Object.entries(lex)){
+    let score = 0;
+    for (const ph of phrases){
+      const rx = new RegExp("(?<![a-z0-9])" + rxEsc(ph) + "(?![a-z0-9])");
+      if (rx.test(t)) score += 3; else if (rx.test(b)) score += 1;
+    }
+    if (score > bestScore){ best = sec; bestScore = score; }
+  }
+  return best;
+}
+
 function renderScores(scores, passers, profile, meta, cached){
   const byId = Object.fromEntries(passers.map(p => [p.id, p]));
   const sorted = [...scores].sort((a,b) => b.fit - a.fit);
+  // 2026-09-16: the top card used to get the highlight and the drafting buttons on
+  // position alone, so a 22/100 near-miss was dressed up as the recommendation.
+  const clears = sorted.length > 0 && sorted[0].fit >= FIT_FLOOR;
+  if (sorted.length && !clears){
+    const t = sorted[0], tp = byId[t.id] || {};
+    const nf = document.createElement("div");
+    nf.className = "nofit";
+    nf.innerHTML = `<b>Nothing in today's pool clears the bar for this profile.</b> The nearest was ${t.fit} out of 100 — ${esc(tp.title || t.id)}${tp.company ? " · " + esc(tp.company) : ""}. A cover letter or a tailored resume is only offered from ${FIT_FLOOR} up, so none is offered here. The verdicts below say why.`;
+    $("#scores").appendChild(nf);
+  }
   sorted.forEach((s, i) => {
     const p = byId[s.id] || {};
     const [route, col] = BAND(s.fit);
+    const top = i === 0 && clears && !cached;
     const el = document.createElement("div");
-    el.className = "scard";
+    el.className = "scard" + (top ? " top" : "");
     el.innerHTML = `${roseSVG(s.fit)}
       <span class="arrow" aria-hidden="true">&#8594;</span>
       <div>
         <div class="head">${esc(p.title || s.id)} <span class="co">· ${esc(p.company || "")}</span><span class="route" style="color:${col};background:${col}1a">${route}</span></div>
         <div class="v">${esc(s.verdict || "")}</div>
         <div class="sw"><b>+</b> ${esc(s.strongest || "—")} &nbsp; <i>−</i> ${esc(s.weakest || "—")}</div>
-        <div class="act">${i === 0 && !cached ? `<button class="letterbtn" type="button">Draft a grounded cover letter →</button><button class="tailorbtn" type="button">Tailor the resume →</button>` : ""}${plink(p.url)}${saveBtn(s.id)}</div>
+        <div class="act">${top ? `<button class="letterbtn" type="button">Draft a grounded cover letter →</button><button class="tailorbtn" type="button">Tailor the resume →</button>` : ""}${plink(p.url)}${saveBtn(s.id)}</div>
       </div>`;
     $("#scores").appendChild(el);
     setTimeout(() => el.classList.add("in"), reduced ? 0 : 130 * i);
     el.querySelector("[data-save]").onclick = () => toggleSave(s.id, p, s.fit);
-    if (i === 0 && !cached){
-      el.querySelector(".letterbtn").onclick = () => draftLetter(el, p, profile);
-      el.querySelector(".tailorbtn").onclick = () => tailorResume(el, p, profile);
+    if (top){
+      el.querySelector(".letterbtn").onclick = () => draftLetter(el, p, profile, s.fit);
+      el.querySelector(".tailorbtn").onclick = () => tailorResume(el, p, profile, s.fit);
     }
   });
   if (meta?.model && meta.model !== model){ model = meta.model; renderMetrics(feed); }
 }
 
-async function draftLetter(card, posting, profile){
+async function draftLetter(card, posting, profile, fit){
   const btn = card.querySelector(".letterbtn");
   const label = btn.textContent;
   // A refused letter must not eat the button's label: the guard message belongs
@@ -1010,7 +1054,7 @@ async function draftLetter(card, posting, profile){
   try{
     const r = await fetch(API + "/api/letter", {
       method: "POST", headers: { "content-type": "application/json" },
-      body: JSON.stringify({ profile, posting }),
+      body: JSON.stringify({ profile, posting, fit }),
     });
     const d = await r.json();
     if (d.letter){
@@ -1033,7 +1077,7 @@ async function draftLetter(card, posting, profile){
 
 /* The resume helper: the profile reworded toward the posting, and the gaps the
    candidate fills only if true. Same guards and the same grounding as the letter. */
-async function tailorResume(card, posting, profile){
+async function tailorResume(card, posting, profile, fit){
   const btn = card.querySelector(".tailorbtn");
   const label = btn.textContent;
   const fail = msg => { banner("warn", msg); btn.disabled = false; btn.textContent = label; };
@@ -1041,7 +1085,7 @@ async function tailorResume(card, posting, profile){
   try{
     const r = await fetch(API + "/api/tailor", {
       method: "POST", headers: { "content-type": "application/json" },
-      body: JSON.stringify({ profile, posting }),
+      body: JSON.stringify({ profile, posting, fit }),
     });
     const d = await r.json();
     if (d.summary){
