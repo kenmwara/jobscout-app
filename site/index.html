@@ -207,7 +207,11 @@
   .setupcard.on,.setupcard:focus-within{background:var(--pg);border-color:rgba(255,255,255,.9);margin-top:0;
     box-shadow:inset 0 1px 0 rgba(255,255,255,.9),var(--sh-card)}
   .setupcard.on:hover{transform:translateY(-5px) scale(1.008)}
-  .setupcard h3{font-family:var(--serif);font-weight:480;font-size:23px;line-height:1.12;letter-spacing:-.01em;margin:0 0 16px}
+  /* The market's own accent, the same token the hero's "LLM" wears: indigo in Canada,
+     green in Kenya. 24px so it clears the large-text contrast bar — indigo on the card
+     measures about 4:1, which is fine at that size and would not be at 23px. */
+  .setupcard h3{font-family:var(--serif);font-weight:480;font-size:24px;line-height:1.12;
+    letter-spacing:-.01em;margin:0 0 16px;color:var(--indigo)}
   .setupcard select{font:15px/1 var(--sans);color:var(--ink);background:var(--surface);cursor:pointer;width:100%;
     border:1px solid var(--hair2);border-radius:14px;padding:13px 14px}
   .setupcard select:focus{outline:none;border-color:var(--indigo);box-shadow:0 0 0 3px rgba(72,101,255,.16)}
