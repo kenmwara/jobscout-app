@@ -61,16 +61,25 @@ func select(profile: String, feed: Feed) -> Selection {
     var idf: [String: Double] = [:]
     for w in words { idf[w] = 1.0 / log(2.0 + Double(docs.filter { $0.contains(w) }.count)) }
     func rel(_ p: Posting) -> Double {
-        let t = p.title.lowercased(), s = p.summary.lowercased()
-        return words.reduce(0.0) { $0 + Double(t.contains($1) ? 3 : s.contains($1) ? 1 : 0) * (idf[$1] ?? 0) }
+        let t = p.title.lowercased()
+        let s = p.summary.lowercased()
+        var n = 0.0
+        for w in words {
+            let hit: Double = t.contains(w) ? 3 : (s.contains(w) ? 1 : 0)
+            n += hit * (idf[w] ?? 0)
+        }
+        return n
     }
+    struct Ranked { let i: Int; let p: Posting; let r: Double }
     func ranked(_ pool: [Posting]) -> [Posting] {
-        pool.enumerated().map { ($0.offset, $0.element, rel($0.element)) }
-            .sorted { $0.2 == $1.2 ? $0.0 < $1.0 : $0.2 > $1.2 }   // stable, like the page's sort
-            .map { $0.1 }
+        var rs: [Ranked] = []
+        for (i, p) in pool.enumerated() { rs.append(Ranked(i: i, p: p, r: rel(p))) }
+        rs.sort { a, b in a.r == b.r ? a.i < b.i : a.r > b.r }   // stable, like the page's sort
+        return rs.map { $0.p }
     }
-    let picked = Array((inSector.count >= 4 ? ranked(inSector)
-                        : ranked(inSector) + ranked(eligible.filter { ($0.sector ?? "") != sector })).prefix(scored))
+    var pool = ranked(inSector)
+    if inSector.count < 4 { pool += ranked(eligible.filter { ($0.sector ?? "") != sector }) }
+    let picked = Array(pool.prefix(scored))
     return Selection(sector: sector, label: feed.labels?[sector] ?? sector, inSector: inSector.count, eligible: eligible.count, postings: picked)
 }
 

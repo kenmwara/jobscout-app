@@ -212,7 +212,7 @@ final class DemoVM: ObservableObject {
         guard let profile = profileText else { return }
         letterBusy = true; letterText = nil; letterTitle = "Grounded cover letter"
         do {
-            let fit = scores.first { $0.id == posting.id }?.fit ?? 0
+            let fit = scores.first(where: { $0.id == posting.id })?.fit ?? 0
             let r = try await Api.letter(profile: profile, posting: posting, fit: fit)
             letterText = (r.breaker || r.error != nil) ? (r.detail ?? "Unavailable.") : r.letter
         } catch {
@@ -226,7 +226,7 @@ final class DemoVM: ObservableObject {
         guard let profile = profileText else { return }
         letterBusy = true; letterText = nil; letterTitle = "Tailored resume"
         do {
-            let fit = scores.first { $0.id == posting.id }?.fit ?? 0
+            let fit = scores.first(where: { $0.id == posting.id })?.fit ?? 0
             let r = try await Api.tailor(profile: profile, posting: posting, fit: fit)
             if r.breaker || r.error != nil { letterText = r.detail ?? "Unavailable." } else {
                 var t = r.summary

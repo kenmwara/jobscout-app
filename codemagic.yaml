@@ -168,10 +168,14 @@ workflows:
           xcodegen generate
       - name: Build for simulator
         script: |
-          cd ios
+          # The log is an artifact and the errors are echoed: the API shows no
+          # step output, so a compile error would otherwise be invisible.
+          cd ios && mkdir -p screens
+          set -o pipefail
           xcodebuild build -project JobScout.xcodeproj -scheme JobScout \
             -destination 'generic/platform=iOS Simulator' \
-            -derivedDataPath build CODE_SIGNING_ALLOWED=NO
+            -derivedDataPath build CODE_SIGNING_ALLOWED=NO 2>&1 | tee screens/xcodebuild.txt \
+            || { echo "==== errors ===="; grep -E "error:|warning: unre" screens/xcodebuild.txt | head -40; exit 65; }
       - name: Simulator screenshot
         script: |
           # Self-diagnosing: everything is logged to an artifact, and the step never
