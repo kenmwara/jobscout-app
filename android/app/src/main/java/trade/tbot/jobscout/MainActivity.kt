@@ -388,7 +388,7 @@ fun DemoScreen(vm: DemoVm = viewModel()) {
 
             item { Hero(feed) }
 
-            item { Stage("000", "THE CANDIDATE", "Start with your resume.", "Upload it or paste it, say where you are, and run. No resume to hand? Score a sample candidate instead.") }
+            item { Stage("000", "THE CANDIDATE", "Start with your resume.", "Upload it or paste it, or score a sample candidate instead.") }
             item {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     MARKETS.forEach { (id, label) -> PillButton(label, filled = id == ui.market) { vm.setMarket(id) } }
@@ -680,7 +680,7 @@ private fun WhereRow(ui: Ui, feed: Feed, vm: DemoVm) {
         val pickable = feed.places.options.size > 1
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
             if (pickable) Box {
-                PillButton("I'm in: $whereLabel") { open = true }
+                PillButton("Work in: $whereLabel") { open = true }
                 DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
                     DropdownMenuItem(
                         text = { Text(if (ui.market == "ke") "anywhere in Kenya" else "anywhere in Canada") },
@@ -694,16 +694,16 @@ private fun WhereRow(ui: Ui, feed: Feed, vm: DemoVm) {
             }
             PillButton("Remote only", filled = ui.remoteOnly) { vm.toggleRemoteOnly() }
         }
-        Text(
-            if (ui.home.isEmpty() && !ui.remoteOnly)
-                "All ${all.size} of today's eligible postings. Narrow them if you like \u2014 it costs nothing and no posting is hidden without a reason."
-            else if (ui.remoteOnly)
-                "$n of today's ${all.size} are open to someone in $whereLabel, remote only."
-            else
-                "$n of today's ${all.size} are open to someone in $whereLabel \u2014 ${feed.places.remote} remote" +
-                    (if (opt != null && opt.local > 0) ", ${opt.local} on site there" else "") +
-                    (if (feed.places.unplaced > 0) ", ${feed.places.unplaced} that don't say where" else "") + ".",
-            color = Muted, fontSize = 12.5.sp, lineHeight = 18.sp,
+        // Silent until a control has been used. A count sitting under an untouched filter reads
+        // as the result of a search nobody ran, which is why the page stopped printing one.
+        val note = when {
+            ui.home.isEmpty() && !ui.remoteOnly -> ""
+            ui.remoteOnly -> "$n of ${all.size} \u2014 $whereLabel, remote only"
+            else -> "$n of ${all.size} \u2014 $whereLabel \u00b7 ${feed.places.remote} remote" +
+                (if (opt != null && opt.local > 0) " \u00b7 ${opt.local} on site there" else "")
+        }
+        if (note.isNotEmpty()) Text(
+            note, color = Muted, fontSize = 12.5.sp, lineHeight = 18.sp,
             modifier = Modifier.padding(top = 8.dp))
     }
 }

@@ -301,7 +301,7 @@ struct ContentView: View {
                 hero
 
                 StageHeading(bearing: "000", label: "THE CANDIDATE", title: "Start with your resume.",
-                             note: "Upload it or paste it, say where you are, and run. No resume to hand? Score a sample candidate instead.")
+                             note: "Upload it or paste it, or score a sample candidate instead.")
                 HStack(spacing: 8) {
                     ForEach(markets, id: \.0) { id, label in
                         PillButton(text: label, filled: id == vm.market) { Task { await vm.setMarket(id) } }
@@ -430,29 +430,30 @@ struct ContentView: View {
                             Button(o.label + (o.local > 0 ? "  \u{2014} \(o.local) local" : "")) { vm.home = o.code }
                         }
                     } label: {
-                        PillButton(text: "I'm in: \(whereLabel)") { }
+                        PillButton(text: "Work in: \(whereLabel)") { }
                             .allowsHitTesting(false)
                     } }
                     PillButton(text: "Remote only", filled: vm.remoteOnly) { vm.remoteOnly.toggle() }
                     Spacer(minLength: 0)
                 }
-                Text(noteText(n: n, total: all.count, whereLabel: whereLabel, opt: opt, pl: pl))
-                    .font(sans(12.5)).foregroundColor(muted).lineSpacing(3)
+                let note = noteText(n: n, total: all.count, whereLabel: whereLabel, opt: opt, pl: pl)
+                if !note.isEmpty {
+                    Text(note).font(sans(12.5)).foregroundColor(muted).lineSpacing(3)
+                }
             }
             .padding(.top, 6)
         }
     }
 
+    /// Empty until a control has been used: a count under an untouched filter reads as the
+    /// result of a search nobody ran, which is why the page stopped printing one.
     private func noteText(n: Int, total: Int, whereLabel: String, opt: PlaceOption?, pl: PlacesInfo) -> String {
-        if vm.home.isEmpty && !vm.remoteOnly {
-            return "All \(total) of today's eligible postings. Narrow them if you like \u{2014} it costs nothing and no posting is hidden without a reason."
-        }
+        if vm.home.isEmpty && !vm.remoteOnly { return "" }
         if vm.remoteOnly {
-            return "\(n) of today's \(total) are open to someone in \(whereLabel), remote only."
+            return "\(n) of \(total) \u{2014} \(whereLabel), remote only"
         }
-        var t = "\(n) of today's \(total) are open to someone in \(whereLabel) \u{2014} \(pl.remote) remote"
-        if let o = opt, o.local > 0 { t += ", \(o.local) on site there" }
-        if pl.unplaced > 0 { t += ", \(pl.unplaced) that don't say where" }
+        var t = "\(n) of \(total) \u{2014} \(whereLabel) \u{00b7} \(pl.remote) remote"
+        if let o = opt, o.local > 0 { t += " \u{00b7} \(o.local) on site there" }
         return t + "."
     }
 
