@@ -415,7 +415,9 @@ struct ContentView: View {
             let n = all.filter { takeable($0, home: vm.home, remoteOnly: vm.remoteOnly) }.count
             VStack(alignment: .leading, spacing: 8) {
                 HStack(spacing: 8) {
-                    Menu {
+                    // One place to choose between is not a choice: the Kenya feed is already gated
+                    // to Kenya, so every on-site row there is in Kenya and picking it excludes nothing.
+                    if pl.options.count > 1 { Menu {
                         Button(vm.market == "ke" ? "anywhere in Kenya" : "anywhere in Canada") { vm.home = "" }
                         ForEach(pl.options) { o in
                             Button(o.label + (o.local > 0 ? "  \u{2014} \(o.local) local" : "")) { vm.home = o.code }
@@ -423,7 +425,7 @@ struct ContentView: View {
                     } label: {
                         PillButton(text: "I'm in: \(whereLabel)") { }
                             .allowsHitTesting(false)
-                    }
+                    } }
                     PillButton(text: "Remote only", filled: vm.remoteOnly) { vm.remoteOnly.toggle() }
                     Spacer(minLength: 0)
                 }

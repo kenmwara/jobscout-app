@@ -381,6 +381,7 @@ fun DemoScreen(vm: DemoVm = viewModel()) {
             // feed.places, so a province only appears with the number of postings that really
             // require being there today.
             if (feed != null && feed.places.options.isNotEmpty()) item { WhereRow(ui, feed, vm) }
+            // (WhereRow itself hides the picker when there is only one place to choose between.)
             item {
                 // Same affordance as the web demo: hidden behind a toggle, processed in memory only.
                 Column {
@@ -653,8 +654,11 @@ private fun WhereRow(ui: Ui, feed: Feed, vm: JobScoutVm) {
     val all = feed.passers
     val n = all.count { takeable(it, ui.home, ui.remoteOnly) }
     Column(Modifier.padding(top = 14.dp)) {
+        // One place to choose between is not a choice: the Kenya feed is already gated to Kenya,
+        // so every on-site row there is in Kenya and picking it would exclude nothing.
+        val pickable = feed.places.options.size > 1
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-            Box {
+            if (pickable) Box {
                 PillButton("I'm in: $whereLabel") { open = true }
                 DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
                     DropdownMenuItem(

@@ -966,8 +966,14 @@ async function loadFeed(){
    postings that actually require being there today. */
 function renderPrefs(){
   const pl = feed && feed.places;
-  if (!pl || !pl.options || !pl.options.length){ $("#prefs").hidden = true; return; }
+  if (!pl || !pl.options){ $("#prefs").hidden = true; return; }
   $("#prefs").hidden = false;
+  // One place to choose between is not a choice. The Kenya feed is already gated to Kenya, so
+  // every on-site row there is in Kenya and picking it would exclude nothing.
+  const pickable = pl.options.length > 1;
+  $("#homeSel").hidden = !pickable;
+  document.querySelector(".prefs .plabel").hidden = !pickable;
+  if (!pickable) home = "";
   $("#homeSel").innerHTML = `<option value="">anywhere in ${MARKET === "ke" ? "Kenya" : "Canada"}</option>` +
     pl.options.map(o => `<option value="${o.code}">${esc(o.label)}${o.local ? ` — ${o.local} local` : ""}</option>`).join("");
   $("#homeSel").value = home;
