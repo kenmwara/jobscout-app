@@ -11,3 +11,18 @@ CREATE INDEX IF NOT EXISTS idx_runs_ip ON demo_runs (ip_hash, ts_ms);
 CREATE INDEX IF NOT EXISTS idx_runs_day ON demo_runs (day);
 CREATE TABLE IF NOT EXISTS feed (day TEXT PRIMARY KEY, payload TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS cached_showcase (id INTEGER PRIMARY KEY AUTOINCREMENT, payload TEXT NOT NULL);
+
+-- Counted product events (2026-09-18). Deliberately has no ip_hash column: this table and
+-- demo_runs are never joined, so a counted step cannot be tied back to a network address.
+CREATE TABLE IF NOT EXISTS ev (
+  id      INTEGER PRIMARY KEY AUTOINCREMENT,
+  ts_ms   INTEGER NOT NULL,
+  day     TEXT NOT NULL,
+  market  TEXT NOT NULL DEFAULT 'ca',
+  surface TEXT NOT NULL DEFAULT 'web',
+  name    TEXT NOT NULL,          -- one of EV_NAMES in src/index.js; anything else is dropped
+  detail  TEXT,                   -- a short enum-ish token, capped at 48 chars
+  sid     TEXT NOT NULL           -- random per tab (per browser on the saved page), not a person
+);
+CREATE INDEX IF NOT EXISTS ev_day_name ON ev (day, name);
+CREATE INDEX IF NOT EXISTS ev_sid ON ev (sid);

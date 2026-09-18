@@ -772,6 +772,29 @@ function roseSVG(fit){
     ${dots}<text class="fitnum" x="52" y="60.5" fill="${col}">${fit}</text></svg>`;
 }
 
+/* ── counted events ──────────────────────────────────────────────────────────────────────
+ * What happened, never who. The id below is random, per tab, and dies with the tab; it exists
+ * so "opened, ran, applied" can be read as one visit. No resume text, no job title, no company,
+ * no IP. sendBeacon so a click that leaves the page still counts. Never awaited, never throws:
+ * a counter must not be able to break the page.
+ */
+let SID = "";
+try{
+  SID = sessionStorage.getItem("jobscout.sid") || "";
+  if (!/^[a-z0-9]{6,24}$/.test(SID)){
+    SID = Math.random().toString(36).slice(2, 10) + Math.random().toString(36).slice(2, 6);
+    sessionStorage.setItem("jobscout.sid", SID);
+  }
+}catch(e){ SID = Math.random().toString(36).slice(2, 14); }
+function ev(n, d){
+  try{
+    const body = JSON.stringify({ n, d: d == null ? null : String(d), m: MARKET, s: "web", sid: SID });
+    if (navigator.sendBeacon) navigator.sendBeacon(API + "/api/ev", new Blob([body], { type: "application/json" }));
+    else fetch(API + "/api/ev", { method: "POST", body, keepalive: true, headers: { "content-type": "application/json" } });
+  }catch(e){}
+}
+ev("open");
+
 // Nothing is chosen on open (2026-09-17: on a phone the collapsed cards hid that
 // Maya was pre-selected, and a run with no resume read as "the app remembered me").
 let feed = null, selected = null, running = false;
@@ -810,6 +833,7 @@ function saveBtn(id){
     aria-pressed="${on}">${on ? "✓ Saved" : "Save"}</button>`;
 }
 function toggleSave(id, p, fit){
+  if (!tracker[id]) ev("save", BAND(fit)[0]);
   if (tracker[id]) delete tracker[id];
   else tracker[id] = { id, title: p.title || id, company: p.company || "", url: p.url || "",
                        fit, saved: new Date().toISOString().slice(0, 10) };
@@ -839,6 +863,7 @@ function renderPersonas(){
   document.querySelectorAll(".chip").forEach(b => b.onclick = () => {
     // picking a sample drops whatever was pasted: two profiles in one run is a lie
     selected = PERSONAS.find(p => p.id === b.dataset.id);
+    ev("sample", selected.id);
     $("#ownText").value = ""; $("#uplStatus").textContent = "";
     markChips(); renderSetup();
   });
@@ -1076,6 +1101,7 @@ async function runPipeline(){
       `No call was made to Claude — a rule already knew, and rules are free. Every posting set aside is listed below, with the reason.`);
     finish(); return;
   }
+  ev("run", sector);
   $("#scoreNote").innerHTML = `A fit from 0 to 100, a verdict in plain words, the strongest point and the weakest. This profile reads as <b>${esc(label)}</b>: ${inSector.length} of today's ${eligible.length} eligible postings are in that sector, and ${passers.length} go to Claude${setAside.length ? `, after ${setAside.length} were set aside by your own settings` : ""}. A cover letter or a tailored resume is offered only when the top match scores ${FIT_FLOOR} or better.`;
   await sleep(300);
   $("#scoreStatus").lastElementChild.textContent = `scoring ${passers.length} ${esc(label)} postings with Claude…`;
@@ -1133,6 +1159,8 @@ function sectorOf(profile, lex){
 }
 
 function renderScores(scores, passers, profile, meta, cached){
+  // the band of the best match: the one number that says whether the run was worth anything
+  if (!cached && scores?.length) ev("scored", BAND(Math.max(...scores.map(x => x.fit || 0)))[0]);
   const byId = Object.fromEntries(passers.map(p => [p.id, p]));
   const sorted = [...scores].sort((a,b) => b.fit - a.fit);
   // 2026-09-16: the top card used to get the highlight and the drafting buttons on
@@ -1163,8 +1191,8 @@ function renderScores(scores, passers, profile, meta, cached){
     setTimeout(() => el.classList.add("in"), reduced ? 0 : 130 * i);
     el.querySelector("[data-save]").onclick = () => toggleSave(s.id, p, s.fit);
     if (top){
-      el.querySelector(".letterbtn").onclick = () => draftLetter(el, p, profile, s.fit);
-      el.querySelector(".tailorbtn").onclick = () => tailorResume(el, p, profile, s.fit);
+      el.querySelector(".letterbtn").onclick = () => { ev("letter"); draftLetter(el, p, profile, s.fit); };
+      el.querySelector(".tailorbtn").onclick = () => { ev("tailor"); tailorResume(el, p, profile, s.fit); };
     }
   });
   if (meta?.model && meta.model !== model){ model = meta.model; renderMetrics(feed); }
@@ -1257,20 +1285,31 @@ $("#ownFile").onchange = async () => {
     if (d.text){
       $("#ownText").value = d.text;
       st.textContent = `✓ ${d.chars.toLocaleString()} characters extracted from ${file.name} — review, then run` + (d.chars > 6000 ? " (trimmed to 6,000)" : "");
-    } else st.textContent = d.detail || d.error || "extraction unavailable";
-  }catch(e){ st.textContent = "extract API unreachable"; }
+      ev("upload", "ok");
+    } else { st.textContent = d.detail || d.error || "extraction unavailable"; ev("upload", "fail"); }
+  }catch(e){ st.textContent = "extract API unreachable"; ev("upload", "fail"); }
   lab.classList.remove("busy"); $("#ownFile").value = "";
   if ($("#ownText").value.trim().length > 40) selected = null;   // a resume beats a sample
   renderSetup();
 };
 // typing a real resume deselects the sample, so the run and the chips never disagree
+let pasted = false;
 $("#ownText").oninput = () => {
-  if ($("#ownText").value.trim().length > 40) selected = null;
+  if ($("#ownText").value.trim().length > 40){
+    selected = null;
+    if (!pasted){ pasted = true; ev("paste"); }   // once a tab: this is a step, not a keystroke
+  }
   renderSetup();
 };
-$("#homeSel").onchange = e => { home = e.target.value; renderSetup(); };
-$("#modeBtn").onclick = () => { remoteOnly = !remoteOnly; renderSetup(); };
+$("#homeSel").onchange = e => { home = e.target.value; ev("where", home || "any"); renderSetup(); };
+$("#modeBtn").onclick = () => { remoteOnly = !remoteOnly; ev("remote", remoteOnly ? "on" : "off"); renderSetup(); };
 $("#runBtn").onclick = runPipeline;
+// Leaving for the employer's site is as far as the page can see. Whether it became an
+// application is the visitor's to say, on the saved page.
+document.addEventListener("click", e => {
+  const a = e.target.closest("a.plink"); if (!a) return;
+  ev("apply", (a.closest(".scard")?.querySelector(".verdict")?.textContent || "").trim().slice(0, 16) || null);
+}, true);
 
 // the three gate frames rise once the band scrolls into view
 new IntersectionObserver((es, io) => es.forEach(e => {

@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>What people actually do — JobScout</title>
+<meta name="description" content="The JobScout funnel, counted: opens, runs, scores, applications and what happened next. Aggregates only.">
+<meta name="robots" content="noindex">
+<link rel="icon" href="/icons/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/icons/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon-180.png">
+<link rel="manifest" href="/site.webmanifest">
+<meta name="theme-color" content="#080331">
+<link rel="stylesheet" href="fonts-embedded.css">
+<style>
+  :root{--indigo:#4865ff;--ink:#080331;--midnight:#1b1463;--canvas:#f8f3eb;--surface:#fff;
+    --text:#080331;--text2:#4a4560;--text3:#6b6780;--hair:rgba(8,3,49,.10);--hair2:rgba(8,3,49,.18);
+    --info:#dce4fb;--meadow:#114e0b;--ember:#cc3600;
+    --serif:"Newsreader",Georgia,serif;--sans:"Inter",-apple-system,system-ui,sans-serif;
+    --ease:cubic-bezier(.22,1,.36,1);
+    --sh:rgba(75,68,57,.05) 0 4px 4px 0,rgba(75,68,57,.08) 0 32px 16px 0}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--canvas);color:var(--text);font-family:var(--sans);font-size:16px;line-height:1.6;
+    background-image:radial-gradient(rgba(8,3,49,.07) 1px,transparent 1px);background-size:24px 24px;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:860px;margin:0 auto;padding:0 20px 80px}
+  header{padding:14px 0 0}
+  header .pill{display:flex;align-items:center;gap:12px;background:var(--surface);border-radius:1600px;box-shadow:var(--sh);padding:12px 18px}
+  .brand{font-family:var(--serif);font-weight:400;font-size:21px;letter-spacing:-.01em;color:var(--ink);text-decoration:none}
+  header nav{margin-left:auto;font-size:14px;font-weight:500;display:flex;gap:16px}
+  header nav a{color:var(--text2);text-decoration:none}
+  header nav a:hover{color:var(--indigo)}
+  .bearing{display:inline-block;margin-top:44px;font-size:12px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);
+    background:var(--surface);border-radius:1600px;padding:9px 18px;box-shadow:var(--sh)}
+  .bearing b{color:var(--indigo);font-weight:500}
+  h1{font-family:var(--serif);font-weight:400;font-size:clamp(34px,6vw,46px);line-height:1.08;letter-spacing:-.02em;margin:18px 0 8px;text-wrap:balance}
+  .sub{color:var(--text2);font-size:17px;margin:0 0 20px;max-width:64ch}
+  h2{font-family:var(--serif);font-weight:400;font-size:26px;letter-spacing:-.015em;margin:44px 0 10px}
+  p,li,td,th{color:var(--text2)}
+  b{color:var(--ink);font-weight:500}
+  a{color:var(--midnight)}
+  .range{display:flex;gap:8px;margin:0 0 8px}
+  .range button{font:500 14px var(--sans);color:var(--text2);background:var(--surface);cursor:pointer;
+    border:1.5px solid var(--hair2);border-radius:1600px;padding:8px 16px;transition:all .2s var(--ease)}
+  .range button.on{background:var(--indigo);border-color:var(--indigo);color:#fff}
+
+  /* the funnel: one bar per step, width proportional to the widest, so the drop-off is the shape */
+  .funnel{background:var(--surface);border-radius:16px;box-shadow:var(--sh);padding:10px 22px 18px;margin:14px 0}
+  .step{display:grid;grid-template-columns:132px minmax(0,1fr) 128px;gap:14px;align-items:center;padding:9px 0;border-bottom:1px solid var(--hair)}
+  .step:last-child{border-bottom:none}
+  .step .lbl{font-size:14.5px;font-weight:500;color:var(--ink)}
+  .step .lbl small{display:block;font-weight:400;font-size:12.5px;color:var(--text3)}
+  .bar{height:12px;border-radius:1600px;background:var(--info);min-width:3px;transition:width .6s var(--ease)}
+  .bar.act{background:var(--indigo)}
+  .bar.out{background:var(--meadow)}
+  .step .n{text-align:right;font-variant-numeric:tabular-nums;font-size:14.5px;color:var(--ink)}
+  .step .n small{color:var(--text3);font-size:12.5px}
+
+  table{width:100%;border-collapse:collapse;background:var(--surface);border-radius:16px;box-shadow:var(--sh);overflow:hidden;font-size:14.5px}
+  th,td{padding:10px 14px;text-align:right;font-variant-numeric:tabular-nums;border-bottom:1px solid var(--hair)}
+  th:first-child,td:first-child{text-align:left;font-variant-numeric:normal}
+  th{font-size:12px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:var(--text3)}
+  tr:last-child td{border-bottom:none}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 0;padding:0;list-style:none}
+  .chips li{font-size:13.5px;color:var(--midnight);background:var(--surface);border-radius:1600px;padding:8px 15px;box-shadow:var(--sh)}
+  .chips b{color:var(--ink)}
+  .note{font-size:13.5px;color:var(--text3);margin:10px 0 0;max-width:70ch}
+  .empty{background:var(--surface);border-radius:16px;box-shadow:var(--sh);padding:26px;color:var(--text2)}
+  .foot{margin-top:56px;padding-top:18px;border-top:1px solid var(--hair);font-size:13px;color:var(--text3)}
+  @media (max-width:560px){ .step{grid-template-columns:104px minmax(0,1fr) 92px;gap:10px} .wrap{padding:0 16px 60px} }
+</style>
+</head>
+<body>
+<div class="wrap">
+<header><div class="pill">
+  <svg width="26" height="26" viewBox="0 0 24 24" aria-hidden="true"><g fill="#4865ff">
+    <circle cx="12" cy="1" r="2.3"/><circle cx="19.78" cy="4.22" r="2.59"/><circle cx="23" cy="12" r="2.89"/><circle cx="19.78" cy="19.78" r="3.18"/>
+    <circle cx="12" cy="23" r="3.47"/><circle cx="4.22" cy="19.78" r="3.76"/><circle cx="1" cy="12" r="4.06"/><circle cx="4.22" cy="4.22" r="4.35"/></g></svg>
+  <a class="brand" href="./">JobScout</a>
+  <nav><a href="./">demo</a><a href="privacy">privacy</a></nav>
+</div></header>
+
+<main>
+  <div class="bearing"><b>270</b> — EVIDENCE</div>
+  <h1>What people actually do.</h1>
+  <p class="sub">Every step of the funnel, counted. Aggregates only — no personal data is recorded and none is shown here. What each event contains is written out on the <a href="privacy">privacy page</a>.</p>
+
+  <div class="range" id="range"></div>
+
+  <div id="body"><div class="empty">Loading…</div></div>
+
+  <div class="foot">Counting began 18 September 2026. Scoring runs go back further, because the rate limiter has always counted them.</div>
+</main>
+</div>
+<script>
+const API = "https://jobscout-app-api.kenmwara.workers.dev";
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const RANGES = [7, 14, 30, 90];
+let days = 14;
+
+/* The funnel in the order a visit happens. `act` marks the steps that cost something real —
+   a call to Claude, a click through to an employer — because those are the ones worth moving. */
+const STEPS = [
+  ["open",    "Opened",        "a tab loaded the page",              ""],
+  ["sample",  "Sample picked", "chose a built-in candidate",         ""],
+  ["upload",  "Resume upload", "a file was read",                    ""],
+  ["paste",   "Resume pasted", "text typed or pasted in",            ""],
+  ["where",   "Location set",  "narrowed to a province",             ""],
+  ["remote",  "Remote toggled","asked for remote only",              ""],
+  ["run",     "Ran it",        "the pipeline was started",           "act"],
+  ["scored",  "Got scores",    "eight verdicts came back",           "act"],
+  ["letter",  "Cover letter",  "asked Claude to draft one",          "act"],
+  ["tailor",  "Tailored CV",   "asked Claude to rewrite one",        "act"],
+  ["save",    "Saved",         "kept on the shortlist",              ""],
+  ["apply",   "Went to apply", "opened the posting at the employer", "act"],
+  ["outcome", "Told us how it went", "marked what happened",         "out"],
+];
+const OUT_LABEL = { applied: "Applied", replied: "They replied", interview: "Interview", offer: "Offer", declined: "Declined" };
+
+function bars(rows, key, cls){
+  const max = Math.max(1, ...rows.map(r => r.v));
+  return rows.map(r => `<div class="step">
+      <div class="lbl">${esc(r.label)}<small>${esc(r.sub)}</small></div>
+      <div><div class="bar ${r.cls || cls || ""}" style="width:${Math.max(2, r.v / max * 100)}%"></div></div>
+      <div class="n">${r.v.toLocaleString()}${r.people != null ? ` <small>· ${r.people} ${r.people === 1 ? "visit" : "visits"}</small>` : ""}</div>
+    </div>`).join("");
+}
+
+function render(d){
+  const f = d.funnel || {};
+  const any = Object.keys(f).length;
+  const steps = STEPS.map(([k, label, sub, cls]) => ({ label, sub, cls, v: f[k]?.n || 0, people: f[k]?.people ?? 0 }));
+  const outs = (d.outcome_order || []).map(o => {
+    const row = (d.outcomes || []).find(x => x.detail === o);
+    return { label: OUT_LABEL[o] || o, sub: "", cls: "out", v: row?.n || 0 };
+  });
+  const runs = d.runs || [], daily = d.daily || [];
+
+  // The two rates the whole thing exists to move.
+  const opens = f.open?.people || 0, ran = f.run?.people || 0, applied = f.apply?.people || 0;
+  const pct = (a, b) => b ? Math.round(a / b * 100) + "%" : "—";
+
+  $("#body").innerHTML = `
+    ${!any ? `<div class="empty"><b>Nothing counted yet in this window.</b><br>
+       Events started on 18 September 2026, so a longer range or a little patience will fill this in.
+       Scoring runs below go back further.</div>` : ""}
+    ${any ? `<ul class="chips">
+      <li><b>${pct(ran, opens)}</b> of visits run it</li>
+      <li><b>${pct(applied, ran)}</b> of runs reach an employer</li>
+      <li><b>${(f.upload?.n || 0) + (f.paste?.n || 0)}</b> real resumes vs <b>${f.sample?.n || 0}</b> samples</li>
+    </ul>
+
+    <h2>The funnel</h2>
+    <div class="funnel">${bars(steps)}</div>
+    <p class="note">Each bar is how many times the step happened; the small number is how many separate visits did it.</p>
+
+    <h2>What happened next</h2>
+    ${outs.some(o => o.v) ? `<div class="funnel">${bars(outs)}</div>
+      <p class="note">Reported by people themselves on the saved-jobs page. This is the only part of the funnel a web page cannot observe, so it is only ever as complete as people choose to make it.</p>`
+      : `<div class="empty">No outcomes reported yet. They arrive when someone marks <b>what happened?</b> on a saved job — the one number that says whether any of this gets people hired.</div>`}
+    ` : ""}
+
+    <h2>Scoring runs</h2>
+    ${runs.length ? `<table><thead><tr><th>Day</th><th>Runs</th><th>Distinct visitors</th><th>Cost USD</th></tr></thead><tbody>
+      ${runs.slice().reverse().map(r => `<tr><td>${esc(r.day)}</td><td>${r.scored}</td><td>${r.ips}</td><td>$${(r.usd || 0).toFixed(2)}</td></tr>`).join("")}
+    </tbody></table>
+    <p class="note">From the rate limiter, which has counted every run since the demo went up. "Distinct visitors" is a count of salted IP hashes, so a shared network reads as one.</p>`
+      : `<div class="empty">No scoring runs in this window.</div>`}
+
+    ${daily.length ? `<h2>By day</h2>
+    <table><thead><tr><th>Day</th><th>Visits</th><th>Runs</th><th>Went to apply</th></tr></thead><tbody>
+      ${daily.slice().reverse().map(r => `<tr><td>${esc(r.day)}</td><td>${r.people}</td><td>${r.runs || 0}</td><td>${r.applies || 0}</td></tr>`).join("")}
+    </tbody></table>` : ""}
+
+    ${(d.sectors || []).length ? `<h2>Sectors people ran</h2>
+    <ul class="chips">${d.sectors.map(x => `<li>${esc(x.detail)} <b>${x.n}</b></li>`).join("")}</ul>` : ""}
+
+    ${(d.markets || []).length ? `<h2>Markets</h2>
+    <ul class="chips">${d.markets.map(x => `<li>${x.market === "ke" ? "Kenya" : "Canada"} <b>${x.people}</b> ${x.people === 1 ? "visit" : "visits"}</li>`).join("")}</ul>` : ""}
+  `;
+}
+
+function renderRange(){
+  $("#range").innerHTML = RANGES.map(d =>
+    `<button type="button" data-d="${d}" class="${d === days ? "on" : ""}">${d} days</button>`).join("");
+  document.querySelectorAll("#range button").forEach(b => b.onclick = () => { days = +b.dataset.d; renderRange(); load(); });
+}
+
+async function load(){
+  try{
+    const r = await fetch(`${API}/api/stats?days=${days}`);
+    render(await r.json());
+  }catch(e){
+    $("#body").innerHTML = `<div class="empty">The stats API is unreachable right now.</div>`;
+  }
+}
+renderRange(); load();
+</script>
+</body>
+</html>

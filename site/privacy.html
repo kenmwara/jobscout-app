@@ -58,24 +58,35 @@
 <main>
   <div class="bearing"><b>000</b> — PRIVACY</div>
   <h1>What JobScout processes, and what it never keeps.</h1>
-  <p class="sub">This covers the web demo at jobscout.page and the JobScout Android and iOS apps. Same backend, same rules. Effective 14 September 2026.</p>
+  <p class="sub">This covers the web demo at jobscout.page and the JobScout Android and iOS apps. Same backend, same rules. Effective 18 September 2026.</p>
 
   <div class="card">
-    <p><b>The short version.</b> JobScout has no accounts, no analytics, no ads, and no third-party SDKs. The only network calls it makes are to its own API. Resume text you paste or upload is used for one scoring run and then discarded. Nothing you type is ever written to a database or a log.</p>
+    <p><b>The short version.</b> JobScout has no accounts, no ads, no third-party analytics and no tracking SDKs. The only network calls it makes are to its own API. Resume text you paste or upload is used for one scoring run and then discarded. Nothing you type is ever written to a database or a log. It does count which <i>steps</i> get used — thirteen named actions, listed below — with no personal data in the count and no way to tie one to you.</p>
     <ul class="never">
-      <li>no accounts</li><li>no analytics</li><li>no ads</li><li>no tracking SDKs</li><li>no resume storage</li><li>no selling of anything</li>
+      <li>no accounts</li><li>no ads</li><li>no third-party analytics</li><li>no tracking SDKs</li><li>no resume storage</li><li>no selling of anything</li>
     </ul>
   </div>
 
   <h2>What you give it, and where it goes</h2>
   <p><b>A candidate profile.</b> Either one of the three built-in personas, or text you paste, or a PDF / DOCX / TXT you upload. That text travels over HTTPS to JobScout's API on Cloudflare, which passes it, together with the day's job postings, to Anthropic's Claude API to produce the scores and the cover letter. It is held in memory for the length of that request and not written anywhere by JobScout. Anthropic processes it under its <a href="https://www.anthropic.com/legal/commercial-terms" rel="noopener">API commercial terms</a>, which by default do not use API inputs to train models.</p>
   <p><b>An uploaded file.</b> The file's bytes are converted to plain text in memory and the text is returned to your device for you to review. The file is not stored. Files over 2 MB are refused before they are read.</p>
-  <p><b>Saved jobs.</b> Postings you tap <b>Save</b> on, and the stage you set, live only on your device: your browser's local storage on the web, app-private storage on Android and iOS. They never leave the device. <b>Clear all</b> in Saved jobs deletes them; uninstalling the app does too.</p>
+  <p><b>Saved jobs.</b> Postings you tap <b>Save</b> on, and the stage you set, live only on your device: your browser's local storage on the web, app-private storage on Android and iOS. The job, the company and the link never leave the device. <b>Clear all</b> in Saved jobs deletes them; uninstalling the app does too. The one exception is described next: when you mark what happened with an application, that single word is counted, on its own.</p>
 
-  <h2>What the server records</h2>
-  <p>Two things, both to keep a free public demo from being abused:</p>
+  <h2>What is counted</h2>
+  <p>JobScout counts which steps people use, because a job tool that is redesigned on the maker's taste rather than on evidence wastes everyone's time. A counted event is one word from this fixed list — nothing else can be written, and the list is enforced in the code:</p>
   <ul>
-    <li><b>A salted SHA-256 hash of your IP address</b>, the time, and the token count and cost of each scoring run. The hash enforces a per-hour cap on runs and cannot be turned back into your address. No profile text, no resume text, no scores are stored with it.</li>
+    <li><b>open</b>, <b>sample</b>, <b>upload</b>, <b>paste</b>, <b>where</b>, <b>remote</b> — a tab opened, and which of the setup controls were touched.</li>
+    <li><b>run</b>, <b>scored</b>, <b>letter</b>, <b>tailor</b> — the pipeline ran, what band the best match landed in, and whether a cover letter or a tailored resume was asked for.</li>
+    <li><b>apply</b>, <b>save</b>, <b>outcome</b> — a posting was opened at the employer's site, kept on the shortlist, or marked with what happened: applied, replied, interview, offer or declined.</li>
+  </ul>
+  <p>Each one is stored with the date, the market (Canada or Kenya), the surface (web, Android or iOS), and a random identifier that is minted per browser tab, dies when the tab closes, and exists only so the steps of a single visit can be read in order. On the saved-jobs page the identifier is per browser rather than per tab, because an outcome is marked days after the run that produced it.</p>
+  <p><b>What a counted event never contains:</b> your IP address, your resume or any part of it, a job title, a company, a link, a score, a name, an email, or anything that could distinguish you from anyone else using JobScout that day. It is not shared with anyone, it drives no advertising, and it follows you nowhere else on the web. The totals are public at <a href="stats">jobscout.page/stats</a> — if you can see it, so can everyone.</p>
+  <p>If you would rather not be counted, browser settings that block <code>sendBeacon</code>, or any content blocker, stop it, and the page works exactly the same.</p>
+
+  <h2>What the server records to keep the demo up</h2>
+  <p>Two more things, both to keep a free public demo from being abused:</p>
+  <ul>
+    <li><b>A salted SHA-256 hash of your IP address</b>, the time, and the token count and cost of each scoring run. The hash enforces a per-hour cap on runs and cannot be turned back into your address. No profile text, no resume text, no scores are stored with it. It is kept in a separate table from the counted events above, and the two are never joined.</li>
     <li><b>A running total of the day's spend</b>, so the demo can stop calling Claude when its daily budget is used up and serve a cached showcase run instead. The cached run is one the operator seeded, not anyone's live input.</li>
   </ul>
   <p>Cloudflare, which hosts the API and this site, keeps its own standard request logs under <a href="https://www.cloudflare.com/privacypolicy/" rel="noopener">its privacy policy</a>.</p>
@@ -92,6 +103,7 @@
   <h2>Your choices</h2>
   <ul>
     <li>Use a built-in persona instead of your own resume, and nothing about you reaches the API at all.</li>
+    <li>Leave the <b>what happened?</b> box alone on the saved page and no outcome is ever counted.</li>
     <li>Delete saved jobs at any time with <b>Clear all</b>, or by uninstalling.</li>
     <li>Questions or a deletion request: <a href="mailto:ken@tbot.trade">ken@tbot.trade</a>. Since no profile text is stored, there is nothing to delete server-side, but ask anyway and you'll get a straight answer.</li>
   </ul>

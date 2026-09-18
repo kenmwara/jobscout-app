@@ -52,6 +52,11 @@
     transition:border-color .2s var(--ease),background .2s var(--ease),color .2s var(--ease)}
   .plink:hover{background:var(--indigo);border-color:var(--indigo);color:#fff}
   .rm{background:none;border:none;color:var(--text3);padding:6px 4px;font:500 14px var(--sans);cursor:pointer}
+  /* what happened next - the only thing on this page the person fills in themselves */
+  .st{font:500 14px var(--sans);color:var(--midnight);background:var(--surface);cursor:pointer;
+    border:1.5px solid var(--hair2);border-radius:1600px;padding:8px 14px}
+  .st:focus{outline:none;border-color:var(--indigo);box-shadow:0 0 0 3px rgba(72,101,255,.16)}
+  .st[data-set="1"]{background:var(--info);border-color:var(--info)}
   .rm:hover{color:#cc3600}
   .foot{margin-top:34px;display:flex;gap:14px;align-items:center;flex-wrap:wrap}
   .btn{font:500 14.5px var(--sans);color:var(--midnight);background:var(--info);border:none;border-radius:1600px;padding:11px 22px;cursor:pointer;text-decoration:none;display:inline-block}
@@ -85,7 +90,10 @@
     <a class="btn" href="./">Score more postings</a>
     <button class="btn quiet" id="clear" type="button" hidden>Clear all saved</button>
   </div>
-  <p class="fine">Saved jobs are stored in this browser only and never leave your device.<br>Clearing the site's data removes them.</p>
+  <p class="fine">Saved jobs are stored in this browser only and never leave your device.<br>
+  Marking what happened sends that one word — applied, replied, interview, offer, declined — and nothing else:
+  no job, no company, no name. It is how we learn whether this actually gets anyone hired. <a href="privacy">Privacy</a>.<br>
+  Clearing the site's data removes them.</p>
 </main>
 </div>
 <script>
@@ -106,6 +114,27 @@ function roseSVG(fit){
     ROSE.map(([x, y], i) => `<circle cx="${x.toFixed(2)}" cy="${y.toFixed(2)}" r="${i < lit ? 13 : 5.5}" fill="${i < lit ? col : "rgba(8,3,49,.18)"}"/>`).join("") +
     `<text class="fitnum" x="52" y="61" fill="${col}">${f}</text></svg>`;
 }
+/* The shortlist is the only place that can answer "did it go anywhere". The mark stays in this
+   browser; a single word is counted so the funnel has an end. */
+const STATUS = [["", "what happened?"], ["applied", "applied"], ["replied", "they replied"],
+                ["interview", "interview"], ["offer", "offer"], ["declined", "declined"]];
+let SID = "";
+try{
+  SID = localStorage.getItem("jobscout.sid") || "";
+  if (!/^[a-z0-9]{6,24}$/.test(SID)){
+    SID = Math.random().toString(36).slice(2, 10) + Math.random().toString(36).slice(2, 6);
+    localStorage.setItem("jobscout.sid", SID);
+  }
+}catch(e){ SID = Math.random().toString(36).slice(2, 14); }
+// The word and nothing else: no title, no company, no id, no link back to the row.
+function ev(n, d){
+  try{
+    const body = JSON.stringify({ n, d: d || null, m: "ca", s: "web", sid: SID });
+    if (navigator.sendBeacon) navigator.sendBeacon("https://jobscout-app-api.kenmwara.workers.dev/api/ev",
+      new Blob([body], { type: "application/json" }));
+  }catch(e){}
+}
+
 const GROUPS = [
   { min: 70, title: "Strong fit", tag: "auto & ping · 70+", note: "Worth applying to today." },
   { min: 55, title: "Worth a look", tag: "unsure · 55–69", note: "Real gaps, real upside. Read the verdict before you decide." },
@@ -130,6 +159,9 @@ function render(){
         <div class="t">${esc(t.title)}${t.company ? ` <span class="co">· ${esc(t.company)}</span>` : ""}</div>
         <div class="m">${t.saved ? "saved " + esc(t.saved) : "saved"}</div>
         <div class="ctl">${t.url ? `<a class="plink" href="${esc(t.url)}" target="_blank" rel="noopener">View posting ↗</a>` : ""}
+          <select class="st" data-st="${esc(t.id)}" data-set="${t.status ? 1 : 0}" aria-label="What happened with this application">
+            ${STATUS.map(([v, lbl]) => `<option value="${v}"${t.status === v || (!t.status && !v) ? " selected" : ""}>${lbl}</option>`).join("")}
+          </select>
           <button class="rm" type="button" data-id="${esc(t.id)}">remove ×</button></div>
       </div>`).join("") + `</div></section>`;
   }).join("");
@@ -137,6 +169,14 @@ function render(){
 $("#list").addEventListener("click", e => {
   const b = e.target.closest(".rm"); if (!b) return;
   delete tracker[b.dataset.id]; save(); render();
+});
+$("#list").addEventListener("change", e => {
+  const sel = e.target.closest(".st"); if (!sel) return;
+  const t = tracker[sel.dataset.st]; if (!t) return;
+  t.status = sel.value || undefined;
+  save();
+  sel.dataset.set = t.status ? 1 : 0;
+  if (t.status) ev("outcome", t.status);
 });
 $("#clear").onclick = () => { if (confirm("Clear your saved jobs? This only affects this browser.")){ tracker = {}; save(); render(); } };
 render();

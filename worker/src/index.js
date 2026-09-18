@@ -62,6 +62,30 @@ async function todaySpendUsd(env) {
   return results?.[0]?.c ?? 0;
 }
 
+/* ── counted events ──────────────────────────────────────────────────────────────────────
+ * The page was redesigned three times on taste alone because nothing was measured. These are
+ * the only names that can be written, so a typo on the page is a dropped event rather than a
+ * new column in the funnel, and an event that is not on this list cannot be invented by anyone
+ * POSTing to the endpoint.
+ */
+const EV_NAMES = new Set([
+  "open",       // a tab opened the page
+  "sample",     // picked a sample candidate            detail: persona id
+  "upload",     // uploaded a resume file               detail: ok | fail
+  "paste",      // pasted resume text
+  "where",      // set the location filter              detail: province code | any
+  "remote",     // toggled remote-only                  detail: on | off
+  "run",        // ran the pipeline                     detail: sector
+  "scored",     // the run came back                    detail: band of the top match
+  "letter",     // asked for a cover letter
+  "tailor",     // asked for a tailored resume
+  "apply",      // opened a posting at the source       detail: band
+  "save",       // kept a posting on the shortlist
+  "outcome",    // marked what happened                 detail: applied|replied|interview|offer|declined
+]);
+const EV_SURFACES = new Set(["web", "android", "ios"]);
+const OUTCOMES = ["applied", "replied", "interview", "offer", "declined"];
+
 async function recordRun(env, key, tokensIn, tokensOut, costUsd) {
   const day = new Date().toISOString().slice(0, 10);
   await env.DB.prepare(
@@ -347,6 +371,45 @@ export default {
       } catch {}
       if (!text) return json(422, { error: "unreadable", detail: "Couldn't read text from that file — paste the text instead." });
       return json(200, { text: text.slice(0, EXTRACT_MAX_CHARS), chars: text.length, kind });
+    }
+
+    if (url.pathname === "/api/ev" && request.method === "POST") {
+      // Never fails loudly: a page must not break because a counter did.
+      try{
+        const b = await request.json();
+        const name = String(b.n || "");
+        const sid = String(b.sid || "").slice(0, 24);
+        if (!EV_NAMES.has(name) || !/^[a-z0-9]{6,24}$/.test(sid)) return new Response(null, { status: 204, headers: CORS });
+        const surface = EV_SURFACES.has(String(b.s || "")) ? String(b.s) : "web";
+        const detail = b.d == null ? null : String(b.d).slice(0, 48);
+        await env.DB.prepare(
+          "INSERT INTO ev (ts_ms, day, market, surface, name, detail, sid) VALUES (?,?,?,?,?,?,?)"
+        ).bind(Date.now(), new Date().toISOString().slice(0, 10), market(b.m), surface, name, detail, sid).run();
+      }catch(e){ /* counted events are never worth a 500 */ }
+      return new Response(null, { status: 204, headers: CORS });
+    }
+
+    if (url.pathname === "/api/stats") {
+      // Aggregates only — every row here is a COUNT, so the response cannot carry a person.
+      const days = Math.min(90, Math.max(1, parseInt(url.searchParams.get("days") || "14", 10)));
+      const from = new Date(Date.now() - days * 86400_000).toISOString().slice(0, 10);
+      const q = sql => env.DB.prepare(sql).bind(from).all().then(r => r.results || []);
+      const [funnel, daily, outcomes, sectors, markets, runs] = await Promise.all([
+        q("SELECT name, COUNT(*) n, COUNT(DISTINCT sid) people FROM ev WHERE day >= ? GROUP BY name"),
+        q("SELECT day, COUNT(DISTINCT sid) people, SUM(name='run') runs, SUM(name='apply') applies FROM ev WHERE day >= ? GROUP BY day ORDER BY day"),
+        q("SELECT detail, COUNT(*) n FROM ev WHERE day >= ? AND name='outcome' GROUP BY detail"),
+        q("SELECT detail, COUNT(*) n FROM ev WHERE day >= ? AND name='run' AND detail IS NOT NULL GROUP BY detail ORDER BY n DESC LIMIT 12"),
+        q("SELECT market, COUNT(DISTINCT sid) people, COUNT(*) n FROM ev WHERE day >= ? GROUP BY market"),
+        // demo_runs predates the event table and is the only history of real usage there is
+        q("SELECT day, COUNT(*) scored, COUNT(DISTINCT ip_hash) ips, ROUND(SUM(cost_usd),4) usd FROM demo_runs WHERE day >= ? GROUP BY day ORDER BY day"),
+      ]);
+      const by = rows => Object.fromEntries(rows.map(r => [r.name, r]));
+      return json(200, {
+        days, from, funnel: by(funnel),
+        order: ["open", "sample", "upload", "paste", "where", "remote", "run", "scored", "letter", "tailor", "apply", "save", "outcome"],
+        outcome_order: OUTCOMES,
+        daily, outcomes, sectors, markets, runs,
+      });
     }
 
     if (url.pathname === "/ingest/feed" && request.method === "POST") {
