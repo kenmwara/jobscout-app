@@ -647,7 +647,7 @@ private fun Chip(text: String, color: Color, ground: Color = color.copy(alpha = 
 /** August's outlined pill; `filled` is the info-tinted state (saved, letter). */
 /** "I'm in <province>" + "Remote only" — the same two controls as the web page. */
 @Composable
-private fun WhereRow(ui: Ui, feed: Feed, vm: JobScoutVm) {
+private fun WhereRow(ui: Ui, feed: Feed, vm: DemoVm) {
     var open by remember { mutableStateOf(false) }
     val opt = feed.places.options.firstOrNull { it.code == ui.home }
     val whereLabel = opt?.label ?: if (ui.market == "ke") "anywhere in Kenya" else "anywhere in Canada"
