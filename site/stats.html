@@ -147,7 +147,7 @@ function render(d){
     ${any ? `<ul class="chips">
       <li><b>${pct(ran, opens)}</b> of visits run it</li>
       <li><b>${pct(applied, ran)}</b> of runs reach an employer</li>
-      <li><b>${(f.upload?.n || 0) + (f.paste?.n || 0)}</b> real resumes vs <b>${f.sample?.n || 0}</b> samples</li>
+      <li><b>${(f.upload?.n || 0) + (f.paste?.n || 0)}</b> real ${(f.upload?.n || 0) + (f.paste?.n || 0) === 1 ? "resume" : "resumes"} vs <b>${f.sample?.n || 0}</b> ${f.sample?.n === 1 ? "sample" : "samples"}</li>
     </ul>
 
     <h2>The funnel</h2>
