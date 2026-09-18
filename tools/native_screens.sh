@@ -1,12 +1,21 @@
 #!/bin/bash
-# Capture native-UI screenshots from an Android emulator (Codemagic mac_mini_m2).
+# Capture native-UI screenshots from an Android emulator (Codemagic linux_x2).
 # Installs the built APK, drives the REAL pipeline once (~1¢, one rate slot),
 # and screenshots each stage. Usage: tools/native_screens.sh <apk> ; out: screens/*.png
 set -euo pipefail
 APK="$1"; OUT="screens"; mkdir -p "$OUT"
 SDK="${ANDROID_SDK_ROOT:-$ANDROID_HOME}"
 export PATH="$SDK/cmdline-tools/latest/bin:$SDK/emulator:$SDK/platform-tools:$PATH"
-IMG="system-images;android-34;google_apis;arm64-v8a"
+# The AVD's architecture must match the host or the emulator refuses to start:
+# "Avd's CPU Architecture 'arm64' is not supported by the QEMU2 emulator on x86_64 host".
+# This was hard-coded to arm64-v8a for mac_mini_m2 and had to be read from the host the
+# moment the workflow moved to linux_x2, which is x86_64 (and is the only instance that can
+# run an emulator at all, because Apple-silicon runners cannot nest virtualisation).
+case "$(uname -m)" in
+  arm64|aarch64) ABI="arm64-v8a" ;;
+  *)             ABI="x86_64" ;;
+esac
+IMG="system-images;android-34;google_apis;$ABI"
 
 yes | sdkmanager --licenses >/dev/null 2>&1 || true
 sdkmanager "$IMG" "emulator" "platform-tools" >/dev/null
