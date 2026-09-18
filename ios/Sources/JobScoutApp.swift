@@ -402,7 +402,7 @@ struct ContentView: View {
     // Same affordance as the web demo: hidden behind a toggle, processed in memory only.
     private var ownResumeBox: some View {
         VStack(alignment: .leading, spacing: 8) {
-            LinkText(text: ownOpen ? "Hide resume box" : "or use your own resume") { ownOpen.toggle() }
+            LinkText(text: ownOpen ? "Hide the resume box" : "Use my own resume") { ownOpen.toggle() }
             if ownOpen {
                 HStack(spacing: 10) {
                     if vm.uploading { ProgressView().tint(indigo) }

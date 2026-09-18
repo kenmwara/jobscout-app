@@ -228,10 +228,13 @@
     transition:opacity .35s var(--ease) .1s,transform .35s var(--ease) .1s,max-height .45s var(--ease)}
   .persona:hover .pd,.persona.sel .pd{max-height:120px;opacity:1;transform:none}
   .runwrap{margin-top:26px;display:flex;align-items:center;justify-content:center;gap:22px;flex-wrap:wrap}
-  .ownlink{background:none;border:none;color:var(--midnight);padding:0;font-size:15px;font-weight:500;
-    text-decoration:underline;text-decoration-thickness:1.5px;text-underline-offset:4px;
-    text-decoration-color:var(--hair2);transition:text-decoration-color .2s var(--ease),color .2s var(--ease)}
-  .ownlink:hover{color:var(--indigo);text-decoration-color:var(--indigo)}
+  /* An equal path, not a footnote: same height as .run, outlined rather than filled so the
+     hierarchy still reads, and full width on a phone where a text link disappears. */
+  .ownlink{background:none;color:var(--midnight);border:1.5px solid var(--hair2);border-radius:var(--pill);
+    padding:14px 26px;font-size:15px;font-weight:500;cursor:pointer;
+    transition:border-color .2s var(--ease),color .2s var(--ease),background .2s var(--ease)}
+  .ownlink:hover{color:var(--indigo);border-color:var(--indigo);background:rgba(72,101,255,.05)}
+  .ownlink[aria-expanded="true"]{color:var(--indigo);border-color:var(--indigo);background:rgba(72,101,255,.07)}
   #ownBox{background:var(--surface);border-radius:var(--card);padding:22px 24px;margin-top:22px;box-shadow:var(--sh-subtle)}
   #ownBox[hidden]{display:none}
   textarea{width:100%;min-height:120px;margin-top:12px;border:1.5px solid var(--hair2);border-radius:var(--card);
@@ -534,6 +537,8 @@
     color:var(--ink);margin:44px 0 -.2em;white-space:nowrap;text-align:center;user-select:none;position:relative;z-index:1}
 
   @media (max-width:760px){
+    .runwrap{gap:12px}
+    .run,.ownlink{width:100%}
     .personas{grid-template-columns:1fr;gap:12px}
     .persona{min-height:0;margin-top:0;padding:20px 20px 18px;flex-direction:row;flex-wrap:wrap;align-items:center;gap:6px 16px}
     .persona .prose{width:44px;height:44px;margin:0;order:-1}
@@ -606,11 +611,11 @@
       <div class="personas" id="personas"></div>
       <div class="runwrap">
         <button class="run" id="runBtn" type="button">Run the pipeline</button>
-        <button class="ownlink" id="ownToggle" type="button">or use your own resume</button>
+        <button class="ownlink" id="ownToggle" type="button" aria-expanded="false" aria-controls="ownBox">Use my own resume</button>
       </div>
       <div id="ownBox" hidden>
-        <label class="upl"><input type="file" id="ownFile" accept=".pdf,.docx,.txt,.md,application/pdf" hidden> Upload resume (PDF, DOCX, TXT)</label><span class="uplstat" id="uplStatus"></span>
-        <textarea id="ownText" maxlength="6000" autocomplete="off" placeholder="Paste plain resume text (max 6,000 chars)…"></textarea>
+        <label class="upl"><input type="file" id="ownFile" accept=".pdf,.docx,.txt,.md,application/pdf" hidden> Upload a file (PDF, DOCX, TXT)</label><span class="uplstat" id="uplStatus"></span>
+        <textarea id="ownText" maxlength="6000" autocomplete="off" placeholder="…or paste your resume as plain text (max 6,000 characters)"></textarea>
         <p class="privacy">Processed in memory for this one scoring run. Never stored, never logged. Uploads are read once and discarded — <a href="privacy">privacy</a>.</p>
       </div>
       <div id="banner"></div>
@@ -821,7 +826,7 @@ function renderPersonas(){
        <div class="pd">${p.desc}</div></button>`).join("");
   document.querySelectorAll(".persona").forEach(b => b.onclick = () => {
     selected = PERSONAS.find(p => p.id === b.dataset.id);
-    $("#ownBox").hidden = true; $("#ownText").value = ""; $("#uplStatus").textContent = "";
+    setOwnOpen(false); $("#ownText").value = ""; $("#uplStatus").textContent = "";
     document.querySelectorAll(".persona").forEach(x => {
       const on = x.dataset.id === selected.id;
       x.classList.toggle("sel", on); x.setAttribute("aria-pressed", String(on));
@@ -918,7 +923,7 @@ async function runPipeline(){
   const profile = profileText();
   if (!profile){
     banner("warn", "Choose a candidate above, or upload your resume, and the pipeline scores this morning's postings against it.");
-    $("#ownBox").hidden = false; $("#ownText").focus();
+    setOwnOpen(true); $("#ownText").focus();
     return;
   }
   running = true; $("#runBtn").disabled = true; banner("", "");
@@ -1155,7 +1160,14 @@ function finish(){
 }
 function esc(s){ return String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
 
-$("#ownToggle").onclick = () => { $("#ownBox").hidden = !$("#ownBox").hidden; };
+/* One place decides the resume box's state, so the label and the ARIA can never drift from it. */
+function setOwnOpen(open){
+  $("#ownBox").hidden = !open;
+  const b = $("#ownToggle");
+  b.textContent = open ? "Hide the resume box" : "Use my own resume";
+  b.setAttribute("aria-expanded", String(open));
+}
+$("#ownToggle").onclick = () => setOwnOpen($("#ownBox").hidden);
 $("#ownFile").onchange = async () => {
   const file = $("#ownFile").files[0]; if (!file) return;
   const lab = $("#ownFile").parentElement, st = $("#uplStatus");

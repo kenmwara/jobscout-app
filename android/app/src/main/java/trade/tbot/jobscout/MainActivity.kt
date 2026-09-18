@@ -373,7 +373,7 @@ fun DemoScreen(vm: DemoVm = viewModel()) {
             item {
                 // Same affordance as the web demo: hidden behind a toggle, processed in memory only.
                 Column {
-                    LinkText(if (ownOpen) "Hide resume box" else "or use your own resume") { ownOpen = !ownOpen }
+                    LinkText(if (ownOpen) "Hide the resume box" else "Use my own resume") { ownOpen = !ownOpen }
                     if (ownOpen) {
                         // Storage Access Framework picker — no storage permission, the user picks one document.
                         val picker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
