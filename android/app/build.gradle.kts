@@ -16,7 +16,7 @@ android {
         // Play rejects any upload whose versionCode is not higher than the last —
         // Codemagic's BUILD_NUMBER only ever goes up, so it IS the versionCode.
         versionCode = System.getenv("BUILD_NUMBER")?.toIntOrNull() ?: 1
-        versionName = "0.6.9"
+        versionName = "0.7.0"
     }
 
     // Codemagic injects CM_KEYSTORE_* from the `android_signing` reference in
