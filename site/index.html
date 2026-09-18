@@ -127,17 +127,6 @@
   .marketchip{display:none;font-family:var(--sans);font-size:11.5px;font-weight:500;letter-spacing:.09em;text-transform:uppercase;
     color:#fff;background:#0b7a3b;border-radius:var(--pill);padding:6px 12px;margin-left:12px;vertical-align:middle}
   html[data-market="ke"] .marketchip{display:inline-block}
-  html[data-market="ke"] #kenyaStage{display:none}
-
-  /* ── the Kenya section on the main page ── */
-  .kenya{padding:64px 0 28px;text-align:center}
-  .kenya h2{font-family:var(--serif);font-weight:480;font-size:clamp(30px,4vw,48px);line-height:1.1;margin:22px auto 12px;max-width:16ch;text-wrap:balance;color:var(--ink)}
-  .kenya .note{margin:0 auto 24px;max-width:62ch;font-size:16.5px;line-height:1.6;color:var(--text2)}
-  .kfacts{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin:0 0 28px}
-  .kfact{background:var(--surface);border-radius:var(--pill);padding:10px 16px;font-size:14px;color:var(--text2);box-shadow:var(--sh-subtle)}
-  .kfact b{color:#0b7a3b;font-weight:500}
-  .kcta{display:inline-block;background:#0b7a3b;color:#fff;border-radius:var(--pill);padding:14px 26px;font-size:16px;font-weight:500;transition:background .2s}
-  .kcta:hover{background:#0b2e1f;color:#fff}
 
   /* ── hero ─────────────────────────────────────────────────────────────── */
   .hero{padding:44px 0 8px;text-align:center;position:relative}
@@ -216,8 +205,14 @@
   .setupcard.on,.setupcard:focus-within{background:var(--pg);border-color:rgba(255,255,255,.9);
     box-shadow:inset 0 1px 0 rgba(255,255,255,.9),var(--sh-card)}
   .setupcard h3{font-family:var(--serif);font-weight:480;font-size:23px;line-height:1.12;letter-spacing:-.01em;margin:0 0 15px}
-  .setupcard h3 small{display:block;font-family:var(--sans);font-weight:500;font-size:12px;letter-spacing:.06em;
-    text-transform:uppercase;color:var(--text2);margin-top:7px}
+  /* Kenya's location card is not a control, so it carries the flag instead: the shield
+     lifts and the bands brighten under the cursor, the only motion on the card. */
+  .kflag{display:block;width:100%;max-width:190px;height:auto;border-radius:10px;
+    box-shadow:0 2px 10px rgba(75,68,57,.18);filter:saturate(.94)}
+  .kflag .kshield{transform-origin:center;transition:transform .45s var(--ease)}
+  #whereCard:hover .kflag{filter:saturate(1.08)}
+  #whereCard:hover .kflag .kshield{transform:scale(1.16)}
+  @media (prefers-reduced-motion:reduce){.kflag .kshield{transition:none}}
   .setupcard select{font:15px/1 var(--sans);color:var(--ink);background:var(--surface);cursor:pointer;width:100%;
     border:1.5px solid var(--hair2);border-radius:var(--pill);padding:12px 14px}
   .setupcard select:focus{outline:none;border-color:var(--indigo);box-shadow:0 0 0 3px rgba(72,101,255,.16)}
@@ -607,24 +602,25 @@
 
     <div class="chooser">
       <div class="bearing"><b>000</b> — THE CANDIDATE</div>
-      <h2>Start with your resume.</h2>
-      <p class="lead" id="sweepline">Your resume against this morning's postings. Every score explained.</p>
+      <h2>Start here.</h2>
+      <p class="lead" id="sweepline">Your resume against this morning's postings.</p>
       <!-- Where you are and whether it must be remote are read from feed.places, so a
            control can never offer a place today's sweep cannot honour. -->
       <div class="setup">
         <div class="setupcard" id="resumeCard">
-          <h3>Your resume<small>read once, never stored</small></h3>
+          <h3>Your resume</h3>
           <label class="upl"><input type="file" id="ownFile" accept=".pdf,.docx,.txt,.md,application/pdf" hidden> Upload PDF, DOCX or TXT</label><span class="uplstat" id="uplStatus"></span>
           <textarea id="ownText" maxlength="6000" autocomplete="off" placeholder="…or paste it as plain text (max 6,000 characters)"></textarea>
-          <p class="cardnote">In memory for this one run. Never stored, never logged — <a href="privacy">privacy</a>.</p>
+          <p class="cardnote">One run only. Never stored — <a href="privacy">privacy</a>.</p>
         </div>
         <div class="setupcard" id="whereCard">
-          <h3>Where you are<small id="whereSub"></small></h3>
-          <select id="homeSel" aria-label="Where you are based"></select>
+          <h3>Where you can work</h3>
+          <select id="homeSel" aria-label="Where you can work"></select>
+          <span id="kenyaFlag" hidden><svg class="kflag" viewBox="0 0 200 120" role="img" aria-label="Flag of Kenya"><rect width="200" height="36" fill="#000"/><rect y="36" width="200" height="6" fill="#fff"/><rect y="42" width="200" height="36" fill="#be0027"/><rect y="78" width="200" height="6" fill="#fff"/><rect y="84" width="200" height="36" fill="#009a49"/><g class="kshield" transform="translate(100 60)"><g stroke="#000" stroke-width="5.5" stroke-linecap="round" fill="none"><path d="M-21 -52 L21 52"/><path d="M21 -52 L-21 52"/></g><g stroke="#fff" stroke-width="3" stroke-linecap="round" fill="none"><path d="M-21 -52 L21 52"/><path d="M21 -52 L-21 52"/></g><path d="M-21 -52 l-4.5 -11 l9.5 4.5 z" fill="#fff" stroke="#000" stroke-width="1"/><path d="M21 -52 l4.5 -11 l-9.5 4.5 z" fill="#fff" stroke="#000" stroke-width="1"/><path d="M-21 52 l-4.5 11 l9.5 -4.5 z" fill="#fff" stroke="#000" stroke-width="1"/><path d="M21 52 l4.5 11 l-9.5 -4.5 z" fill="#fff" stroke="#000" stroke-width="1"/><path d="M0 -46 C17 -30 17 30 0 46 C-17 30 -17 -30 0 -46 Z" fill="#fff" stroke="#000" stroke-width="1.4"/><path d="M0 -38 C12 -25 12 25 0 38 C-12 25 -12 -25 0 -38 Z" fill="#be0027"/><path d="M0 -38 C12 -25 12 -20 12 -18 L-12 -18 C-12 -20 -12 -25 0 -38 Z" fill="#000"/><path d="M0 38 C12 25 12 20 12 18 L-12 18 C-12 20 -12 25 0 38 Z" fill="#000"/><rect x="-12" y="-19.5" width="24" height="2.6" fill="#fff"/><rect x="-12" y="16.9" width="24" height="2.6" fill="#fff"/><path d="M0 -14 C5 -7 5 7 0 14 C-5 7 -5 -7 0 -14 Z" fill="#fff"/></g></svg></span>
           <p class="cardnote" id="whereNote"></p>
         </div>
         <div class="setupcard" id="remoteCard">
-          <h3>Remote only<small>open from where you are</small></h3>
+          <h3>Remote only</h3>
           <button class="modebtn" id="modeBtn" type="button" aria-pressed="false">Off</button>
           <p class="cardnote" id="remoteNote"></p>
         </div>
@@ -633,7 +629,7 @@
       <div class="runwrap">
         <button class="run" id="runBtn" type="button">Run the pipeline</button>
       </div>
-      <p class="samples">No resume to hand? Score a sample candidate instead: <span id="personas"></span></p>
+      <p class="samples">No resume to hand? <span id="personas"></span></p>
       <div id="banner"></div>
     </div>
   </section>
@@ -691,20 +687,6 @@
     <button class="cbtn" id="cprev" type="button" aria-label="previous">&#8592;</button>
     <div class="cdots" id="cdots"></div>
     <button class="cbtn" id="cnext" type="button" aria-label="next">&#8594;</button>
-  </div>
-</section>
-
-<section class="kenya" id="kenyaStage" aria-label="The Kenya market">
-  <div class="wrap">
-    <div class="bearing"><b>315</b> — KENYA</div>
-    <h2>The same pipeline, for Kenya.</h2>
-    <p class="note">Tens of thousands of qualified people, and postings that say remote but mean somewhere else. The Kenya market asks the first question first: can this employer hire someone based in Kenya? Worldwide, EMEA and Africa-open roles pass. A named place elsewhere is rejected, with the reason. Anything that asks the applicant for money is rejected outright.</p>
-    <div class="kfacts">
-      <span class="kfact"><b>Eligibility first</b> — the gate answers it before anyone applies</span>
-      <span class="kfact"><b>Graduates scored as graduates</b> — entry-level roles against entry-level expectations</span>
-      <span class="kfact"><b>Free to the job seeker</b> — always</span>
-    </div>
-    <a class="kcta" href="https://nairobi.jobscout.page">Open the Kenya market →</a>
   </div>
 </section>
 
@@ -942,8 +924,8 @@ async function loadFeed(){
     const c = feed.counts || {};
     const secs = Object.keys(feed.sectors || {}).length;
     $("#sweepline").innerHTML = secs
-      ? `Your resume against this morning's <b>${feed.postings.length}</b> postings across <b>${secs}</b> sectors. Your own words pick the sector; Claude scores that sector's postings.`
-      : `Your resume against this morning's <b>${feed.postings.length}</b> postings. Every score explained.`;
+      ? `<b>${feed.postings.length}</b> postings swept this morning, across <b>${secs}</b> sectors.`
+      : `<b>${feed.postings.length}</b> postings swept this morning.`;
   }catch(e){
     $("#sweepline").textContent = "The feed is unreachable right now. Scoring needs the API.";
   }
@@ -966,21 +948,23 @@ function renderSetup(){
   if (pickable){
     $("#homeSel").innerHTML = `<option value="">anywhere in ${country}</option>` +
       pl.options.map(o => `<option value="${o.code}">${esc(o.label)}${o.local ? ` — ${o.local} on site` : ""}</option>`).join("");
+    $("#homeSel").setAttribute("aria-label", "Where you can work");
     $("#homeSel").value = home;
   }
   const opt = (pl?.options || []).find(o => o.code === home);
   const onsite = pl ? all.length - pl.remote - pl.unplaced : 0;
-  $("#whereSub").textContent = pickable ? "narrow it if you like" : country;
+  // In Kenya the card cannot be a control, so it is the flag.
+  $("#kenyaFlag").hidden = pickable || MARKET !== "ke";
   $("#whereNote").textContent = !pl ? ""
-    : !pickable ? `Every on-site posting today is in ${country} — ${all.length - pl.remote} of them. Nothing to narrow.`
-    : opt ? `${opt.local} posting${opt.local === 1 ? " is" : "s are"} on site in ${esc(opt.label)} today, and ${pl.remote} more are remote.`
-    : `${pl.remote} remote, ${onsite} on site somewhere named, ${pl.unplaced} that don't say where.`;
+    : !pickable ? `Every on-site role today is in ${country} — ${all.length - pl.remote} of them.`
+    : opt ? `${opt.local} on site in ${opt.label} · ${pl.remote} remote`
+    : `${pl.remote} remote · ${onsite} on site · ${pl.unplaced} unsaid`;
   $("#whereCard").classList.toggle("on", !!home);
   $("#modeBtn").textContent = remoteOnly ? "On" : "Off";
   $("#modeBtn").classList.toggle("on", remoteOnly);
   $("#modeBtn").setAttribute("aria-pressed", String(remoteOnly));
   $("#remoteCard").classList.toggle("on", remoteOnly);
-  $("#remoteNote").textContent = pl ? `${pl.remote} of today's ${all.length} are open from anywhere.` : "";
+  $("#remoteNote").textContent = pl ? `${pl.remote} of ${all.length} open from anywhere` : "";
   $("#resumeCard").classList.toggle("on", $("#ownText").value.trim().length > 40);
   markChips();
   prefNote();
@@ -993,10 +977,10 @@ function prefNote(){
   const n = all.filter(takeable).length;
   const opt = (feed.places.options || []).find(o => o.code === home);
   const where = opt ? opt.label : (MARKET === "ke" ? "Kenya" : "Canada");
+  // Silent at rest: the cards already carry the numbers, and a sentence repeating them was noise.
   $("#prefNote").innerHTML = home || remoteOnly
-    ? `<b>${n}</b> of today's ${all.length} are open to someone in ${esc(where)}${remoteOnly ? ", remote only" : ""}` +
-      (remoteOnly ? "." : ` — ${feed.places.remote} remote${opt && opt.local ? `, ${opt.local} on site there` : ""}${feed.places.unplaced ? `, ${feed.places.unplaced} that don't say where` : ""}.`)
-    : `All ${all.length} of today's eligible postings. Narrow them if you like — it costs nothing and no posting is hidden without a reason.`;
+    ? `Scoring <b>${n}</b> of today's ${all.length} — the rest stay on the page, each with its reason.`
+    : "";
 }
 
 function sleep(ms){ return new Promise(r => setTimeout(r, reduced ? 0 : ms)); }
