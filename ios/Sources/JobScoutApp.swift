@@ -454,7 +454,7 @@ struct ContentView: View {
         }
         var t = "\(n) of \(total) \u{2014} \(whereLabel) \u{00b7} \(pl.remote) remote"
         if let o = opt, o.local > 0 { t += " \u{00b7} \(o.local) on site there" }
-        return t + "."
+        return t
     }
 
     private var ownResumeBox: some View {
