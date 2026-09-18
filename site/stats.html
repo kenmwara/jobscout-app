@@ -115,7 +115,8 @@ const STEPS = [
   ["apply",   "Went to apply", "opened the posting at the employer", "act"],
   ["outcome", "Told us how it went", "marked what happened",         "out"],
 ];
-const OUT_LABEL = { applied: "Applied", replied: "They replied", interview: "Interview", offer: "Offer", declined: "Declined" };
+const OUT_LABEL = { applied: "Applied", pending: "Waiting to hear", responded: "They replied",
+                    interviewed: "Interview", callback: "Callback", declined: "Declined" };
 
 function bars(rows, key, cls){
   const max = Math.max(1, ...rows.map(r => r.v));

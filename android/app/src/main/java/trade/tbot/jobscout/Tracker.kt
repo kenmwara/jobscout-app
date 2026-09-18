@@ -13,6 +13,7 @@ val STAGES = listOf(
     "responded" to "Responded",
     "interviewed" to "Interviewed",
     "callback" to "Callback",
+    "declined" to "Declined",   // a no is an outcome; the set had no way to say it
 )
 
 fun stageLabel(id: String): String = STAGES.firstOrNull { it.first == id }?.second ?: id

@@ -3,6 +3,9 @@ import Foundation
 /// Same worker API the web demo speaks — the app is another client of it.
 let apiBase = URL(string: "https://jobscout-app-api.kenmwara.workers.dev")!
 
+/// Random per launch, in memory only: it links the steps of one session and nothing else.
+let evSid = String((0..<12).map { _ in "abcdefghijklmnopqrstuvwxyz0123456789".randomElement()! })
+
 struct Gate: Codable { var verdict = ""; var reason = "" }
 
 struct Posting: Codable, Identifiable {
@@ -109,6 +112,20 @@ enum Api {
         req.timeoutInterval = 120  // 8 sequential live LLM calls behind /api/score
         let (data, _) = try await URLSession.shared.data(for: req)
         return try JSONDecoder().decode(R.self, from: data)
+    }
+
+    /// One counted step. The same names the web page sends; the worker drops anything not on
+    /// its list. No resume, no posting, no device id, no address, and `evSid` is random per
+    /// launch and never written to disk. Fire and forget: a counter must never fail a screen.
+    static func ev(_ name: String, _ detail: String? = nil, market: String = "ca") {
+        var req = URLRequest(url: apiBase.appendingPathComponent("api/ev"))
+        req.httpMethod = "POST"
+        // text/plain keeps this a simple request, matching the page (see site/index.html)
+        req.setValue("text/plain", forHTTPHeaderField: "content-type")
+        var payload: [String: String] = ["n": name, "m": market, "s": "ios", "sid": evSid]
+        if let d = detail { payload["d"] = String(d.prefix(48)) }
+        req.httpBody = try? JSONSerialization.data(withJSONObject: payload)
+        URLSession.shared.dataTask(with: req).resume()
     }
 
     static func feed(market: String = "ca") async throws -> Feed {

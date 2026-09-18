@@ -116,8 +116,9 @@ function roseSVG(fit){
 }
 /* The shortlist is the only place that can answer "did it go anywhere". The mark stays in this
    browser; a single word is counted so the funnel has an end. */
-const STATUS = [["", "what happened?"], ["applied", "applied"], ["replied", "they replied"],
-                ["interview", "interview"], ["offer", "offer"], ["declined", "declined"]];
+const STATUS = [["", "what happened?"], ["applied", "applied"], ["pending", "waiting to hear"],
+                ["responded", "they replied"], ["interviewed", "interview"], ["callback", "callback"],
+                ["declined", "declined"]];
 let SID = "";
 try{
   SID = localStorage.getItem("jobscout.sid") || "";

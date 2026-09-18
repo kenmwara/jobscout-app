@@ -1,6 +1,9 @@
 package trade.tbot.jobscout
 
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
@@ -14,6 +17,10 @@ import java.util.concurrent.TimeUnit
 
 /** Same worker API the web demo speaks — the app is another client of it. */
 const val API_BASE = "https://jobscout-app-api.kenmwara.workers.dev"
+
+/** Random per process, in memory only: it links the steps of one session and nothing else. */
+private val evSid: String = buildString { repeat(12) { append("abcdefghijklmnopqrstuvwxyz0123456789".random()) } }
+private val evScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
 @Serializable data class Gate(val verdict: String = "", val reason: String = "")
 
@@ -152,6 +159,28 @@ object Api {
             // {error, detail} body the UI shows verbatim; anything else is a plain failure.
             if (!resp.isSuccessful && !body.trimStart().startsWith("{")) error("HTTP ${resp.code}")
             body
+        }
+    }
+
+    /**
+     * One counted step. The same thirteen names the web page sends and the worker allows;
+     * anything else is dropped server-side. Carries no resume, no posting, no device id and
+     * no address, and evSid is random per process and never written to disk.
+     *
+     * Fire and forget: a counter must never fail a screen, so every error is swallowed.
+     */
+    fun ev(name: String, detail: String? = null, market: String = "ca") {
+        evScope.launch {
+            try {
+                val d = if (detail == null) "null" else "\"" + detail.take(48) + "\""
+                val body = "{\"n\":\"" + name + "\",\"d\":" + d +
+                    ",\"m\":\"" + market + "\",\"s\":\"android\",\"sid\":\"" + evSid + "\"}"
+                // text/plain keeps this a simple request, matching the page (see site/index.html)
+                http.newCall(
+                    Request.Builder().url(API_BASE + "/api/ev")
+                        .post(body.toRequestBody("text/plain".toMediaType())).build()
+                ).execute().close()
+            } catch (_: Throwable) { }
         }
     }
 

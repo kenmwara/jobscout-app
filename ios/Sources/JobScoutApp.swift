@@ -134,6 +134,7 @@ final class DemoVM: ObservableObject {
     func setMarket(_ m: String) async {
         guard m != market, phase != .gates, phase != .scoring else { return }
         // home is cleared with the market: "Manitoba" means nothing in the Kenya feed.
+        Api.ev("open", market: m)
         market = m; personaIdx = -1; home = ""; remoteOnly = false; feed = nil; phase = .idle; scores = []; banner = nil
         await load()
     }
@@ -142,6 +143,7 @@ final class DemoVM: ObservableObject {
         guard let feed, phase != .gates, phase != .scoring else { return }
         guard let profile = profileText else { banner = Self.noCandidate; return }
         let sel = select(profile: profile, feed: feed, home: home, remoteOnly: remoteOnly)
+        Api.ev("run", sel.sector, market: market)
         selection = sel
         phase = .gates; gatesShown = 0; scores = []; meta = nil; banner = nil; fromCache = false
         for _ in 0...feed.rejects.count {
@@ -173,6 +175,7 @@ final class DemoVM: ObservableObject {
     /// run finished, so the tracker filled itself with a list nobody asked for
     /// and nobody could read. Nothing enters it now without a tap.
     func save(_ s: Score, _ p: Posting?) {
+        if tracker[s.id] == nil { Api.ev("save", market: market) }
         var t = tracker[s.id] ?? Tracked(id: s.id, stage: "survivor", updated: nowISO())
         t.title = p?.title ?? t.title
         t.company = p?.company ?? t.company
@@ -184,6 +187,8 @@ final class DemoVM: ObservableObject {
 
     func setStage(_ id: String, _ stage: String) {
         guard var t = tracker[id] else { return }
+        // The word alone leaves the device - no title, no company, no id (see site/privacy.html).
+        if stage != "survivor" && t.stage != stage { Api.ev("outcome", stage, market: market) }
         t.stage = stage
         t.updated = nowISO()
         tracker[id] = t
@@ -308,7 +313,7 @@ struct ContentView: View {
                 // The samples are a fallback, under the real controls, not the front door.
                 ForEach(Array(personasFor(vm.market).enumerated()), id: \.element.id) { i, p in
                     personaCard(p, index: i, selected: i == vm.personaIdx && !vm.usingOwn)
-                        .onTapGesture { vm.personaIdx = i }
+                        .onTapGesture { vm.personaIdx = i; Api.ev("sample", p.id, market: vm.market) }
                 }
                 runButton
 
@@ -358,7 +363,7 @@ struct ContentView: View {
         }
         .background(ZStack { canvasBg; Dots() }.ignoresSafeArea())
         .sheet(isPresented: $showTracker) { TrackerView(vm: vm) }
-        .task { await vm.load() }
+        .task { Api.ev("open", market: vm.market); await vm.load() }
         .sheet(isPresented: .init(get: { vm.letterBusy || vm.letterText != nil },
                                   set: { if !$0 { vm.letterText = nil; vm.letterBusy = false } })) {
             letterSheet

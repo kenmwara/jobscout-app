@@ -81,10 +81,11 @@ const EV_NAMES = new Set([
   "tailor",     // asked for a tailored resume
   "apply",      // opened a posting at the source       detail: band
   "save",       // kept a posting on the shortlist
-  "outcome",    // marked what happened                 detail: applied|replied|interview|offer|declined
+  "outcome",    // marked what happened                 detail: one of OUTCOMES below
 ]);
 const EV_SURFACES = new Set(["web", "android", "ios"]);
-const OUTCOMES = ["applied", "replied", "interview", "offer", "declined"];
+// The apps' stage ids (Tracker.kt / TrackerView.swift), which the web page now shares.
+const OUTCOMES = ["applied", "pending", "responded", "interviewed", "callback", "declined"];
 
 async function recordRun(env, key, tokensIn, tokensOut, costUsd) {
   const day = new Date().toISOString().slice(0, 10);

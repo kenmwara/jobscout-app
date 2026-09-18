@@ -130,7 +130,7 @@ class DemoVm(app: Application) : AndroidViewModel(app) {
     private val _ui = MutableStateFlow(Ui(tracker = TrackerStore.load(app)))
     val ui = _ui.asStateFlow()
 
-    init { loadFeed(); checkForUpdate() }
+    init { loadFeed(); checkForUpdate(); Api.ev("open", market = _ui.value.market) }
 
     /**
      * Sideloaded copies have no store to update them, so the app asks GitHub for
@@ -178,7 +178,10 @@ class DemoVm(app: Application) : AndroidViewModel(app) {
         else -> "Feed unavailable: ${e.message ?: e::class.java.simpleName}"
     }
 
-    fun pick(i: Int) = _ui.update { it.copy(personaIdx = i) }
+    fun pick(i: Int) {
+        Api.ev("sample", personasFor(_ui.value.market).getOrNull(i)?.id, _ui.value.market)
+        _ui.update { it.copy(personaIdx = i) }
+    }
 
     /** Switching market swaps the feed, the candidates and the rubric; a run in progress is left alone. */
     fun setMarket(m: String) {
@@ -188,10 +191,21 @@ class DemoVm(app: Application) : AndroidViewModel(app) {
                              feed = null, phase = Phase.IDLE, scores = emptyList(), banner = null) }
         loadFeed()
     }
-    fun setHome(code: String) = _ui.update { it.copy(home = code) }
-    fun toggleRemoteOnly() = _ui.update { it.copy(remoteOnly = !it.remoteOnly) }
+    fun setHome(code: String) {
+        Api.ev("where", code.ifEmpty { "any" }, _ui.value.market)
+        _ui.update { it.copy(home = code) }
+    }
+    fun toggleRemoteOnly() {
+        Api.ev("remote", if (_ui.value.remoteOnly) "off" else "on", _ui.value.market)
+        _ui.update { it.copy(remoteOnly = !it.remoteOnly) }
+    }
 
-    fun setResume(s: String) = _ui.update { it.copy(resume = s.take(6000)) }
+    // counted once a process: pasting is one step, not one per keystroke
+    private var pasteCounted = false
+    fun setResume(s: String) {
+        if (!pasteCounted && s.trim().length > 40) { pasteCounted = true; Api.ev("paste", market = _ui.value.market) }
+        _ui.update { it.copy(resume = s.take(6000)) }
+    }
 
     /** Same rule as the web demo: pasted text wins once it is longer than 40 chars, else the persona. */
     private fun profileText(): String? {
@@ -244,6 +258,7 @@ class DemoVm(app: Application) : AndroidViewModel(app) {
             _ui.update { it.copy(banner = NO_CANDIDATE) }; return
         }
         val sel = select(profile, feed, _ui.value.home, _ui.value.remoteOnly)
+        Api.ev("run", sel.sector, _ui.value.market)
         viewModelScope.launch {
             _ui.update { it.copy(phase = Phase.GATES, gatesShown = 0, scores = emptyList(),
                                  meta = null, banner = null, fromCache = false, selection = sel) }
@@ -315,8 +330,12 @@ class DemoVm(app: Application) : AndroidViewModel(app) {
     }
 
     /** Upserts; a posting not yet tracked (e.g. removed, then re-staged from its card) enters at that stage. */
-    fun setStage(item: Tracked, stage: String) =
+    fun setStage(item: Tracked, stage: String) {
+        // The word alone leaves the device — no title, no company, no id (see site/privacy.html).
+        if (stage != "survivor" && _ui.value.tracker[item.id]?.stage != stage) Api.ev("outcome", stage, _ui.value.market)
+        if (!_ui.value.tracker.containsKey(item.id)) Api.ev("save", market = _ui.value.market)
         setTracker(_ui.value.tracker + (item.id to item.copy(stage = stage, updated = Instant.now().toString())))
+    }
 
     fun untrack(id: String) = setTracker(_ui.value.tracker - id)
     fun clearTracker() = setTracker(emptyMap())
