@@ -112,6 +112,8 @@ data class Ui(
     val uploadStatus: String? = null,
     val phase: Phase = Phase.IDLE,
     val selection: Selection? = null,   // which postings met Claude, and why (sector + counts)
+    val home: String = "",              // province the visitor lives in; "" = anywhere
+    val remoteOnly: Boolean = false,
     val gatesShown: Int = 0,
     val scores: List<Score> = emptyList(),
     val meta: Meta? = null,
@@ -181,9 +183,14 @@ class DemoVm(app: Application) : AndroidViewModel(app) {
     /** Switching market swaps the feed, the candidates and the rubric; a run in progress is left alone. */
     fun setMarket(m: String) {
         if (m == _ui.value.market) return
-        _ui.update { it.copy(market = m, personaIdx = -1, feed = null, phase = Phase.IDLE, scores = emptyList(), banner = null) }
+        // home is cleared with the market: "Manitoba" means nothing in the Kenya feed.
+        _ui.update { it.copy(market = m, personaIdx = -1, home = "", remoteOnly = false,
+                             feed = null, phase = Phase.IDLE, scores = emptyList(), banner = null) }
         loadFeed()
     }
+    fun setHome(code: String) = _ui.update { it.copy(home = code) }
+    fun toggleRemoteOnly() = _ui.update { it.copy(remoteOnly = !it.remoteOnly) }
+
     fun setResume(s: String) = _ui.update { it.copy(resume = s.take(6000)) }
 
     /** Same rule as the web demo: pasted text wins once it is longer than 40 chars, else the persona. */
@@ -236,7 +243,7 @@ class DemoVm(app: Application) : AndroidViewModel(app) {
         val profile = profileText() ?: run {
             _ui.update { it.copy(banner = NO_CANDIDATE) }; return
         }
-        val sel = select(profile, feed)
+        val sel = select(profile, feed, _ui.value.home, _ui.value.remoteOnly)
         viewModelScope.launch {
             _ui.update { it.copy(phase = Phase.GATES, gatesShown = 0, scores = emptyList(),
                                  meta = null, banner = null, fromCache = false, selection = sel) }
@@ -370,6 +377,10 @@ fun DemoScreen(vm: DemoVm = viewModel()) {
             itemsIndexed(personasFor(ui.market)) { i, p ->
                 PersonaCard(p, index = i, selected = i == ui.personaIdx && !usingOwn) { vm.pick(i) }
             }
+            // Where you live changes which postings you could actually take. Rendered from
+            // feed.places, so a province only appears with the number of postings that really
+            // require being there today.
+            if (feed != null && feed.places.options.isNotEmpty()) item { WhereRow(ui, feed, vm) }
             item {
                 // Same affordance as the web demo: hidden behind a toggle, processed in memory only.
                 Column {
@@ -633,6 +644,45 @@ private fun Chip(text: String, color: Color, ground: Color = color.copy(alpha = 
 }
 
 /** August's outlined pill; `filled` is the info-tinted state (saved, letter). */
+/** "I'm in <province>" + "Remote only" — the same two controls as the web page. */
+@Composable
+private fun WhereRow(ui: Ui, feed: Feed, vm: JobScoutVm) {
+    var open by remember { mutableStateOf(false) }
+    val opt = feed.places.options.firstOrNull { it.code == ui.home }
+    val whereLabel = opt?.label ?: if (ui.market == "ke") "anywhere in Kenya" else "anywhere in Canada"
+    val all = feed.passers
+    val n = all.count { takeable(it, ui.home, ui.remoteOnly) }
+    Column(Modifier.padding(top = 14.dp)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+            Box {
+                PillButton("I'm in: $whereLabel") { open = true }
+                DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
+                    DropdownMenuItem(
+                        text = { Text(if (ui.market == "ke") "anywhere in Kenya" else "anywhere in Canada") },
+                        onClick = { vm.setHome(""); open = false })
+                    feed.places.options.forEach { o ->
+                        DropdownMenuItem(
+                            text = { Text(o.label + if (o.local > 0) "  \u2014 ${o.local} local" else "") },
+                            onClick = { vm.setHome(o.code); open = false })
+                    }
+                }
+            }
+            PillButton("Remote only", filled = ui.remoteOnly) { vm.toggleRemoteOnly() }
+        }
+        Text(
+            if (ui.home.isEmpty() && !ui.remoteOnly)
+                "All ${all.size} of today's eligible postings. Narrow them if you like \u2014 it costs nothing and no posting is hidden without a reason."
+            else if (ui.remoteOnly)
+                "$n of today's ${all.size} are open to someone in $whereLabel, remote only."
+            else
+                "$n of today's ${all.size} are open to someone in $whereLabel \u2014 ${feed.places.remote} remote" +
+                    (if (opt != null && opt.local > 0) ", ${opt.local} on site there" else "") +
+                    (if (feed.places.unplaced > 0) ", ${feed.places.unplaced} that don't say where" else "") + ".",
+            color = Muted, fontSize = 12.5.sp, lineHeight = 18.sp,
+            modifier = Modifier.padding(top = 8.dp))
+    }
+}
+
 @Composable
 private fun PillButton(text: String, color: Color = MidnightViolet, filled: Boolean = false, enabled: Boolean = true,
                        onClick: () -> Unit) {

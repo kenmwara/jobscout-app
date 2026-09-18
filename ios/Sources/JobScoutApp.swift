@@ -55,6 +55,8 @@ final class DemoVM: ObservableObject {
     @Published var fromCache = false
     @Published var banner: String?
     @Published var selection: Selection?   // which postings met Claude, and why (sector + counts)
+    @Published var home = ""               // province the visitor lives in; "" = anywhere
+    @Published var remoteOnly = false
     @Published var letterText: String?
     @Published var letterBusy = false
     @Published var letterTitle = "Grounded cover letter"
@@ -131,14 +133,15 @@ final class DemoVM: ObservableObject {
     /// Switching market swaps the feed, the candidates and the rubric; a run in progress is left alone.
     func setMarket(_ m: String) async {
         guard m != market, phase != .gates, phase != .scoring else { return }
-        market = m; personaIdx = -1; feed = nil; phase = .idle; scores = []; banner = nil
+        // home is cleared with the market: "Manitoba" means nothing in the Kenya feed.
+        market = m; personaIdx = -1; home = ""; remoteOnly = false; feed = nil; phase = .idle; scores = []; banner = nil
         await load()
     }
 
     func run() async {
         guard let feed, phase != .gates, phase != .scoring else { return }
         guard let profile = profileText else { banner = Self.noCandidate; return }
-        let sel = select(profile: profile, feed: feed)
+        let sel = select(profile: profile, feed: feed, home: home, remoteOnly: remoteOnly)
         selection = sel
         phase = .gates; gatesShown = 0; scores = []; meta = nil; banner = nil; fromCache = false
         for _ in 0...feed.rejects.count {
@@ -303,6 +306,7 @@ struct ContentView: View {
                     personaCard(p, index: i, selected: i == vm.personaIdx && !vm.usingOwn)
                         .onTapGesture { vm.personaIdx = i }
                 }
+                whereRow
                 ownResumeBox
                 runButton
 
@@ -400,6 +404,49 @@ struct ContentView: View {
     }
 
     // Same affordance as the web demo: hidden behind a toggle, processed in memory only.
+    /// "I'm in <province>" + "Remote only" — the same two controls as the web page, rendered
+    /// from feed.places so a province only appears with the postings that really require being
+    /// there today.
+    @ViewBuilder private var whereRow: some View {
+        if let feed = vm.feed, let pl = feed.places, !pl.options.isEmpty {
+            let opt = pl.options.first { $0.code == vm.home }
+            let whereLabel = opt?.label ?? (vm.market == "ke" ? "anywhere in Kenya" : "anywhere in Canada")
+            let all = feed.passers
+            let n = all.filter { takeable($0, home: vm.home, remoteOnly: vm.remoteOnly) }.count
+            VStack(alignment: .leading, spacing: 8) {
+                HStack(spacing: 8) {
+                    Menu {
+                        Button(vm.market == "ke" ? "anywhere in Kenya" : "anywhere in Canada") { vm.home = "" }
+                        ForEach(pl.options) { o in
+                            Button(o.label + (o.local > 0 ? "  \u{2014} \(o.local) local" : "")) { vm.home = o.code }
+                        }
+                    } label: {
+                        PillButton(text: "I'm in: \(whereLabel)") { }
+                            .allowsHitTesting(false)
+                    }
+                    PillButton(text: "Remote only", filled: vm.remoteOnly) { vm.remoteOnly.toggle() }
+                    Spacer(minLength: 0)
+                }
+                Text(noteText(n: n, total: all.count, whereLabel: whereLabel, opt: opt, pl: pl))
+                    .font(sans(12.5)).foregroundColor(muted).lineSpacing(3)
+            }
+            .padding(.top, 6)
+        }
+    }
+
+    private func noteText(n: Int, total: Int, whereLabel: String, opt: PlaceOption?, pl: PlacesInfo) -> String {
+        if vm.home.isEmpty && !vm.remoteOnly {
+            return "All \(total) of today's eligible postings. Narrow them if you like \u{2014} it costs nothing and no posting is hidden without a reason."
+        }
+        if vm.remoteOnly {
+            return "\(n) of today's \(total) are open to someone in \(whereLabel), remote only."
+        }
+        var t = "\(n) of today's \(total) are open to someone in \(whereLabel) \u{2014} \(pl.remote) remote"
+        if let o = opt, o.local > 0 { t += ", \(o.local) on site there" }
+        if pl.unplaced > 0 { t += ", \(pl.unplaced) that don't say where" }
+        return t + "."
+    }
+
     private var ownResumeBox: some View {
         VStack(alignment: .leading, spacing: 8) {
             LinkText(text: ownOpen ? "Hide the resume box" : "Use my own resume") { ownOpen.toggle() }
