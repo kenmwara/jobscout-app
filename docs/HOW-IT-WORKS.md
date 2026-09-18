@@ -18,17 +18,28 @@ Claude call.
 
 ## The flow, in order
 
-**1 · Candidate.** You pick one of three personas (or paste a resume, which is
-processed in memory and never stored). Nothing is chosen for you — a run with no
-candidate asks for one, so a result on screen is always a result about someone. This is the profile the AI reads against.
+**1 · Candidate.** Three cards, in the order the work actually happens: your
+resume, where you can work, and whether it has to be remote. The resume is the
+point of the thing, so it leads — upload a PDF, DOCX or TXT, or paste the text,
+processed in memory and never stored. Three sample candidates sit under the
+button for anyone who would rather not hand over a resume to see the pipeline
+run. Nothing is pre-selected, and a run with no candidate asks for one, so a
+result on screen is always a result about someone.
 
-<img src="img/web-candidate.png" alt="Persona chooser" width="520">
+The two filters are built from the day's own sweep, not a hardcoded list, so a
+control can never offer a province the morning's postings cannot honour. A
+posting is kept if it is remote, or names your province, or names no province
+at all — that last clause matters, because around twenty-three postings a day
+say only "Canada". No card states a count until its own control is used: a
+number on an untouched control would read as the result of a search nobody ran.
+
+<img src="img/web-candidate.png" alt="The three setup cards: your resume, where you can work, remote only" width="520">
 
 **2 · Why those, and not the rest.** Every posting first passes deterministic
 checks — is it genuinely remote, is the candidate's region actually eligible,
 does it ask the applicant for money. This is free and instant, and it's where
 most postings die. Design point: never spend AI money to discover what a rule
-already knows. The survivors carry a sector tag (eighteen sectors, from a keyword
+already knows. The survivors carry a sector tag (nineteen sectors, from a keyword
 lexicon the feed ships with itself, tuned against a 66-profile regression harness);
 the page reads the profile with the same
 lexicon, ranks that sector's postings by the profile's own words, and sends only
@@ -64,7 +75,12 @@ that is really in the profile.
 [nairobi.jobscout.page](https://nairobi.jobscout.page): the day's sweep
 re-gated for a hire based in Kenya, three Kenyan candidates, and a rubric that
 asks first whether the employer can hire from Kenya at all — the question most
-"remote" postings answer only after a week of applying.
+"remote" postings answer only after a week of applying. The location card there
+offers no picker, because 105 of the 110 on-site Kenyan postings give their
+location as the single word "Kenya" — the sources do not publish a town, so the
+page does not invent one.
+
+<img src="img/web-kenya.png" alt="The same three cards on the Kenya market" width="520">
 
 ## The engineering underneath
 
@@ -76,6 +92,15 @@ asks first whether the employer can hire from Kenya at all — the question most
 - **Cheap on purpose**: a full run (gates + 8 live scores) costs about one cent
   on a Haiku-class model — which is why the budget breaker, not the rate limit,
   is what bounds the spend.
+- **Measured, not guessed**: thirteen named events record which steps people
+  actually use, through to what happened after an application — applied,
+  replied, interview, declined, marked by the person it happened to. The name
+  must be on an allowlist inside the Worker, and an event carries no IP, no
+  resume text, no job title and no company. The totals are public at
+  [jobscout.page/stats](https://jobscout.page/stats); what each event can and
+  cannot contain is written out on the
+  [privacy page](https://jobscout.page/privacy). The page had been redesigned
+  three times on taste before this existed.
 - **Separated by design**: the public demo reads a sanitized feed published by
   the private pipeline; it can see titles and verdicts, never private data.
   In the private system, the same separation keeps the reporting path unable

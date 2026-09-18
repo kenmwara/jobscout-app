@@ -11,8 +11,11 @@ prefilter's own reasons, and every score and cover letter is a live Claude call.
 
 ## The 90-second tour
 
-1. **Pick a candidate** (three personas) or paste your own resume text —
-   processed in-memory for one run, never stored or logged.
+1. **Add your resume** — upload a PDF, DOCX or TXT, or paste the text,
+   processed in-memory for one run, never stored or logged. Say where you can
+   work and whether it must be remote; both controls are built from the day's
+   own sweep. Three sample candidates sit under the button for anyone who would
+   rather not hand over a resume. Nothing is pre-selected.
 2. **Live scoring.** The gate survivors go to Claude (Haiku-class) with an
    honest rubric — most postings are a poor fit and the model says so. Each
    result renders on the brand's **bearing rose** — the mark itself, carrying
