@@ -216,8 +216,10 @@
   /* one number per card, on the floor of it */
   .cardnote{font-size:13px;color:var(--text2);line-height:1.5;margin:16px 0 0;
     font-variant-numeric:tabular-nums}
-  /* The bearing mark the persona cards wore: eight dots on the logo's ring, blooming one
-     bearing at a time under the cursor. One hue per card. */
+  /* The logo itself, at card size: the same eight bearings with the same ramping radius as
+     the mark in the header, blooming one bearing at a time under the cursor. The box is
+     widened to -3.5/31 because the big dots overrun a 24-unit box: the header clips them and
+     gets away with it at 26px, but at 78px the clip reads as square corners. */
   .prose{width:78px;height:78px;display:block;margin:auto auto 0;transition:transform .5s var(--ease)}
   .prose circle{fill:var(--hair2)}
   @media (prefers-reduced-motion:no-preference){
@@ -639,19 +641,19 @@
           <h3>Your resume</h3>
           <label class="upl"><input type="file" id="ownFile" accept=".pdf,.docx,.txt,.md,application/pdf" hidden> Upload PDF, DOCX, TXT</label><span class="uplstat" id="uplStatus"></span>
           <textarea id="ownText" maxlength="6000" autocomplete="off" placeholder="…or paste it"></textarea>
-          <svg class="prose" viewBox="0 0 104 104" aria-hidden="true"><circle style="--i:0" cx="52.00" cy="14.00" r="11"/><circle style="--i:1" cx="78.87" cy="25.13" r="11"/><circle style="--i:2" cx="90.00" cy="52.00" r="11"/><circle style="--i:3" cx="78.87" cy="78.87" r="11"/><circle style="--i:4" cx="52.00" cy="90.00" r="11"/><circle style="--i:5" cx="25.13" cy="78.87" r="11"/><circle style="--i:6" cx="14.00" cy="52.00" r="11"/><circle style="--i:7" cx="25.13" cy="25.13" r="11"/></svg>
+          <svg class="prose" viewBox="-3.5 -3.5 31 31" aria-hidden="true"><circle style="--i:0" cx="12.0000" cy="1.0000" r="2.2750"/><circle style="--i:1" cx="19.7782" cy="4.2218" r="2.5694"/><circle style="--i:2" cx="23.0000" cy="12.0000" r="2.8639"/><circle style="--i:3" cx="19.7782" cy="19.7782" r="3.1583"/><circle style="--i:4" cx="12.0000" cy="23.0000" r="3.4527"/><circle style="--i:5" cx="4.2218" cy="19.7782" r="3.7471"/><circle style="--i:6" cx="1.0000" cy="12.0000" r="4.0416"/><circle style="--i:7" cx="4.2218" cy="4.2218" r="4.3360"/></svg>
           <p class="cardnote">Never stored · <a href="privacy">privacy</a></p>
         </div>
         <div class="setupcard" id="whereCard">
           <h3>Where you can work</h3>
           <select id="homeSel" aria-label="Where you can work"></select>
-          <svg class="prose" viewBox="0 0 104 104" aria-hidden="true"><circle style="--i:0" cx="52.00" cy="14.00" r="11"/><circle style="--i:1" cx="78.87" cy="25.13" r="11"/><circle style="--i:2" cx="90.00" cy="52.00" r="11"/><circle style="--i:3" cx="78.87" cy="78.87" r="11"/><circle style="--i:4" cx="52.00" cy="90.00" r="11"/><circle style="--i:5" cx="25.13" cy="78.87" r="11"/><circle style="--i:6" cx="14.00" cy="52.00" r="11"/><circle style="--i:7" cx="25.13" cy="25.13" r="11"/></svg>
+          <svg class="prose" viewBox="-3.5 -3.5 31 31" aria-hidden="true"><circle style="--i:0" cx="12.0000" cy="1.0000" r="2.2750"/><circle style="--i:1" cx="19.7782" cy="4.2218" r="2.5694"/><circle style="--i:2" cx="23.0000" cy="12.0000" r="2.8639"/><circle style="--i:3" cx="19.7782" cy="19.7782" r="3.1583"/><circle style="--i:4" cx="12.0000" cy="23.0000" r="3.4527"/><circle style="--i:5" cx="4.2218" cy="19.7782" r="3.7471"/><circle style="--i:6" cx="1.0000" cy="12.0000" r="4.0416"/><circle style="--i:7" cx="4.2218" cy="4.2218" r="4.3360"/></svg>
           <p class="cardnote" id="whereNote"></p>
         </div>
         <div class="setupcard" id="remoteCard">
           <h3>Remote only</h3>
           <button class="modebtn" id="modeBtn" type="button" aria-pressed="false">Off</button>
-          <svg class="prose" viewBox="0 0 104 104" aria-hidden="true"><circle style="--i:0" cx="52.00" cy="14.00" r="11"/><circle style="--i:1" cx="78.87" cy="25.13" r="11"/><circle style="--i:2" cx="90.00" cy="52.00" r="11"/><circle style="--i:3" cx="78.87" cy="78.87" r="11"/><circle style="--i:4" cx="52.00" cy="90.00" r="11"/><circle style="--i:5" cx="25.13" cy="78.87" r="11"/><circle style="--i:6" cx="14.00" cy="52.00" r="11"/><circle style="--i:7" cx="25.13" cy="25.13" r="11"/></svg>
+          <svg class="prose" viewBox="-3.5 -3.5 31 31" aria-hidden="true"><circle style="--i:0" cx="12.0000" cy="1.0000" r="2.2750"/><circle style="--i:1" cx="19.7782" cy="4.2218" r="2.5694"/><circle style="--i:2" cx="23.0000" cy="12.0000" r="2.8639"/><circle style="--i:3" cx="19.7782" cy="19.7782" r="3.1583"/><circle style="--i:4" cx="12.0000" cy="23.0000" r="3.4527"/><circle style="--i:5" cx="4.2218" cy="19.7782" r="3.7471"/><circle style="--i:6" cx="1.0000" cy="12.0000" r="4.0416"/><circle style="--i:7" cx="4.2218" cy="4.2218" r="4.3360"/></svg>
           <p class="cardnote" id="remoteNote"></p>
         </div>
       </div>
