@@ -1,6 +1,8 @@
 /* Re-shoot every doc screenshot from the live site.
  *
- * Run from the repo root so `playwright` resolves: node .shoot.js
+ * Run from the repo root: node tools/shoot_docs.js
+ * (Node resolves `playwright` from the script's own directory upward, so it must live in
+ *  the repo, not in a scratch folder — that was the first failure.)
  *
  * Two runs hit the live scoring API (about a cent each) because the gates and the score card
  * cannot be photographed without real results, and a staged screenshot in a doc that boasts
@@ -12,7 +14,7 @@
 const { chromium } = require("playwright");
 const path = require("path");
 
-const OUT = path.join(__dirname, "docs", "img");
+const OUT = path.join(__dirname, "..", "docs", "img");
 const VIEW = { width: 1280, height: 1000 };
 
 const lightCards = () =>
