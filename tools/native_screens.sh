@@ -67,9 +67,27 @@ PY
 
 # The CTA is "Run the pipeline" since the design rewrite — this said "Run today",
 # matched nothing, and would have tapped with no coordinates under `set -e`.
-dump
-TAP=$(center "Run the pipeline")
-[ -n "$TAP" ] || { echo "could not find the run button in the UI dump"; head -c 2000 ui.xml; exit 1; }
+# Wait for the app to actually paint before looking for anything in it. On a cold Linux
+# emulator the feed fetch is slower than the 7s above, and the first dump came back as a bare
+# ComposeView with no Text nodes at all — so `center` found nothing and `set -e` killed the
+# build AFTER a perfectly good first screenshot had been taken.
+TAP=""
+for i in $(seq 1 20); do                       # 20 x 3s = 1 min
+  dump
+  TAP=$(center "Run the pipeline")
+  [ -n "$TAP" ] && break
+  sleep 3
+done
+# Everything past this point drives a live run. If the UI never came up, keep what was
+# captured and say so, rather than throwing away a good screenshot over a missing tap.
+if [ -z "$TAP" ]; then
+  echo "the run button never appeared in the UI dump after 60s — keeping the screens taken so far"
+  head -c 1500 ui.xml
+  ls -la "$OUT"
+  exit 0
+fi
+# The first screenshot was taken before the feed landed; retake it now that the page is real.
+adb exec-out screencap -p > "$OUT/android-01-candidate.png"
 adb shell input tap $TAP
 sleep 4
 adb exec-out screencap -p > "$OUT/android-02-running.png"
