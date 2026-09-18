@@ -193,46 +193,45 @@
   .chooser h2{font-family:var(--serif);font-weight:480;font-size:30px;letter-spacing:-.015em;line-height:1.15;margin:0 0 4px;color:var(--ink)}
   .chooser .lead{font-size:16px;color:var(--text2);margin:0 0 22px;max-width:72ch}
   .chooser .lead b{color:var(--ink);font-weight:500}
-  .personas{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;align-items:stretch}
+  /* The three things a run needs: a resume, where you are, whether it must be remote.
+     Same frosted glass the persona cards wore - the personas are now a sample row under
+     the button, because what this scores is YOUR resume. */
+  .setup{display:grid;grid-template-columns:1.3fr 1fr 1fr;gap:16px;align-items:stretch;margin-top:8px}
   /* glass over the cream and the rings; hovering a card lifts it, tints it its
      own hue and blooms the mark - a full preview of being chosen, so the click
      only confirms what the hand already saw. The description is always visible:
      a phone has no hover, and nothing is pre-selected. */
   /* frosted glass: a thin white fill over a strong blur, a bright top edge, a
      faint sheen - the colour pools and the rings show through, softened */
-  .persona{position:relative;border:1px solid rgba(255,255,255,.75);border-radius:24px;padding:26px 26px 24px;
+  .setupcard{position:relative;border:1px solid rgba(255,255,255,.75);border-radius:24px;padding:24px;
     background:linear-gradient(160deg,rgba(255,255,255,.42),rgba(255,255,255,.12));
     -webkit-backdrop-filter:blur(22px) saturate(1.5);backdrop-filter:blur(22px) saturate(1.5);text-align:left;
-    color:var(--ink);display:flex;flex-direction:column;min-height:0;margin-top:44px;cursor:pointer;
+    color:var(--ink);display:flex;flex-direction:column;
     box-shadow:inset 0 1px 0 rgba(255,255,255,.9),rgba(75,68,57,.08) 0 10px 24px 0;
-    transition:background .4s var(--ease),box-shadow .4s var(--ease),margin-top .45s var(--ease),transform .45s var(--ease),border-color .4s var(--ease)}
-  .persona:nth-child(1){--pc:#328a3b;--pg:linear-gradient(160deg,rgba(220,239,223,.72),rgba(220,239,223,.32))}
-  .persona:nth-child(2){--pc:#cc3600;--pg:linear-gradient(160deg,rgba(251,227,214,.74),rgba(251,227,214,.34))}
-  .persona:nth-child(3){--pc:#4865ff;--pg:linear-gradient(160deg,rgba(220,228,251,.74),rgba(220,228,251,.34))}
-  .persona:hover{background:var(--pg);border-color:rgba(255,255,255,.9);transform:translateY(-12px) scale(1.025);
-    box-shadow:inset 0 1px 0 rgba(255,255,255,.9),rgba(75,68,57,.22) 0 36px 64px 0}
-  .persona.sel{background:var(--pg);border-color:rgba(255,255,255,.9);margin-top:0;
+    transition:background .4s var(--ease),box-shadow .4s var(--ease),border-color .4s var(--ease)}
+  .setupcard:nth-child(1){--pg:linear-gradient(160deg,rgba(220,228,251,.72),rgba(220,228,251,.30))}
+  .setupcard:nth-child(2){--pg:linear-gradient(160deg,rgba(220,239,223,.72),rgba(220,239,223,.30))}
+  .setupcard:nth-child(3){--pg:linear-gradient(160deg,rgba(251,227,214,.74),rgba(251,227,214,.32))}
+  /* a card tints when it is actually doing something - the state is the colour */
+  .setupcard.on,.setupcard:focus-within{background:var(--pg);border-color:rgba(255,255,255,.9);
     box-shadow:inset 0 1px 0 rgba(255,255,255,.9),var(--sh-card)}
-  .persona.sel:hover{transform:translateY(-6px) scale(1.01)}
-  .persona .pn{font-family:var(--serif);font-weight:480;font-size:25px;line-height:1.12;letter-spacing:-.01em;margin:0}
-  .persona .pn small{display:block;font-family:var(--sans);font-weight:500;font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--text2);margin-top:6px}
-  /* the mark, blooming one bearing at a time - the same gesture the score rose makes */
-  .prose{width:96px;height:96px;display:block;margin:20px auto 18px;transition:transform .5s var(--ease)}
-  .prose circle{fill:var(--hair2)}
-  @media (prefers-reduced-motion:no-preference){
-    .prose circle{transform:scale(.42);transform-origin:center;transform-box:fill-box;
-      transition:transform .45s var(--ease) calc(var(--i) * 50ms),fill .3s var(--ease)}
-  }
-  .persona:hover .prose circle,.persona.sel .prose circle{fill:var(--pc);opacity:1;transform:none}
-  .persona:hover .prose,.persona.sel .prose{transform:scale(1.12)}
-  .persona .pd{font-size:15px;color:var(--text2);line-height:1.55;margin:0;transition:color .35s var(--ease)}
-  .persona:hover .pd,.persona.sel .pd{color:var(--ink)}
-  .prefs{margin-top:22px;display:flex;align-items:center;justify-content:center;gap:10px 14px;flex-wrap:wrap}
-  .prefs .plabel{font-size:14px;color:var(--text2)}
-  .prefs select{font:15px/1 var(--sans);color:var(--ink);background:var(--surface);cursor:pointer;
-    border:1.5px solid var(--hair2);border-radius:var(--pill);padding:11px 14px;max-width:100%}
-  .prefs select:focus{outline:none;border-color:var(--indigo);box-shadow:0 0 0 3px rgba(72,101,255,.16)}
-  .modebtn{font:15px/1 var(--sans);font-weight:500;color:var(--text2);background:none;cursor:pointer;
+  .setupcard h3{font-family:var(--serif);font-weight:480;font-size:23px;line-height:1.12;letter-spacing:-.01em;margin:0 0 15px}
+  .setupcard h3 small{display:block;font-family:var(--sans);font-weight:500;font-size:12px;letter-spacing:.06em;
+    text-transform:uppercase;color:var(--text2);margin-top:7px}
+  .setupcard select{font:15px/1 var(--sans);color:var(--ink);background:var(--surface);cursor:pointer;width:100%;
+    border:1.5px solid var(--hair2);border-radius:var(--pill);padding:12px 14px}
+  .setupcard select:focus{outline:none;border-color:var(--indigo);box-shadow:0 0 0 3px rgba(72,101,255,.16)}
+  .setupcard textarea{min-height:92px;margin-top:10px}
+  .setupcard .upl{align-self:flex-start}
+  .cardnote{font-size:13.5px;color:var(--text2);line-height:1.55;margin:auto 0 0;padding-top:12px}
+  /* the sample candidates: one row, under the button, where a fallback belongs */
+  .samples{margin:20px 0 0;text-align:center;font-size:14px;color:var(--text2);line-height:2.4}
+  .chip{font:14px/1 var(--sans);color:var(--midnight);background:var(--surface);cursor:pointer;
+    border:1.5px solid var(--hair2);border-radius:var(--pill);padding:9px 15px;margin:0 3px;
+    transition:border-color .2s var(--ease),color .2s var(--ease),background .2s var(--ease)}
+  .chip:hover{border-color:var(--indigo);color:var(--indigo)}
+  .chip.sel{background:var(--indigo);border-color:var(--indigo);color:#fff}
+  .modebtn{align-self:flex-start;font:15px/1 var(--sans);font-weight:500;color:var(--text2);background:none;cursor:pointer;
     border:1.5px solid var(--hair2);border-radius:var(--pill);padding:11px 18px;
     transition:border-color .2s var(--ease),color .2s var(--ease),background .2s var(--ease)}
   .modebtn:hover{border-color:var(--indigo);color:var(--indigo)}
@@ -242,15 +241,6 @@
   .verdict.aside{background:var(--hair);color:var(--text2)}
   .prefnote{margin:10px 0 0;font-size:13.5px;color:var(--text2);text-align:center;line-height:1.6}
   .runwrap{margin-top:18px;display:flex;align-items:center;justify-content:center;gap:22px;flex-wrap:wrap}
-  /* An equal path, not a footnote: same height as .run, outlined rather than filled so the
-     hierarchy still reads, and full width on a phone where a text link disappears. */
-  .ownlink{background:none;color:var(--midnight);border:1.5px solid var(--hair2);border-radius:var(--pill);
-    padding:14px 26px;font-size:15px;font-weight:500;cursor:pointer;
-    transition:border-color .2s var(--ease),color .2s var(--ease),background .2s var(--ease)}
-  .ownlink:hover{color:var(--indigo);border-color:var(--indigo);background:rgba(72,101,255,.05)}
-  .ownlink[aria-expanded="true"]{color:var(--indigo);border-color:var(--indigo);background:rgba(72,101,255,.07)}
-  #ownBox{background:var(--surface);border-radius:var(--card);padding:22px 24px;margin-top:22px;box-shadow:var(--sh-subtle)}
-  #ownBox[hidden]{display:none}
   textarea{width:100%;min-height:120px;margin-top:12px;border:1.5px solid var(--hair2);border-radius:var(--card);
     padding:14px 16px;font:15px/1.6 var(--sans);resize:vertical;background:var(--canvas);color:var(--ink)}
   textarea:focus{outline:none;border-color:var(--indigo);box-shadow:0 0 0 3px rgba(72,101,255,.16)}
@@ -552,15 +542,10 @@
 
   @media (max-width:760px){
     .runwrap{gap:12px}
-    .run,.ownlink{width:100%}
-    .prefs{gap:8px}
-    .prefs select,.modebtn{flex:1 1 100%}
-    .personas{grid-template-columns:1fr;gap:12px}
-    .persona{min-height:0;margin-top:0;padding:20px 20px 18px;flex-direction:row;flex-wrap:wrap;align-items:center;gap:6px 16px}
-    .persona .prose{width:44px;height:44px;margin:0;order:-1}
-    .persona .pn{flex:1;font-size:20px}
-    .persona .pd{flex-basis:100%}
-    .persona.sel .prose{transform:none;width:56px;height:56px}
+    .run{width:100%}
+    .setup{grid-template-columns:1fr;gap:12px}
+    .setupcard{padding:20px}
+    .cardnote{margin-top:12px}
   }
   @media (max-width:640px){
     /* Side by side, the rose left a ~200px text column and titles broke over
@@ -622,26 +607,33 @@
 
     <div class="chooser">
       <div class="bearing"><b>000</b> — THE CANDIDATE</div>
-      <h2>Start with a candidate.</h2>
-      <p class="lead" id="sweepline">Three profiles or your own resume, against this morning's postings. Same jobs, different scores.</p>
-      <div class="personas" id="personas"></div>
-      <!-- Where you live changes which postings you could actually take; the feed ships the
-           vocabulary so this can never offer a place today's sweep cannot honour. -->
-      <div class="prefs" id="prefs" hidden>
-        <span class="plabel">I'm in</span>
-        <select id="homeSel" aria-label="Where you are based"></select>
-        <button class="modebtn" id="modeBtn" type="button" aria-pressed="false">Remote only</button>
+      <h2>Start with your resume.</h2>
+      <p class="lead" id="sweepline">Your resume against this morning's postings. Every score explained.</p>
+      <!-- Where you are and whether it must be remote are read from feed.places, so a
+           control can never offer a place today's sweep cannot honour. -->
+      <div class="setup">
+        <div class="setupcard" id="resumeCard">
+          <h3>Your resume<small>read once, never stored</small></h3>
+          <label class="upl"><input type="file" id="ownFile" accept=".pdf,.docx,.txt,.md,application/pdf" hidden> Upload PDF, DOCX or TXT</label><span class="uplstat" id="uplStatus"></span>
+          <textarea id="ownText" maxlength="6000" autocomplete="off" placeholder="…or paste it as plain text (max 6,000 characters)"></textarea>
+          <p class="cardnote">In memory for this one run. Never stored, never logged — <a href="privacy">privacy</a>.</p>
+        </div>
+        <div class="setupcard" id="whereCard">
+          <h3>Where you are<small id="whereSub"></small></h3>
+          <select id="homeSel" aria-label="Where you are based"></select>
+          <p class="cardnote" id="whereNote"></p>
+        </div>
+        <div class="setupcard" id="remoteCard">
+          <h3>Remote only<small>open from where you are</small></h3>
+          <button class="modebtn" id="modeBtn" type="button" aria-pressed="false">Off</button>
+          <p class="cardnote" id="remoteNote"></p>
+        </div>
       </div>
       <p class="prefnote" id="prefNote"></p>
       <div class="runwrap">
         <button class="run" id="runBtn" type="button">Run the pipeline</button>
-        <button class="ownlink" id="ownToggle" type="button" aria-expanded="false" aria-controls="ownBox">Use my own resume</button>
       </div>
-      <div id="ownBox" hidden>
-        <label class="upl"><input type="file" id="ownFile" accept=".pdf,.docx,.txt,.md,application/pdf" hidden> Upload a file (PDF, DOCX, TXT)</label><span class="uplstat" id="uplStatus"></span>
-        <textarea id="ownText" maxlength="6000" autocomplete="off" placeholder="…or paste your resume as plain text (max 6,000 characters)"></textarea>
-        <p class="privacy">Processed in memory for this one scoring run. Never stored, never logged. Uploads are read once and discarded — <a href="privacy">privacy</a>.</p>
-      </div>
+      <p class="samples">No resume to hand? Score a sample candidate instead: <span id="personas"></span></p>
       <div id="banner"></div>
     </div>
   </section>
@@ -798,13 +790,6 @@ function roseSVG(fit){
     ${dots}<text class="fitnum" x="52" y="60.5" fill="${col}">${fit}</text></svg>`;
 }
 
-/* The chooser's mark - the same eight bearings as the score rose, at one size.
-   CSS drives the bloom off .persona.sel, so this is rendered once and never
-   re-rendered. */
-const miniRose = () => `<svg class="prose" viewBox="0 0 104 104" aria-hidden="true">` +
-  ROSE.map(([x, y], i) => `<circle style="--i:${i}" cx="${x.toFixed(2)}" cy="${y.toFixed(2)}" r="11"/>`).join("") +
-  `</svg>`;
-
 // Nothing is chosen on open (2026-09-17: on a phone the collapsed cards hid that
 // Maya was pre-selected, and a run with no resume read as "the app remembered me").
 let feed = null, selected = null, running = false;
@@ -863,19 +848,23 @@ function plink(url){
   return url ? `<a class="plink" href="${esc(url)}" target="_blank" rel="noopener">View posting ↗</a>` : "";
 }
 
+/* The samples are a fallback, so they are chips in a sentence, not cards. The full
+   description rides in the title, which is where a one-line aside belongs. */
 function renderPersonas(){
   $("#personas").innerHTML = PERSONAS.map(p =>
-    `<button type="button" class="persona${p===selected?" sel":""}" data-id="${p.id}" aria-pressed="${p===selected}">
-       <h3 class="pn">${p.name}<small>${p.role}</small></h3>
-       ${miniRose()}
-       <div class="pd">${p.desc}</div></button>`).join("");
-  document.querySelectorAll(".persona").forEach(b => b.onclick = () => {
+    `<button type="button" class="chip${p===selected?" sel":""}" data-id="${p.id}"
+       title="${esc(p.desc)}" aria-pressed="${p===selected}">${esc(p.name)} · ${esc(p.role.toLowerCase())}</button>`).join("");
+  document.querySelectorAll(".chip").forEach(b => b.onclick = () => {
+    // picking a sample drops whatever was pasted: two profiles in one run is a lie
     selected = PERSONAS.find(p => p.id === b.dataset.id);
-    setOwnOpen(false); $("#ownText").value = ""; $("#uplStatus").textContent = "";
-    document.querySelectorAll(".persona").forEach(x => {
-      const on = x.dataset.id === selected.id;
-      x.classList.toggle("sel", on); x.setAttribute("aria-pressed", String(on));
-    });
+    $("#ownText").value = ""; $("#uplStatus").textContent = "";
+    markChips(); renderSetup();
+  });
+}
+function markChips(){
+  document.querySelectorAll(".chip").forEach(x => {
+    const on = !!selected && x.dataset.id === selected.id;
+    x.classList.toggle("sel", on); x.setAttribute("aria-pressed", String(on));
   });
 }
 
@@ -953,32 +942,47 @@ async function loadFeed(){
     const c = feed.counts || {};
     const secs = Object.keys(feed.sectors || {}).length;
     $("#sweepline").innerHTML = secs
-      ? `Three profiles or your own resume, against this morning's <b>${feed.postings.length}</b> postings across <b>${secs}</b> sectors. The profile picks the sector; Claude scores that sector's postings.`
-      : `Three profiles or your own resume, against this morning's <b>${feed.postings.length}</b> postings. Same jobs, different scores.`;
+      ? `Your resume against this morning's <b>${feed.postings.length}</b> postings across <b>${secs}</b> sectors. Your own words pick the sector; Claude scores that sector's postings.`
+      : `Your resume against this morning's <b>${feed.postings.length}</b> postings. Every score explained.`;
   }catch(e){
     $("#sweepline").textContent = "The feed is unreachable right now. Scoring needs the API.";
   }
   renderMetrics(feed);
-  renderPrefs();
+  renderSetup();
 }
 
-/* The picker is built from feed.places, so a province only ever appears with the number of
-   postings that actually require being there today. */
-function renderPrefs(){
+/* Every control is built from feed.places, so none of them can offer a place today's sweep
+   cannot honour, and each card carries the number that makes it worth touching. */
+function renderSetup(){
   const pl = feed && feed.places;
-  if (!pl || !pl.options){ $("#prefs").hidden = true; return; }
-  $("#prefs").hidden = false;
-  // One place to choose between is not a choice. The Kenya feed is already gated to Kenya, so
-  // every on-site row there is in Kenya and picking it would exclude nothing.
-  const pickable = pl.options.length > 1;
+  const all = feed ? feed.postings.filter(p => p.gate?.verdict !== "reject") : [];
+  const country = MARKET === "ke" ? "Kenya" : "Canada";
+  // One place to choose between is not a choice. In Kenya 105 of the 110 on-site postings give
+  // their location as the bare word "Kenya", so a city picker would silently drop postings that
+  // may well be in the city you picked. The card states the split instead.
+  const pickable = !!(pl && pl.options && pl.options.length > 1);
   $("#homeSel").hidden = !pickable;
-  document.querySelector(".prefs .plabel").hidden = !pickable;
   if (!pickable) home = "";
-  $("#homeSel").innerHTML = `<option value="">anywhere in ${MARKET === "ke" ? "Kenya" : "Canada"}</option>` +
-    pl.options.map(o => `<option value="${o.code}">${esc(o.label)}${o.local ? ` — ${o.local} local` : ""}</option>`).join("");
-  $("#homeSel").value = home;
+  if (pickable){
+    $("#homeSel").innerHTML = `<option value="">anywhere in ${country}</option>` +
+      pl.options.map(o => `<option value="${o.code}">${esc(o.label)}${o.local ? ` — ${o.local} on site` : ""}</option>`).join("");
+    $("#homeSel").value = home;
+  }
+  const opt = (pl?.options || []).find(o => o.code === home);
+  const onsite = pl ? all.length - pl.remote - pl.unplaced : 0;
+  $("#whereSub").textContent = pickable ? "narrow it if you like" : country;
+  $("#whereNote").textContent = !pl ? ""
+    : !pickable ? `Every on-site posting today is in ${country} — ${all.length - pl.remote} of them. Nothing to narrow.`
+    : opt ? `${opt.local} posting${opt.local === 1 ? " is" : "s are"} on site in ${esc(opt.label)} today, and ${pl.remote} more are remote.`
+    : `${pl.remote} remote, ${onsite} on site somewhere named, ${pl.unplaced} that don't say where.`;
+  $("#whereCard").classList.toggle("on", !!home);
+  $("#modeBtn").textContent = remoteOnly ? "On" : "Off";
   $("#modeBtn").classList.toggle("on", remoteOnly);
   $("#modeBtn").setAttribute("aria-pressed", String(remoteOnly));
+  $("#remoteCard").classList.toggle("on", remoteOnly);
+  $("#remoteNote").textContent = pl ? `${pl.remote} of today's ${all.length} are open from anywhere.` : "";
+  $("#resumeCard").classList.toggle("on", $("#ownText").value.trim().length > 40);
+  markChips();
   prefNote();
 }
 
@@ -1001,8 +1005,8 @@ async function runPipeline(){
   if (running || !feed?.postings?.length) return;
   const profile = profileText();
   if (!profile){
-    banner("warn", "Choose a candidate above, or upload your resume, and the pipeline scores this morning's postings against it.");
-    setOwnOpen(true); $("#ownText").focus();
+    banner("warn", "Add your resume above — upload a file or paste the text — or score one of the sample candidates under the button.");
+    $("#ownText").focus();
     return;
   }
   running = true; $("#runBtn").disabled = true; banner("", "");
@@ -1257,14 +1261,6 @@ function finish(){
 }
 function esc(s){ return String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
 
-/* One place decides the resume box's state, so the label and the ARIA can never drift from it. */
-function setOwnOpen(open){
-  $("#ownBox").hidden = !open;
-  const b = $("#ownToggle");
-  b.textContent = open ? "Hide the resume box" : "Use my own resume";
-  b.setAttribute("aria-expanded", String(open));
-}
-$("#ownToggle").onclick = () => setOwnOpen($("#ownBox").hidden);
 $("#ownFile").onchange = async () => {
   const file = $("#ownFile").files[0]; if (!file) return;
   const lab = $("#ownFile").parentElement, st = $("#uplStatus");
@@ -1280,14 +1276,16 @@ $("#ownFile").onchange = async () => {
     } else st.textContent = d.detail || d.error || "extraction unavailable";
   }catch(e){ st.textContent = "extract API unreachable"; }
   lab.classList.remove("busy"); $("#ownFile").value = "";
+  if ($("#ownText").value.trim().length > 40) selected = null;   // a resume beats a sample
+  renderSetup();
 };
-$("#homeSel").onchange = e => { home = e.target.value; prefNote(); };
-$("#modeBtn").onclick = () => {
-  remoteOnly = !remoteOnly;
-  $("#modeBtn").classList.toggle("on", remoteOnly);
-  $("#modeBtn").setAttribute("aria-pressed", String(remoteOnly));
-  prefNote();
+// typing a real resume deselects the sample, so the run and the chips never disagree
+$("#ownText").oninput = () => {
+  if ($("#ownText").value.trim().length > 40) selected = null;
+  renderSetup();
 };
+$("#homeSel").onchange = e => { home = e.target.value; renderSetup(); };
+$("#modeBtn").onclick = () => { remoteOnly = !remoteOnly; renderSetup(); };
 $("#runBtn").onclick = runPipeline;
 
 // the three gate frames rise once the band scrolls into view

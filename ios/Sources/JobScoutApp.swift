@@ -277,7 +277,8 @@ struct JobScoutApp: App {
 struct ContentView: View {
     @StateObject private var vm = DemoVM()
     @Environment(\.openURL) private var openURL
-    @State private var ownOpen = false
+    // the resume is the point of the app, so its box is open on arrival
+    @State private var ownOpen = true
     @State private var importing = false
     @State private var showTracker = false
     @State private var gatesOpen = false
@@ -294,20 +295,21 @@ struct ContentView: View {
 
                 hero
 
-                StageHeading(bearing: "000", label: "THE CANDIDATE", title: "Start with a candidate.",
-                             note: "Three profiles or your own resume. Same jobs, different scores.")
+                StageHeading(bearing: "000", label: "THE CANDIDATE", title: "Start with your resume.",
+                             note: "Upload it or paste it, say where you are, and run. No resume to hand? Score a sample candidate instead.")
                 HStack(spacing: 8) {
                     ForEach(markets, id: \.0) { id, label in
                         PillButton(text: label, filled: id == vm.market) { Task { await vm.setMarket(id) } }
                     }
                     Spacer(minLength: 0)
                 }
+                ownResumeBox
+                whereRow
+                // The samples are a fallback, under the real controls, not the front door.
                 ForEach(Array(personasFor(vm.market).enumerated()), id: \.element.id) { i, p in
                     personaCard(p, index: i, selected: i == vm.personaIdx && !vm.usingOwn)
                         .onTapGesture { vm.personaIdx = i }
                 }
-                whereRow
-                ownResumeBox
                 runButton
 
                 if !vm.scores.isEmpty || vm.banner != nil {
@@ -451,7 +453,7 @@ struct ContentView: View {
 
     private var ownResumeBox: some View {
         VStack(alignment: .leading, spacing: 8) {
-            LinkText(text: ownOpen ? "Hide the resume box" : "Use my own resume") { ownOpen.toggle() }
+            LinkText(text: ownOpen ? "Hide the resume box" : "Add your resume") { ownOpen.toggle() }
             if ownOpen {
                 HStack(spacing: 10) {
                     if vm.uploading { ProgressView().tint(indigo) }

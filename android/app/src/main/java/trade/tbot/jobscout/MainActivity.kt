@@ -347,7 +347,8 @@ private val RESUME_MIMES = arrayOf(
 fun DemoScreen(vm: DemoVm = viewModel()) {
     val ui by vm.ui.collectAsState()
     val feed = ui.feed
-    var ownOpen by remember { mutableStateOf(false) }
+    // the resume is the point of the app, so its box is open on arrival
+    var ownOpen by remember { mutableStateOf(true) }
     var trackerOpen by remember { mutableStateOf(false) }
     var gatesOpen by remember { mutableStateOf(false) }
     val usingOwn = ui.resume.trim().length > 40
@@ -368,24 +369,16 @@ fun DemoScreen(vm: DemoVm = viewModel()) {
 
             item { Hero(feed) }
 
-            item { Stage("000", "THE CANDIDATE", "Start with a candidate.", "Three profiles or your own resume. Same jobs, different scores.") }
+            item { Stage("000", "THE CANDIDATE", "Start with your resume.", "Upload it or paste it, say where you are, and run. No resume to hand? Score a sample candidate instead.") }
             item {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     MARKETS.forEach { (id, label) -> PillButton(label, filled = id == ui.market) { vm.setMarket(id) } }
                 }
             }
-            itemsIndexed(personasFor(ui.market)) { i, p ->
-                PersonaCard(p, index = i, selected = i == ui.personaIdx && !usingOwn) { vm.pick(i) }
-            }
-            // Where you live changes which postings you could actually take. Rendered from
-            // feed.places, so a province only appears with the number of postings that really
-            // require being there today.
-            if (feed != null && feed.places.options.isNotEmpty()) item { WhereRow(ui, feed, vm) }
-            // (WhereRow itself hides the picker when there is only one place to choose between.)
             item {
                 // Same affordance as the web demo: hidden behind a toggle, processed in memory only.
                 Column {
-                    LinkText(if (ownOpen) "Hide the resume box" else "Use my own resume") { ownOpen = !ownOpen }
+                    LinkText(if (ownOpen) "Hide the resume box" else "Add your resume") { ownOpen = !ownOpen }
                     if (ownOpen) {
                         // Storage Access Framework picker — no storage permission, the user picks one document.
                         val picker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
@@ -420,6 +413,15 @@ fun DemoScreen(vm: DemoVm = viewModel()) {
                         )
                     }
                 }
+            }
+            // Where you live changes which postings you could actually take. Rendered from
+            // feed.places, so a province only appears with the number of postings that really
+            // require being there today.
+            if (feed != null && feed.places.options.isNotEmpty()) item { WhereRow(ui, feed, vm) }
+            // (WhereRow itself hides the picker when there is only one place to choose between.)
+            // The samples are a fallback, under the real controls, not the front door.
+            itemsIndexed(personasFor(ui.market)) { i, p ->
+                PersonaCard(p, index = i, selected = i == ui.personaIdx && !usingOwn) { vm.pick(i) }
             }
             item {
                 Button(
