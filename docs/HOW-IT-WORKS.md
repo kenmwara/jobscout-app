@@ -19,7 +19,8 @@ Claude call.
 ## The flow, in order
 
 **1 · Candidate.** You pick one of three personas (or paste a resume, which is
-processed in memory and never stored). This is the profile the AI reads against.
+processed in memory and never stored). Nothing is chosen for you — a run with no
+candidate asks for one, so a result on screen is always a result about someone. This is the profile the AI reads against.
 
 <img src="img/web-candidate.png" alt="Persona chooser" width="520">
 
@@ -91,7 +92,10 @@ operated by one person.
 
 The same demo also ships as **fully native mobile apps** — Kotlin/Jetpack
 Compose on Android and Swift/SwiftUI on iOS, no webview — built green in
-Codemagic CI against the same guarded API. The Android app installs on any phone today —
+Codemagic CI against the same guarded API. They run the same selection as the
+page, not a simplified one: the sector lexicon that travels inside the feed
+classifies the profile on the device, the same IDF ranking picks the eight that
+go to Claude, and the 55 floor governs what gets drafted. The Android app installs on any phone today —
 **download: [github.com/kenmwara/jobscout-app/releases/latest](https://github.com/kenmwara/jobscout-app/releases/latest/download/JobScout-release.apk)**
 (signed, sideload, Android 8+; checksum in the release notes) — and is in
 closed testing on Google Play ahead of a public listing; iOS device
