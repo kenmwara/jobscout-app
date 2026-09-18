@@ -33,15 +33,34 @@ fun sectorOf(profile: String, lex: Map<String, List<String>>): String {
     return if (bestScore >= 3) best else "other"
 }
 
+/**
+ * Could someone living in [home] take this posting? Mirror of takeable() in site/index.html,
+ * Select.swift and tools/demo_eval.py - change the four together.
+ *
+ * Remote is takeable from anywhere inside its own scope; onsite or hybrid needs you there; and a
+ * posting naming no province is ambiguous rather than nowhere, so it is kept. That last clause is
+ * load-bearing: 23 rows a day say only "Canada".
+ */
+fun takeable(p: Posting, home: String, remoteOnly: Boolean): Boolean {
+    if (remoteOnly && p.remote_policy != "remote") return false
+    if (home.isEmpty()) return true
+    if (p.remote_policy == "remote") return true
+    if (p.places.isEmpty()) return true
+    return home in p.places
+}
+
 data class Selection(val sector: String, val label: String, val inSector: Int, val eligible: Int, val postings: List<Posting>)
 
 /** The profile's sector first, ranked by the profile's own words (title hit 3, summary 1, IDF-weighted); under four in the sector, top up with the rest. */
-fun select(profile: String, feed: Feed): Selection {
-    val eligible = feed.passers
+fun select(profile: String, feed: Feed, home: String = "", remoteOnly: Boolean = false): Selection {
+    val all = feed.passers
+    val eligible = all.filter { takeable(it, home, remoteOnly) }
     val sector = sectorOf(profile, feed.lexicon)
     val inSector = eligible.filter { it.sector == sector }
     val words = WORD.findAll(profile.lowercase()).map { it.value }.distinct().filter { it !in STOP }.take(80).toList()
-    val docs = eligible.map { (it.title + " " + it.summary).lowercase() }
+    // The IDF corpus stays the WHOLE eligible feed, not the filtered set: rarity is a property
+    // of the market, not of what this visitor will consider.
+    val docs = all.map { (it.title + " " + it.summary).lowercase() }
     val idf = words.associateWith { w -> 1.0 / ln(2.0 + docs.count { w in it }) }
     fun rel(p: Posting): Double {
         val t = p.title.lowercase(); val s = p.summary.lowercase()

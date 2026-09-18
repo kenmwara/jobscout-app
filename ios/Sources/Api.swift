@@ -17,9 +17,18 @@ struct Posting: Codable, Identifiable {
     var source = ""
     var gate = Gate()
     var sector: String?          // from the feed's lexicon (tools/sector.py); optional so an older feed still decodes
+    var places: [String]?        // province codes the location names; empty or absent = unpinnable
 }
 
 struct Counts: Codable { var pass = 0; var reject = 0 }
+
+struct PlaceOption: Codable, Identifiable {
+    var code = ""; var label = ""; var local = 0
+    var id: String { code }
+}
+
+/// remote = takeable from any of them; unplaced = requires being somewhere but names no province.
+struct PlacesInfo: Codable { var remote = 0; var unplaced = 0; var options: [PlaceOption] = [] }
 
 struct Feed: Codable {
     var day: String?
@@ -30,6 +39,7 @@ struct Feed: Codable {
     var counts = Counts()
     var lexicon: [String: [String]]?   // sector -> phrases; classifies the profile client-side
     var labels: [String: String]?
+    var places: PlacesInfo?      // the picker's whole vocabulary, counted by the publisher
     var passers: [Posting] { postings.filter { $0.gate.verdict != "reject" } }
     var rejects: [Posting] { postings.filter { $0.gate.verdict == "reject" } }
 }

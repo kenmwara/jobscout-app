@@ -31,6 +31,21 @@ func sectorOf(_ profile: String, lex: [String: [String]]) -> String {
     return bestScore >= 3 ? best : "other"
 }
 
+/// Could someone living in `home` take this posting? Mirror of takeable() in site/index.html,
+/// Select.kt and tools/demo_eval.py - change the four together.
+///
+/// Remote is takeable from anywhere inside its own scope; onsite or hybrid needs you there; and a
+/// posting naming no province is ambiguous rather than nowhere, so it is kept. That last clause is
+/// load-bearing: 23 rows a day say only "Canada".
+func takeable(_ p: Posting, home: String, remoteOnly: Bool) -> Bool {
+    if remoteOnly && p.remote_policy != "remote" { return false }
+    if home.isEmpty { return true }
+    if p.remote_policy == "remote" { return true }
+    let places = p.places ?? []
+    if places.isEmpty { return true }
+    return places.contains(home)
+}
+
 struct Selection {
     let sector: String, label: String, inSector: Int, eligible: Int, postings: [Posting]
 
@@ -43,8 +58,9 @@ struct Selection {
 }
 
 /// The profile's sector first, ranked by the profile's own words (title hit 3, summary 1, IDF-weighted); under four in the sector, top up with the rest.
-func select(profile: String, feed: Feed) -> Selection {
-    let eligible = feed.passers
+func select(profile: String, feed: Feed, home: String = "", remoteOnly: Bool = false) -> Selection {
+    let all = feed.passers
+    let eligible = all.filter { takeable($0, home: home, remoteOnly: remoteOnly) }
     let sector = sectorOf(profile, lex: feed.lexicon ?? [:])
     let inSector = eligible.filter { ($0.sector ?? "") == sector }
     let low = profile.lowercased()
@@ -57,7 +73,9 @@ func select(profile: String, feed: Feed) -> Selection {
             if words.count == 80 { break }
         }
     }
-    let docs = eligible.map { ($0.title + " " + $0.summary).lowercased() }
+    // The IDF corpus stays the WHOLE eligible feed, not the filtered set: rarity is a property
+    // of the market, not of what this visitor will consider.
+    let docs = all.map { ($0.title + " " + $0.summary).lowercased() }
     var idf: [String: Double] = [:]
     for w in words { idf[w] = 1.0 / log(2.0 + Double(docs.filter { $0.contains(w) }.count)) }
     func rel(_ p: Posting) -> Double {

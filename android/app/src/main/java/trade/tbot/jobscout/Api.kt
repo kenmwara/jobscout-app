@@ -30,10 +30,22 @@ data class Posting(
     val source: String = "",
     val gate: Gate = Gate(),
     val sector: String = "",          // from the feed's lexicon (tools/sector.py)
+    val places: List<String> = emptyList(),   // province codes the location names; empty = unpinnable
 )
 
 @Serializable
 data class Counts(val pass: Int = 0, val reject: Int = 0)
+
+@Serializable
+data class PlaceOption(val code: String = "", val label: String = "", val local: Int = 0)
+
+/** remote = takeable from any of them; unplaced = requires being somewhere but names no province. */
+@Serializable
+data class PlacesInfo(
+    val remote: Int = 0,
+    val unplaced: Int = 0,
+    val options: List<PlaceOption> = emptyList(),
+)
 
 @Serializable
 data class Feed(
@@ -45,6 +57,7 @@ data class Feed(
     val counts: Counts = Counts(),
     val lexicon: Map<String, List<String>> = emptyMap(),   // sector -> phrases; classifies the profile client-side
     val labels: Map<String, String> = emptyMap(),
+    val places: PlacesInfo = PlacesInfo(),    // the picker's whole vocabulary, counted by the publisher
 ) {
     val passers: List<Posting> get() = postings.filter { it.gate.verdict != "reject" }
     val rejects: List<Posting> get() = postings.filter { it.gate.verdict == "reject" }
