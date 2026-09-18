@@ -213,14 +213,31 @@
   .setupcard textarea{min-height:104px;margin-top:10px;border-radius:14px}
   .setupcard .upl{align-self:flex-start;border-radius:14px}
   /* one number per card, on the floor of it */
-  .cardnote{font-size:13px;color:var(--text2);line-height:1.5;margin:auto 0 0;padding-top:16px;
+  .cardnote{font-size:13px;color:var(--text2);line-height:1.5;margin:16px 0 0;
     font-variant-numeric:tabular-nums}
-  /* Kenya's card cannot be a control, so it carries the flag; the shield lifts with the card. */
-  .kflag{display:block;width:100%;max-width:190px;height:auto;border-radius:10px;
-    box-shadow:0 2px 10px rgba(75,68,57,.18);filter:saturate(.94)}
-  .kflag .kshield{transform-origin:center;transition:transform .45s var(--ease)}
-  #whereCard:hover .kflag .kshield{transform:scale(1.16)}
-  @media (prefers-reduced-motion:reduce){.kflag .kshield,.setupcard{transition:none}}
+  /* The bearing mark the persona cards wore: eight dots on the logo's ring, blooming one
+     bearing at a time under the cursor. One hue per card. */
+  .prose{width:78px;height:78px;display:block;margin:auto auto 0;transition:transform .5s var(--ease)}
+  .prose circle{fill:var(--hair2)}
+  @media (prefers-reduced-motion:no-preference){
+    .prose circle{transform:scale(.42);transform-origin:center;transform-box:fill-box;
+      transition:transform .45s var(--ease) calc(var(--i) * 50ms),fill .3s var(--ease)}
+  }
+  .setupcard:hover .prose circle,.setupcard.on .prose circle{fill:var(--pc);opacity:1;transform:none}
+  .setupcard:hover .prose,.setupcard.on .prose{transform:scale(1.1)}
+  .setupcard:nth-child(1){--pc:#328a3b}
+  .setupcard:nth-child(3){--pc:#4865ff}
+  /* The middle card blooms in the market's own colours — the country signal, as the page's
+     mark rather than a small bad drawing of a flag. */
+  #whereCard:hover .prose circle,#whereCard.on .prose circle{fill:#d52b1e}
+  #whereCard:hover .prose circle:nth-child(2n),#whereCard.on .prose circle:nth-child(2n){fill:#8c1512}
+  html[data-market="ke"] #whereCard:hover .prose circle:nth-child(3n+1),
+  html[data-market="ke"] #whereCard.on .prose circle:nth-child(3n+1){fill:#0b0b0b}
+  html[data-market="ke"] #whereCard:hover .prose circle:nth-child(3n+2),
+  html[data-market="ke"] #whereCard.on .prose circle:nth-child(3n+2){fill:#be0027}
+  html[data-market="ke"] #whereCard:hover .prose circle:nth-child(3n),
+  html[data-market="ke"] #whereCard.on .prose circle:nth-child(3n){fill:#009a49}
+  @media (prefers-reduced-motion:reduce){.setupcard,.prose,.prose circle{transition:none}}
   .samples{margin:22px 0 0;text-align:center;font-size:14px;color:var(--text2);line-height:2.4}
   .chip{font:14px/1 var(--sans);color:var(--midnight);background:var(--surface);cursor:pointer;
     border:1px solid var(--hair2);border-radius:var(--pill);padding:9px 15px;margin:0 3px;
@@ -542,7 +559,15 @@
     .setup{grid-template-columns:1fr;gap:12px}
     .setupcard{padding:22px;min-height:0;margin-top:0;border-radius:28px}
     .setupcard:hover{transform:none}
-    .cardnote{margin:14px 0 0;padding-top:0}
+    /* on a phone there is no hover, so the mark blooms as soon as the card is on screen */
+    .prose{width:56px;height:56px;margin:16px auto 0}
+    .setupcard .prose circle{fill:var(--pc)}
+    #whereCard .prose circle{fill:#d52b1e}
+    #whereCard .prose circle:nth-child(2n){fill:#8c1512}
+    html[data-market="ke"] #whereCard .prose circle:nth-child(3n+1){fill:#0b0b0b}
+    html[data-market="ke"] #whereCard .prose circle:nth-child(3n+2){fill:#be0027}
+    html[data-market="ke"] #whereCard .prose circle:nth-child(3n){fill:#009a49}
+    .cardnote{margin:14px 0 0}
   }
   @media (max-width:640px){
     /* Side by side, the rose left a ~200px text column and titles broke over
@@ -613,17 +638,19 @@
           <h3>Your resume</h3>
           <label class="upl"><input type="file" id="ownFile" accept=".pdf,.docx,.txt,.md,application/pdf" hidden> Upload PDF, DOCX, TXT</label><span class="uplstat" id="uplStatus"></span>
           <textarea id="ownText" maxlength="6000" autocomplete="off" placeholder="…or paste it"></textarea>
+          <svg class="prose" viewBox="0 0 104 104" aria-hidden="true"><circle style="--i:0" cx="52.00" cy="14.00" r="11"/><circle style="--i:1" cx="78.87" cy="25.13" r="11"/><circle style="--i:2" cx="90.00" cy="52.00" r="11"/><circle style="--i:3" cx="78.87" cy="78.87" r="11"/><circle style="--i:4" cx="52.00" cy="90.00" r="11"/><circle style="--i:5" cx="25.13" cy="78.87" r="11"/><circle style="--i:6" cx="14.00" cy="52.00" r="11"/><circle style="--i:7" cx="25.13" cy="25.13" r="11"/></svg>
           <p class="cardnote">Never stored · <a href="privacy">privacy</a></p>
         </div>
         <div class="setupcard" id="whereCard">
           <h3>Where you can work</h3>
           <select id="homeSel" aria-label="Where you can work"></select>
-          <span id="kenyaFlag" hidden><svg class="kflag" viewBox="0 0 200 120" role="img" aria-label="Flag of Kenya"><rect width="200" height="36" fill="#000"/><rect y="36" width="200" height="6" fill="#fff"/><rect y="42" width="200" height="36" fill="#be0027"/><rect y="78" width="200" height="6" fill="#fff"/><rect y="84" width="200" height="36" fill="#009a49"/><g class="kshield" transform="translate(100 60)"><g stroke="#000" stroke-width="5.5" stroke-linecap="round" fill="none"><path d="M-21 -52 L21 52"/><path d="M21 -52 L-21 52"/></g><g stroke="#fff" stroke-width="3" stroke-linecap="round" fill="none"><path d="M-21 -52 L21 52"/><path d="M21 -52 L-21 52"/></g><path d="M-21 -52 l-4.5 -11 l9.5 4.5 z" fill="#fff" stroke="#000" stroke-width="1"/><path d="M21 -52 l4.5 -11 l-9.5 4.5 z" fill="#fff" stroke="#000" stroke-width="1"/><path d="M-21 52 l-4.5 11 l9.5 -4.5 z" fill="#fff" stroke="#000" stroke-width="1"/><path d="M21 52 l4.5 11 l-9.5 -4.5 z" fill="#fff" stroke="#000" stroke-width="1"/><path d="M0 -46 C17 -30 17 30 0 46 C-17 30 -17 -30 0 -46 Z" fill="#fff" stroke="#000" stroke-width="1.4"/><path d="M0 -38 C12 -25 12 25 0 38 C-12 25 -12 -25 0 -38 Z" fill="#be0027"/><path d="M0 -38 C12 -25 12 -20 12 -18 L-12 -18 C-12 -20 -12 -25 0 -38 Z" fill="#000"/><path d="M0 38 C12 25 12 20 12 18 L-12 18 C-12 20 -12 25 0 38 Z" fill="#000"/><rect x="-12" y="-19.5" width="24" height="2.6" fill="#fff"/><rect x="-12" y="16.9" width="24" height="2.6" fill="#fff"/><path d="M0 -14 C5 -7 5 7 0 14 C-5 7 -5 -7 0 -14 Z" fill="#fff"/></g></svg></span>
+          <svg class="prose" viewBox="0 0 104 104" aria-hidden="true"><circle style="--i:0" cx="52.00" cy="14.00" r="11"/><circle style="--i:1" cx="78.87" cy="25.13" r="11"/><circle style="--i:2" cx="90.00" cy="52.00" r="11"/><circle style="--i:3" cx="78.87" cy="78.87" r="11"/><circle style="--i:4" cx="52.00" cy="90.00" r="11"/><circle style="--i:5" cx="25.13" cy="78.87" r="11"/><circle style="--i:6" cx="14.00" cy="52.00" r="11"/><circle style="--i:7" cx="25.13" cy="25.13" r="11"/></svg>
           <p class="cardnote" id="whereNote"></p>
         </div>
         <div class="setupcard" id="remoteCard">
           <h3>Remote only</h3>
           <button class="modebtn" id="modeBtn" type="button" aria-pressed="false">Off</button>
+          <svg class="prose" viewBox="0 0 104 104" aria-hidden="true"><circle style="--i:0" cx="52.00" cy="14.00" r="11"/><circle style="--i:1" cx="78.87" cy="25.13" r="11"/><circle style="--i:2" cx="90.00" cy="52.00" r="11"/><circle style="--i:3" cx="78.87" cy="78.87" r="11"/><circle style="--i:4" cx="52.00" cy="90.00" r="11"/><circle style="--i:5" cx="25.13" cy="78.87" r="11"/><circle style="--i:6" cx="14.00" cy="52.00" r="11"/><circle style="--i:7" cx="25.13" cy="25.13" r="11"/></svg>
           <p class="cardnote" id="remoteNote"></p>
         </div>
       </div>
@@ -984,8 +1011,6 @@ function renderSetup(){
   }
   const opt = (pl?.options || []).find(o => o.code === home);
   const onsite = pl ? all.length - pl.remote - pl.unplaced : 0;
-  // In Kenya the card cannot be a control, so it is the flag.
-  $("#kenyaFlag").hidden = pickable || MARKET !== "ke";
   $("#whereNote").textContent = !pl ? ""
     : !pickable ? `${all.length - pl.remote} on site, all in ${country}`
     : opt ? `${opt.local} on site in ${opt.label} · ${pl.remote} remote`
