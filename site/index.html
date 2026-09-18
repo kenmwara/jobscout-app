@@ -227,7 +227,21 @@
   .persona .pd{font-size:15px;color:var(--ink);line-height:1.55;margin:auto 0 0;max-height:0;opacity:0;transform:translateY(8px);overflow:hidden;
     transition:opacity .35s var(--ease) .1s,transform .35s var(--ease) .1s,max-height .45s var(--ease)}
   .persona:hover .pd,.persona.sel .pd{max-height:120px;opacity:1;transform:none}
-  .runwrap{margin-top:26px;display:flex;align-items:center;justify-content:center;gap:22px;flex-wrap:wrap}
+  .prefs{margin-top:22px;display:flex;align-items:center;justify-content:center;gap:10px 14px;flex-wrap:wrap}
+  .prefs .plabel{font-size:14px;color:var(--text2)}
+  .prefs select{font:15px/1 var(--sans);color:var(--ink);background:var(--surface);cursor:pointer;
+    border:1.5px solid var(--hair2);border-radius:var(--pill);padding:11px 14px;max-width:100%}
+  .prefs select:focus{outline:none;border-color:var(--indigo);box-shadow:0 0 0 3px rgba(72,101,255,.16)}
+  .modebtn{font:15px/1 var(--sans);font-weight:500;color:var(--text2);background:none;cursor:pointer;
+    border:1.5px solid var(--hair2);border-radius:var(--pill);padding:11px 18px;
+    transition:border-color .2s var(--ease),color .2s var(--ease),background .2s var(--ease)}
+  .modebtn:hover{border-color:var(--indigo);color:var(--indigo)}
+  .modebtn.on{background:var(--indigo);border-color:var(--indigo);color:#fff}
+  .row.aside{opacity:.72}
+  .row.aside .t{text-decoration:line-through;text-decoration-color:var(--hair2)}
+  .verdict.aside{background:var(--hair);color:var(--text2)}
+  .prefnote{margin:10px 0 0;font-size:13.5px;color:var(--text2);text-align:center;line-height:1.6}
+  .runwrap{margin-top:18px;display:flex;align-items:center;justify-content:center;gap:22px;flex-wrap:wrap}
   /* An equal path, not a footnote: same height as .run, outlined rather than filled so the
      hierarchy still reads, and full width on a phone where a text link disappears. */
   .ownlink{background:none;color:var(--midnight);border:1.5px solid var(--hair2);border-radius:var(--pill);
@@ -539,6 +553,8 @@
   @media (max-width:760px){
     .runwrap{gap:12px}
     .run,.ownlink{width:100%}
+    .prefs{gap:8px}
+    .prefs select,.modebtn{flex:1 1 100%}
     .personas{grid-template-columns:1fr;gap:12px}
     .persona{min-height:0;margin-top:0;padding:20px 20px 18px;flex-direction:row;flex-wrap:wrap;align-items:center;gap:6px 16px}
     .persona .prose{width:44px;height:44px;margin:0;order:-1}
@@ -609,6 +625,14 @@
       <h2>Start with a candidate.</h2>
       <p class="lead" id="sweepline">Three profiles or your own resume, against this morning's postings. Same jobs, different scores.</p>
       <div class="personas" id="personas"></div>
+      <!-- Where you live changes which postings you could actually take; the feed ships the
+           vocabulary so this can never offer a place today's sweep cannot honour. -->
+      <div class="prefs" id="prefs" hidden>
+        <span class="plabel">I'm in</span>
+        <select id="homeSel" aria-label="Where you are based"></select>
+        <button class="modebtn" id="modeBtn" type="button" aria-pressed="false">Remote only</button>
+      </div>
+      <p class="prefnote" id="prefNote"></p>
       <div class="runwrap">
         <button class="run" id="runBtn" type="button">Run the pipeline</button>
         <button class="ownlink" id="ownToggle" type="button" aria-expanded="false" aria-controls="ownBox">Use my own resume</button>
@@ -784,6 +808,27 @@ const miniRose = () => `<svg class="prose" viewBox="0 0 104 104" aria-hidden="tr
 // Nothing is chosen on open (2026-09-17: on a phone the collapsed cards hid that
 // Maya was pre-selected, and a run with no resume read as "the app remembered me").
 let feed = null, selected = null, running = false;
+/* Where the visitor lives, and whether they will consider anything but remote. Both start unset —
+   nothing is chosen for anyone, the same rule the personas follow. */
+let home = "", remoteOnly = false;
+
+/* Could a person living in `home` take this posting? Remote is takeable from anywhere inside its
+   own scope; an onsite or hybrid posting needs you there; and a posting that names no province is
+   ambiguous, not nowhere, so it is kept rather than dropped. Mirrored in Select.kt, Select.swift
+   and tools/demo_eval.py — change the four together. */
+function takeable(p){
+  if (remoteOnly && p.remote_policy !== "remote") return false;
+  if (!home) return true;
+  if (p.remote_policy === "remote") return true;
+  if (!(p.places || []).length) return true;
+  return p.places.includes(home);
+}
+function whyNot(p){
+  if (remoteOnly && p.remote_policy !== "remote")
+    return `you asked for remote only — this one is listed ${esc(p.remote_policy || "onsite")}`;
+  const where = (feed.places?.options || []).find(o => o.code === home);
+  return `you are in ${esc(where ? where.label : home)} — this one needs you in ${esc(p.location || "another province")}`;
+}
 
 /* ── Saved jobs: per-browser, localStorage only, key jobscout.tracker.
    The list itself lives on saved.html now; this page only saves and counts. ── */
@@ -914,6 +959,34 @@ async function loadFeed(){
     $("#sweepline").textContent = "The feed is unreachable right now. Scoring needs the API.";
   }
   renderMetrics(feed);
+  renderPrefs();
+}
+
+/* The picker is built from feed.places, so a province only ever appears with the number of
+   postings that actually require being there today. */
+function renderPrefs(){
+  const pl = feed && feed.places;
+  if (!pl || !pl.options || !pl.options.length){ $("#prefs").hidden = true; return; }
+  $("#prefs").hidden = false;
+  $("#homeSel").innerHTML = `<option value="">anywhere in ${MARKET === "ke" ? "Kenya" : "Canada"}</option>` +
+    pl.options.map(o => `<option value="${o.code}">${esc(o.label)}${o.local ? ` — ${o.local} local` : ""}</option>`).join("");
+  $("#homeSel").value = home;
+  $("#modeBtn").classList.toggle("on", remoteOnly);
+  $("#modeBtn").setAttribute("aria-pressed", String(remoteOnly));
+  prefNote();
+}
+
+/* One sentence, recomputed from the feed, that adds up. */
+function prefNote(){
+  if (!feed || !feed.places){ $("#prefNote").textContent = ""; return; }
+  const all = feed.postings.filter(p => p.gate?.verdict !== "reject");
+  const n = all.filter(takeable).length;
+  const opt = (feed.places.options || []).find(o => o.code === home);
+  const where = opt ? opt.label : (MARKET === "ke" ? "Kenya" : "Canada");
+  $("#prefNote").innerHTML = home || remoteOnly
+    ? `<b>${n}</b> of today's ${all.length} are open to someone in ${esc(where)}${remoteOnly ? ", remote only" : ""}` +
+      (remoteOnly ? "." : ` — ${feed.places.remote} remote${opt && opt.local ? `, ${opt.local} on site there` : ""}${feed.places.unplaced ? `, ${feed.places.unplaced} that don't say where` : ""}.`)
+    : `All ${all.length} of today's eligible postings. Narrow them if you like — it costs nothing and no posting is hidden without a reason.`;
 }
 
 function sleep(ms){ return new Promise(r => setTimeout(r, reduced ? 0 : ms)); }
@@ -939,17 +1012,22 @@ async function runPipeline(){
   // rejects (the instructive part), then everything else behind the toggle.
   const GATE_SHOWN = 6;
   const gateSector = sectorOf(profile, feed.lexicon || {});
-  const gateOrder = [...feed.postings.filter(p => p.sector === gateSector && p.gate?.verdict !== "reject"),
-                     ...feed.postings.filter(p => p.gate?.verdict === "reject"),
-                     ...feed.postings.filter(p => p.sector !== gateSector && p.gate?.verdict !== "reject")];
+  const ok = p => p.gate?.verdict !== "reject";
+  const gateOrder = [...feed.postings.filter(p => ok(p) && p.sector === gateSector && takeable(p)),
+                     ...feed.postings.filter(p => !ok(p)),
+                     ...feed.postings.filter(p => ok(p) && !takeable(p)),
+                     ...feed.postings.filter(p => ok(p) && p.sector !== gateSector && takeable(p))];
   const rows = gateOrder.map((p, i) => {
     const rej = p.gate?.verdict === "reject";
+    // Three states, never two. "You are in Manitoba and this is a Toronto office job" is not a
+    // rejection by the market, and printing it as one would put words in the market's mouth.
+    const aside = !rej && !takeable(p);
     const el = document.createElement("div");
-    el.className = "row" + (rej ? " rej" : "");
+    el.className = "row" + (rej ? " rej" : aside ? " aside" : "");
     el.innerHTML = `<div><div class="t">${esc(p.title)} <span class="co">· ${esc(p.company)}</span></div>
       <div class="m">${esc(p.location)} · ${esc(p.source || "board")}</div>
-      <div class="gatereason">${rej ? "✗ " : "✓ "}${esc(p.gate?.reason || "")}</div></div>
-      <span class="verdict ${rej ? "reject" : "pass"}">${rej ? "rejected" : "eligible"}</span>`;
+      <div class="gatereason">${rej ? "✗ " : aside ? "– " : "✓ "}${aside ? whyNot(p) : esc(p.gate?.reason || "")}</div></div>
+      <span class="verdict ${rej ? "reject" : aside ? "aside" : "pass"}">${rej ? "rejected" : aside ? "set aside" : "eligible"}</span>`;
     (i < GATE_SHOWN ? $("#gateRows") : $("#gateMore")).appendChild(el);
     if (i >= GATE_SHOWN) el.classList.add("in");
     return el;
@@ -976,8 +1054,12 @@ async function runPipeline(){
   // lexicon classifies the profile here, so a banker meets banking postings. Fewer than
   // four in the sector → top up with the rest, and the floor rule below says so honestly.
   const eligible = feed.postings.filter(p => p.gate?.verdict !== "reject");
+  // The visitor's own constraints are gates like any other: deterministic, free, and each one
+  // that removes a posting owes a reason. eligible = chosen + setAside, always.
+  const chosen = eligible.filter(takeable);
+  const setAside = eligible.filter(p => !takeable(p));
   const sector = sectorOf(profile, feed.lexicon || {});
-  const inSector = eligible.filter(p => p.sector === sector);
+  const inSector = chosen.filter(p => p.sector === sector);
   // Within the sector, the postings nearest the profile's own words go first (a title
   // hit counts 3, a summary hit 1), so a wealth advisor meets advisor postings before
   // tax analysts. Deterministic and free; Claude still does the judging.
@@ -985,13 +1067,22 @@ async function runPipeline(){
   const words = [...new Set(profile.toLowerCase().match(/[a-z][a-z&-]{4,}/g) || [])].filter(w => !STOP.has(w)).slice(0, 80);
   // Inverse document frequency over the feed: "senior", "manager", "services" sit in most
   // postings and must not outrank "advisor" or "mortgage" (mirrors tools/demo_eval.py).
+  // NOTE: the IDF corpus stays the WHOLE eligible feed, not `chosen`. Rarity is a property of
+  // the market, not of what this visitor will consider; narrowing it would make every word in a
+  // small pool look rare and scramble the ranking.
   const docs = eligible.map(p => ((p.title || "") + " " + (p.summary || "")).toLowerCase());
   const idf = Object.fromEntries(words.map(w => [w, 1 / Math.log(2 + docs.filter(d => d.includes(w)).length)]));
   const rel = p => { const t = (p.title || "").toLowerCase(), s = (p.summary || "").toLowerCase(); let n = 0; for (const w of words){ n += (t.includes(w) ? 3 : s.includes(w) ? 1 : 0) * idf[w]; } return n; };
   const ranked = pool => [...pool].sort((a, b) => rel(b) - rel(a));
-  const passers = (inSector.length >= 4 ? ranked(inSector) : ranked(inSector).concat(ranked(eligible.filter(p => p.sector !== sector)))).slice(0, 8);
+  const passers = (inSector.length >= 4 ? ranked(inSector) : ranked(inSector).concat(ranked(chosen.filter(p => p.sector !== sector)))).slice(0, 8);
   const label = (feed.labels || {})[sector] || sector;
-  $("#scoreNote").innerHTML = `A fit from 0 to 100, a verdict in plain words, the strongest point and the weakest. This profile reads as <b>${esc(label)}</b>: ${inSector.length} of today's ${eligible.length} eligible postings are in that sector, and ${passers.length} go to Claude. A cover letter or a tailored resume is offered only when the top match scores ${FIT_FLOOR} or better.`;
+  if (!passers.length){
+    // A rule already knew the answer, so nothing is sent and nothing is spent.
+    banner("warn", `Nothing in today's ${eligible.length} eligible postings is open to you with those settings. ` +
+      `No call was made to Claude — a rule already knew, and rules are free. Every posting set aside is listed below, with the reason.`);
+    finish(); return;
+  }
+  $("#scoreNote").innerHTML = `A fit from 0 to 100, a verdict in plain words, the strongest point and the weakest. This profile reads as <b>${esc(label)}</b>: ${inSector.length} of today's ${eligible.length} eligible postings are in that sector, and ${passers.length} go to Claude${setAside.length ? `, after ${setAside.length} were set aside by your own settings` : ""}. A cover letter or a tailored resume is offered only when the top match scores ${FIT_FLOOR} or better.`;
   await sleep(300);
   $("#scoreStatus").lastElementChild.textContent = `scoring ${passers.length} ${esc(label)} postings with Claude…`;
 
@@ -1183,6 +1274,13 @@ $("#ownFile").onchange = async () => {
     } else st.textContent = d.detail || d.error || "extraction unavailable";
   }catch(e){ st.textContent = "extract API unreachable"; }
   lab.classList.remove("busy"); $("#ownFile").value = "";
+};
+$("#homeSel").onchange = e => { home = e.target.value; prefNote(); };
+$("#modeBtn").onclick = () => {
+  remoteOnly = !remoteOnly;
+  $("#modeBtn").classList.toggle("on", remoteOnly);
+  $("#modeBtn").setAttribute("aria-pressed", String(remoteOnly));
+  prefNote();
 };
 $("#runBtn").onclick = runPipeline;
 
