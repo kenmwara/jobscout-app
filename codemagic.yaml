@@ -120,9 +120,12 @@ workflows:
   # fine APK and then fail at the emulator step.
   android-screens:
     name: JobScout Android (UI screenshots)
-    instance_type: mac_mini_m2
+    # linux, not mac_mini_m2: the Apple-silicon runner cannot nest virtualisation, so the
+    # emulator dies at boot with `HVF error: HV_UNSUPPORTED` and the build fails with nothing
+    # but an emulator.log. Linux runners expose KVM, which is what the emulator actually needs.
+    instance_type: linux_x2
     # 30 was not enough: the APK build alone takes ~3 min and the emulator needs
-    # real time to come up on a shared mac runner. The first attempt was killed
+    # real time to come up on a shared runner. The first attempt was killed
     # by the cap mid-boot with nothing to show for it.
     max_build_duration: 45
     environment:

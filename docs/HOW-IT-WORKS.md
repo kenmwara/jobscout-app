@@ -33,7 +33,14 @@ at all — that last clause matters, because around twenty-three postings a day
 say only "Canada". No card states a count until its own control is used: a
 number on an untouched control would read as the result of a search nobody ran.
 
-<img src="img/web-candidate.png" alt="The three setup cards: your resume, where you can work, remote only" width="520">
+<img src="img/web-chooser.png" alt="The three setup cards: your resume, where you can work, remote only" width="520">
+
+The same three cards stack on a phone. That is where this page has failed hardest and
+been fixed most: a card description hidden behind `:hover` is invisible on a touch screen,
+and a pre-selected candidate a visitor never chose reads as "the app remembered my last
+search". Both shipped, both were found on a phone, and neither was visible on a desktop.
+
+<img src="img/web-mobile.png" alt="jobscout.page on a phone: the three cards stacked, marks lit without a hover" width="250">
 
 **2 · Why those, and not the rest.** Every posting first passes deterministic
 checks — is it genuinely remote, is the candidate's region actually eligible,
@@ -80,7 +87,7 @@ offers no picker, because 105 of the 110 on-site Kenyan postings give their
 location as the single word "Kenya" — the sources do not publish a town, so the
 page does not invent one.
 
-<img src="img/web-kenya.png" alt="The same three cards on the Kenya market" width="520">
+<img src="img/web-kenya.png" alt="The Kenya market: the same three cards, in green, with no location picker" width="520">
 
 ## The engineering underneath
 
