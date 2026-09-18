@@ -789,8 +789,12 @@ try{
 function ev(n, d){
   try{
     const body = JSON.stringify({ n, d: d == null ? null : String(d), m: MARKET, s: "web", sid: SID });
-    if (navigator.sendBeacon) navigator.sendBeacon(API + "/api/ev", new Blob([body], { type: "application/json" }));
-    else fetch(API + "/api/ev", { method: "POST", body, keepalive: true, headers: { "content-type": "application/json" } });
+    // text/plain, NOT application/json: a Blob with a non-safelisted content type makes
+    // sendBeacon need a CORS preflight, which sendBeacon cannot do, so the browser drops the
+    // request and returns true anyway. Verified on the live site — the json beacon vanished
+    // and the text/plain one landed. The worker parses the body itself, so the header is free.
+    if (navigator.sendBeacon) navigator.sendBeacon(API + "/api/ev", new Blob([body], { type: "text/plain" }));
+    else fetch(API + "/api/ev", { method: "POST", body, keepalive: true });
   }catch(e){}
 }
 ev("open");

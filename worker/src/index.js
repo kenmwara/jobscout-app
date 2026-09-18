@@ -376,7 +376,9 @@ export default {
     if (url.pathname === "/api/ev" && request.method === "POST") {
       // Never fails loudly: a page must not break because a counter did.
       try{
-        const b = await request.json();
+        // Parsed from text, not request.json(): the page sends text/plain so that sendBeacon
+        // stays a simple request and never needs a preflight it cannot perform.
+        const b = JSON.parse(await request.text());
         const name = String(b.n || "");
         const sid = String(b.sid || "").slice(0, 24);
         if (!EV_NAMES.has(name) || !/^[a-z0-9]{6,24}$/.test(sid)) return new Response(null, { status: 204, headers: CORS });

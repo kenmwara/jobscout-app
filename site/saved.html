@@ -130,8 +130,9 @@ try{
 function ev(n, d){
   try{
     const body = JSON.stringify({ n, d: d || null, m: "ca", s: "web", sid: SID });
+    // text/plain keeps sendBeacon out of a CORS preflight it cannot perform (see index.html).
     if (navigator.sendBeacon) navigator.sendBeacon("https://jobscout-app-api.kenmwara.workers.dev/api/ev",
-      new Blob([body], { type: "application/json" }));
+      new Blob([body], { type: "text/plain" }));
   }catch(e){}
 }
 
