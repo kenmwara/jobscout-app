@@ -159,11 +159,12 @@ The setup screen is not pictured here, and deliberately: it was rebuilt on
 picture of a screen the app no longer has. See the web shots above — the phones
 run the same three controls in the same order.
 
-Captured by hand rather than in CI, because the `android-screens` workflow
-cannot run on this plan. `mac_mini_m2` is itself a VM and cannot nest
-virtualisation, so the emulator dies at boot with `HVF error: HV_UNSUPPORTED`;
-`linux_x2` has the KVM it needs and is refused as not available on the current
-billing plan. A real device is the better caption anyway.
+Captured by hand rather than in CI. The `android-screens` workflow now targets
+`linux_x2`, which is the only instance that can run it — the emulator needs KVM
+and `mac_mini_m2` is itself a VM that cannot nest virtualisation, so there the
+emulator dies at boot with `HVF error: HV_UNSUPPORTED`. Linux is refused on the
+free personal plan, so this waits on billing. A real device is the better
+caption anyway.
 
 ## Deploying
 
