@@ -16,12 +16,12 @@ let personas = [
     Persona(id: "maya", name: "Maya — Senior Platform Engineer",
         desc: "Vancouver · Canadian PR · remote-only · Python/TypeScript, Cloudflare, LLM orchestration",
         profile: "Senior platform engineer in Vancouver, BC (Canadian PR; no US work authorization — US roles must allow remote-from-Canada). 8 years: Python, TypeScript, Cloudflare Workers/D1, DigitalOcean, FastAPI, nginx. Builds and operates LLM-orchestrated production systems (Claude API) end-to-end solo: trading platform, audit pipelines, edge APIs. Wants: senior/staff platform or AI-infrastructure roles, fully remote."),
-    Persona(id: "dev", name: "Dev — New-grad SWE",
-        desc: "Toronto · React/Node internships · hybrid OK · first full-time role",
-        profile: "New-grad software engineer in Toronto, ON (Canadian citizen). BSc CS 2026. Two internships: React/Next.js front-end at a fintech, Node/Express APIs at a startup. Comfortable with TypeScript, Postgres, basic AWS. Looking for: junior/new-grad full-stack or front-end roles, Toronto hybrid or remote-Canada."),
-    Persona(id: "ingrid", name: "Ingrid — Data Scientist",
-        desc: "Montréal · Canadian PR · Python/ML · remote-Canada or hybrid Montréal",
-        profile: "Data scientist in Montréal, QC (Canadian PR; bilingual French and English). 5 years: Python, pandas, scikit-learn, PyTorch, SQL, dbt; production ML for churn and pricing at a marketplace. Strong experimentation and causal inference. Looking for: senior data science or ML engineer roles, remote-Canada or Montréal hybrid. No relocation outside Canada."),
+    Persona(id: "riley", name: "Riley — Customer Support Specialist",
+        desc: "Calgary · 2 yrs SaaS support · Zendesk/Intercom · remote-Canada or hybrid",
+        profile: "Customer support specialist in Calgary, AB (Canadian citizen). 2 years of technical customer support for a Canadian SaaS company: Zendesk, Intercom, Jira; email, chat and escalation triage; CSAT 95%. Writes help-centre articles and runs onboarding calls. Looking for: customer support, customer success or support-operations roles, remote-Canada or Calgary hybrid."),
+    Persona(id: "priya", name: "Priya — Financial Advisor",
+        desc: "Toronto · LLQP licensed · investments and insurance · hybrid or remote-Canada",
+        profile: "Financial advisor in Toronto, ON (Canadian citizen; LLQP and mutual funds licensed). 6 years advising retail clients on investments, insurance and mortgages at a Canadian bank; portfolio reviews, retirement planning, referrals to wealth specialists. Looking for: financial advisor, investment specialist or client-relationship roles, Toronto hybrid or remote-Canada."),
 ]
 
 // The Kenya market (2026-09-15): the same sweep re-gated for a hire based in Kenya,
