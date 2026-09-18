@@ -145,21 +145,25 @@ gate for a new personal account: 12 testers over 14 days before production);
 the app targets Android 16 (API 36), which Play requires of new apps.
 
 <p>
-  <img src="docs/img/native/android-01-candidate.jpg" height="470" alt="JobScout on Android — the candidate chooser, each card carrying the mark in its own hue; the chosen one blooms">
-  &nbsp;&nbsp;
   <img src="docs/img/native/android-02-scoring.jpg" height="470" alt="JobScout on Android — live scoring: the bearing rose lit to each fit, the route band, and the reasoning both ways">
   &nbsp;&nbsp;
   <img src="docs/img/native/android-03-gates.jpg" height="470" alt="JobScout on Android — the gate verdicts below the results, six shown with the rest one tap away">
 </p>
 
-*Android on a real phone, on the build in this repo. Left — the candidate
-chooser: one hue per candidate, and the mark blooming in the chosen card's own
-colour. Middle — live scoring, the rose lit to each fit with the reasoning for
-and against. Right — the gate verdicts, sitting below the results as receipts.*
+*Android on a real phone, on the build in this repo. Left — live scoring, the
+rose lit to each fit with the reasoning for and against. Right — the gate
+verdicts, sitting below the results as receipts.*
 
-Captured by hand rather than in CI: the `android-screens` workflow cannot run on
-the free plan (the emulator needs Hypervisor.framework and `mac_mini_m2` is
-itself a VM, so QEMU cannot start). A real device is the better caption anyway.
+The setup screen is not pictured here, and deliberately: it was rebuilt on
+2026-09-18 around the resume, and a screenshot of the old one would be a
+picture of a screen the app no longer has. See the web shots above — the phones
+run the same three controls in the same order.
+
+Captured by hand rather than in CI, because the `android-screens` workflow
+cannot run on this plan. `mac_mini_m2` is itself a VM and cannot nest
+virtualisation, so the emulator dies at boot with `HVF error: HV_UNSUPPORTED`;
+`linux_x2` has the KVM it needs and is refused as not available on the current
+billing plan. A real device is the better caption anyway.
 
 ## Deploying
 
