@@ -20,8 +20,8 @@ let personas = [
         desc: "Toronto · React/Node internships · hybrid OK · first full-time role",
         profile: "New-grad software engineer in Toronto, ON (Canadian citizen). BSc CS 2026. Two internships: React/Next.js front-end at a fintech, Node/Express APIs at a startup. Comfortable with TypeScript, Postgres, basic AWS. Looking for: junior/new-grad full-stack or front-end roles, Toronto hybrid or remote-Canada."),
     Persona(id: "ingrid", name: "Ingrid — Data Scientist",
-        desc: "Berlin · EU work auth · Python/ML · remote EU or hybrid Berlin",
-        profile: "Data scientist in Berlin, Germany (EU work authorization only). 5 years: Python, pandas, scikit-learn, PyTorch, SQL, dbt; production ML for churn and pricing at a marketplace. Strong experimentation/causal inference. Looking for: senior data science or ML engineer roles, remote within EU or hybrid Berlin. No relocation."),
+        desc: "Montréal · Canadian PR · Python/ML · remote-Canada or hybrid Montréal",
+        profile: "Data scientist in Montréal, QC (Canadian PR; bilingual French and English). 5 years: Python, pandas, scikit-learn, PyTorch, SQL, dbt; production ML for churn and pricing at a marketplace. Strong experimentation and causal inference. Looking for: senior data science or ML engineer roles, remote-Canada or Montréal hybrid. No relocation outside Canada."),
 ]
 
 // The Kenya market (2026-09-15): the same sweep re-gated for a hire based in Kenya,

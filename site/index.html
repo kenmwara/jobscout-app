@@ -202,7 +202,7 @@
   .persona{position:relative;border:1px solid rgba(255,255,255,.75);border-radius:24px;padding:26px 26px 24px;
     background:linear-gradient(160deg,rgba(255,255,255,.42),rgba(255,255,255,.12));
     -webkit-backdrop-filter:blur(22px) saturate(1.5);backdrop-filter:blur(22px) saturate(1.5);text-align:left;
-    color:var(--ink);display:flex;flex-direction:column;min-height:330px;margin-top:44px;cursor:pointer;
+    color:var(--ink);display:flex;flex-direction:column;min-height:0;margin-top:44px;cursor:pointer;
     box-shadow:inset 0 1px 0 rgba(255,255,255,.9),rgba(75,68,57,.08) 0 10px 24px 0;
     transition:background .4s var(--ease),box-shadow .4s var(--ease),margin-top .45s var(--ease),transform .45s var(--ease),border-color .4s var(--ease)}
   .persona:nth-child(1){--pc:#328a3b;--pg:linear-gradient(160deg,rgba(220,239,223,.72),rgba(220,239,223,.32))}
@@ -216,7 +216,7 @@
   .persona .pn{font-family:var(--serif);font-weight:480;font-size:25px;line-height:1.12;letter-spacing:-.01em;margin:0}
   .persona .pn small{display:block;font-family:var(--sans);font-weight:500;font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--text2);margin-top:6px}
   /* the mark, blooming one bearing at a time - the same gesture the score rose makes */
-  .prose{width:120px;height:120px;display:block;margin:auto;transition:transform .5s var(--ease)}
+  .prose{width:96px;height:96px;display:block;margin:20px auto 18px;transition:transform .5s var(--ease)}
   .prose circle{fill:var(--hair2)}
   @media (prefers-reduced-motion:no-preference){
     .prose circle{transform:scale(.42);transform-origin:center;transform-box:fill-box;
@@ -224,9 +224,8 @@
   }
   .persona:hover .prose circle,.persona.sel .prose circle{fill:var(--pc);opacity:1;transform:none}
   .persona:hover .prose,.persona.sel .prose{transform:scale(1.12)}
-  .persona .pd{font-size:15px;color:var(--ink);line-height:1.55;margin:auto 0 0;max-height:0;opacity:0;transform:translateY(8px);overflow:hidden;
-    transition:opacity .35s var(--ease) .1s,transform .35s var(--ease) .1s,max-height .45s var(--ease)}
-  .persona:hover .pd,.persona.sel .pd{max-height:120px;opacity:1;transform:none}
+  .persona .pd{font-size:15px;color:var(--text2);line-height:1.55;margin:0;transition:color .35s var(--ease)}
+  .persona:hover .pd,.persona.sel .pd{color:var(--ink)}
   .prefs{margin-top:22px;display:flex;align-items:center;justify-content:center;gap:10px 14px;flex-wrap:wrap}
   .prefs .plabel{font-size:14px;color:var(--text2)}
   .prefs select{font:15px/1 var(--sans);color:var(--ink);background:var(--surface);cursor:pointer;
@@ -763,8 +762,8 @@ const PERSONAS_CA = [
     profile:"Senior platform engineer in Vancouver, BC (Canadian PR; no US work authorization — US roles must allow remote-from-Canada). 8 years: Python, TypeScript, Cloudflare Workers/D1, DigitalOcean, FastAPI, nginx. Builds and operates LLM-orchestrated production systems (Claude API) end-to-end solo: trading platform, audit pipelines, edge APIs. Wants: senior/staff platform or AI-infrastructure roles, fully remote." },
   { id:"dev", name:"Dev", role:"New-grad SWE", desc:"Toronto · React/Node internships · hybrid OK · first full-time role",
     profile:"New-grad software engineer in Toronto, ON (Canadian citizen). BSc CS 2026. Two internships: React/Next.js front-end at a fintech, Node/Express APIs at a startup. Comfortable with TypeScript, Postgres, basic AWS. Looking for: junior/new-grad full-stack or front-end roles, Toronto hybrid or remote-Canada." },
-  { id:"ingrid", name:"Ingrid", role:"Data Scientist", desc:"Berlin · EU work auth · Python/ML · remote EU or hybrid Berlin",
-    profile:"Data scientist in Berlin, Germany (EU work authorization only). 5 years: Python, pandas, scikit-learn, PyTorch, SQL, dbt; production ML for churn and pricing at a marketplace. Strong experimentation/causal inference. Looking for: senior data science or ML engineer roles, remote within EU or hybrid Berlin. No relocation." },
+  { id:"ingrid", name:"Ingrid", role:"Data Scientist", desc:"Montréal · Canadian PR · Python/ML · remote-Canada or hybrid Montréal",
+    profile:"Data scientist in Montréal, QC (Canadian PR; bilingual French and English). 5 years: Python, pandas, scikit-learn, PyTorch, SQL, dbt; production ML for churn and pricing at a marketplace. Strong experimentation and causal inference. Looking for: senior data science or ML engineer roles, remote-Canada or Montréal hybrid. No relocation outside Canada." },
 ];
 const PERSONAS = MARKET === "ke" ? PERSONAS_KE : PERSONAS_CA;
 if (MARKET === "ke"){
