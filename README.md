@@ -145,18 +145,18 @@ gate for a new personal account: 12 testers over 14 days before production);
 the app targets Android 16 (API 36), which Play requires of new apps.
 
 <p>
-  <img src="docs/img/native/ios-01-setup.png" height="470" alt="JobScout on iOS — the setup screen: resume first, then where you can work and remote only, with the samples below">
+  <img src="docs/img/native/android-01-setup.png" height="470" alt="JobScout on Android — the setup screen: resume first, then where you can work and remote only, with the samples below">
   &nbsp;&nbsp;
   <img src="docs/img/native/android-02-scoring.jpg" height="470" alt="JobScout on Android — live scoring: the bearing rose lit to each fit, the route band, and the reasoning both ways">
   &nbsp;&nbsp;
   <img src="docs/img/native/android-03-gates.jpg" height="470" alt="JobScout on Android — the gate verdicts below the results, six shown with the rest one tap away">
 </p>
 
-*Left — the setup screen, taken off the iOS simulator in CI on the current
-build: the resume first, then where you can work and remote only, with the
-sample candidates below. Middle and right are Android on a real phone — live
-scoring with the rose lit to each fit and the reasoning both ways, then the
-gate verdicts sitting below the results as receipts.*
+*Left — the setup screen, captured on an emulator in CI on the current build:
+the resume first, then where you can work and remote only, with the sample
+candidates below. Middle and right are Android on a real phone — live scoring
+with the rose lit to each fit and the reasoning both ways, then the gate
+verdicts sitting below the results as receipts.*
 
 Captured by hand rather than in CI. The `android-screens` workflow now targets
 `linux_x2`, which is the only instance that can run it — the emulator needs KVM
