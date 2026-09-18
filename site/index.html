@@ -185,48 +185,49 @@
   /* The three things a run needs: a resume, where you are, whether it must be remote.
      Same frosted glass the persona cards wore - the personas are now a sample row under
      the button, because what this scores is YOUR resume. */
-  .setup{display:grid;grid-template-columns:1.3fr 1fr 1fr;gap:16px;align-items:stretch;margin-top:8px}
-  /* glass over the cream and the rings; hovering a card lifts it, tints it its
-     own hue and blooms the mark - a full preview of being chosen, so the click
-     only confirms what the hand already saw. The description is always visible:
-     a phone has no hover, and nothing is pre-selected. */
-  /* frosted glass: a thin white fill over a strong blur, a bright top edge, a
-     faint sheen - the colour pools and the rings show through, softened */
-  .setupcard{position:relative;border:1px solid rgba(255,255,255,.75);border-radius:24px;padding:24px;
+  .setup{display:grid;grid-template-columns:1.25fr 1fr 1fr;gap:16px;align-items:stretch;margin-top:6px}
+  /* The persona cards' gesture, on the controls that replaced them: the card sits low, lifts and
+     takes its own hue under the cursor, and settles flush once it is doing something. Geometry
+     from the Awesomic sheet — 36px radius, 28px padding — palette unchanged. */
+  .setupcard{position:relative;border:1px solid rgba(255,255,255,.75);border-radius:36px;padding:28px;
     background:linear-gradient(160deg,rgba(255,255,255,.42),rgba(255,255,255,.12));
     -webkit-backdrop-filter:blur(22px) saturate(1.5);backdrop-filter:blur(22px) saturate(1.5);text-align:left;
-    color:var(--ink);display:flex;flex-direction:column;
+    color:var(--ink);display:flex;flex-direction:column;min-height:340px;margin-top:22px;
     box-shadow:inset 0 1px 0 rgba(255,255,255,.9),rgba(75,68,57,.08) 0 10px 24px 0;
-    transition:background .4s var(--ease),box-shadow .4s var(--ease),border-color .4s var(--ease)}
-  .setupcard:nth-child(1){--pg:linear-gradient(160deg,rgba(220,228,251,.72),rgba(220,228,251,.30))}
-  .setupcard:nth-child(2){--pg:linear-gradient(160deg,rgba(220,239,223,.72),rgba(220,239,223,.30))}
-  .setupcard:nth-child(3){--pg:linear-gradient(160deg,rgba(251,227,214,.74),rgba(251,227,214,.32))}
-  /* a card tints when it is actually doing something - the state is the colour */
-  .setupcard.on,.setupcard:focus-within{background:var(--pg);border-color:rgba(255,255,255,.9);
+    transition:background .4s var(--ease),box-shadow .4s var(--ease),margin-top .45s var(--ease),
+               transform .45s var(--ease),border-color .4s var(--ease)}
+  .setupcard:nth-child(1){--pg:linear-gradient(160deg,rgba(220,228,251,.78),rgba(220,228,251,.30))}
+  .setupcard:nth-child(3){--pg:linear-gradient(160deg,rgba(220,239,223,.78),rgba(220,239,223,.30))}
+  /* the middle card wears the flag of the market it filters */
+  #whereCard{--pg:linear-gradient(160deg,rgba(255,255,255,.92),rgba(213,43,30,.26))}
+  html[data-market="ke"] #whereCard{--pg:linear-gradient(160deg,rgba(8,3,49,.16),rgba(190,0,39,.24) 46%,rgba(0,154,73,.26))}
+  .setupcard:hover{background:var(--pg);border-color:rgba(255,255,255,.9);transform:translateY(-10px) scale(1.015);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.9),rgba(75,68,57,.2) 0 32px 56px 0}
+  .setupcard.on,.setupcard:focus-within{background:var(--pg);border-color:rgba(255,255,255,.9);margin-top:0;
     box-shadow:inset 0 1px 0 rgba(255,255,255,.9),var(--sh-card)}
-  .setupcard h3{font-family:var(--serif);font-weight:480;font-size:23px;line-height:1.12;letter-spacing:-.01em;margin:0 0 15px}
-  /* Kenya's location card is not a control, so it carries the flag instead: the shield
-     lifts and the bands brighten under the cursor, the only motion on the card. */
+  .setupcard.on:hover{transform:translateY(-5px) scale(1.008)}
+  .setupcard h3{font-family:var(--serif);font-weight:480;font-size:23px;line-height:1.12;letter-spacing:-.01em;margin:0 0 16px}
+  .setupcard select{font:15px/1 var(--sans);color:var(--ink);background:var(--surface);cursor:pointer;width:100%;
+    border:1px solid var(--hair2);border-radius:14px;padding:13px 14px}
+  .setupcard select:focus{outline:none;border-color:var(--indigo);box-shadow:0 0 0 3px rgba(72,101,255,.16)}
+  .setupcard textarea{min-height:104px;margin-top:10px;border-radius:14px}
+  .setupcard .upl{align-self:flex-start;border-radius:14px}
+  /* one number per card, on the floor of it */
+  .cardnote{font-size:13px;color:var(--text2);line-height:1.5;margin:auto 0 0;padding-top:16px;
+    font-variant-numeric:tabular-nums}
+  /* Kenya's card cannot be a control, so it carries the flag; the shield lifts with the card. */
   .kflag{display:block;width:100%;max-width:190px;height:auto;border-radius:10px;
     box-shadow:0 2px 10px rgba(75,68,57,.18);filter:saturate(.94)}
   .kflag .kshield{transform-origin:center;transition:transform .45s var(--ease)}
-  #whereCard:hover .kflag{filter:saturate(1.08)}
   #whereCard:hover .kflag .kshield{transform:scale(1.16)}
-  @media (prefers-reduced-motion:reduce){.kflag .kshield{transition:none}}
-  .setupcard select{font:15px/1 var(--sans);color:var(--ink);background:var(--surface);cursor:pointer;width:100%;
-    border:1.5px solid var(--hair2);border-radius:var(--pill);padding:12px 14px}
-  .setupcard select:focus{outline:none;border-color:var(--indigo);box-shadow:0 0 0 3px rgba(72,101,255,.16)}
-  .setupcard textarea{min-height:92px;margin-top:10px}
-  .setupcard .upl{align-self:flex-start}
-  .cardnote{font-size:13.5px;color:var(--text2);line-height:1.55;margin:auto 0 0;padding-top:12px}
-  /* the sample candidates: one row, under the button, where a fallback belongs */
-  .samples{margin:20px 0 0;text-align:center;font-size:14px;color:var(--text2);line-height:2.4}
+  @media (prefers-reduced-motion:reduce){.kflag .kshield,.setupcard{transition:none}}
+  .samples{margin:22px 0 0;text-align:center;font-size:14px;color:var(--text2);line-height:2.4}
   .chip{font:14px/1 var(--sans);color:var(--midnight);background:var(--surface);cursor:pointer;
-    border:1.5px solid var(--hair2);border-radius:var(--pill);padding:9px 15px;margin:0 3px;
+    border:1px solid var(--hair2);border-radius:var(--pill);padding:9px 15px;margin:0 3px;
     transition:border-color .2s var(--ease),color .2s var(--ease),background .2s var(--ease)}
   .chip:hover{border-color:var(--indigo);color:var(--indigo)}
   .chip.sel{background:var(--indigo);border-color:var(--indigo);color:#fff}
-  .modebtn{align-self:flex-start;font:15px/1 var(--sans);font-weight:500;color:var(--text2);background:none;cursor:pointer;
+  .modebtn{  .modebtn{align-self:flex-start;font:15px/1 var(--sans);font-weight:500;color:var(--text2);background:none;cursor:pointer;
     border:1.5px solid var(--hair2);border-radius:var(--pill);padding:11px 18px;
     transition:border-color .2s var(--ease),color .2s var(--ease),background .2s var(--ease)}
   .modebtn:hover{border-color:var(--indigo);color:var(--indigo)}
@@ -539,8 +540,9 @@
     .runwrap{gap:12px}
     .run{width:100%}
     .setup{grid-template-columns:1fr;gap:12px}
-    .setupcard{padding:20px}
-    .cardnote{margin-top:12px}
+    .setupcard{padding:22px;min-height:0;margin-top:0;border-radius:28px}
+    .setupcard:hover{transform:none}
+    .cardnote{margin:14px 0 0;padding-top:0}
   }
   @media (max-width:640px){
     /* Side by side, the rose left a ~200px text column and titles broke over
@@ -603,15 +605,15 @@
     <div class="chooser">
       <div class="bearing"><b>000</b> — THE CANDIDATE</div>
       <h2>Start here.</h2>
-      <p class="lead" id="sweepline">Your resume against this morning's postings.</p>
+      <p class="lead" id="sweepline">Swept this morning.</p>
       <!-- Where you are and whether it must be remote are read from feed.places, so a
            control can never offer a place today's sweep cannot honour. -->
       <div class="setup">
         <div class="setupcard" id="resumeCard">
           <h3>Your resume</h3>
-          <label class="upl"><input type="file" id="ownFile" accept=".pdf,.docx,.txt,.md,application/pdf" hidden> Upload PDF, DOCX or TXT</label><span class="uplstat" id="uplStatus"></span>
-          <textarea id="ownText" maxlength="6000" autocomplete="off" placeholder="…or paste it as plain text (max 6,000 characters)"></textarea>
-          <p class="cardnote">One run only. Never stored — <a href="privacy">privacy</a>.</p>
+          <label class="upl"><input type="file" id="ownFile" accept=".pdf,.docx,.txt,.md,application/pdf" hidden> Upload PDF, DOCX, TXT</label><span class="uplstat" id="uplStatus"></span>
+          <textarea id="ownText" maxlength="6000" autocomplete="off" placeholder="…or paste it"></textarea>
+          <p class="cardnote">Never stored · <a href="privacy">privacy</a></p>
         </div>
         <div class="setupcard" id="whereCard">
           <h3>Where you can work</h3>
@@ -629,7 +631,7 @@
       <div class="runwrap">
         <button class="run" id="runBtn" type="button">Run the pipeline</button>
       </div>
-      <p class="samples">No resume to hand? <span id="personas"></span></p>
+      <p class="samples">Or try one: <span id="personas"></span></p>
       <div id="banner"></div>
     </div>
   </section>
@@ -863,7 +865,7 @@ function plink(url){
 function renderPersonas(){
   $("#personas").innerHTML = PERSONAS.map(p =>
     `<button type="button" class="chip${p===selected?" sel":""}" data-id="${p.id}"
-       title="${esc(p.desc)}" aria-pressed="${p===selected}">${esc(p.name)} · ${esc(p.role.toLowerCase())}</button>`).join("");
+       title="${esc(p.role)} — ${esc(p.desc)}" aria-pressed="${p===selected}">${esc(p.name)}</button>`).join("");
   document.querySelectorAll(".chip").forEach(b => b.onclick = () => {
     // picking a sample drops whatever was pasted: two profiles in one run is a lie
     selected = PERSONAS.find(p => p.id === b.dataset.id);
@@ -953,8 +955,8 @@ async function loadFeed(){
     const c = feed.counts || {};
     const secs = Object.keys(feed.sectors || {}).length;
     $("#sweepline").innerHTML = secs
-      ? `<b>${feed.postings.length}</b> postings swept this morning, across <b>${secs}</b> sectors.`
-      : `<b>${feed.postings.length}</b> postings swept this morning.`;
+      ? `<b>${feed.postings.length}</b> postings · <b>${secs}</b> sectors · swept this morning.`
+      : `<b>${feed.postings.length}</b> postings · swept this morning.`;
   }catch(e){
     $("#sweepline").textContent = "The feed is unreachable right now. Scoring needs the API.";
   }
@@ -985,7 +987,7 @@ function renderSetup(){
   // In Kenya the card cannot be a control, so it is the flag.
   $("#kenyaFlag").hidden = pickable || MARKET !== "ke";
   $("#whereNote").textContent = !pl ? ""
-    : !pickable ? `Every on-site role today is in ${country} — ${all.length - pl.remote} of them.`
+    : !pickable ? `${all.length - pl.remote} on site, all in ${country}`
     : opt ? `${opt.local} on site in ${opt.label} · ${pl.remote} remote`
     : `${pl.remote} remote · ${onsite} on site · ${pl.unplaced} unsaid`;
   $("#whereCard").classList.toggle("on", !!home);
@@ -993,7 +995,7 @@ function renderSetup(){
   $("#modeBtn").classList.toggle("on", remoteOnly);
   $("#modeBtn").setAttribute("aria-pressed", String(remoteOnly));
   $("#remoteCard").classList.toggle("on", remoteOnly);
-  $("#remoteNote").textContent = pl ? `${pl.remote} of ${all.length} open from anywhere` : "";
+  $("#remoteNote").textContent = pl ? `${pl.remote} of ${all.length} anywhere` : "";
   $("#resumeCard").classList.toggle("on", $("#ownText").value.trim().length > 40);
   markChips();
   prefNote();
@@ -1106,7 +1108,7 @@ async function runPipeline(){
     finish(); return;
   }
   ev("run", sector);
-  $("#scoreNote").innerHTML = `A fit from 0 to 100, a verdict in plain words, the strongest point and the weakest. This profile reads as <b>${esc(label)}</b>: ${inSector.length} of today's ${eligible.length} eligible postings are in that sector, and ${passers.length} go to Claude${setAside.length ? `, after ${setAside.length} were set aside by your own settings` : ""}. A cover letter or a tailored resume is offered only when the top match scores ${FIT_FLOOR} or better.`;
+  $("#scoreNote").innerHTML = `Reads as <b>${esc(label)}</b> · ${inSector.length} of ${eligible.length} in that sector · ${passers.length} scored${setAside.length ? ` · ${setAside.length} set aside by your settings` : ""}. A letter or a tailored resume is offered from ${FIT_FLOOR} up.`;
   await sleep(300);
   $("#scoreStatus").lastElementChild.textContent = `scoring ${passers.length} ${esc(label)} postings with Claude…`;
 
