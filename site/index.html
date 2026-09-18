@@ -179,8 +179,8 @@
       radial-gradient(38% 55% at 84% 62%,rgba(72,101,255,.30),transparent 70%),
       radial-gradient(20% 30% at 40% 90%,rgba(240,152,215,.30),transparent 70%);
     filter:blur(28px)}
-  .chooser h2{font-family:var(--serif);font-weight:480;font-size:30px;letter-spacing:-.015em;line-height:1.15;margin:0 0 4px;color:var(--ink)}
-  .chooser .lead{font-size:16px;color:var(--text2);margin:0 0 22px;max-width:72ch}
+  .chooser .lead{font-size:16px;color:var(--text2);margin:10px 0 0;max-width:72ch}
+  .chooser .lead[hidden]{display:none}
   .chooser .lead b{color:var(--ink);font-weight:500}
   /* The three things a run needs: a resume, where you are, whether it must be remote.
      Same frosted glass the persona cards wore - the personas are now a sample row under
@@ -632,8 +632,8 @@
 
     <div class="chooser">
       <div class="bearing"><b>000</b> — THE CANDIDATE</div>
-      <h2>Start here.</h2>
-      <p class="lead" id="sweepline">Swept this morning.</p>
+      <!-- #sweepline is empty unless the feed fails; the cards speak for themselves. -->
+      <p class="lead" id="sweepline" hidden></p>
       <!-- Where you are and whether it must be remote are read from feed.places, so a
            control can never offer a place today's sweep cannot honour. -->
       <div class="setup">
@@ -983,12 +983,11 @@ async function loadFeed(){
   try{
     const r = await fetch(API + "/api/feed?market=" + MARKET); feed = await r.json();
     const c = feed.counts || {};
-    const secs = Object.keys(feed.sectors || {}).length;
-    $("#sweepline").innerHTML = secs
-      ? `<b>${feed.postings.length}</b> postings · <b>${secs}</b> sectors · swept this morning.`
-      : `<b>${feed.postings.length}</b> postings · swept this morning.`;
+    $("#sweepline").hidden = true;
   }catch(e){
+    // the one thing worth saying up here, and only when it is true
     $("#sweepline").textContent = "The feed is unreachable right now. Scoring needs the API.";
+    $("#sweepline").hidden = false;
   }
   renderMetrics(feed);
   renderSetup();
@@ -1013,17 +1012,15 @@ function renderSetup(){
     $("#homeSel").value = home;
   }
   const opt = (pl?.options || []).find(o => o.code === home);
-  const onsite = pl ? all.length - pl.remote - pl.unplaced : 0;
-  $("#whereNote").textContent = !pl ? ""
-    : !pickable ? `${all.length - pl.remote} on site, all in ${country}`
-    : opt ? `${opt.local} on site in ${opt.label} · ${pl.remote} remote`
-    : `${pl.remote} remote · ${onsite} on site · ${pl.unplaced} unsaid`;
+  // Silent until it has been used: a count on an untouched control reads as the result of a
+  // search nobody has run.
+  $("#whereNote").textContent = opt ? `${opt.local} on site in ${opt.label} · ${pl.remote} remote` : "";
   $("#whereCard").classList.toggle("on", !!home);
   $("#modeBtn").textContent = remoteOnly ? "On" : "Off";
   $("#modeBtn").classList.toggle("on", remoteOnly);
   $("#modeBtn").setAttribute("aria-pressed", String(remoteOnly));
   $("#remoteCard").classList.toggle("on", remoteOnly);
-  $("#remoteNote").textContent = pl ? `${pl.remote} of ${all.length} anywhere` : "";
+  $("#remoteNote").textContent = pl && remoteOnly ? `${pl.remote} of ${all.length} anywhere` : "";
   $("#resumeCard").classList.toggle("on", $("#ownText").value.trim().length > 40);
   markChips();
   prefNote();
