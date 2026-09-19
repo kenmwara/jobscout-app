@@ -208,7 +208,7 @@ a{color:inherit}
 
 /* ── site header ────────────────────────────────────────────────────── */
 header.site{padding:22px 0}
-header.site .row{display:flex;align-items:center;gap:20px}
+header.site .row{display:flex;align-items:center;gap:20px;position:relative}
 .brand{display:flex;align-items:center;gap:10px;font:500 20px/1 var(--serif);color:var(--ink);letter-spacing:-.02em}
 .brand svg{width:26px;height:26px;display:block;fill:var(--accent)}
 nav.main{margin-left:auto;display:flex;align-items:center;gap:8px}
@@ -234,7 +234,6 @@ nav.main a:hover{color:var(--ink)}
 .mkt button[aria-pressed="true"]{
   background:var(--surface);color:var(--ink);box-shadow:var(--sh-hover)
 }
-header.site .row{position:relative}
 @media(max-width:860px){
   .mkt{position:static;transform:none;margin-left:auto}
   .mkt button{padding:9px 13px}
@@ -928,6 +927,27 @@ html.anim .bell[aria-pressed="true"] svg{animation:ring .6s var(--ease)}
   section.band,section.plain{padding:56px 0}
 }
 
+/* ── the closing page, v3 ───────────────────────────────────────────────
+   The v2.2 ending was a 200px wordmark, a full-width pill and a field of
+   floating tiles — a different page pretending to be the same one. This is the
+   reference's ending instead: one line, two buttons, then the links. */
+.endpage{background:var(--canvas-2);border-top:1px solid var(--hair);
+  margin-top:90px;padding:86px 0 40px}
+.endpage .tiles,.endpage .wordmark{display:none}
+.ctarow{display:flex;align-items:center;justify-content:space-between;gap:28px;flex-wrap:wrap;
+  padding-bottom:64px;border-bottom:1px solid var(--hair)}
+.dream{font:400 clamp(26px,3.4vw,40px)/1.15 var(--serif);letter-spacing:-.025em;color:var(--ink);margin:0;max-width:16ch}
+.ctas{display:flex;gap:12px;flex-wrap:wrap}
+.cta,.cta2{
+  display:inline-flex;align-items:center;text-decoration:none;white-space:nowrap;
+  font:500 15px/1 var(--sans);padding:16px 26px;border-radius:var(--r-pill);
+  transition:all var(--t-micro) var(--ease)}
+.cta{background:var(--ink);color:var(--canvas);box-shadow:var(--sh-hover)}
+.cta:hover{background:var(--accent);color:var(--accent-ink)}
+.cta2{border:1px solid var(--hair2);color:var(--text)}
+.cta2:hover{border-color:var(--accent);color:var(--accent)}
+footer.site{padding:56px 0 0;border-top:0;margin-top:0}
+
 /* ── the results grid: the run renders the same card Browse does ──────── */
 .scores{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:28px;align-items:start}
 @media(max-width:980px){.scores{grid-template-columns:repeat(2,1fr)}}
@@ -951,37 +971,10 @@ html.anim .bell[aria-pressed="true"] svg{animation:ring .6s var(--ease)}
 .bearing{font:500 11px/1 var(--sans);letter-spacing:.14em;text-transform:uppercase;color:var(--text3)}
 .bearing b{color:var(--accent);font-weight:600}
 
-/* ── carried over from v2.2: stages, gates band, carousel, banners, end
-   page. All read var(--*), so the new tokens re-tint them untouched. ── */
-  /* ── stages ───────────────────────────────────────────────────────────── */
-  .stage{padding:64px 0 0;text-align:center}
-  .stage h2{font-family:var(--serif);font-weight:480;font-size:clamp(30px,4vw,48px);line-height:1.1;
-    letter-spacing:-.015em;margin:22px 0 10px;color:var(--ink)}
-  .stage .note{font-size:16.5px;color:var(--text2);margin:0 auto 26px;max-width:64ch;line-height:1.6}
-  .rows{background:var(--surface);border:none;border-radius:var(--card);overflow:hidden;text-align:left;box-shadow:var(--sh-card)}
-  .row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:3px 18px;padding:16px 24px;
-    border-bottom:1px solid var(--hair);opacity:0;transform:translateY(8px)}
-  .row:last-child{border-bottom:0}
-  .row.in{opacity:1;transform:none}
-  .row .t{font-weight:500;font-size:15.5px}
-  .row .t .co{color:var(--text2);font-weight:400}
-  .row .m{font-size:13px;color:var(--text2)}
-  .verdict{font-size:11px;font-weight:500;letter-spacing:.07em;text-transform:uppercase;align-self:center;
-    border-radius:var(--pill);padding:5px 13px;white-space:nowrap}
-  .verdict.pass{color:var(--meadow);background:rgba(50,138,59,.16)}
-  .verdict.reject{color:var(--stone);background:var(--info)}
-  .gatereason{grid-column:1/-1;font-size:13.5px;color:var(--text2)}
-  /* the strike is DRAWN, left to right, once the row has landed */
-  .row.rej .t{color:var(--text3);background:linear-gradient(var(--hair2),var(--hair2)) no-repeat 0 58%/100% 1.5px}
-  @media (prefers-reduced-motion:no-preference){
-    .row{transition:opacity .45s var(--ease),transform .45s var(--ease)}
-    .row.rej .t{background-size:0% 1.5px;transition:background-size .55s var(--ease) .3s}
-    .row.rej.in .t{background-size:100% 1.5px}
-    .row .verdict{transform:scale(.6);opacity:0}
-    .row.in .verdict{transform:none;opacity:1;transition:transform .45s var(--ease) .22s,opacity .3s var(--ease) .22s}
-    .row .gatereason{opacity:0;transform:translateX(-8px)}
-    .row.in .gatereason{opacity:1;transform:none;transition:opacity .4s var(--ease) .15s,transform .4s var(--ease) .15s}
-  }
+/* ── still carried from v2.2: the banner, the Claude chip and the
+   indigo band the How-it-works section uses. The stages, the gates band,
+   the metrics carousel and the old closing page went with their markup. ── */
+
 
   /* ── the indigo band, August's "care-obsessed operators" page ───────────
      THE CURVE IS NOT AN SVG. August's home-hero_background is a 1668px-wide box
@@ -996,184 +989,33 @@ html.anim .bell[aria-pressed="true"] svg{animation:ring .6s var(--ease)}
      viewport. Capped here rather than in a new rule - an added `.band .wrap`
      has the SAME specificity as this one and loses to it on order. */
   .band>.wrap{max-width:min(1040px,100vw)}
-  .band .bearing{background:rgba(255,255,255,.12);color:#dce4fb;box-shadow:none}
-  .band .bearing b{color:#fff}
   .band h2{color:#fff}
-  .band .note{color:#e9edff;font-weight:450}
   @supports (animation-timeline: view()){
     @media (prefers-reduced-motion:no-preference){
       .band{animation:flatten linear both;animation-timeline:view();animation-range:exit 0% exit 90%}
       @keyframes flatten{to{border-bottom-left-radius:0;border-bottom-right-radius:0}}
     }
   }
-
-  /* the three gate checks as August's multi-coloured frames - they RISE into
-     place one after another as the band scrolls in */
-  .gatecards{position:relative;display:grid;gap:16px;margin:34px auto 40px;max-width:900px;padding:22px}
-  @media (min-width:900px){.gatecards{grid-template-columns:repeat(3,1fr);max-width:1060px}
-    .gc{padding:22px 24px}.gc h3{font-size:22px}}
-  .gc{border-radius:var(--card);padding:26px 30px;display:grid;gap:6px 28px;
-    grid-template-columns:minmax(0,1fr);text-align:left;color:var(--ink)}
-  .gc h3{font-family:var(--serif);font-weight:480;font-size:27px;line-height:1.15;margin:0}
-  .gc p{margin:0;font-size:15.5px;line-height:1.6;font-weight:500;color:var(--ink)}
-  .gc-1{background:var(--forest);color:#fff} .gc-1 p{color:#fff}
-  .gc-2{background:var(--ember)}
-  .gc-3{background:var(--blossom)}
-  @media (prefers-reduced-motion:no-preference){
-    .gatecards .gc{opacity:0;transform:translateY(28px) scale(.98)}
-    .gatecards.in .gc{opacity:1;transform:none;transition:opacity .7s var(--ease),transform .7s var(--ease)}
-    .gatecards.in .gc-2{transition-delay:.14s}
-    .gatecards.in .gc-3{transition-delay:.28s}
-  }
-  /* the clockwise-travelling border August draws around this group */
-  .gatecards::before{content:"";position:absolute;inset:0;border-radius:26px;padding:1.5px;
-    background:conic-gradient(from var(--spin,0deg),#328a3b,#ff6d39,#f098d7,#a2baff,#328a3b);
-    -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
-            mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
-    -webkit-mask-composite:xor;mask-composite:exclude;pointer-events:none}
   @property --spin{syntax:'<angle>';inherits:false;initial-value:0deg}
   @media (prefers-reduced-motion:no-preference){
     .gatecards::before{animation:spinborder 14s linear infinite}
     @keyframes spinborder{to{--spin:360deg}}
   }
-  .band .rows{background:rgba(255,255,255,.06);box-shadow:none;
-    border:1px solid rgba(255,255,255,.14)}
-  .band .row{border-bottom-color:rgba(255,255,255,.1)}
-  .band .row:hover{background:rgba(255,255,255,.05)}
-  .band .row .t{color:#fff} .band .row .t .co{color:#d6dcff}
-  .band .row .m,.band .row .gatereason{color:#d0d8ff;font-weight:450}
-  .band .row.rej .t{color:#aab5e6;background-image:linear-gradient(#aab5e6,#aab5e6)}
-  .band .verdict.pass{color:#d6ffd9;background:rgba(50,138,59,.42)}
-  .band .verdict.reject{color:#c9d3ff;background:rgba(255,255,255,.12)}
-  .band .status{color:#c9d3ff}
 
   /* ── scoring: August's "Get to know us" frames - two roomy tinted cards ── */
   @media (min-width:1060px){
     .scores{display:grid;grid-template-columns:1fr 1fr;gap:22px}
     .scard{padding:32px 34px}
   }
-  .scard{position:relative;background:var(--surface)}
-  .scard:nth-child(4n+1){background:#f4f7f2} .scard:nth-child(4n+2){background:#fdf3ef}
-  .scard:nth-child(4n+3){background:#f5f2fb} .scard:nth-child(4n+4){background:#fdf1f9}
-  .scard .arrow{position:absolute;top:22px;right:22px;width:38px;height:38px;border-radius:100px;
-    background:var(--surface);display:grid;place-items:center;color:var(--indigo);
-    font-size:16px;box-shadow:var(--sh-subtle);transition:background .3s var(--ease)}
-  .scard:hover .arrow{background:var(--indigo);color:#fff}
-
-  /* ── the numbers: a Calendly-style centred carousel ────────────────────
-     One card in focus, the neighbours peeking either side at reduced scale,
-     a segmented progress bar beneath. Scroll-snap does the work; the arrows
-     and the bar just call scrollTo. Values are FILLED FROM THE FEED - the old
-     rail typed "22 / 14 / 8" into the page and called it live. */
-  .metrics{margin:76px 0 0;padding:64px 0 60px;position:relative;
-    background-image:radial-gradient(rgba(8,3,49,.13) 1px,transparent 1px);background-size:14px 14px}
-  .crail{display:flex;gap:22px;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;
-    padding:30px 0 30px;align-items:center}
-  .crail::-webkit-scrollbar{display:none}
-  /* spacers so the first and last card can sit in the centre */
-  .crail::before,.crail::after{content:"";flex:0 0 calc(50% - min(640px,86vw)/2 - 22px)}
-  /* a card arrives from the right faded and small, brightens as it reaches the
-     centre, and STAYS bright once it has been seen - only the unseen fade */
-  .ccard{flex:0 0 min(640px,86vw);scroll-snap-align:center;background:var(--surface);border-radius:28px;
-    box-shadow:var(--sh-card);display:grid;grid-template-columns:1.1fr 1fr;min-height:340px;overflow:hidden;
-    transform:scale(.9);opacity:.35;transition:transform .55s var(--ease),opacity .55s var(--ease)}
-  .ccard.seen{transform:none;opacity:1}
-  .ccard .cl{padding:36px 34px 30px;display:flex;flex-direction:column;justify-content:space-between;text-align:left}
-  .ccard .big{font-family:var(--serif);font-weight:480;font-size:clamp(52px,7vw,76px);line-height:1;letter-spacing:-.025em;color:var(--ink)}
-  .ccard .cap{font-size:19px;line-height:1.4;margin-top:12px;color:var(--ink);font-weight:500}
-  .ccard .foot{font-size:14px;color:var(--text2);margin-top:22px;line-height:1.5}
-  .ccard .cr{margin:16px 16px 16px 0;border-radius:22px;display:grid;place-items:center;padding:28px;
-    font-family:var(--serif);font-weight:480;font-size:23px;line-height:1.25;text-align:center;letter-spacing:-.01em}
-  .m-a .cr{background:var(--midnight);color:#fff}
-  .m-b .cr{background:var(--indigo);color:#fff}
-  .m-c .cr{background:var(--blossom);color:var(--ink)}
-  .m-d .cr{background:var(--forest);color:#fff}
-  .m-e .cr{background:var(--ember);color:var(--ink)}
-  .m-f .cr{background:var(--info);color:var(--ink)}
-  .cnav{display:flex;justify-content:center;align-items:center;gap:22px;margin-top:4px}
-  .cbtn{width:46px;height:46px;border-radius:50%;border:1.5px solid var(--hair2);background:var(--surface);
-    color:var(--ink);font-size:18px;cursor:pointer;box-shadow:var(--sh-subtle);display:grid;place-items:center}
-  .cbtn:hover{background:var(--indigo);border-color:var(--indigo);color:#fff}
-  .cdots{display:flex;gap:6px;align-items:center}
-  .cdots i{width:8px;height:8px;border-radius:8px;background:var(--hair2);cursor:pointer;transition:width .35s var(--ease),background .35s var(--ease)}
-  .cdots i.on{width:56px;background:var(--indigo)}
-  @media (max-width:640px){
-    .ccard{grid-template-columns:1fr;min-height:0}
-    .ccard .cr{margin:0 16px 16px;min-height:120px;font-size:19px}
-  }
-
-  /* ── status / banners ─────────────────────────────────────────────────── */
-  .status{font-size:13.5px;color:var(--text2);padding:16px 2px;display:flex;align-items:center;gap:10px;justify-content:center}
-  .status[hidden]{display:none}
-  .spin{width:14px;height:14px;border:2px solid var(--info);border-top-color:var(--indigo);border-radius:50%;flex:none}
-  @media (prefers-reduced-motion:no-preference){.spin{animation:sp .7s linear infinite}}
   @keyframes sp{to{transform:rotate(360deg)}}
   /* while Claude scores, Claude's own mark breathes in place of the spinner */
   .cmark{width:22px;height:22px;border-radius:50%;flex:none}
   @media (prefers-reduced-motion:no-preference){.cmark{animation:breathe 1.4s ease-in-out infinite}}
   @keyframes breathe{50%{transform:scale(.82);opacity:.6}}
   .banner{border-radius:var(--card);padding:15px 18px;font-size:14.5px;margin:16px auto 0;text-align:left;max-width:1040px}
-  .banner.warn{background:rgba(255,109,57,.12);border:1px solid rgba(204,54,0,.3);color:var(--ember-deep)}
-  .banner.err{background:rgba(204,54,0,.1);border:1px solid rgba(204,54,0,.35);color:var(--ember-deep)}
-
-  /* ── the closing page: Cosmos's "Sign up", element for element ──────────
-     A white sheet. Small image-like tiles drift in the space around one line,
-     one giant black pill and one quiet outlined pill. Below, a single row:
-     links left, the mark centred, links right. Then the wordmark, cropped by
-     the bottom of the page. Nothing else - no numbers, no meta, no prose. */
-  .endpage{position:relative;margin-top:96px;padding:150px 0 0;overflow:hidden;text-align:center;
-    background:var(--surface);border-radius:48px 48px 0 0}
-  .tiles{position:absolute;left:0;right:0;top:0;height:min(600px,66%);pointer-events:none}
-  /* the tiles are pictures, not text: small rounded swatches of the palette,
-     a few carrying the mark, the far ones blurred for depth */
-  .tile{position:absolute;width:var(--s,64px);height:calc(var(--s,64px) * .78);border-radius:calc(var(--s,64px) * .18);
-    background:var(--bg);box-shadow:rgba(75,68,57,.18) 0 10px 24px 0;transform:rotate(var(--r,0deg));opacity:var(--o,.9);
-    filter:blur(var(--b,0px))}
-  .tile svg{width:52%;height:52%;position:absolute;left:24%;top:24%;opacity:.85}
-  .t-indigo{--bg:linear-gradient(135deg,#4865ff,#a2baff)} .t-forest{--bg:linear-gradient(135deg,#328a3b,#9fd8a6)}
-  .t-ember{--bg:linear-gradient(135deg,#ff6d39,#ffb454)} .t-blossom{--bg:linear-gradient(135deg,#f098d7,#ffaefe)}
-  .t-midnight{--bg:linear-gradient(135deg,#1b1463,#4865ff)} .t-info{--bg:linear-gradient(135deg,#dce4fb,#ffffff)}
-  .t-cream{--bg:linear-gradient(135deg,#f8f3eb,#e7e1d6)}
   @media (prefers-reduced-motion:no-preference){
     .tile{animation:float var(--d,9s) ease-in-out infinite alternate}
     @keyframes float{to{transform:rotate(var(--r,0deg)) translateY(-18px)}}
-  }
-  .endpage .inner{position:relative;z-index:1;max-width:820px;margin:0 auto;padding:0 24px}
-  .endpage .dream{font-family:var(--serif);font-weight:480;font-size:27px;color:var(--ink);margin:0 0 22px;letter-spacing:-.01em}
-  .cta{display:inline-block;background:var(--ink);color:#fff;font-family:var(--serif);font-weight:480;font-size:clamp(32px,6vw,66px);
-    letter-spacing:-.02em;border-radius:var(--pill);padding:.38em 1em;text-decoration:none;box-shadow:var(--sh-cta);
-    transition:background .3s var(--ease),transform .3s var(--ease),box-shadow .3s var(--ease)}
-  .cta:hover{background:var(--midnight);text-decoration:none;transform:translateY(-3px);box-shadow:rgba(75,68,57,.2) 0 24px 48px 0}
-  .cta2{display:inline-block;margin:26px 0 0;border:1.5px solid var(--hair2);border-radius:var(--pill);padding:13px 28px;
-    font-size:16.5px;font-weight:500;color:var(--ink);text-decoration:none;background:var(--surface)}
-  .cta2:hover{background:var(--indigo);border-color:var(--indigo);color:#fff;text-decoration:none}
-  .endlinks{position:relative;z-index:1;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:14px 28px;
-    margin:150px auto 0;max-width:1200px;padding:0 28px;font-size:15.5px;font-weight:500}
-  .endlinks div{display:flex;gap:26px;flex-wrap:wrap;align-items:center}
-  .endlinks div:last-child{justify-content:flex-end}
-  .endlinks a{color:var(--text2)} .endlinks a:hover{color:var(--indigo);text-decoration:none}
-  .endlinks .mk{width:32px;height:32px;display:block}
-  /* attribution, not affiliation: Claude does the scoring, Anthropic is not a partner */
-  .claude{display:inline-flex;align-items:center;gap:9px;color:var(--text2);font-weight:500}
-  .claude img{width:24px;height:24px;border-radius:50%}
-  .wordmark{font-family:var(--serif);font-weight:500;font-size:clamp(88px,21.5vw,330px);line-height:.8;letter-spacing:-.05em;
-    color:var(--ink);margin:44px 0 -.2em;white-space:nowrap;text-align:center;user-select:none;position:relative;z-index:1}
-
-  @media (max-width:760px){
-    .runwrap{gap:12px}
-    .run{width:100%}
-    .setup{grid-template-columns:1fr;gap:12px}
-    .setupcard{padding:22px;min-height:0;margin-top:0;border-radius:28px}
-    .setupcard:hover{transform:none}
-    /* on a phone there is no hover, so the mark blooms as soon as the card is on screen */
-    .prose{width:56px;height:56px;margin:16px auto 0}
-    .setupcard .prose circle{fill:var(--pc)}
-    #whereCard .prose circle{fill:#d52b1e}
-    #whereCard .prose circle:nth-child(2n){fill:#8c1512}
-    html[data-market="ke"] #whereCard .prose circle:nth-child(3n+1){fill:#0b0b0b}
-    html[data-market="ke"] #whereCard .prose circle:nth-child(3n+2){fill:#be0027}
-    html[data-market="ke"] #whereCard .prose circle:nth-child(3n){fill:#009a49}
-    .cardnote{margin:14px 0 0}
   }
   @media (max-width:640px){
     /* Side by side, the rose left a ~200px text column and titles broke over
@@ -1207,16 +1049,15 @@ html.anim .bell[aria-pressed="true"] svg{animation:ring .6s var(--ease)}
     header nav a.getapp,header nav a.market{padding:7px 9px}
     .brand{font-size:18px}
     .marketchip{margin-left:8px;padding:5px 9px;font-size:10.5px}
-  }
-</style>
+  }</style>
 </head>
 <body id="top">
 
 <div id="nprog"><div class="bar"></div><div class="peg"></div></div>
 <div id="toast" aria-live="polite"></div>
 
-<header class="site">
-  <div class="wrap">
+<div class="wrap">
+  <header class="site">
     <div class="row">
       <div class="brand">
         <span class="mark" id="mark" title="JobScout">
@@ -1238,13 +1079,12 @@ html.anim .bell[aria-pressed="true"] svg{animation:ring .6s var(--ease)}
       </div>
       <nav class="main">
         <a href="#" class="keep" id="navBrowse">Browse</a>
-        <a href="saved" id="navTrack">Saved (0)</a>
-        <a class="hidesm" href="https://github.com/kenmwara/jobscout-app/blob/main/docs/HOW-IT-WORKS.md" target="_blank" rel="noopener">How it works</a>
-        <a class="hidesm" href="https://github.com/kenmwara/jobscout-app" target="_blank" rel="noopener">Source</a>
+        <a href="saved" id="navSaved">Saved (0)</a>
+        <a href="https://github.com/kenmwara/jobscout-app/blob/main/docs/HOW-IT-WORKS.md" target="_blank" rel="noopener">How it works</a>
       </nav>
     </div>
-  </div>
-</header>
+  </header>
+</div>
 
 <main>
 <div id="v-landing">
@@ -1292,7 +1132,7 @@ html.anim .bell[aria-pressed="true"] svg{animation:ring .6s var(--ease)}
   <section class="plain">
     <div class="wrap">
       <h2 class="sec">Browse by what the feed actually knows</h2>
-      <p class="lede">Every tile is a real slice of today's sweep. Nothing here is a category we cannot fill.</p>
+      <p class="lede">Every tile below is a real slice of today's sweep. Nothing here is a category we cannot fill.</p>
       <div style="height:26px"></div>
       <div class="taxtabs" id="taxTabs">
         <button data-tax="sector" aria-pressed="true">By sector</button>
@@ -1309,16 +1149,16 @@ html.anim .bell[aria-pressed="true"] svg{animation:ring .6s var(--ease)}
       <p class="lede">Three steps, and the middle one is the only one that costs anything.</p>
       <div class="grid3">
         <div class="card">
-          <div class="mini">Resume · read in the browser<span class="badge">never stored</span></div>
-          <div><h3>Your resume, not a form</h3><p>Upload or paste it. It is read in your browser, scored, and never stored — no account, no profile to keep current. <a href="privacy">What we count</a>.</p></div>
+          <div class="mini">Resume · read in the browser<span class="badge">read</span></div>
+          <div><h3>Your resume, not a form</h3><p>Upload or paste it. It is read in the browser, scored, and never stored — no account, no profile to keep current.</p></div>
         </div>
         <div class="card">
-          <div class="mini"><span id="gateMini">the gate runs first</span><span class="badge">no cost</span></div>
-          <div><h3>A gate before the model</h3><p>Three deterministic checks read every posting before Claude sees one. They cost nothing, and each rejection carries its reason.</p></div>
+          <div class="mini"><span id="gateMini">the day, narrowed</span><span class="badge" id="gateCut">before a paid call</span></div>
+          <div><h3>A gate before the model</h3><p>A deterministic filter drops most of the day before a single paid call. What survives is what could plausibly fit.</p></div>
         </div>
         <div class="card">
           <div class="mini">Fit 0–100 · strongest &amp; weakest<span class="badge">scored</span></div>
-          <div><h3>A number and a reason</h3><p>Every survivor gets a fit and a verdict in plain words. The top match gets a cover letter grounded in your resume alone.</p></div>
+          <div><h3>A number and a reason</h3><p>Every survivor gets a fit from 0 to 100 and a verdict in plain words. The top match gets a cover letter grounded in your resume alone.</p></div>
         </div>
       </div>
     </div>
@@ -1326,13 +1166,13 @@ html.anim .bell[aria-pressed="true"] svg{animation:ring .6s var(--ease)}
 
   <section class="plain">
     <div class="wrap">
-      <p class="manifesto">Most job boards show you everything and call it choice. This one reads what you wrote, throws away the share that cannot fit, and tells you why about the rest.</p>
+      <p class="manifesto" id="manifesto">Most job boards show you everything and call it choice. This one reads what you wrote, throws away the share that cannot fit, and tells you why about the rest.</p>
     </div>
   </section>
 </div>
 
 <div id="v-browse" class="hide">
-  <div class="heromark pagemark""pagemark" aria-hidden="true">
+  <div class="heromark pagemark" aria-hidden="true">
         <svg viewBox="0 0 760 760">
           <defs>
             <radialGradient id="markpop2" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse"
@@ -1357,7 +1197,7 @@ html.anim .bell[aria-pressed="true"] svg{animation:ring .6s var(--ease)}
         </div>
       </div>
       <div class="searchrow">
-        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="opacity:.45;flex:0 0 auto"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+        <svg class="ic" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="opacity:.45;flex:0 0 auto"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
         <input type="text" id="browseQ" placeholder="Filter by title, company or keyword">
       </div>
       <div class="filters" id="browseFilters"></div>
@@ -1368,90 +1208,38 @@ html.anim .bell[aria-pressed="true"] svg{animation:ring .6s var(--ease)}
   </div>
 </div>
 
-<div class="wrap">
-<section class="tickerwrap" aria-label="Sources swept">
-    <p class="tickerlead">Swept every morning &middot; five boards and ~800 company ATS feeds</p>
-    <div class="ticker" aria-hidden="true">
-      <div class="tickrun"><span class="src"><b>Greenhouse</b><i>ATS</i></span><span class="src"><b>Lever</b><i>ATS</i></span><span class="src"><b>Ashby</b><i>ATS</i></span><span class="src"><b>Workable</b><i>ATS</i></span><span class="src"><b>SmartRecruiters</b><i>ATS</i></span><span class="src"><b>Workday</b><i>ATS</i></span><span class="src"><b>BambooHR</b><i>ATS</i></span><span class="src"><b>Recruitee</b><i>ATS</i></span><span class="src"><b>RemoteOK</b><i>board</i></span><span class="src"><b>We Work Remotely</b><i>board</i></span><span class="src"><b>Hacker News</b><i>board</i></span><span class="src"><b>Wellfound</b><i>board</i></span><span class="src"><b>Remotive</b><i>board</i></span></div><div class="tickrun"><span class="src"><b>Greenhouse</b><i>ATS</i></span><span class="src"><b>Lever</b><i>ATS</i></span><span class="src"><b>Ashby</b><i>ATS</i></span><span class="src"><b>Workable</b><i>ATS</i></span><span class="src"><b>SmartRecruiters</b><i>ATS</i></span><span class="src"><b>Workday</b><i>ATS</i></span><span class="src"><b>BambooHR</b><i>ATS</i></span><span class="src"><b>Recruitee</b><i>ATS</i></span><span class="src"><b>RemoteOK</b><i>board</i></span><span class="src"><b>We Work Remotely</b><i>board</i></span><span class="src"><b>Hacker News</b><i>board</i></span><span class="src"><b>Wellfound</b><i>board</i></span><span class="src"><b>Remotive</b><i>board</i></span></div>
-    </div>
-  </section>
-
-  
-<section class="stage" id="scoreStage" hidden>
-    <div class="bearing"><b>090</b> — SCORING</div>
-    <h2>What Claude makes of them</h2>
-    <p class="note" id="scoreNote">A fit from 0 to 100, a verdict in plain words, the strongest point and the weakest. The rose lights with the score; the top match gets a cover letter grounded in the profile alone.</p>
-    <div class="status" id="scoreStatus"><img class="cmark" src="claude-mark.png" alt="" width="22" height="22"><span>scoring with Claude…</span></div>
-    <div class="scores" id="scores"></div>
-  </section>
-
-  
-</div>
-<section class="stage band" id="gatesStage" hidden>
-    <div class="wrap">
-      <div class="bearing"><b>180</b> — GATES</div>
-      <h2>Why those, and not the rest</h2>
-      <p class="note">Before Claude sees anything, three deterministic checks read every posting from the sweep. They cost nothing, run in an instant, and each rejection carries its reason.</p>
-      <div class="gatecards" id="gatecards">
-        <div class="gc gc-1">
-          <h3>Remote-listed</h3>
-          <p>The posting itself has to say remote — not "flexible", not "hybrid-friendly".</p>
-        </div>
-        <div class="gc gc-2">
-          <h3>Region-eligible</h3>
-          <p>Work authorization, checked against where the role can legally be done.</p>
-        </div>
-        <div class="gc gc-3">
-          <h3>Title in scope</h3>
-          <p>The title has to sit in the bands the candidate is searching. Cheapest gate, biggest cut.</p>
-        </div>
-      </div>
-      <div class="rows" id="gateRows"></div>
-      <div class="rows gatemore" id="gateMore" hidden></div>
-      <div class="gatetoggle"><button id="gateToggle" type="button" hidden></button></div>
-      <div class="status" id="gateStatus" hidden><span class="spin"></span><span></span></div>
-    </div>
-  </section>
-
 </main>
 
-<section class="metrics" aria-label="What the demo actually does">
-  <div class="wrap" style="text-align:center">
-    <div class="bearing"><b>360</b> — THE NUMBERS</div>
-    <h2 style="font-family:var(--serif);font-weight:480;font-size:clamp(30px,4vw,48px);line-height:1.1;margin:22px 0 10px;color:var(--ink)">What is actually running</h2>
-    <p class="note" style="margin:0 auto 6px;font-size:16.5px;color:var(--text2);max-width:64ch">Read from the live pipeline as this page loaded. Nothing here is typed in.</p>
-  </div>
-  <div class="crail" id="crail"></div>
-  <div class="cnav">
-    <button class="cbtn" id="cprev" type="button" aria-label="previous">&#8592;</button>
-    <div class="cdots" id="cdots"></div>
-    <button class="cbtn" id="cnext" type="button" aria-label="next">&#8594;</button>
-  </div>
-</section>
 
-
-<section class="endpage" id="getapp">
-  <div class="tiles" id="tiles" aria-hidden="true"></div>
-  <div class="inner">
-    <p class="dream">Let it read the market for you.</p>
-    <a class="cta" href="https://github.com/kenmwara/jobscout-app/releases/latest/download/JobScout-release.apk">Get the Android app</a>
-    <div><a class="cta2" href="#top">Run it in the browser</a></div>
-  </div>
-  <div class="endlinks">
-    <div>
-      <a href="https://github.com/kenmwara/jobscout-app" target="_blank" rel="noopener">Source</a>
-      <a href="https://tbot.trade/portfolio" target="_blank" rel="noopener">Builder</a>
-      <a href="saved">Saved</a>
-      <a href="privacy">Privacy</a>
+<div class="wrap">
+  <footer class="site">
+    <div class="fgrid">
+      <div>
+        <p class="fbrand">JobScout</p>
+        <p class="fnote" id="fnote">Reads your resume, drops what cannot fit, and tells you why about the rest.</p>
+      </div>
+      <div>
+        <h4>Find work</h4>
+        <a href="#" data-go="browse">Browse today&rsquo;s sweep</a><a href="#" data-go="remote">Remote only</a>
+        <a href="#" data-go="sectors">By sector</a><a href="saved">Saved jobs</a>
+      </div>
+      <div>
+        <h4>Product</h4>
+        <a href="https://github.com/kenmwara/jobscout-app/releases/latest/download/JobScout-release.apk">Android app</a><a href="https://github.com/kenmwara/jobscout-app#ios">iPhone app</a>
+        <a href="https://github.com/kenmwara/jobscout-app/blob/main/docs/HOW-IT-WORKS.md" target="_blank" rel="noopener">How it works</a><a href="stats">Live stats</a>
+      </div>
+      <div>
+        <h4>Markets</h4>
+        <a href="https://jobscout.page/">Canada</a><a href="https://nairobi.jobscout.page/">Kenya</a>
+      </div>
+      <div>
+        <h4>Legal</h4>
+        <a href="privacy">Privacy</a><a href="privacy#counted">What we count</a>
+      </div>
     </div>
-    <svg class="mk" viewBox="0 0 24 24" fill="#4865ff" aria-hidden="true"><circle cx="12.000" cy="1.000" r="2.300"/><circle cx="19.778" cy="4.222" r="2.593"/><circle cx="23.000" cy="12.000" r="2.886"/><circle cx="19.778" cy="19.778" r="3.179"/><circle cx="12.000" cy="23.000" r="3.471"/><circle cx="4.222" cy="19.778" r="3.764"/><circle cx="1.000" cy="12.000" r="4.057"/><circle cx="4.222" cy="4.222" r="4.350"/></svg>
-    <div>
-      <span class="claude"><img src="claude-mark.png" alt="" width="24" height="24">Scored by Claude</span>
-      <a href="mailto:ken@tbot.trade">Contact</a>
-    </div>
-  </div>
-  <div class="wordmark" aria-hidden="true">JobScout</div>
-</section>
+    <p class="sources" id="sources">&mdash;</p>
+  </footer>
+</div>
 
 
 
@@ -1604,7 +1392,7 @@ function toggleSave(id, p, fit){
 }
 function savedCount(){
   const n = Object.keys(tracker).length;
-  $("#navTrack").textContent = `saved (${n})`;
+  $("#navSaved").textContent = `Saved (${n})`;
 }
 function plink(url){
   return url ? `<a class="plink" href="${esc(url)}" target="_blank" rel="noopener">View posting ↗</a>` : "";
@@ -1624,63 +1412,6 @@ function profileText(){
 function banner(kind, text){
   $("#banner").innerHTML = text ? `<div class="banner ${kind}">${text}</div>` : "";
 }
-function metricsFor(f){
-  const c = f?.counts || {};
-  const n = f?.postings?.length, p = c.pass, r = c.reject;
-  return [
-    { k:"m-a", big: n ?? "—", cap:"postings curated from this morning's real sweep", foot:"the ledger, not a cached demo set", side:"Real jobs. Real morning." },
-    { k:"m-b", big:"~800", cap:"company ATS feeds swept daily, plus five boards", foot:"Greenhouse, Lever, Ashby, Workable, Workday…", side:"Swept before you wake up." },
-    { k:"m-c", big: p ?? "—", cap:"cleared the deterministic gates today", foot:`${r ?? "—"} rejected, each with its reason on the page`, side:"Free to say no." },
-    { k:"m-d", big:"8", cap:"eligible postings scored per run, in one call to Claude", foot:`scored concurrently on ${model} — the whole run lands in a few seconds`, side:"One call. Eight verdicts." },
-    { k:"m-e", big:"4", cap:"fit bands, and each one picks a different next step", foot:"auto ≥ 80 · ping 70–79 · unsure 55–69 · near-miss below 55", side:"The score picks the route." },
-    { k:"m-f", big:"0", cap:"applications submitted on your behalf", foot:"a human clicks every Submit. Always.", side:"You click. It never does." },
-  ];
-}
-let cards = [], model = "—";
-function renderMetrics(f){
-  const rail = $("#crail");
-  rail.innerHTML = metricsFor(f).map((m, i) => `
-    <div class="ccard ${m.k}${i === 0 ? " on seen" : ""}">
-      <div class="cl"><div><div class="big">${m.big}</div><div class="cap">${m.cap}</div></div><div class="foot">${m.foot}</div></div>
-      <div class="cr">${m.side}</div>
-    </div>`).join("");
-  cards = [...rail.children];
-  $("#cdots").innerHTML = cards.map((_, i) => `<i${i === 0 ? ' class="on"' : ""} data-i="${i}"></i>`).join("");
-  const dots = [...$("#cdots").children];
-  // `on` tracks the centred card for the bar; `seen` is never removed, so a
-  // card brightens once on the way in and stays bright behind you
-  const io = new IntersectionObserver(es => es.forEach(e => {
-    const i = cards.indexOf(e.target);
-    if (e.isIntersecting){
-      cards.forEach((c, j) => c.classList.toggle("on", j === i));
-      cards.slice(0, i + 1).forEach(c => c.classList.add("seen"));
-      dots.forEach((d, j) => d.classList.toggle("on", j === i));
-    }
-  }), { root: rail, threshold: .6 });
-  cards.forEach(c => io.observe(c));
-  const go = i => cards[Math.max(0, Math.min(cards.length - 1, i))]
-    ?.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "nearest", inline: "center" });
-  const cur = () => cards.findIndex(c => c.classList.contains("on"));
-  $("#cprev").onclick = () => go(cur() - 1);
-  $("#cnext").onclick = () => go(cur() + 1);
-  dots.forEach(d => d.onclick = () => go(+d.dataset.i));
-}
-
-/* ── the closing page's drifting tiles: swatches of the palette, placed by
-   hand so none lands on the line, the pill or the button - Cosmos's field of
-   little pictures, in our colours. [x%, y%, size, hue, rotation, blur, opacity] ── */
-const TILES = [
-  [3,10,76,"indigo",-9,0,.95],[11,34,52,"blossom",6,1,.8],[5,62,64,"forest",-4,0,.9],[16,80,44,"cream",10,2,.7],
-  [22,14,58,"ember",8,0,.9],[27,52,40,"info",-12,1.5,.75],[33,74,70,"midnight",4,0,.95],
-  [66,78,56,"blossom",-7,0,.9],[72,12,66,"forest",9,0,.95],[80,44,46,"indigo",-5,1.5,.75],[87,20,58,"ember",-11,0,.9],
-  [93,62,72,"midnight",7,0,.95],[57,6,42,"cream",-3,2,.7],[40,4,50,"info",5,1,.8],[62,50,36,"indigo",12,2.5,.6],[90,84,48,"blossom",-8,1,.8],
-];
-const MARK = `<svg viewBox="0 0 24 24" fill="rgba(255,255,255,.9)"><circle cx="12" cy="1" r="2.3"/><circle cx="19.78" cy="4.22" r="2.59"/><circle cx="23" cy="12" r="2.89"/><circle cx="19.78" cy="19.78" r="3.18"/><circle cx="12" cy="23" r="3.47"/><circle cx="4.22" cy="19.78" r="3.76"/><circle cx="1" cy="12" r="4.06"/><circle cx="4.22" cy="4.22" r="4.35"/></svg>`;
-function renderTiles(){
-  $("#tiles").innerHTML = TILES.map(([x, y, s, hue, r, b, o], i) =>
-    `<span class="tile t-${hue}" style="left:${x}%;top:${y}%;--s:${s}px;--r:${r}deg;--b:${b}px;--o:${o};--d:${7 + (i * 3) % 6}s">${i % 4 === 0 ? MARK : ""}</span>`
-  ).join("");
-}
 
 async function loadFeed(){
   try{
@@ -1692,8 +1423,9 @@ async function loadFeed(){
     $("#sweepline").textContent = "The feed is unreachable right now. Scoring needs the API.";
     $("#sweepline").hidden = false;
   }
-  renderMetrics(feed);
   renderSetup();
+  sources();
+  narrowing();
 }
 
 /* removed with the chooser (2026-09-19): renderSetup / prefNote rebuilt for the single box — see UI section */
@@ -1710,53 +1442,16 @@ async function runPipeline(){
   }
   running = true; $("#runBtn").disabled = true; banner("", "");
 
-  $("#gatesStage").hidden = false;
-  $("#gateRows").innerHTML = ""; $("#gateMore").innerHTML = ""; $("#gateMore").hidden = true;
-  $("#scoreStage").hidden = true; $("#scores").innerHTML = "";
+  /* A run IS Browse, with scores — there is no separate results stage. */
+  setView("browse");
+  $("#browseTitle").textContent = "Your matches";
+  $("#scSeg").classList.add("hide");
+  $("#browseJobs").innerHTML = "";
+  const status = $("#browseCount");
+  const think = t => status.innerHTML = `<span class="think"><img class="cmark" src="claude-mark.png" alt=""`
+    + ` width="18" height="18"><span class="dots"><i></i><i></i><i></i></span><b>${esc(t)}</b></span>`;
+  think("checking eligibility\u2026");
 
-  // Only the first few stream. Twenty-two verdicts at once is a wall, and the
-  // point of this section lands in the first handful — so the handful is the
-  // profile's own sector (2026-09-17: a banker was shown six ReliefWeb consultancies
-  // as "the receipts" because they happened to lead the feed). Sector first, then the
-  // rejects (the instructive part), then everything else behind the toggle.
-  const GATE_SHOWN = 6;
-  const gateSector = sectorOf(profile, feed.lexicon || {});
-  const ok = p => p.gate?.verdict !== "reject";
-  const gateOrder = [...feed.postings.filter(p => ok(p) && p.sector === gateSector && takeable(p)),
-                     ...feed.postings.filter(p => !ok(p)),
-                     ...feed.postings.filter(p => ok(p) && !takeable(p)),
-                     ...feed.postings.filter(p => ok(p) && p.sector !== gateSector && takeable(p))];
-  const rows = gateOrder.map((p, i) => {
-    const rej = p.gate?.verdict === "reject";
-    // Three states, never two. "You are in Manitoba and this is a Toronto office job" is not a
-    // rejection by the market, and printing it as one would put words in the market's mouth.
-    const aside = !rej && !takeable(p);
-    const el = document.createElement("div");
-    el.className = "row" + (rej ? " rej" : aside ? " aside" : "");
-    el.innerHTML = `<div><div class="t">${esc(p.title)} <span class="co">· ${esc(p.company)}</span></div>
-      <div class="m">${esc(p.location)} · ${esc(p.source || "board")}</div>
-      <div class="gatereason">${rej ? "✗ " : aside ? "– " : "✓ "}${aside ? whyNot(p) : esc(p.gate?.reason || "")}</div></div>
-      <span class="verdict ${rej ? "reject" : aside ? "aside" : "pass"}">${rej ? "rejected" : aside ? "set aside" : "eligible"}</span>`;
-    (i < GATE_SHOWN ? $("#gateRows") : $("#gateMore")).appendChild(el);
-    if (i >= GATE_SHOWN) el.classList.add("in");
-    return el;
-  });
-  const hidden = Math.max(0, rows.length - GATE_SHOWN);
-  const tog = $("#gateToggle");
-  tog.hidden = !hidden;
-  tog.textContent = `show the other ${hidden} verdicts`;
-  tog.onclick = () => {
-    const open = $("#gateMore").hidden;
-    $("#gateMore").hidden = !open;
-    tog.textContent = open ? "hide them again" : `show the other ${hidden} verdicts`;
-  };
-  // Land on the results, not on the prefilter - the gate list fills in below
-  // while the scoring call is in flight, and reads as the receipts afterwards.
-  $("#scoreStage").hidden = false;
-  $("#scoreStatus").hidden = false;
-  $("#scoreStatus").lastElementChild.textContent = "checking eligibility…";
-  $("#scoreStage").scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "start" });
-  for (const el of rows.slice(0, GATE_SHOWN)){ await sleep(140); el.classList.add("in"); }
 
   // 2026-09-16: score the sector the profile reads as, not the first eight eligible.
   // The feed carries ~12 postings per sector and the lexicon that tagged them; the same
@@ -1792,9 +1487,8 @@ async function runPipeline(){
     finish(); return;
   }
   ev("run", sector);
-  $("#scoreNote").innerHTML = `Reads as <b>${esc(label)}</b> · ${inSector.length} of ${eligible.length} in that sector · ${passers.length} scored${setAside.length ? ` · ${setAside.length} set aside by your settings` : ""}. A letter or a tailored resume is offered from ${FIT_FLOOR} up.`;
   await sleep(300);
-  $("#scoreStatus").lastElementChild.textContent = `scoring ${passers.length} ${esc(label)} postings with Claude…`;
+  think(`scoring ${passers.length} ${label} postings with Claude\u2026`);
 
   let data;
   try{
@@ -1806,7 +1500,8 @@ async function runPipeline(){
     if (r.status === 429) { banner("warn", "Rate limit reached for this hour — the guard is doing its job. Try again in a bit."); finish(); return; }
   }catch(e){ banner("err", "Scoring API unreachable: " + e); finish(); return; }
 
-  $("#scoreStatus").hidden = true;
+  status.textContent = `${passers.length} scored of ${feed.postings.length} swept \u2014 reads as ${label}`
+    + (setAside.length ? ` \u00b7 ${setAside.length} set aside by your settings` : "");
 
   if (data.breaker){
     banner("warn", data.detail + (data.cached ? " Showing the cached showcase run:" : ""));
@@ -1861,7 +1556,7 @@ function renderScores(scores, passers, profile, meta, cached){
     const nf = document.createElement("div");
     nf.className = "nofit";
     nf.innerHTML = `<b>Nothing in today's pool clears the bar for this profile.</b> The nearest was ${t.fit} out of 100 — ${esc(tp.title || t.id)}${tp.company ? " · " + esc(tp.company) : ""}. A cover letter or a tailored resume is only offered from ${FIT_FLOOR} up, so none is offered here. The verdicts below say why.`;
-    $("#scores").appendChild(nf);
+    $("#browseJobs").appendChild(nf);
   }
   sorted.forEach((s, i) => {
     const p = byId[s.id] || {};
@@ -1902,7 +1597,7 @@ function renderScores(scores, passers, profile, meta, cached){
         <span class="pill${p.remote_policy === "remote" ? " on" : ""}">${
           p.remote_policy === "remote" ? "Remote" : p.remote_policy === "hybrid" ? "Hybrid" : "On site"}</span>
       </div>`;
-    $("#scores").appendChild(el);
+    $("#browseJobs").appendChild(el);
     setTimeout(() => el.classList.add("in", "arrive"), reduced ? 0 : 105 * i);
     const sb = el.querySelector("[data-save]");
     sb.onclick = () => { toggleSave(s.id, p, s.fit); sb.setAttribute("aria-pressed", String(!!tracker[s.id])); };
@@ -1912,7 +1607,6 @@ function renderScores(scores, passers, profile, meta, cached){
       el.querySelector(".tailorbtn").onclick = () => { ev("tailor"); tailorResume(el, p, profile, s.fit); };
     }
   });
-  if (meta?.model && meta.model !== model){ model = meta.model; renderMetrics(feed); }
 }
 
 async function draftLetter(card, posting, profile, fit){
@@ -1985,9 +1679,7 @@ async function tailorResume(card, posting, profile, fit){
 /* Every early exit routes through here, so the spinner is stopped here too. */
 function finish(){
   prog.done();
-  running = false; $("#runBtn").disabled = false; $("#scoreStatus").hidden = true;
-  // an aborted run would otherwise leave a "Live scoring" heading over nothing
-  if (!$("#scores").children.length) $("#scoreStage").hidden = true;
+  running = false; $("#runBtn").disabled = false;
 }
 function esc(s){ return String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
 
@@ -2027,10 +1719,6 @@ document.addEventListener("click", e => {
   ev("apply", (a.closest(".scard")?.querySelector(".verdict")?.textContent || "").trim().slice(0, 16) || null);
 }, true);
 
-// the three gate frames rise once the band scrolls into view
-new IntersectionObserver((es, io) => es.forEach(e => {
-  if (e.isIntersecting){ e.target.classList.add("in"); io.unobserve(e.target); }
-}), { threshold: .25 }).observe($("#gatecards"));
 
 // A resume never survives a reload: browsers restore textarea contents on
 // reload/back, and a tab left open overnight would otherwise run yesterday's
@@ -2042,10 +1730,8 @@ document.addEventListener("visibilitychange", () => {
   if (document.visibilityState === "visible" && !running && Date.now() - OPENED > 6 * 3600e3) location.reload();
 });
 
-renderTiles();
 savedCount();
 loadFeed();
-fetch(API + "/api/health").then(r => r.json()).then(d => { if (d.model){ model = d.model; renderMetrics(feed); } }).catch(()=>{});
 
 /* ═══════════════════════════════════════════════════════════════════════════
    THE REDESIGN'S UI — v3, 2026-09-19.
@@ -2145,25 +1831,35 @@ function rotate(){
    Not Full time / Contract / AI training — the sweep carries no employment
    type at all, and a tab that returns the same rows is a lie. */
 function heroTabs(){
-  const pol = policyCounts(), all = eligible().length;
+  const pol = policyCounts(), all = feed.postings.length;
   const items = [["Remote", pol.remote, "remote"], ["Hybrid", pol.hybrid, "hybrid"],
                  ["On site", pol.onsite, "onsite"]].filter(x => x[1] > 0);
   $("#heroTabs").innerHTML =
     items.map(([t, n, k]) => `<a href="#" data-pol="${k}">${t} <span style="opacity:.6">${n}</span></a>`).join("") +
     `<a href="#" data-pol="">All ${all}</a>`;
-  const secs = sectorList();
-  $("#heroSectors").innerHTML = secs.slice(0, 8).map(([sx, n]) =>
-      `<a href="#" data-sec="${esc(sx)}">${esc(label(sx))} <span style="opacity:.6">${n}</span></a>`).join("")
-    + `<a class="all" href="#" data-sec="">All ${secs.length} sectors</a>`;
+  /* The sector row's home is Browse — the hero carries the three policy tabs
+     and nothing else. Leaving both rows here made the hero a wall of chips. */
   $("#heroTabs").querySelectorAll("a").forEach(a => a.onclick = e => {
     e.preventDefault(); sector = null; query = "";
     policyOnly = a.dataset.pol || ""; setView("browse");
   });
-  $("#heroSectors").querySelectorAll("a").forEach(a => a.onclick = e => {
-    e.preventDefault(); sector = a.dataset.sec || null; query = ""; setView("browse");
-  });
 }
 let policyOnly = "";
+
+/* The three places that quote a share of the day. The mockup wrote 85% by hand;
+   the real figure is the sweep against what one run actually sends to Claude
+   (the gate alone rejects 3 of 309, so quoting the gate would flatter it). Read
+   from the feed on every load, so it cannot drift away from the truth. */
+function narrowing(){
+  const total = feed?.postings?.length, per = feed?.scored_per_run;
+  if (!total || !per) return;
+  const cut = Math.round((1 - per / total) * 100);
+  $("#gateMini").textContent = `${total} → ${per} postings`;
+  $("#gateCut").textContent = `${cut}% cut`;
+  $("#manifesto").textContent = `Most job boards show you everything and call it choice. `
+    + `This one reads what you wrote, throws away the ${cut}% that cannot fit, and tells you why about the rest.`;
+  $("#fnote").textContent = `Reads your resume, drops the ${cut}% that cannot fit, and tells you why about the rest.`;
+}
 
 /* ── the taxonomy, three real axes ─────────────────────────────────────── */
 function taxTiles(){
@@ -2252,7 +1948,7 @@ function companyCards(){
 function browse(){
   if (!feed) return;
   const host = $("#browseJobs"), f = $("#browseFilters"), row = $("#browseSectors");
-  const all = eligible().length;
+  const all = feed.postings.length;
   host.classList.toggle("cos", scope === "cos");
 
   const places = feed.places?.options || [];
@@ -2392,7 +2088,7 @@ function dismissCard(card, dir){
 /* Shown once a session: a drag is invisible until someone tries it. */
 function swipeCoach(){
   try { if (sessionStorage.getItem("jobscout.swipehint")) return; } catch (e) {}
-  const host = $("#scores");
+  const host = $("#browseJobs");
   const el = document.createElement("div");
   el.className = "coach";
   el.innerHTML = `<span class="hand" aria-hidden="true">⇄</span>
@@ -2489,6 +2185,28 @@ document.querySelector(".box .go").onclick = submitBox;
   box.addEventListener("pointerenter", () => lit(true));
   box.addEventListener("pointerleave", () => { if (document.activeElement !== el) lit(false); });
 })();
+
+/* the footer's own links drive the same views as the nav */
+document.querySelectorAll('footer.site [data-go]').forEach(a => a.onclick = e => {
+  e.preventDefault();
+  const go = a.dataset.go;
+  query = ""; sector = null; policyOnly = go === "remote" ? "remote" : "";
+  remoteOnly = go === "remote";
+  setView("browse");
+  if (go === "sectors") document.getElementById("browseSectors").scrollIntoView({ block: "center" });
+});
+
+/* where today's postings came from — the sources we sweep, not partners.
+   Called from loadFeed, not on script end: it quotes the day's count. */
+function sources(){
+  const el = document.getElementById("sources");
+  if (!el) return;
+  const name = MARKET === "ke"
+    ? "JobWebKenya · Canonical · Andela · M-KOPA · ReliefWeb and other company boards"
+    : "WeWorkRemotely · Canonical · BMO · Manulife · CIBC · Sun Life · GitLab · Jobicy and other company boards";
+  el.innerHTML = `<b>Where today\u2019s ${feed?.postings?.length ?? ''} postings came from:</b> ${name}. ` +
+    `These are sources we sweep, not partners or sponsors.`;
+}
 
 reveal(); relight(); rotate();
 </script>
