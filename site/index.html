@@ -1552,11 +1552,25 @@ document.addEventListener("visibilitychange", () => {
 });
 
 savedCount();
+/* Synchronously, before the feed is fetched: if we are returning to Browse the
+   page must OPEN on Browse. Doing this inside loadFeed().then() meant the
+   landing painted first and was replaced a moment later — "the page first goes
+   to landing before redirecting back to matches". The grid fills in when the
+   feed lands; the right frame is on screen from the start. */
+(function firstView(){
+  const wantBrowse = history.state?.v === "browse" || location.hash === "#browse"
+    || (() => { try { return !!sessionStorage.getItem(RUNKEY); } catch (e) { return false; } })();
+  if (!wantBrowse) return;
+  view = "browse";
+  $("#v-landing").classList.add("hide");
+  $("#v-browse").classList.remove("hide");
+})();
+
 loadFeed().then(() => {
   recallRun();
   const st = history.state;
   if (st && st.v) restore(st);
-  else if (location.hash === "#browse") setView("browse");
+  else if (view === "browse" || location.hash === "#browse") setView("browse", true);
 });
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -1714,6 +1728,10 @@ function heroTabs(){
   });
 }
 let policyOnly = "";
+/* "show the whole sweep instead" used to do `scored = null` and then keepRun(),
+   which REMOVED the run from sessionStorage — one click destroyed eight paid
+   Claude calls with no way back. It hides the matches now; this says so. */
+let sweepOverride = false;
 
 /* The three places that quote a share of the day. The mockup wrote 85% by hand;
    the real figure is the sweep against what one run actually sends to Claude
@@ -1941,7 +1959,7 @@ function browse(){
     wireBells(host); reveal(); return;
   }
 
-  if (scored){
+  if (scored && !sweepOverride){
     const rows = scoredRows();
     $("#browseTitle").textContent = "Your matches";
     const clears = scored.some(x => x.fit >= FIT_FLOOR);
@@ -1951,8 +1969,10 @@ function browse(){
     $("#browseCount").insertAdjacentHTML("beforeend",
       ` <button class="allsweep" type="button">show the whole sweep instead</button>`);
     $("#browseCount").querySelector(".allsweep").onclick = () => {
-      scored = null; remoteOnly = false; sector = null; policyOnly = ""; query = "";
-      $("#browseQ").value = ""; keepRun(); browse();
+      // Hide them, never discard them. The run stays in sessionStorage.
+      sweepOverride = true;
+      remoteOnly = false; sector = null; policyOnly = ""; query = "";
+      $("#browseQ").value = ""; browse();
     };
     host.innerHTML = "";
     // The honest headline when a run finds nothing worth applying to. It is
@@ -1976,7 +1996,21 @@ function browse(){
 
   const rows = browseRows();
   $("#browseTitle").textContent = query ? `“${query}”` : "Explore today's sweep";
-  $("#browseCount").textContent = `${rows.length} shown of ${all}`;
+  /* A run is hidden behind this view. Say so, and give it back. */
+  const backHost = $("#browseCount");
+  if (scored && sweepOverride){
+    backHost.innerHTML =
+      `<button class="allsweep backrun" type="button">← back to your ${scored.length} matches</button>`
+      + `<span style="padding-left:10px">${rows.length} shown of ${all}</span>`;
+    backHost.querySelector(".backrun").onclick = () => {
+      sweepOverride = false; sector = null; policyOnly = ""; query = "";
+      const q = $("#browseQ"); if (q) q.value = "";
+      browse();
+    };
+  } else {
+    // textContent, not innerHTML — and only when there is no button to preserve.
+    backHost.textContent = `${rows.length} shown of ${all}`;
+  }
   host.innerHTML = rows.length
     ? rows.map(browseCard).join("")
     : `<p class="lede">Nothing in today's sweep matches that combination.</p>`;
@@ -2035,7 +2069,11 @@ addEventListener("popstate", e => restore(e.state || { v: "landing" }));
 /* Leaving for another page of ours: same history stack, so Back returns here
    with the run and the filters intact rather than to a cold landing page. */
 function go(href){
-  history.replaceState(snapshot(), "", location.hash || "");
+  /* The hash has to say which view we were on. It used to write
+     `location.hash || ""`, which is empty on a first visit to Browse, so coming
+     back landed on the landing page and only switched once the feed resolved —
+     a visible flash of the wrong page, reported from the live site. */
+  history.replaceState(snapshot(), "", view === "browse" ? "#browse" : "#");
   location.href = href;
 }
 
