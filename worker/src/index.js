@@ -235,10 +235,16 @@ const ANSWERABLE = new Set(["input_text", "textarea", "multi_value_single_select
 // Never drafted, never stored, not even shown as a blank for us to fill: these
 // are the candidate's own to declare, and a plausible guess would be a lie
 // told in their name on a legal form.
-const PERSONAL = /gender|race|ethnic|veteran|disab|self.?identif|demograph|birth|age\b|salary|compensation|criminal|conviction/i;
+const PERSONAL = /gender|pronoun|race|ethnic|veteran|disab|self.?identif|demograph|birth|age\b|salary|compensation|criminal|conviction|sexual|religio/i;
 const IDENTITY = /first name|last name|full name|email|phone|address|linkedin|website|portfolio|github/i;
 
 const inProfile = (profile, phrase) => phrase.trim().length >= 8 && squash(profile).includes(squash(phrase));
+
+// What a rewrite fabricates, and what a plain capitalised word is not: numbers
+// and dates, acronyms (AWS, KQL, SRE), CamelCase and dotted product names
+// (GitLab, Node.js, Log(N)), versions. Sentence-initial capitals are skipped on
+// purpose — flagging "Built" would make the guard cry wolf and get ignored.
+const HARD_TOKEN = /\b\d[\d.,%/+-]*\b|\b[A-Za-z]+[A-Z][A-Za-z]*\b|\b[A-Z]{2,}\b|\b[A-Za-z]+\.[a-z]{2,}\b/g;
 
 const meta = (d, spent) => ({ model: MODEL, cost_usd: +d.cost.toFixed(5),
   day_spend_usd: +(spent + d.cost).toFixed(4), day_budget_usd: DAILY_BUDGET_USD });
@@ -371,6 +377,76 @@ export default {
       });
     }
 
+    // The whole resume, rebuilt for one posting — a document to attach, not a
+    // summary to read. /api/tailor advises; this one produces the file. Every
+    // section of the original survives: nothing is dropped for being off-topic,
+    // because a resume with a hole in its dates is worse than one that rambles.
+    if (url.pathname === "/api/resume" && request.method === "POST") {
+      const g = await guarded(request, env, "resume rebuilding resumes tomorrow");
+      if (g instanceof Response) return g;
+      const { profile, p } = g;
+      const d = await draft(env, 2600,
+        "You rewrite a candidate's entire resume for one job posting. Return JSON only, no prose, no code fence: " +
+        '{"name": string, "contact": string, "headline": string, ' +
+        '"sections": [{"heading": string, "items": [{"title": string, "meta": string, "bullets": [string]}]}], ' +
+        '"gaps": [{"asks": string, "note": string}]}. ' +
+        "Reproduce the WHOLE resume, every role, school, certificate and skill the profile contains, in a sensible " +
+        "order with the most relevant first. name and contact come verbatim from the profile; contact is one line. " +
+        "headline: one line naming what they are, aimed at this posting. " +
+        "Each item: title (role, qualification or skill group), meta (employer, dates, place — exactly as the profile " +
+        "gives them, never invented or inferred), bullets (reworded toward this posting). " +
+        "An item with no bullets in the profile keeps an empty bullets array. " +
+        "ABSOLUTE RULE: every employer, job title, date, number, percentage, tool, product, certificate and " +
+        "qualification in your output must already appear in the profile. Rewording is the job; adding is not. " +
+        "If the posting asks for something the profile does not have, leave it out of the resume and put it in gaps: " +
+        "asks = the requirement in the posting's words; note = one sentence on what the candidate could add here, " +
+        "and only if it is true of them. Up to 5. These are the lines they add themselves before they send it.",
+        `PROFILE:\n${profile}\n\nPOSTING:\n${postingText(p)}`);
+      if (d instanceof Response) return d;
+      const out = parseJson(d.text);
+      if (!out || !Array.isArray(out.sections))
+        return json(502, { error: "upstream", detail: "The model did not return a usable resume. Nothing was charged to you." });
+
+      // The guard prose cannot enforce. Acronyms, CamelCase names, versions and
+      // every number are exactly what a rewrite invents — an employer that was
+      // never there, a percentage nobody measured. Each one has to be in the
+      // original or the draft is refused outright; a resume is signed by the
+      // candidate, so a single fabricated line is the whole thing ruined.
+      const hard = new Set();
+      const scan = t => String(t || "").match(HARD_TOKEN)?.forEach(x => hard.add(x));
+      scan(out.headline);
+      for (const sec of out.sections) {
+        scan(sec.heading);
+        for (const it of sec.items || []) { scan(it.title); scan(it.meta); (it.bullets || []).forEach(scan); }
+      }
+      const flat = squash(profile);
+      const invented = [...hard].filter(t => !flat.includes(squash(t)));
+      if (invented.length)
+        return json(502, { error: "ungrounded", invented: invented.slice(0, 8),
+          detail: `The draft used ${invented.length} thing${invented.length > 1 ? "s" : ""} your resume does not contain (${invented.slice(0, 3).join(", ")}). It was refused rather than shown.` });
+
+      await recordRun(env, g.key, d.usage.input_tokens, d.usage.output_tokens, d.cost);
+      return json(200, {
+        name: String(out.name || "").slice(0, 120),
+        contact: String(out.contact || "").slice(0, 300),
+        headline: String(out.headline || "").slice(0, 300),
+        sections: out.sections.slice(0, 8).map(sec => ({
+          heading: String(sec.heading || "").slice(0, 80),
+          items: (sec.items || []).slice(0, 12).map(it => ({
+            title: String(it.title || "").slice(0, 160),
+            meta: String(it.meta || "").slice(0, 160),
+            bullets: (it.bullets || []).slice(0, 8).map(b => String(b).slice(0, 400)),
+          })),
+        })),
+        // The gaps deliberately sit OUTSIDE the document: they are what the
+        // resume does not say, and the only hand that may put them in is theirs.
+        gaps: Array.isArray(out.gaps)
+          ? out.gaps.filter(x => x && typeof x.asks === "string").slice(0, 5)
+              .map(x => ({ asks: x.asks, note: typeof x.note === "string" ? x.note : "" })) : [],
+        meta: meta(d, g.spent),
+      });
+    }
+
     // The screening questions, read from the employer's own form and answered
     // from the profile alone. See the block comment above GH_URL.
     if (url.pathname === "/api/answers" && request.method === "POST") {
@@ -394,11 +470,16 @@ export default {
       }
 
       const asked = (form.questions || []).map(q => ({ q, f: q.fields?.[0] || {} }))
-        .filter(({ q, f }) => ANSWERABLE.has(f.type) && !PERSONAL.test(q.label || ""));
-      // Name, email and phone are the candidate's to type; we never hold them.
-      const drafting = asked.filter(({ q }) => !IDENTITY.test(q.label || ""));
-      const yours = asked.filter(({ q }) => IDENTITY.test(q.label || ""))
-        .map(({ q, f }) => ({ label: q.label, required: !!q.required, type: f.type, answer: "", why: "yours to type" }));
+        .filter(({ f }) => ANSWERABLE.has(f.type));
+      // Shown, never drafted. Seeing that a form asks at all is the point of
+      // reading it early; answering on someone's behalf is a different thing.
+      const never = l => PERSONAL.test(l) ? "yours alone — we never draft this"
+                       : IDENTITY.test(l) ? "yours to type" : "";
+      const drafting = asked.filter(({ q }) => !never(q.label || ""));
+      const yours = asked.filter(({ q }) => never(q.label || ""))
+        .map(({ q, f }) => ({ label: q.label, required: !!q.required, type: f.type,
+                              options: f.values?.map(v => v.label) || [], answer: "", from: "",
+                              why: never(q.label || "") }));
 
       if (!drafting.length)
         return json(200, { source: "greenhouse", url: p.url, questions: yours, drafted: 0 });
@@ -414,10 +495,14 @@ export default {
         "n: the question's number. answer: what the candidate would put, in their own register, at most 60 words; " +
         "for a question with OPTIONS the answer MUST be one option copied exactly, or \"\" if the profile supports none. " +
         "from: a phrase copied VERBATIM from the profile that establishes the answer. " +
-        "Omit the question entirely — do not guess, do not hedge, do not answer in general terms — when the profile does not " +
-        "settle it. Salary expectations, notice period, visa or sponsorship status, criminal history, disability, " +
-        "race, gender, veteran status and referral source are the candidate's own to declare: omit every one of them " +
-        "unless the profile states it outright.",
+        // Stated as "answer what the profile settles", not "omit what is sensitive":
+        // the cautious reading of the earlier wording drafted nothing at all, even for
+        // a profile that said outright where it lived and that it could work there.
+        "Answer every question the profile settles, including where the candidate lives, whether they are legally " +
+        "eligible to work somewhere, and their notice or availability — if the profile says it, use it. " +
+        "Omit a question entirely — do not guess, do not hedge, do not answer in general terms — when the profile " +
+        "does not settle it. Never answer these at all, whatever the profile says: how they heard about the company, " +
+        "salary expectations, criminal history, and anything about race, gender, disability or veteran status.",
         `PROFILE:\n${profile}\n\nPOSTING:\n${postingText(p)}\n\nQUESTIONS:\n${ask}`);
       if (d instanceof Response) return d;
 
