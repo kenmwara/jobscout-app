@@ -230,8 +230,56 @@ const squash = t => String(t).toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
 const GH_URL = /^https?:\/\/(?:job-boards|boards)\.greenhouse\.io\/([^/?#]+)\/jobs\/(\d+)/;
 const UA = "Mozilla/5.0 (compatible; JobScout/1.0; +https://jobscout.page)";
 const hostOf = u => { try { return new URL(u).host; } catch { return ""; } };
+// Ashby publishes its forms too — I reported otherwise on 2026-09-19 and was
+// wrong: the selection is fieldEntries, not fields, and `field` is a JSON
+// scalar with no subfields. Between the two boards that is 113 of Canada's 309
+// and 83 of Kenya's 323. Workday is the remaining third and needs a candidate
+// account per employer, so it stays unreadable.
+const ASHBY_URL = /^https?:\/\/jobs\.ashbyhq\.com\/([^/?#]+)\/([0-9a-f-]{36})/;
 // A file field is an attachment the candidate adds themselves; the rest we can read.
 const ANSWERABLE = new Set(["input_text", "textarea", "multi_value_single_select"]);
+const ASHBY_ANSWERABLE = new Set(["String", "LongText", "ValueSelect", "Number", "Boolean"]);
+
+/* One shape out of two boards: {source, fields:[{label, required, type, options}]},
+   or null when the form is not published anywhere we can reach. */
+async function readForm(rawUrl) {
+  const u = String(rawUrl || "");
+  const gh = GH_URL.exec(u);
+  if (gh) {
+    const r = await fetch(`https://boards-api.greenhouse.io/v1/boards/${gh[1]}/jobs/${gh[2]}?questions=true`,
+      { headers: { "user-agent": UA, accept: "application/json" } });
+    if (!r.ok) throw new Error("greenhouse " + r.status);
+    const form = await r.json();
+    return { source: "greenhouse", fields: (form.questions || [])
+      .map(q => ({ q, f: q.fields?.[0] || {} }))
+      .filter(({ f }) => ANSWERABLE.has(f.type))
+      .map(({ q, f }) => ({ label: q.label, required: !!q.required, type: f.type,
+                            options: (f.values || []).map(v => v.label) })) };
+  }
+  const ash = ASHBY_URL.exec(u);
+  if (ash) {
+    const r = await fetch("https://jobs.ashbyhq.com/api/non-user-graphql?op=ApiJobPosting", {
+      method: "POST",
+      headers: { "content-type": "application/json", "user-agent": UA },
+      body: JSON.stringify({
+        operationName: "ApiJobPosting",
+        variables: { organizationHostedJobsPageName: ash[1], jobPostingId: ash[2] },
+        query: "query ApiJobPosting($organizationHostedJobsPageName: String!, $jobPostingId: String!) {" +
+               " jobPosting(organizationHostedJobsPageName: $organizationHostedJobsPageName, jobPostingId: $jobPostingId)" +
+               " { applicationForm { sections { fieldEntries { isRequired field } } } } }",
+      }),
+    });
+    if (!r.ok) throw new Error("ashby " + r.status);
+    const d = await r.json();
+    const secs = d?.data?.jobPosting?.applicationForm?.sections;
+    if (!Array.isArray(secs)) return null;
+    return { source: "ashby", fields: secs.flatMap(s => s.fieldEntries || [])
+      .filter(fe => fe?.field && ASHBY_ANSWERABLE.has(fe.field.type))
+      .map(fe => ({ label: fe.field.title || fe.field.humanReadablePath || "", required: !!fe.isRequired,
+                    type: fe.field.type, options: (fe.field.selectableValues || []).map(v => v.label) })) };
+  }
+  return null;
+}
 // Never drafted, never stored, not even shown as a blank for us to fill: these
 // are the candidate's own to declare, and a plausible guess would be a lie
 // told in their name on a legal form.
@@ -485,39 +533,32 @@ export default {
       if (g instanceof Response) return g;
       const { profile, p } = g;
 
-      const m = GH_URL.exec(String(p.url || ""));
-      if (!m) return json(200, { unsupported: true, host: hostOf(p.url),
-        detail: "This employer's form is not published, so the questions cannot be read before you open it." });
-
-      let form;
+      let asked, source;
       try {
-        const r = await fetch(`https://boards-api.greenhouse.io/v1/boards/${m[1]}/jobs/${m[2]}?questions=true`,
-          { headers: { "user-agent": UA, accept: "application/json" } });
-        if (!r.ok) throw new Error("HTTP " + r.status);
-        form = await r.json();
+        asked = await readForm(p.url);
+        source = asked && asked.source;
       } catch (e) {
         return json(200, { unsupported: true, host: hostOf(p.url),
           detail: "The employer's form could not be read just now. Nothing was charged to you." });
       }
-
-      const asked = (form.questions || []).map(q => ({ q, f: q.fields?.[0] || {} }))
-        .filter(({ f }) => ANSWERABLE.has(f.type));
+      if (!asked) return json(200, { unsupported: true, host: hostOf(p.url),
+        detail: "This employer's form is not published, so the questions cannot be read before you open it." });
+      asked = asked.fields;
       // Shown, never drafted. Seeing that a form asks at all is the point of
       // reading it early; answering on someone's behalf is a different thing.
       const never = l => PERSONAL.test(l) ? "yours alone — we never draft this"
                        : IDENTITY.test(l) ? "yours to type" : "";
-      const drafting = asked.filter(({ q }) => !never(q.label || ""));
-      const yours = asked.filter(({ q }) => never(q.label || ""))
-        .map(({ q, f }) => ({ label: q.label, required: !!q.required, type: f.type,
-                              options: f.values?.map(v => v.label) || [], answer: "", from: "",
-                              why: never(q.label || "") }));
+      const drafting = asked.filter(q => !never(q.label || ""));
+      const yours = asked.filter(q => never(q.label || ""))
+        .map(q => ({ label: q.label, required: q.required, type: q.type,
+                     options: q.options, answer: "", from: "", why: never(q.label || "") }));
 
       if (!drafting.length)
-        return json(200, { source: "greenhouse", url: p.url, questions: yours, drafted: 0 });
+        return json(200, { source, url: p.url, questions: yours, drafted: 0 });
 
-      const ask = drafting.map(({ q, f }, i) =>
-        `${i + 1}. ${q.label}${q.required ? " [required]" : ""} (${f.type})` +
-        (f.values?.length ? `\n   OPTIONS: ${f.values.map(v => v.label).join(" | ")}` : "")).join("\n");
+      const ask = drafting.map((q, i) =>
+        `${i + 1}. ${q.label}${q.required ? " [required]" : ""} (${q.type})` +
+        (q.options.length ? `\n   OPTIONS: ${q.options.join(" | ")}` : "")).join("\n");
 
       const d = await draft(env, 1100,
         "You answer a job application's screening questions using ONLY the candidate profile given. " +
@@ -544,15 +585,14 @@ export default {
           if (a && Number.isInteger(a.n) && typeof a.answer === "string" && typeof a.from === "string")
             by.set(a.n, a);
 
-      const questions = drafting.map(({ q, f }, i) => {
+      const questions = drafting.map((q, i) => {
         const a = by.get(i + 1);
-        const opts = f.values?.map(v => v.label) || [];
         // Two guards, both refusable: the cited phrase has to be in the profile,
         // and a choice has to be one the employer actually offers.
         const grounded = a && a.answer.trim() && inProfile(profile, a.from)
-          && (!opts.length || opts.includes(a.answer.trim()));
+          && (!q.options.length || q.options.includes(a.answer.trim()));
         return {
-          label: q.label, required: !!q.required, type: f.type, options: opts,
+          label: q.label, required: q.required, type: q.type, options: q.options,
           answer: grounded ? a.answer.trim() : "",
           from: grounded ? a.from : "",
           why: grounded ? "" : "yours to answer — your profile does not settle it",
@@ -561,7 +601,7 @@ export default {
 
       await recordRun(env, g.key, d.usage.input_tokens, d.usage.output_tokens, d.cost);
       return json(200, {
-        source: "greenhouse", url: p.url,
+        source, url: p.url,
         questions: [...yours, ...questions],
         drafted: questions.filter(q => q.answer).length,
         meta: meta(d, g.spent),
