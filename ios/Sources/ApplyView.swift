@@ -291,6 +291,10 @@ struct Answers: View {
                                 Text("from your resume: \u{201C}\(q.from)\u{201D}")
                                     .font(sans(12)).foregroundColor(text3).lineSpacing(2)
                             }
+                            // One button per answer. You are in the employer's form
+                            // with a single field focused; what you need is that one
+                            // answer, not the whole block to pick apart.
+                            AnswerCopyButton(text: q.answer)
                         } else {
                             // Not a gap to be filled in later — a deliberate refusal, and
                             // the reason is the useful part.
@@ -303,6 +307,24 @@ struct Answers: View {
                 PillButton(text: "Copy the answers") { UIPasteboard.general.string = answersText(r) }
             }
         }
+    }
+}
+
+/// The clipboard glyph with the word beside it — an icon alone is a guess, and
+/// a word alone is easy to skim past in a list of twenty questions. Only drafted
+/// answers get one: pasting "yours to answer" into an employer's textarea is a
+/// trap, not a convenience.
+struct AnswerCopyButton: View {
+    let text: String
+    @State private var copied = false
+
+    var body: some View {
+        PillButton(text: copied ? "\u{29C9}  Copied" : "\u{29C9}  Copy") {
+            UIPasteboard.general.string = text
+            copied = true
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.6) { copied = false }
+        }
+        .padding(.top, 6)
     }
 }
 

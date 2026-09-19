@@ -167,3 +167,63 @@ struct LinkText: View {
         .buttonStyle(.plain)
     }
 }
+
+/// The word for a posting's remote policy. "onsite" covers everything that is
+/// neither remote nor hybrid, including a posting that simply never said.
+func policyWord(_ policy: String) -> String {
+    switch policy {
+    case "remote": return "Remote"
+    case "hybrid": return "Hybrid"
+    default: return "On site"
+    }
+}
+
+/// A wrapping row of tiles, each a slice of the feed with its count. SwiftUI had
+/// no flow layout before iOS 16's Layout protocol, so the rows are chunked in
+/// twos by hand — which is what a phone's width wants anyway: two tiles a row,
+/// readable, and no horizontal scroll.
+struct FlowTiles: View {
+    /// (id, label, count) — the id is what the caller filters on, the label is
+    /// what a person reads.
+    let items: [(String, String, Int)]
+    let selected: String?
+    let onTap: (String) -> Void
+
+    var body: some View {
+        VStack(spacing: 8) {
+            ForEach(Array(stride(from: 0, to: items.count, by: 2)), id: \.self) { i in
+                HStack(spacing: 8) {
+                    tile(items[i])
+                    if i + 1 < items.count {
+                        tile(items[i + 1])
+                    } else {
+                        Color.clear.frame(maxWidth: .infinity)
+                    }
+                }
+            }
+        }
+    }
+
+    private func tile(_ it: (String, String, Int)) -> some View {
+        let on = selected == it.0
+        return Button { onTap(it.0) } label: {
+            VStack(alignment: .leading, spacing: 3) {
+                Text(on ? it.1 + "  \u{00D7}" : it.1)
+                    .font(sans(13, .medium)).foregroundColor(ink)
+                    .lineLimit(1).frame(maxWidth: .infinity, alignment: .leading)
+                Text("\(it.2) open").font(sans(11.5)).foregroundColor(text3)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .padding(.horizontal, 13).padding(.vertical, 11)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(cardBg)
+            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .stroke(on ? indigo : hairline, lineWidth: on ? 1.5 : 1)
+            )
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+    }
+}

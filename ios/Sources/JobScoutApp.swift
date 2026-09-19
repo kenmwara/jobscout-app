@@ -341,6 +341,10 @@ struct ContentView: View {
     @State private var importing = false
     @State private var showTracker = false
     @State private var gatesOpen = false
+    /// Which slice of the feed the sweep is showing, if any. Nil is the whole day.
+    @State private var sector: String? = nil
+    /// The sweep is long; show a screenful until asked for the rest.
+    @State private var sweepOpen = false
 
     var body: some View {
         ScrollView {
@@ -365,6 +369,8 @@ struct ContentView: View {
                 ownResumeBox
                 whereRow
                 runButton
+
+                feedSection
 
                 if !vm.scores.isEmpty || vm.banner != nil {
                     StageHeading(bearing: "090", label: "SCORING", title: "What Claude makes of them",
@@ -584,6 +590,71 @@ struct ContentView: View {
         .frame(maxWidth: .infinity, alignment: .leading).padding(14)
         .background(Color(hex: 0xFFF6DC))
         .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+    }
+
+    /// What the day is MADE of, and then the day. The web's order, and Android's.
+    private var feedSection: some View {
+        Group {
+            if let feed = vm.feed {
+                let eligible = feed.passers
+                // Posting.sector is optional (an older feed may not carry one) and
+                // Feed.labels is too, so both are unwrapped rather than assumed.
+                let counted = Dictionary(grouping: eligible.filter { $0.sector != nil },
+                                         by: { $0.sector ?? "" })
+                    .map { ($0.key, $0.value.count) }
+                    .sorted { $0.1 > $1.1 }
+                let rows = sector == nil ? eligible : eligible.filter { $0.sector == sector }
+                let shown = sweepOpen ? rows : Array(rows.prefix(6))
+
+                StageHeading(bearing: "045", label: "THE FEED",
+                             title: "Browse by what the feed actually knows",
+                             note: "Every tile is a real slice of today\u2019s sweep. Nothing here is a category we cannot fill.")
+                FlowTiles(items: counted.prefix(10).map { ($0.0, feed.labels?[$0.0] ?? $0.0, $0.1) },
+                          selected: sector) { tapped in
+                    sector = (sector == tapped) ? nil : tapped
+                    sweepOpen = false
+                }
+
+                StageHeading(bearing: "070", label: "THE SWEEP",
+                             title: sector.flatMap { feed.labels?[$0] } ?? "Explore today\u2019s sweep",
+                             note: "\(rows.count) of \(feed.postings.count) swept this morning. Tap one to open the posting on the employer\u2019s own site.")
+                VStack(spacing: 0) {
+                    ForEach(Array(shown.enumerated()), id: \.element.id) { i, p in
+                        if i > 0 { Divider().overlay(hairline) }
+                        sweepRow(p)
+                    }
+                }
+                .background(cardBg)
+                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                .warmShadow()
+                if rows.count > 6 {
+                    PillButton(text: sweepOpen ? "show fewer"
+                                               : "see all \(rows.count)") { sweepOpen.toggle() }
+                }
+            }
+        }
+    }
+
+    /// One posting in the sweep. Tapping it opens the employer's page — the only
+    /// thing JobScout ever does on your behalf is open a link.
+    private func sweepRow(_ p: Posting) -> some View {
+        Button {
+            if let u = URL(string: p.url) { openURL(u) }
+        } label: {
+            HStack(alignment: .center, spacing: 12) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(p.title).font(sans(14, .medium)).foregroundColor(ink)
+                        .lineLimit(1).frame(maxWidth: .infinity, alignment: .leading)
+                    Text(p.company).font(sans(12.5)).foregroundColor(text3)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                Chip(text: policyWord(p.remote_policy).uppercased(), color: stone, ground: info)
+            }
+            .padding(.horizontal, 18).padding(.vertical, 13)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .disabled(p.url.isEmpty)
     }
 
     private func gateRow(_ r: Posting) -> some View {
