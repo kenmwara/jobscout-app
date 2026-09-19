@@ -254,3 +254,19 @@ h1.display,h2.sec{text-wrap:balance}
   .fgrid{grid-template-columns:1fr 1fr}
 }
 @media(max-width:420px){ .fgrid{grid-template-columns:1fr} }
+
+/* ── the mark, as the ground every page stands on ───────────────────────
+   The hero's glow, kept behind the content on every page rather than only the
+   landing. It is a mask, not markup: the accent shows through the ring, so it
+   re-tints with the market and no page has to carry the SVG. Fixed, so it
+   cannot add height or a sideways scrollbar. */
+body::before{
+  content:"";position:fixed;left:50%;top:18vh;transform:translateX(-50%);
+  width:min(1400px,104vw);aspect-ratio:1;pointer-events:none;z-index:0;
+  background:var(--accent);opacity:.06;
+  -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 760 760'%3E%3Ccircle cx='380' cy='80' r='28.4'/%3E%3Ccircle cx='592.1' cy='167.9' r='54.1'/%3E%3Ccircle cx='680' cy='380' r='79.8'/%3E%3Ccircle cx='592.1' cy='592.1' r='105.5'/%3E%3Ccircle cx='380' cy='680' r='131.2'/%3E%3Ccircle cx='167.9' cy='592.1' r='156.9'/%3E%3Ccircle cx='80' cy='380' r='182.6'/%3E%3Ccircle cx='167.9' cy='167.9' r='208.3'/%3E%3C/svg%3E") no-repeat center/contain;
+          mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 760 760'%3E%3Ccircle cx='380' cy='80' r='28.4'/%3E%3Ccircle cx='592.1' cy='167.9' r='54.1'/%3E%3Ccircle cx='680' cy='380' r='79.8'/%3E%3Ccircle cx='592.1' cy='592.1' r='105.5'/%3E%3Ccircle cx='380' cy='680' r='131.2'/%3E%3Ccircle cx='167.9' cy='592.1' r='156.9'/%3E%3Ccircle cx='80' cy='380' r='182.6'/%3E%3Ccircle cx='167.9' cy='167.9' r='208.3'/%3E%3C/svg%3E") no-repeat center/contain;
+}
+html[data-market="ke"] body::before{opacity:.1}
+/* content sits on top of it */
+body>*{position:relative;z-index:1}

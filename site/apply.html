@@ -113,7 +113,7 @@ document.documentElement.setAttribute("data-market",
         JobScout
       </a>
       <nav class="main" style="margin-left:auto;display:flex;gap:8px;align-items:center">
-        <a href="./">Browse</a>
+        <a href="#" id="backLink">&#8592; Back to your matches</a>
         <a href="saved">Saved jobs</a>
       </nav>
     </div>
@@ -220,6 +220,14 @@ document.documentElement.setAttribute("data-market",
 
 <script>
 const $ = s => document.querySelector(s);
+/* Back to the run, not to a cold landing page: history.back() keeps the
+   matches and the filters that were on screen when you left them. */
+document.addEventListener("DOMContentLoaded", () => {
+  $("#backLink").onclick = e => {
+    e.preventDefault();
+    if (history.length > 1) history.back(); else location.href = "./";
+  };
+});
 const API = "https://jobscout-app-api.kenmwara.workers.dev";
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 document.documentElement.classList.add("anim");
@@ -283,6 +291,18 @@ function render(){
   if (p.url) link.href = p.url; else { link.hidden = true; }
   if (tracker[p.id]?.status === "applied") applied();
 
+  // Below the fit floor every endpoint behind these steps refuses, so the page
+  // says so instead of offering three buttons that each fail.
+  if (Number.isFinite(+S.fit) && +S.fit < 55){
+    $("#steps").hidden = true; $("#needProfile").hidden = true;
+    $("#main").insertAdjacentHTML("beforeend",
+      `<div class="panel"><p class="eyebrow">Not offered</p>
+       <h2 style="font:450 23px/1.2 var(--serif);margin:0 0 10px;color:var(--ink)">This one scored ${+S.fit} out of 100</h2>
+       <p class="note">A cover letter, a rebuilt resume and the screening answers are only offered from 55 up —
+       below that the honest answer is that your resume does not fit this posting, and dressing it up would not change
+       that. The posting is still open above if you want to judge for yourself.</p></div>`);
+    return;
+  }
   if (S.profile) $("#steps").hidden = false;
   else $("#needProfile").hidden = false;
 }

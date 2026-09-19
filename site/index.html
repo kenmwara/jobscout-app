@@ -716,61 +716,6 @@ html.anim .bell[aria-pressed="true"] svg{animation:ring .6s var(--ease)}
 }
 
 
-/* ── the sheet: where a draft goes ──────────────────────────────────────
-   Their job page is a whole new route. A generated draft is not a route — it
-   is one artifact about one posting — so it gets a dialog instead: same idea,
-   no navigation, and the run behind it is not lost. On a phone it is a panel
-   that comes up from the bottom, which is where a phone expects one. */
-.sheet{position:fixed;inset:0;z-index:200;display:flex;align-items:center;justify-content:center;
-  padding:28px;background:rgba(8,3,49,.42);backdrop-filter:blur(3px)}
-html[data-market="ke"] .sheet{background:rgba(0,0,0,.6)}
-.sheet[hidden]{display:none}
-.sheetcard{background:var(--surface);border-radius:var(--r-card);box-shadow:var(--sh-hover);
-  width:min(760px,100%);max-height:100%;display:flex;flex-direction:column;overflow:hidden;
-  border:1px solid var(--hair)}
-.sheethead{display:flex;align-items:flex-start;gap:16px;padding:26px 28px 18px;border-bottom:1px solid var(--hair)}
-.sheethead .co{font:500 12px/1 var(--sans);letter-spacing:.07em;text-transform:uppercase;
-  color:var(--text3);margin:0 0 8px}
-.sheethead h3{font:450 clamp(21px,2.4vw,27px)/1.2 var(--serif);letter-spacing:-.02em;color:var(--ink);margin:0}
-.sheethead .kind{font:400 14px/1.4 var(--sans);color:var(--text2);margin:8px 0 0}
-.sheetx{margin-left:auto;flex:0 0 auto;appearance:none;border:1px solid var(--hair2);background:transparent;
-  color:var(--text2);width:34px;height:34px;border-radius:50%;font-size:17px;line-height:1;cursor:pointer;
-  transition:all var(--t-micro) var(--ease)}
-.sheetx:hover{background:var(--canvas-2);color:var(--ink);border-color:var(--accent)}
-.sheetbody{padding:24px 28px 8px;overflow:auto;flex:1}
-.sheetbody p{margin:0 0 15px;font:400 16px/1.68 var(--sans);color:var(--text)}
-.sheetbody h4{font:600 11.5px/1 var(--sans);letter-spacing:.08em;text-transform:uppercase;
-  color:var(--text3);margin:22px 0 11px}
-.sheetbody h4:first-child{margin-top:0}
-.sheetbody ul{margin:0 0 15px;padding-left:20px}
-.sheetbody li{font:400 15.5px/1.62 var(--sans);color:var(--text);margin:0 0 9px}
-.sheetbody .gaps li b{color:var(--ink);font-weight:600}
-.sheetfoot{display:flex;align-items:center;gap:10px;flex-wrap:wrap;
-  padding:16px 28px 22px;border-top:1px solid var(--hair);background:var(--canvas-2)}
-.sheetfoot .lm{font:400 13px/1.45 var(--sans);color:var(--text3);margin:0 auto 0 0;max-width:34ch}
-.sheetfoot button{appearance:none;font:500 14px/1 var(--sans);padding:11px 18px;border-radius:var(--r-btn);
-  cursor:pointer;border:1px solid var(--hair2);background:transparent;color:var(--text);
-  transition:all var(--t-micro) var(--ease)}
-.sheetfoot button:hover{border-color:var(--accent);color:var(--accent)}
-.sheetfoot .primary{background:var(--ink);color:var(--canvas);border-color:transparent}
-.sheetfoot .primary:hover{background:var(--accent);color:var(--accent-ink);border-color:transparent}
-.sheetwait{display:flex;align-items:center;gap:12px;padding:16px 0 26px;
-  font:400 15px/1 var(--sans);color:var(--text2)}
-@media (prefers-reduced-motion:no-preference){
-  .sheet{animation:sheetin .2s var(--ease)}
-  .sheetcard{animation:sheetup .34s var(--ease)}
-  @keyframes sheetin{from{opacity:0}to{opacity:1}}
-  @keyframes sheetup{from{opacity:0;transform:translateY(14px) scale(.985)}to{opacity:1;transform:none}}
-}
-@media(max-width:620px){
-  .sheet{padding:0;align-items:flex-end}
-  .sheetcard{width:100%;max-height:92vh;border-radius:20px 20px 0 0;border-bottom:0}
-  .sheethead{padding:20px 18px 14px}
-  .sheetbody{padding:18px 18px 4px}
-  .sheetfoot{padding:14px 18px 18px}
-  .sheetfoot .lm{order:3;margin:2px 0 0;max-width:none}
-}
-
 /* ── the results grid: the run renders the same card Browse does ──────── */
 .scores{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:28px;align-items:start}
 @media(max-width:980px){.scores{grid-template-columns:repeat(2,1fr)}}
@@ -779,13 +724,16 @@ html[data-market="ke"] .sheet{background:rgba(0,0,0,.6)}
   border-radius:var(--r-card);padding:22px 26px;font:400 15px/1.6 var(--sans);color:var(--text2)}
 .scores .nofit b{color:var(--ink);font-weight:500}
 .job .act{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
-.job .letterbtn,.job .tailorbtn,.job .applybtn,.job .plink,.job .savebtn2{
+.allsweep{appearance:none;background:transparent;border:0;padding:0 0 0 6px;cursor:pointer;
+  font:500 13.5px/1 var(--sans);color:var(--accent);text-decoration:underline;text-underline-offset:3px}
+.allsweep:hover{color:var(--ink)}
+.job .applybtn,.job .plink,.job .savebtn2{
   appearance:none;cursor:pointer;background:transparent;border:1px solid var(--hair2);
   border-radius:var(--r-pill);padding:8px 14px;font:500 12.5px/1 var(--sans);
   color:var(--text);text-decoration:none;transition:all var(--t-micro) var(--ease)}
-.job .letterbtn{background:var(--ink);color:var(--canvas);border-color:transparent}
-.job .letterbtn:hover,.job .tailorbtn:hover,.job .applybtn:hover,.job .plink:hover{border-color:var(--accent);color:var(--accent)}
-.job .letterbtn:hover{background:var(--accent);color:var(--accent-ink);border-color:transparent}
+.job .applybtn{background:var(--ink);color:var(--canvas);border-color:transparent}
+.job .plink:hover{border-color:var(--accent);color:var(--accent)}
+.job .applybtn:hover{background:var(--accent);color:var(--accent-ink);border-color:transparent}
 .job .lm{margin-top:12px;background:var(--canvas-2);border:1px solid var(--hair);
   border-radius:14px;padding:14px;font:400 13.5px/1.6 var(--sans);color:var(--text2);white-space:pre-wrap}
 .stage{padding:76px 0 0}
@@ -877,26 +825,6 @@ html[data-market="ke"] .sheet{background:rgba(0,0,0,.6)}
 
 <div id="nprog"><div class="bar"></div><div class="peg"></div></div>
 <div id="toast" aria-live="polite"></div>
-
-<div class="sheet" id="sheet" hidden>
-  <div class="sheetcard" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
-    <div class="sheethead">
-      <div>
-        <p class="co" id="sheetCo"></p>
-        <h3 id="sheetTitle"></h3>
-        <p class="kind" id="sheetKind"></p>
-      </div>
-      <button class="sheetx" id="sheetX" type="button" aria-label="Close">&times;</button>
-    </div>
-    <div class="sheetbody" id="sheetBody"></div>
-    <div class="sheetfoot">
-      <p class="lm" id="sheetNote"></p>
-      <button type="button" id="sheetCopy">Copy</button>
-      <button type="button" id="sheetSave">Download</button>
-      <button type="button" class="primary" id="sheetDone">Done</button>
-    </div>
-  </div>
-</div>
 
 <div class="wrap">
   <header class="site">
@@ -1389,193 +1317,73 @@ function renderScores(scores, passers, profile, meta, cached){
   // the band of the best match: the one number that says whether the run was worth anything
   if (!cached && scores?.length) ev("scored", BAND(Math.max(...scores.map(x => x.fit || 0)))[0]);
   const byId = Object.fromEntries(passers.map(p => [p.id, p]));
-  const sorted = [...scores].sort((a,b) => b.fit - a.fit);
-  // 2026-09-16: the top card used to get the highlight and the drafting buttons on
-  // position alone, so a 22/100 near-miss was dressed up as the recommendation.
+  const sorted = [...scores].sort((a, b) => b.fit - a.fit);
+  // 2026-09-16: the top card used to get the highlight and the drafting buttons
+  // on position alone, so a 22/100 near-miss was dressed up as the recommendation.
   const clears = sorted.length > 0 && sorted[0].fit >= FIT_FLOOR;
-  if (sorted.length && !clears){
-    const t = sorted[0], tp = byId[t.id] || {};
-    const nf = document.createElement("div");
-    nf.className = "nofit";
-    nf.innerHTML = `<b>Nothing in today's pool clears the bar for this profile.</b> The nearest was ${t.fit} out of 100 — ${esc(tp.title || t.id)}${tp.company ? " · " + esc(tp.company) : ""}. A cover letter or a tailored resume is only offered from ${FIT_FLOOR} up, so none is offered here. The verdicts below say why.`;
-    $("#browseJobs").appendChild(nf);
-  }
-  sorted.forEach((s, i) => {
-    const p = byId[s.id] || {};
-    const [route, col, bg] = BAND(s.fit);
-    const top = i === 0 && clears && !cached;
-    const el = document.createElement("div");
-    el.className = "job bloomer" + (top ? " top" : "");
-    el.dataset.id = s.id;
-    el.dataset.title = p.title || s.id;
-    const age = ageOf(p);
-    el.innerHTML = `<span class="bl" aria-hidden="true"></span>
+  // Held, not painted. browse() owns the grid, so a filter narrows these
+  // instead of throwing them away and rebuilding from the whole sweep.
+  scoredProfile = profile;
+  scoredNote = `reads as ${label(sectorOf(profile, feed.lexicon || {}))}`;
+  scored = sorted.map((x, i) => ({ ...x, p: byId[x.id] || {}, top: i === 0 && clears && !cached }));
+  browse();
+}
+
+/* A scored match. The three drafting buttons became one: they all led to the
+   application page in the end, and it holds the letter, the resume and the
+   questions together. */
+function scoreCard(x, i){
+  const p = x.p, [route, col, bg] = BAND(x.fit), age = ageOf(p);
+  const el = document.createElement("div");
+  el.className = "job bloomer" + (x.top ? " top" : "");
+  el.dataset.id = x.id;
+  el.dataset.title = p.title || x.id;
+  el.innerHTML = `<span class="bl" aria-hidden="true"></span>
       <button class="dismiss" type="button" aria-label="Dismiss this match">\u00d7</button>
       <span class="swipehint" aria-hidden="true">Not for me</span>
       <div class="top">
         <span class="logo">${esc((p.company || "?").slice(0, 2).toUpperCase())}</span>
         <span style="display:flex;align-items:center;gap:10px">
-          ${roseSVG(s.fit)}
-          <button class="savebtn" type="button" data-save="${esc(s.id)}" aria-pressed="${!!tracker[s.id]}"
-            aria-label="Save ${esc(p.title || s.id)}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 1 0-7.8 7.8l1 1.1L12 21.2l7.8-7.7 1-1.1a5.5 5.5 0 0 0 0-7.8z"/></svg></button>
+          ${roseSVG(x.fit)}
+          <button class="savebtn" type="button" data-save="${esc(x.id)}" aria-pressed="${!!tracker[x.id]}"
+            aria-label="Save ${esc(p.title || x.id)}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 1 0-7.8 7.8l1 1.1L12 21.2l7.8-7.7 1-1.1a5.5 5.5 0 0 0 0-7.8z"/></svg></button>
         </span>
       </div>
       <div>
         <p class="co">${esc(p.company || "")}</p>
-        <h3 class="role">${esc(p.title || s.id)}</h3>
+        <h3 class="role">${esc(p.title || x.id)}</h3>
         <p style="margin:9px 0 0;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
           <span class="route" style="color:${col};background:${bg}">${route}</span>
           <span class="age${age.days === 0 ? " new" : ""}${age.stale ? " stale" : ""}" tabindex="0"
             data-ev="${esc(age.ev)}">${esc(age.text)}</span></p>
-        <p class="verdict" style="margin:9px 0 0">${esc(s.verdict || "")}</p>
+        <p class="verdict" style="margin:9px 0 0">${esc(x.verdict || "")}</p>
         <div class="ev">
-          <span class="up" tabindex="0" data-ev="${esc(s.strongest || "\u2014")}">\u2191 strongest</span>
-          <span class="down" tabindex="0" data-ev="${esc(s.weakest || "\u2014")}">\u2193 weakest</span>
+          <span class="up" tabindex="0" data-ev="${esc(x.strongest || "\u2014")}">\u2191 strongest</span>
+          <span class="down" tabindex="0" data-ev="${esc(x.weakest || "\u2014")}">\u2193 weakest</span>
         </div>
-        <div class="act">${top ? `<button class="letterbtn" type="button">Cover letter \u2192</button><button class="tailorbtn" type="button">Tailor resume \u2192</button><button class="applybtn" type="button">Prepare application \u2192</button>` : ""}${plink(p.url)}</div>
+        <div class="act">${x.fit >= FIT_FLOOR
+          ? `<button class="applybtn" type="button">${x.top ? "Prepare application \u2192" : "Open application \u2192"}</button>`
+          : ""}${plink(p.url)}</div>
       </div>
       <div class="foot">
         <span class="loc">${esc(p.location || "Location not stated")}</span>
         <span class="pill${p.remote_policy === "remote" ? " on" : ""}">${
           p.remote_policy === "remote" ? "Remote" : p.remote_policy === "hybrid" ? "Hybrid" : "On site"}</span>
       </div>`;
-    $("#browseJobs").appendChild(el);
-    setTimeout(() => el.classList.add("in", "arrive"), reduced ? 0 : 105 * i);
-    const sb = el.querySelector("[data-save]");
-    sb.onclick = () => { toggleSave(s.id, p, s.fit); sb.setAttribute("aria-pressed", String(!!tracker[s.id])); };
-    wireSwipe(el);
-    if (top){
-      el.querySelector(".letterbtn").onclick = () => { ev("letter"); draftLetter(el, p, profile, s.fit); };
-      el.querySelector(".tailorbtn").onclick = () => { ev("tailor"); tailorResume(el, p, profile, s.fit); };
-      /* The application page needs the posting and the resume. sessionStorage,
-         not the URL: a resume does not belong in a query string, and this dies
-         with the tab rather than being kept between visits. */
-      el.querySelector(".applybtn").onclick = () => {
-        ev("apply_open");
-        try{ sessionStorage.setItem("jobscout.apply", JSON.stringify({ posting: p, profile, fit: s.fit })); }catch(e){}
-        location.href = "apply";
-      };
-    }
+  setTimeout(() => el.classList.add("in", "arrive"), reduced ? 0 : 105 * i);
+  const sb = el.querySelector("[data-save]");
+  sb.onclick = () => { toggleSave(x.id, p, x.fit); sb.setAttribute("aria-pressed", String(!!tracker[x.id])); };
+  wireSwipe(el);
+  /* The application page needs the posting and the resume. sessionStorage, not
+     the URL: a resume does not belong in a query string, and this dies with the
+     tab rather than being kept between visits. */
+  el.querySelector(".applybtn")?.addEventListener("click", () => {
+    ev("apply_open");
+    try{ sessionStorage.setItem("jobscout.apply",
+      JSON.stringify({ posting: p, profile: scoredProfile, fit: x.fit })); }catch(e){}
+    go("apply");
   });
-}
-
-/* One dialog, reused. Returns focus to whatever opened it — a draft is a
-   detour, and you should land back on the card you left. */
-const SHEET = { plain: "", name: "draft.txt", opener: null };
-const CACHE = {};   // postingId + kind -> what came back, so a second look is free
-
-function openSheet(posting, kind, opener){
-  SHEET.opener = opener || null;
-  $("#sheetCo").textContent = posting.company || "";
-  $("#sheetTitle").textContent = posting.title || posting.id;
-  $("#sheetKind").textContent = kind === "letter"
-    ? "Cover letter, grounded in your profile alone"
-    : "Your resume, aimed at this posting";
-  $("#sheetBody").innerHTML = `<div class="sheetwait"><img class="cmark" src="claude-mark.png" alt="" width="20" height="20"><span>${
-    kind === "letter" ? "drafting the letter" : "rewording the profile"}\u2026</span></div>`;
-  $("#sheetNote").textContent = "";
-  $("#sheetCopy").hidden = $("#sheetSave").hidden = true;
-  $("#sheet").hidden = false;
-  document.body.style.overflow = "hidden";
-  $("#sheetX").focus();
-}
-function closeSheet(){
-  $("#sheet").hidden = true;
-  document.body.style.overflow = "";
-  SHEET.opener?.focus();
-}
-function sheetReady(html, plain, note, name){
-  $("#sheetBody").innerHTML = html;
-  SHEET.plain = plain; SHEET.name = name;
-  $("#sheetNote").textContent = note;
-  $("#sheetCopy").hidden = $("#sheetSave").hidden = false;
-  $("#sheetCopy").textContent = "Copy";
-}
-function sheetFail(msg){
-  closeSheet();
-  banner("warn", msg);
-}
-$("#sheetX").onclick = $("#sheetDone").onclick = closeSheet;
-$("#sheet").onclick = e => { if (e.target === $("#sheet")) closeSheet(); };
-addEventListener("keydown", e => { if (e.key === "Escape" && !$("#sheet").hidden) closeSheet(); });
-$("#sheetCopy").onclick = async () => {
-  try{ await navigator.clipboard.writeText(SHEET.plain); $("#sheetCopy").textContent = "Copied"; }
-  catch{ $("#sheetCopy").textContent = "Select and copy"; }
-};
-$("#sheetSave").onclick = () => {
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(new Blob([SHEET.plain], { type: "text/plain;charset=utf-8" }));
-  a.download = SHEET.name;
-  a.click();
-  setTimeout(() => URL.revokeObjectURL(a.href), 4000);
-};
-/* The API hands back plain text with the odd **emphasis** and a --- rule.
-   Paragraphs and bold, nothing more — this is a letter, not a document. */
-function asProse(t){
-  return String(t).split(/\n{2,}/).map(p => p.trim()).filter(p => p && !/^-{3,}$/.test(p))
-    .map(p => `<p>${esc(p).replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>").replace(/\n/g, "<br>")}</p>`).join("");
-}
-const slug = p => (`${p.company || ""}-${p.title || p.id}`)
-  .toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 60);
-
-async function draftLetter(card, posting, profile, fit){
-  const btn = card.querySelector(".letterbtn");
-  const key = posting.id + ":letter";
-  openSheet(posting, "letter", btn);
-  if (CACHE[key]) return sheetReady(asProse(CACHE[key]), CACHE[key],
-    "Grounded only in the profile you gave.", `cover-letter-${slug(posting)}.txt`);
-  try{
-    const r = await fetch(API + "/api/letter", {
-      method: "POST", headers: { "content-type": "application/json" },
-      body: JSON.stringify({ profile, posting, fit }),
-    });
-    const d = await r.json();
-    if (d.letter){
-      CACHE[key] = d.letter;
-      sheetReady(asProse(d.letter), d.letter,
-        "Grounded only in the profile you gave.", `cover-letter-${slug(posting)}.txt`);
-    } else if (r.status === 429){
-      sheetFail((d.detail || "Demo cap reached.") + " The per-visitor limit is the guard working \u2014 letters resume next hour.");
-    } else {
-      sheetFail(d.detail || d.error || "Letter drafting is unavailable right now.");
-    }
-  }catch(e){ sheetFail("Letter API unreachable: " + e); }
-}
-
-/* The resume helper: the profile reworded toward the posting, and the gaps the
-   candidate fills only if true. Same guards and the same grounding as the letter. */
-async function tailorResume(card, posting, profile, fit){
-  const btn = card.querySelector(".tailorbtn");
-  const key = posting.id + ":tailor";
-  openSheet(posting, "tailor", btn);
-  const render = d => {
-    const li = xs => xs.map(x => `<li>${esc(x)}</li>`).join("");
-    sheetReady(
-      `<h4>Summary</h4><p>${esc(d.summary)}</p>` +
-      (d.bullets?.length ? `<h4>Experience, aimed at this posting</h4><ul>${li(d.bullets)}</ul>` : "") +
-      (d.gaps?.length
-        ? `<h4>What the posting asks for that the profile does not say</h4><ul class="gaps">${
-            d.gaps.map(g => `<li><b>${esc(g.asks)}</b> \u2014 ${esc(g.note)}</li>`).join("")}</ul>`
-        : `<h4>Gaps</h4><p>Nothing the posting asks for is missing from the profile.</p>`),
-      [d.summary, "", ...(d.bullets || []).map(b => "\u2022 " + b),
-       ...(d.gaps?.length ? ["", "Gaps:", ...d.gaps.map(g => `\u2022 ${g.asks} — ${g.note}`)] : [])].join("\n"),
-      "Reworded from your profile, nothing added \u2014 the gaps are yours to fill, and only if true.",
-      `resume-for-${slug(posting)}.txt`);
-  };
-  if (CACHE[key]) return render(CACHE[key]);
-  try{
-    const r = await fetch(API + "/api/tailor", {
-      method: "POST", headers: { "content-type": "application/json" },
-      body: JSON.stringify({ profile, posting, fit }),
-    });
-    const d = await r.json();
-    if (d.summary){ CACHE[key] = d; render(d); }
-    else if (r.status === 429){
-      sheetFail((d.detail || "Demo cap reached.") + " The per-visitor limit is the guard working \u2014 it resumes next hour.");
-    } else {
-      sheetFail(d.detail || d.error || "Resume tailoring is unavailable right now.");
-    }
-  }catch(e){ sheetFail("Tailor API unreachable: " + e); }
+  return el;
 }
 
 /* Every early exit routes through here, so the spinner is stopped here too. */
@@ -1633,7 +1441,11 @@ document.addEventListener("visibilitychange", () => {
 });
 
 savedCount();
-loadFeed();
+loadFeed().then(() => {
+  const st = history.state;
+  if (st && st.v) restore(st);
+  else if (location.hash === "#browse") setView("browse");
+});
 
 /* ═══════════════════════════════════════════════════════════════════════════
    THE REDESIGN'S UI — v3, 2026-09-19.
@@ -1654,6 +1466,9 @@ document.documentElement.classList.add("anim");
 
 let view = "landing", scope = "jobs", tax = "sector", sector = null, query = "";
 let freshOnly = false;
+/* A run's results. Null means the grid is the whole sweep; an array means
+   it is the matches, and every filter narrows those instead of the feed. */
+let scored = null, scoredProfile = "", scoredNote = "";
 const DISMISSED = new Set();
 const ALERTS = new Set();
 const TODAY = new Date().toISOString().slice(0, 10);
@@ -1789,6 +1604,23 @@ function taxTiles(){
 }
 
 /* ── Browse: the feed, narrowed. New surface — the demo has never had one. ── */
+/* One filter chain, whatever the grid holds. A run puts eight scored matches
+   there; without one it is the day's sweep. Before this, every filter click
+   after a run rebuilt the grid from the feed and the results were gone. */
+function scoredRows(){
+  let rows = scored.filter(x => !DISMISSED.has(x.id));
+  const pol = policyOnly || (remoteOnly ? "remote" : "");
+  if (pol) rows = rows.filter(x => x.p.remote_policy === pol);
+  if (sector) rows = rows.filter(x => x.p.sector === sector);
+  if (home) rows = rows.filter(x => (x.p.places || []).includes(home) || x.p.remote_policy === "remote");
+  if (freshOnly) rows = rows.filter(x => { const a = ageOf(x.p); return a.days !== undefined && a.days < 7; });
+  if (query){
+    const q = query.toLowerCase();
+    rows = rows.filter(x => (x.p.title + " " + x.p.company + " " + (x.p.location || "")).toLowerCase().includes(q));
+  }
+  return rows;
+}
+
 function browseRows(){
   let rows = eligible().filter(p => !DISMISSED.has(p.id));
   if (policyOnly) rows = rows.filter(p => p.remote_policy === policyOnly);
@@ -1851,7 +1683,8 @@ function browse(){
   if (!feed) return;
   const host = $("#browseJobs"), f = $("#browseFilters"), row = $("#browseSectors");
   const all = feed.postings.length;
-  host.classList.toggle("cos", scope === "cos");
+  host.classList.toggle("cos", scope === "cos" && !scored);
+  $("#scSeg").classList.toggle("hide", !!scored);
 
   const places = feed.places?.options || [];
   f.innerHTML =
@@ -1888,6 +1721,39 @@ function browse(){
     wireBells(host); reveal(); return;
   }
 
+  if (scored){
+    const rows = scoredRows();
+    $("#browseTitle").textContent = "Your matches";
+    const clears = scored.some(x => x.fit >= FIT_FLOOR);
+    $("#browseCount").innerHTML = (rows.length === scored.length
+      ? `${scored.length} scored of ${all} swept \u2014 ${esc(scoredNote)}`
+      : `${rows.length} of your ${scored.length} matches`);
+    $("#browseCount").insertAdjacentHTML("beforeend",
+      ` <button class="allsweep" type="button">show the whole sweep instead</button>`);
+    $("#browseCount").querySelector(".allsweep").onclick = () => {
+      scored = null; remoteOnly = false; sector = null; policyOnly = ""; query = "";
+      $("#browseQ").value = ""; browse();
+    };
+    host.innerHTML = "";
+    // The honest headline when a run finds nothing worth applying to. It is
+    // the verdicts that are useful then, not a row of buttons to a page whose
+    // every step would be refused.
+    if (!clears && rows.length){
+      const nf = document.createElement("div");
+      nf.className = "nofit";
+      nf.innerHTML = `<b>Nothing in today's sweep clears the bar for this resume.</b> `
+        + `The nearest was ${Math.max(...scored.map(x => x.fit))} out of 100. A letter, a resume or the `
+        + `screening answers are only offered from ${FIT_FLOOR} up, so none is offered here \u2014 `
+        + `the verdicts below say why, and the postings are still one click away.`;
+      host.appendChild(nf);
+    }
+    if (rows.length) rows.forEach((x, i) => host.appendChild(scoreCard(x, i)));
+    else host.innerHTML = `<p class="lede">None of your matches fits that combination. `
+      + `The filters are narrowing your ${scored.length} scored matches, not the whole sweep.</p>`;
+    reveal();
+    return;
+  }
+
   const rows = browseRows();
   $("#browseTitle").textContent = query ? `“${query}”` : "Explore today's sweep";
   $("#browseCount").textContent = `${rows.length} shown of ${all}`;
@@ -1902,13 +1768,34 @@ function browse(){
   reveal();
 }
 
-function setView(v){
+/* A view change is a page as far as the person is concerned, so it gets a
+   history entry. Without one, Back left the site's first view — the landing
+   page — and took the search with it. */
+function setView(v, fromPop){
   view = v;
   $("#v-landing").classList.toggle("hide", v !== "landing");
   $("#v-browse").classList.toggle("hide", v !== "browse");
   if (v === "browse") browse();
   scrollTo({ top: 0 });
   relight(); reveal();
+  if (!fromPop) history.pushState(snapshot(), "", v === "browse" ? "#browse" : "#");
+}
+
+/* Enough to put a view back the way it was found. */
+const snapshot = () => ({ v: view, sector, query, remoteOnly, policyOnly, home, freshOnly, scope });
+function restore(st){
+  if (!st) return;
+  ({ sector, query, remoteOnly, policyOnly, home, freshOnly, scope } = st);
+  const q = $("#browseQ"); if (q) q.value = query || "";
+  setView(st.v || "landing", true);
+}
+addEventListener("popstate", e => restore(e.state || { v: "landing" }));
+
+/* Leaving for another page of ours: same history stack, so Back returns here
+   with the run and the filters intact rather than to a cold landing page. */
+function go(href){
+  history.replaceState(snapshot(), "", location.hash || "");
+  location.href = href;
 }
 
 /* ── alerts. The UI is real; the delivery channel is not built yet. ──────── */
