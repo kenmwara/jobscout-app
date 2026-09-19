@@ -283,7 +283,14 @@ async function readForm(rawUrl) {
 // Never drafted, never stored, not even shown as a blank for us to fill: these
 // are the candidate's own to declare, and a plausible guess would be a lie
 // told in their name on a legal form.
-const PERSONAL = /gender|pronoun|race|ethnic|veteran|disab|self.?identif|demograph|birth|age\b|salary|compensation|criminal|conviction|sexual|religio/i;
+// Passport, citizenship and nationality are NOT implied by where someone
+// lives: reading Supabase's real form, "Passport Country" came back "Canada"
+// from a resume that said only that the person is based in Vancouver. Plenty
+// of people live and work somewhere on a permit with another country's
+// passport, and this is a legal declaration, not a convenience field.
+// Eligibility to work somewhere stays answerable — a resume can say that
+// outright, and this one did.
+const PERSONAL = /gender|pronoun|race|ethnic|veteran|disab|self.?identif|demograph|birth|age\b|salary|compensation|criminal|conviction|sexual|religio|passport|citizen|nationality|immigration|work permit|visa/i;
 const IDENTITY = /first name|last name|full name|email|phone|address|linkedin|website|portfolio|github/i;
 
 const inProfile = (profile, phrase) => phrase.trim().length >= 8 && squash(profile).includes(squash(phrase));
