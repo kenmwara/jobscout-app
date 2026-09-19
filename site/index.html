@@ -30,6 +30,106 @@
 <link rel="stylesheet" href="fonts-embedded.css">
 <script>if(/^(nairobi|ke)\./.test(location.hostname)||/[?&]market=ke\b/.test(location.search))document.documentElement.dataset.market="ke";</script>
 <style>
+/* ═══ CARRIED FROM v2.2, and load-bearing ══════════════════════════════════
+   Dropping this block is what broke the first deploy. It holds:
+     · body{overflow-x:hidden} — the ONLY thing containing the gates band,
+       which is 132vw wide on purpose, and the carousel's off-canvas cards.
+       Without it the whole page scrolled sideways.
+     · .wrap, the base html/body/link rules, ::selection.
+     · the v2.2 token names the carried sections still reference (--midnight,
+       --info, --pill, --card, the shadow set). :root is demoted to `html`
+       here so the redesign's own token block — same specificity, declared
+       after — wins on every name the two share.
+   ══════════════════════════════════════════════════════════════════════ */
+  /* ── JobScout v2.2 — August Health language ──────────────────────────────
+     Cream canvas, indigo ink, editorial serif against Inter, pill geometry,
+     warm-brown shadows. Tokens mirror jobscout/brandkit/tokens.
+     Contrast measured on cream #f8f3eb: deep-ink 17.8, midnight 14.3,
+     stone 11.4, meadow 9.0, ember-deep 4.6, indigo 4.2, forest 3.9.
+     Indigo and forest are FILL/large-text only — never body copy.
+
+     v2.2 (2026-09-14): the serif runs at 450–500 instead of 400 and every
+     small size came up a step — Newsreader 400 on cream read thin on a phone.
+     Candidate cards borrow Steep's "one lit card" layout, the numbers are a
+     Calendly-style centred carousel, and the page closes on a Cosmos-style
+     CTA over a cropped wordmark.                                          ── */
+  html{
+    --indigo:#4865ff; --ink:#080331; --midnight:#1b1463; --lavender:#a2baff; --stone:#333333;
+    --canvas:#f8f3eb; --surface:#ffffff; --tinted:#f098d7; --accent:#ffaefe;
+    --vibrant:#ff6d39; --info:#dce4fb;
+    --forest:#328a3b; --meadow:#114e0b; --ember:#ff6d39; --ember-deep:#cc3600;
+    --blossom:#f098d7; --petal:#ffaefe;
+
+    /* fit bands — product logic. text colour is contrast-checked on cream. */
+    --auto:#114e0b;      --auto-fill:#328a3b;
+    --ping:#1b1463;      --ping-fill:#4865ff;
+    --unsure:#cc3600;    --unsure-fill:#ff6d39;
+    --nearmiss:#333333;  --nearmiss-fill:#dce4fb;
+
+    --text:#080331; --text2:#4a4560; --text3:#6b6780;
+    --hair:rgba(8,3,49,.10); --hair2:rgba(8,3,49,.18);
+
+    --serif:"Newsreader",Georgia,"Times New Roman",serif;
+    --sans:"Inter",-apple-system,system-ui,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --mono:"JetBrains Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+
+    --pill:1600px; --card:16px;
+    --sh-cta:rgba(75,68,57,.1) 0 12px 24px 0, rgba(75,68,57,.1) 0 48px 48px 0;
+    --sh-card:rgba(75,68,57,.1) 0 48px 48px 0;
+    --sh-subtle:rgba(75,68,57,.05) 0 4px 4px 0, rgba(75,68,57,.08) 0 32px 16px 0;
+    --sh-btn:rgba(99,91,79,.08) 0 8px 16px 0, rgba(99,91,79,.04) 0 32px 32px 0;
+    --ease:cubic-bezier(.22,1,.36,1);
+  }
+
+  /* August's measured transitions: background-color .3s, colour .3s, box-shadow .2s.
+     Restrained - no transforms on hover anywhere on the reference. */
+  a,button,.upl,.letterbtn,.tailorbtn,.pill,select.stage,.verdict{
+    transition:background-color .3s var(--ease),color .3s var(--ease),
+               border-color .3s var(--ease),box-shadow .2s var(--ease)}
+  .run:hover{filter:none;transform:none;background:var(--midnight);box-shadow:var(--sh-cta)}
+  .scard.in:hover{box-shadow:rgba(75,68,57,.26) 0 40px 72px 0}
+  .row:hover{background:rgba(72,101,255,.035)}
+  header nav a:hover{color:var(--indigo);text-decoration:none}
+  .pill:hover{background:var(--lavender)}
+  *{box-sizing:border-box}
+  /* The hero circles bleed past the viewport edges, as August's do. Clip rather
+     than scroll - overflow-x:clip does not create a scroll container, so sticky
+     positioning on the header keeps working (overflow:hidden would break it). */
+  html{overflow-x:clip;scroll-behavior:smooth}
+  body{overflow-x:clip}
+  body{margin:0;background:var(--canvas);color:var(--text);font-family:var(--sans);font-size:16.5px;line-height:1.6;-webkit-font-smoothing:antialiased}
+  body{background-image:radial-gradient(rgba(8,3,49,.07) 1px,transparent 1px);background-size:24px 24px;background-attachment:fixed}
+  .wrap{max-width:1200px;margin:0 auto;padding:0 24px}
+  main.wrap{max-width:1040px}
+  a{color:var(--midnight);text-decoration:none}
+  a:hover{text-decoration:underline;text-underline-offset:3px}
+  button{font:inherit;cursor:pointer}
+  ::selection{background:var(--accent)}
+  @media (prefers-reduced-motion:reduce){ html{scroll-behavior:auto} }
+
+
+/* the source ticker, which lived at the tail of the chooser block */
+  /* Source ticker - August's own logoTickerClient: translateX(0 -> -100%) over 100s
+     linear infinite. The track holds two identical runs so the wrap is seamless. */
+  .tickerwrap{margin:54px 0 4px;overflow:hidden;position:relative;
+    width:100vw;margin-left:calc(50% - 50vw);
+    -webkit-mask-image:linear-gradient(90deg,transparent,#000 6%,#000 94%,transparent);
+            mask-image:linear-gradient(90deg,transparent,#000 6%,#000 94%,transparent)}
+  .tickerlead{font-size:12px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--text2);text-align:center;margin:0 0 20px}
+  .ticker{display:flex;width:max-content;gap:0}
+  @media (prefers-reduced-motion:no-preference){.ticker{animation:tick 100s linear infinite}}
+  @keyframes tick{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+  .tickrun{display:flex;align-items:center;gap:44px;padding-right:44px;flex:none}
+  .src{display:inline-flex;align-items:center;gap:10px;white-space:nowrap;
+    font-size:15px;font-weight:500;color:var(--text2)}
+  .src b{font-family:var(--serif);font-weight:450;font-size:24px;color:var(--ink)}
+  /* the source type as a chip, so each entry reads as one object */
+  .src i{font-style:normal;font-size:11px;font-weight:500;letter-spacing:.07em;text-transform:uppercase;
+    color:var(--midnight);background:var(--info);border-radius:var(--pill);padding:4px 10px}
+
+
+
 /* ══ JobScout v3 — the Parallel-study redesign, 2026-09-19 ═══════════════
    Two authored token sets (CA light, KE dark); nothing outside them uses a
    hex. Notes and what was deliberately not copied: docs/REDESIGN-parallel.md
