@@ -409,12 +409,16 @@ fun DemoScreen(vm: DemoVm = viewModel()) {
                 ui.banner?.let { item { Banner(it) } }
 
                 when (screen) {
-                    Screen.LANDING -> landing(ui, feed, vm, policy) { p ->
-                        policy = p
-                        // Choosing a policy is how you get from the hero into the sweep,
-                        // which is what the mockup's second frame is.
-                        if (p != null) screen = Screen.BROWSE
-                    }
+                    Screen.LANDING -> landing(
+                        ui, feed, vm, policy,
+                        onPolicy = { p ->
+                            policy = p
+                            // Choosing a policy is how you get from the hero into the
+                            // sweep, which is what the mockup's second frame is.
+                            if (p != null) screen = Screen.BROWSE
+                        },
+                        onMatches = { screen = Screen.MATCHES },
+                    )
                     Screen.BROWSE -> browse(ui, feed, policy) { policy = it }
                     Screen.MATCHES -> matches(ui, feed, vm)
                 }
@@ -436,12 +440,20 @@ fun DemoScreen(vm: DemoVm = viewModel()) {
    sweep is real without becoming the list. */
 private fun LazyListScope.landing(
     ui: Ui, feed: Feed?, vm: DemoVm, policy: String?, onPolicy: (String?) -> Unit,
+    onMatches: () -> Unit,
 ) {
     item {
         MHero(
             resume = ui.resume, onResume = vm::setResume, onRun = vm::run,
             policy = policy, onPolicy = onPolicy,
         )
+    }
+    /* A way back to a run you already paid for. Without this the matches were
+       unreachable once you left them: the effect that opens that frame fires on a
+       CHANGE in scores, and the scores had not changed — so the only route back was
+       running again, at eight more calls. Found on the emulator 2026-09-19. */
+    if (ui.scores.isNotEmpty()) item {
+        MFilter("← your ${ui.scores.size} matches", on = false, onClick = onMatches)
     }
     item {
         MCount(
