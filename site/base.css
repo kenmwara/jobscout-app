@@ -159,6 +159,26 @@ body{
 .wrap{max-width:var(--max);margin:0 auto;padding:0 24px}
 a{color:inherit}
 
+/* ── band colours ────────────────────────────────────────────────────────
+   Contrast-checked on cream, and muddy on Kenya's near-black, so the dark
+   market gets its own set rather than a tint of these. */
+html,
+html[data-market="ca"]{--b-auto:#114e0b;--b-ping:#1b1463;--b-unsure:#cc3600;--b-near:#333333;
+  --b-auto-bg:#e3f0e4;--b-ping-bg:#dce4fb;--b-unsure-bg:#ffe6da;--b-near-bg:#e9e8ee}
+html[data-market="ke"]{--b-auto:#5fd98c;--b-ping:#8fb3ff;--b-unsure:#ff9466;--b-near:#a8b3a6;
+  --b-auto-bg:rgba(95,217,140,.14);--b-ping-bg:rgba(143,179,255,.14);
+  --b-unsure-bg:rgba(255,148,102,.14);--b-near-bg:rgba(168,179,166,.14)}
+
+/* ── v2.2 names, kept alive as aliases ──────────────────────────────────
+   saved, privacy and stats still write var(--midnight) and var(--info) in
+   their own rules. Rather than rewrite every one, the old names point at the
+   current system — so those pages re-tint with the market for free. */
+html{--sh:var(--sh-subtle)}
+html[data-market="ke"]{
+  --indigo:var(--accent); --midnight:var(--ink); --info:var(--chip);
+  --lavender:var(--hair2); --meadow:var(--b-auto); --ember:var(--b-unsure);
+  --sh:none}
+
 /* ── site header ────────────────────────────────────────────────────── */
 header.site{padding:22px 0}
 header.site .row{display:flex;align-items:center;gap:20px;position:relative}
