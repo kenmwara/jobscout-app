@@ -1385,8 +1385,13 @@ const PERSONAS_CA = [
 const PERSONAS = MARKET === "ke" ? PERSONAS_KE : PERSONAS_CA;
 if (MARKET === "ke"){
   document.title = "JobScout Kenya — an LLM reads the job market honestly";
-  document.querySelector(".hero .sub").textContent = "Real postings, open to a hire based in Kenya. Every reason shown.";
-  const nm = document.querySelector("#navMarket"); nm.textContent = "Canada"; nm.href = "https://jobscout.page";
+  // The v2.2 subtitle and the #navMarket link are gone with the chooser — the
+  // hero says one thing and the market switch is the pill in the header. This
+  // block threw on null for both, and because it runs before loadFeed the whole
+  // Kenya page rendered empty while Canada was fine. Anything market-specific
+  // that touches the DOM gets a guard from here on.
+  const sub = document.querySelector(".hero .sub");
+  if (sub) sub.textContent = "Real postings, open to a hire based in Kenya. Every reason shown.";
   // the Kenya gates are different gates: say what they actually check
   const gc = document.querySelectorAll("#gatecards .gc");
   [["In Kenya, or open to it", "A role located in Kenya passes. So does one open worldwide, across EMEA or Africa."],
