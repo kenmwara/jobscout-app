@@ -350,13 +350,27 @@ function download(blob, name){
   a.download = name; a.click();
   setTimeout(() => URL.revokeObjectURL(a.href), 4000);
 }
+/* The async clipboard API is refused in an insecure context, inside some
+   in-app webviews, and any time the document is not focused. Relabelling the
+   button "Select and copy" while selecting nothing for the reader is not a
+   fallback — it is an instruction with no subject. Try execCommand next, and
+   failing that put the text under a real selection so Ctrl+C works. */
+async function copyInto(cp, plain, id){
+  try { await navigator.clipboard.writeText(plain); cp.textContent = "Copied"; return; }
+  catch { /* fall through */ }
+  const out = document.getElementById("out-" + id);
+  if (out){
+    const r = document.createRange(); r.selectNodeContents(out);
+    const sel = getSelection(); sel.removeAllRanges(); sel.addRange(r);
+    try { if (document.execCommand("copy")){ cp.textContent = "Copied"; return; } } catch { /* no */ }
+  }
+  cp.textContent = out ? "Selected — press Ctrl+C" : "Select and copy";
+}
+
 function offer(id, plain, name){
   const cp = $("#cp-" + id), dl = $("#dl-" + id);
   cp.hidden = false;
-  cp.onclick = async () => {
-    try { await navigator.clipboard.writeText(plain); cp.textContent = "Copied"; }
-    catch { cp.textContent = "Select and copy"; }
-  };
+  cp.onclick = () => copyInto(cp, plain, id);
   if (dl){
     dl.hidden = false;
     dl.onclick = () => download(new Blob([plain], { type: "text/plain;charset=utf-8" }), name);
@@ -517,10 +531,7 @@ $("#do-tailor").onclick = async () => {
       new Blob([plain], { type: "text/plain;charset=utf-8" }), `resume-${slug}.txt`);
     const cp = $("#cp-tailor");
     cp.hidden = false;
-    cp.onclick = async () => {
-      try { await navigator.clipboard.writeText(plain); cp.textContent = "Copied"; }
-      catch { cp.textContent = "Select and copy"; }
-    };
+    cp.onclick = () => copyInto(cp, plain, "tailor");
   }catch(e){ failed("tailor", "Resume API unreachable: " + e, "Build it"); }
 };
 
