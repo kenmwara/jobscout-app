@@ -117,7 +117,17 @@ function esc(s){ return String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","
 const BAND = f => f >= 80 ? ["auto", "var(--b-auto)"] : f >= 70 ? ["ping", "var(--b-ping)"]
               : f >= 55 ? ["unsure", "var(--b-unsure)"] : ["near-miss", "var(--b-near)"];
 const ROSE = Array.from({length: 8}, (_, i) => { const th = (-90 + 45 * i) * Math.PI / 180; return [52 + 38 * Math.cos(th), 52 + 38 * Math.sin(th)]; });
+/* No number, because there is no number — a dashed ring, not a zero. */
+function roseBlank(){
+  return `<svg class="rose" viewBox="0 0 104 104" role="img" aria-label="not scored">` +
+    `<circle cx="52" cy="52" r="40" fill="none" stroke="var(--hair)" stroke-width="7" stroke-dasharray="4 7"/>` +
+    `<text class="fitnum" x="52" y="61" fill="var(--ink-3)">–</text></svg>`;
+}
+
 function roseSVG(fit){
+  /* Saved straight from Browse, nothing ever scored it. Drawing a 0 claimed a
+     verdict the pipeline never reached. */
+  if (fit === null || fit === undefined || fit === "") return roseBlank();
   const f = Math.max(0, Math.min(100, +fit || 0)), [, col] = BAND(f);
   const lit = Math.max(1, Math.round(f / 100 * 8));
   return `<svg class="rose" viewBox="0 0 104 104" role="img" aria-label="fit ${f} of 100">` +
@@ -154,9 +164,12 @@ const GROUPS = [
   { min: 70, title: "Strong fit", tag: "auto & ping · 70+", note: "Worth applying to today." },
   { min: 55, title: "Worth a look", tag: "unsure · 55–69", note: "Real gaps, real upside. Read the verdict before you decide." },
   { min: 0,  title: "Near-miss", tag: "below 55", note: "Kept for a reason only you know." },
+  { min: null, title: "Not scored", tag: "saved from Browse",
+    note: "Kept before the pipeline read your resume against it." },
 ];
 function render(){
   const items = Object.values(tracker).sort((x, y) => (y.fit||0) - (x.fit||0));
+  const unscored = t => t.fit === null || t.fit === undefined || t.fit === "";
   $("#clear").hidden = !items.length;
   $("#h1").innerHTML = items.length ? `The <span class="n">${items.length}</span> you kept.` : "Nothing kept yet.";
   if (!items.length){
@@ -166,7 +179,9 @@ function render(){
   }
   let used = [];
   $("#list").innerHTML = GROUPS.map(g => {
-    const rows = items.filter(t => (t.fit||0) >= g.min && !used.includes(t));
+    const rows = g.min === null
+      ? items.filter(t => unscored(t) && !used.includes(t))
+      : items.filter(t => !unscored(t) && (t.fit||0) >= g.min && !used.includes(t));
     used = used.concat(rows);
     if (!rows.length) return "";
     return `<section class="group"><h2>${g.title}<small>${g.tag}</small></h2><p>${g.note}</p><div class="rows">` + rows.map(t => `

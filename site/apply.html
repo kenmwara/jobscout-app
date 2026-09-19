@@ -283,7 +283,12 @@ function render(){
   const bits = [ago(p.posted_at), p.location, p.remote_policy === "remote" ? "Remote"
     : p.remote_policy === "hybrid" ? "Hybrid" : p.remote_policy ? "On site" : ""].filter(Boolean);
   $("#meta").innerHTML = bits.map(b => `<span>${esc(b)}</span>`).join('<span style="opacity:.4">&middot;</span>');
-  if (Number.isFinite(+S.fit)){
+  /* `+null` is 0 and Number.isFinite(0) is true, so a job saved straight from
+     Browse — never scored, fit null — came through here as a hard 0 and the
+     page told the user "This one scored 0 out of 100" and stamped it NEAR-MISS.
+     That is a verdict the pipeline never reached. */
+  const isScored = S.fit !== null && S.fit !== undefined && S.fit !== "" && Number.isFinite(+S.fit);
+  if (isScored){
     const [route, col, bg] = BAND(+S.fit);
     $("#fit").innerHTML = roseSVG(+S.fit) + `<span class="route" style="color:${col};background:${bg}">${route}</span>`;
   }
@@ -293,7 +298,7 @@ function render(){
 
   // Below the fit floor every endpoint behind these steps refuses, so the page
   // says so instead of offering three buttons that each fail.
-  if (Number.isFinite(+S.fit) && +S.fit < 55){
+  if (isScored && +S.fit < 55){
     $("#steps").hidden = true; $("#needProfile").hidden = true;
     $("#main").insertAdjacentHTML("beforeend",
       `<div class="panel"><p class="eyebrow">Not offered</p>

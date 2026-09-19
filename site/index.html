@@ -1214,6 +1214,11 @@ function sleep(ms){ return new Promise(r => setTimeout(r, reduced ? 0 : ms)); }
 
 async function runPipeline(){
   if (running || !feed?.postings?.length) return;
+  /* A sector or a search left over from Browse would silently narrow the eight
+     the run just produced — and the sector chips are hidden while a run is on
+     screen, so there would be no control left to unset it. Cleared here rather
+     than at the call sites: the upload path and the arrow both land here. */
+  sector = null; query = "";
   prog.start(); swipeCoach();
   const profile = profileText();
   if (!profile){
@@ -1612,6 +1617,8 @@ function syncHint(){
 }
 function submitBox(){
   const el = $("#ownText");
+  // A sector picked in Browse before pasting would silently narrow the eight,
+  // and with the chip row hidden during a run there would be nothing to unset.
   if (modeOf(el.value) === "resume"){ query = ""; runPipeline(); return; }
   query = el.value.trim(); sector = null; setView("browse");
 }
@@ -1620,6 +1627,17 @@ function submitBox(){
 const PROMPTS = MARKET === "ke"
   ? ["Paste your resume…", "Type your job title…", "Software engineer", "…or drop a PDF"]
   : ["Paste your resume…", "Type your job title…", "Backend Engineer", "…or drop a PDF"];
+/* The example the box types out has to be a search that finds something.
+   "Backend Engineer" is plausible and today's sweep has none of them, so the
+   one query the page suggests returned 0 of 309. Take a real short title from
+   the feed instead — whatever the day is actually hiring for. */
+function seedPrompt(){
+  const t = (feed?.postings || [])
+    .map(p => (p.title || "").trim())
+    .find(t => t && t.split(/\s+/).length >= 2 && t.split(/\s+/).length <= 3 && !/[(,\/]/.test(t));
+  if (t) PROMPTS[2] = t;
+}
+
 let _pi = 0, _ci = 0, _typing = true, _timer;
 function rotate(){
   const el = $("#ownText");
@@ -1635,12 +1653,15 @@ function rotate(){
    Not Full time / Contract / AI training — the sweep carries no employment
    type at all, and a tab that returns the same rows is a lie. */
 function heroTabs(){
-  const pol = policyCounts(), all = feed.postings.length;
+  const pol = policyCounts();
   const items = [["Remote", pol.remote, "remote"], ["Hybrid", pol.hybrid, "hybrid"],
                  ["On site", pol.onsite, "onsite"]].filter(x => x[1] > 0);
+  /* No counts here. A number on every tab before you have said anything is
+     noise you cannot act on — the figures belong in Browse, next to the grid
+     they describe, which is where these tabs take you. */
   $("#heroTabs").innerHTML =
-    items.map(([t, n, k]) => `<a href="#" data-pol="${k}">${t} <span style="opacity:.6">${n}</span></a>`).join("") +
-    `<a href="#" data-pol="">All ${all}</a>`;
+    items.map(([t, , k]) => `<a href="#" data-pol="${k}">${t}</a>`).join("") +
+    `<a href="#" data-pol="">All</a>`;
   /* The sector row's home is Browse — the hero carries the three policy tabs
      and nothing else. Leaving both rows here made the hero a wall of chips. */
   $("#heroTabs").querySelectorAll("a").forEach(a => a.onclick = e => {
@@ -1701,11 +1722,18 @@ function scoredRows(){
   if (sector) rows = rows.filter(x => x.p.sector === sector);
   if (home) rows = rows.filter(x => (x.p.places || []).includes(home) || x.p.remote_policy === "remote");
   if (freshOnly) rows = rows.filter(x => { const a = ageOf(x.p); return a.days !== undefined && a.days < 7; });
-  if (query){
-    const q = query.toLowerCase();
-    rows = rows.filter(x => (x.p.title + " " + x.p.company + " " + (x.p.location || "")).toLowerCase().includes(q));
-  }
+  if (query) rows = rows.filter(x => hitsQuery(x.p));
   return rows;
+}
+
+/* A typed job title is words, not a substring. "Backend Engineer" is what the
+   box itself suggests, and `.includes("backend engineer")` matched none of the
+   309 because no title reads exactly that; "Fraud Analyst" missed a posting
+   called "Fraud Inbound Analyst" the same way. Every word must appear, in any
+   order. Both filter chains call this — they had the same bug twice. */
+function hitsQuery(p){
+  const hay = (p.title + " " + p.company + " " + (p.location || "")).toLowerCase();
+  return query.toLowerCase().split(/\s+/).filter(Boolean).every(w => hay.includes(w));
 }
 
 function browseRows(){
@@ -1715,10 +1743,7 @@ function browseRows(){
   if (sector) rows = rows.filter(p => p.sector === sector);
   if (home) rows = rows.filter(p => (p.places || []).includes(home) || p.remote_policy === "remote");
   if (freshOnly) rows = rows.filter(p => { const a = ageOf(p); return a.days !== undefined && a.days < 7; });
-  if (query){
-    const q = query.toLowerCase();
-    rows = rows.filter(p => (p.title + " " + p.company + " " + (p.location || "")).toLowerCase().includes(q));
-  }
+  if (query) rows = rows.filter(hitsQuery);
   return rows;
 }
 
@@ -1751,10 +1776,11 @@ function browseCard(p){
 /* Companies, rolled up from today's sweep. Only what the feed supports: how
    many are open and how many remote. No "posted this week" — that needs a
    per-company rollup we do not publish. */
+const COMPANY_CAP = 16;
 function companyCards(){
   const by = {};
   eligible().forEach(p => { (by[p.company] = by[p.company] || []).push(p); });
-  return Object.entries(by).sort((a, b) => b[1].length - a[1].length).slice(0, 16)
+  return Object.entries(by).sort((a, b) => b[1].length - a[1].length).slice(0, COMPANY_CAP)
     .map(([name, ps]) => {
       const secs = Object.entries(ps.reduce((a, p) => (a[p.sector] = (a[p.sector] || 0) + 1, a), {}))
         .sort((a, b) => b[1] - a[1]).slice(0, 2).map(([sx]) => esc(label(sx))).join(" · ");
@@ -1772,6 +1798,13 @@ function companyCards(){
 function browse(){
   if (!feed) return;
   const host = $("#browseJobs"), f = $("#browseFilters"), row = $("#browseSectors");
+  /* Whoever set the query — the hero box, a footer link, a restored history
+     entry — the box has to show it. Arriving from the hero left it empty while
+     the grid was filtered, so a search that found nothing looked like a broken
+     page with no way back. Skipped while focused: the value is trimmed and
+     rewriting it under the caret eats the space the user just typed. */
+  const qbox = $("#browseQ");
+  if (qbox && document.activeElement !== qbox && qbox.value !== query) qbox.value = query || "";
   const all = feed.postings.length;
   host.classList.toggle("cos", scope === "cos" && !scored);
   $("#scSeg").classList.toggle("hide", !!scored);
@@ -1788,8 +1821,13 @@ function browse(){
        data-human="${esc(sector ? label(sector) : (query || "matching"))}"
        aria-pressed="${ALERTS.has("q:" + (sector || query || "all"))}">${BELL} Alert me</button>`;
 
+  /* The sector row belongs to the sweep: seventeen chips carrying the sweep's
+     own counts (309, 24, 24 ...). Under "Your matches" above eight scored cards
+     they described a different set of postings entirely. Gone while a run is on
+     screen, exactly as the Jobs/Companies segment already is — the link that
+     says "show the whole sweep instead" is how you get back to them. */
   const secs = sectorList();
-  row.innerHTML = scope === "cos" ? "" :
+  row.innerHTML = (scope === "cos" || scored) ? "" :
     `<button class="bloomer" data-sec="" aria-pressed="${sector === null}"><span class="l">All sectors</span> <span class="n">${all}</span><span class="bl"></span></button>` +
     secs.map(([sx, n]) => `<button class="bloomer" data-sec="${esc(sx)}" aria-pressed="${sector === sx}"><span class="l">${esc(label(sx))}</span> <span class="n">${n}</span><span class="bl"></span></button>`).join("");
 
@@ -1807,7 +1845,12 @@ function browse(){
   if (scope === "cos"){
     $("#browseTitle").textContent = "Companies hiring today";
     host.innerHTML = companyCards();
-    $("#browseCount").textContent = `${new Set(eligible().map(p => p.company)).size} companies in today's sweep`;
+    // companyCards() renders the top 16; the count used to quote all 81, so 65
+    // were unreachable AND unmentioned. Same idiom as the jobs tab next door.
+    const cos = new Set(eligible().map(p => p.company)).size;
+    $("#browseCount").textContent = cos > COMPANY_CAP
+      ? `${COMPANY_CAP} shown of ${cos} companies in today's sweep`
+      : `${cos} companies in today's sweep`;
     wireBells(host); reveal(); return;
   }
 
@@ -2038,7 +2081,7 @@ document.addEventListener("pointerdown", e => {
 /* ── renderSetup: what the chooser used to do, for the one box ──────────── */
 function renderSetup(){
   if (!feed) return;
-  heroTabs(); taxTiles(); syncHint();
+  heroTabs(); taxTiles(); syncHint(); seedPrompt();
   if (view === "browse") browse();
 }
 
