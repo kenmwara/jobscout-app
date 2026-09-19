@@ -1630,7 +1630,13 @@ function submitBox(){
      which is an unhandled rejection inside an async function, i.e. a run that
      dies in total silence. It did, for an hour, until the arrow was clicked. */
   if (modeOf(el.value) === "resume"){ query = ""; sector = null; runPipeline(); return; }
-  query = el.value.trim(); sector = null; setView("browse");
+  /* A search from the hero box is a NEW search, so it leaves a finished run
+     behind. You have to be back on the landing page to reach this box at all,
+     and typing a job title there plainly means the market, not the eight cards
+     from last time — which is what it used to filter, silently, explaining
+     itself only in the small print above the grid. The Browse filter box is
+     the one that narrows a run, and it says so. */
+  query = el.value.trim(); sector = null; scored = null; policyOnly = ""; setView("browse");
 }
 
 /* The rotation teaches the dual affordance without a label. */
@@ -1743,7 +1749,14 @@ function scoredRows(){
    order. Both filter chains call this — they had the same bug twice. */
 function hitsQuery(p){
   const hay = (p.title + " " + p.company + " " + (p.location || "")).toLowerCase();
-  return query.toLowerCase().split(/\s+/).filter(Boolean).every(w => hay.includes(w));
+  const q = query.toLowerCase().trim();
+  // Words of three letters or more, every one of them — the same rule the
+  // Android client has always used. Dropping the short ones keeps "Head of
+  // Engineering" from hanging on "of"; when nothing survives the cut ("HR",
+  // "AI") the whole query has to appear instead, so a short search still
+  // filters rather than matching all 309.
+  const words = q.split(/\s+/).filter(w => w.length > 2);
+  return words.length ? words.every(w => hay.includes(w)) : hay.includes(q);
 }
 
 function browseRows(){
