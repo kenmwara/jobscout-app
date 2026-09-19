@@ -225,6 +225,19 @@ async function draft(env, max_tokens, system, content) {
 }
 
 const squash = t => String(t).toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+// Every Greenhouse posting in the feed is one of these two hosts, and all 63
+// parse: /<board token>/jobs/<id>. The board API below it needs no key.
+const GH_URL = /^https?:\/\/(?:job-boards|boards)\.greenhouse\.io\/([^/?#]+)\/jobs\/(\d+)/;
+const UA = "Mozilla/5.0 (compatible; JobScout/1.0; +https://jobscout.page)";
+const hostOf = u => { try { return new URL(u).host; } catch { return ""; } };
+// A file field is an attachment the candidate adds themselves; the rest we can read.
+const ANSWERABLE = new Set(["input_text", "textarea", "multi_value_single_select"]);
+// Never drafted, never stored, not even shown as a blank for us to fill: these
+// are the candidate's own to declare, and a plausible guess would be a lie
+// told in their name on a legal form.
+const PERSONAL = /gender|race|ethnic|veteran|disab|self.?identif|demograph|birth|age\b|salary|compensation|criminal|conviction/i;
+const IDENTITY = /first name|last name|full name|email|phone|address|linkedin|website|portfolio|github/i;
+
 const inProfile = (profile, phrase) => phrase.trim().length >= 8 && squash(profile).includes(squash(phrase));
 
 const meta = (d, spent) => ({ model: MODEL, cost_usd: +d.cost.toFixed(5),
@@ -354,6 +367,87 @@ export default {
               .map(b => b.text).slice(0, 6) : [],
         gaps: Array.isArray(out.gaps) ? out.gaps.filter(x => x && typeof x.asks === "string").slice(0, 5)
                 .map(x => ({ asks: x.asks, note: typeof x.note === "string" ? x.note : "" })) : [],
+        meta: meta(d, g.spent),
+      });
+    }
+
+    // The screening questions, read from the employer's own form and answered
+    // from the profile alone. See the block comment above GH_URL.
+    if (url.pathname === "/api/answers" && request.method === "POST") {
+      const g = await guarded(request, env, "answer drafting resumes tomorrow");
+      if (g instanceof Response) return g;
+      const { profile, p } = g;
+
+      const m = GH_URL.exec(String(p.url || ""));
+      if (!m) return json(200, { unsupported: true, host: hostOf(p.url),
+        detail: "This employer's form is not published, so the questions cannot be read before you open it." });
+
+      let form;
+      try {
+        const r = await fetch(`https://boards-api.greenhouse.io/v1/boards/${m[1]}/jobs/${m[2]}?questions=true`,
+          { headers: { "user-agent": UA, accept: "application/json" } });
+        if (!r.ok) throw new Error("HTTP " + r.status);
+        form = await r.json();
+      } catch (e) {
+        return json(200, { unsupported: true, host: hostOf(p.url),
+          detail: "The employer's form could not be read just now. Nothing was charged to you." });
+      }
+
+      const asked = (form.questions || []).map(q => ({ q, f: q.fields?.[0] || {} }))
+        .filter(({ q, f }) => ANSWERABLE.has(f.type) && !PERSONAL.test(q.label || ""));
+      // Name, email and phone are the candidate's to type; we never hold them.
+      const drafting = asked.filter(({ q }) => !IDENTITY.test(q.label || ""));
+      const yours = asked.filter(({ q }) => IDENTITY.test(q.label || ""))
+        .map(({ q, f }) => ({ label: q.label, required: !!q.required, type: f.type, answer: "", why: "yours to type" }));
+
+      if (!drafting.length)
+        return json(200, { source: "greenhouse", url: p.url, questions: yours, drafted: 0 });
+
+      const ask = drafting.map(({ q, f }, i) =>
+        `${i + 1}. ${q.label}${q.required ? " [required]" : ""} (${f.type})` +
+        (f.values?.length ? `\n   OPTIONS: ${f.values.map(v => v.label).join(" | ")}` : "")).join("\n");
+
+      const d = await draft(env, 1100,
+        "You answer a job application's screening questions using ONLY the candidate profile given. " +
+        "Return JSON only, no prose, no code fence: " +
+        '{"answers": [{"n": number, "answer": string, "from": string}]}. ' +
+        "n: the question's number. answer: what the candidate would put, in their own register, at most 60 words; " +
+        "for a question with OPTIONS the answer MUST be one option copied exactly, or \"\" if the profile supports none. " +
+        "from: a phrase copied VERBATIM from the profile that establishes the answer. " +
+        "Omit the question entirely — do not guess, do not hedge, do not answer in general terms — when the profile does not " +
+        "settle it. Salary expectations, notice period, visa or sponsorship status, criminal history, disability, " +
+        "race, gender, veteran status and referral source are the candidate's own to declare: omit every one of them " +
+        "unless the profile states it outright.",
+        `PROFILE:\n${profile}\n\nPOSTING:\n${postingText(p)}\n\nQUESTIONS:\n${ask}`);
+      if (d instanceof Response) return d;
+
+      const out = parseJson(d.text);
+      const by = new Map();
+      if (out && Array.isArray(out.answers))
+        for (const a of out.answers)
+          if (a && Number.isInteger(a.n) && typeof a.answer === "string" && typeof a.from === "string")
+            by.set(a.n, a);
+
+      const questions = drafting.map(({ q, f }, i) => {
+        const a = by.get(i + 1);
+        const opts = f.values?.map(v => v.label) || [];
+        // Two guards, both refusable: the cited phrase has to be in the profile,
+        // and a choice has to be one the employer actually offers.
+        const grounded = a && a.answer.trim() && inProfile(profile, a.from)
+          && (!opts.length || opts.includes(a.answer.trim()));
+        return {
+          label: q.label, required: !!q.required, type: f.type, options: opts,
+          answer: grounded ? a.answer.trim() : "",
+          from: grounded ? a.from : "",
+          why: grounded ? "" : "yours to answer — your profile does not settle it",
+        };
+      });
+
+      await recordRun(env, g.key, d.usage.input_tokens, d.usage.output_tokens, d.cost);
+      return json(200, {
+        source: "greenhouse", url: p.url,
+        questions: [...yours, ...questions],
+        drafted: questions.filter(q => q.answer).length,
         meta: meta(d, g.spent),
       });
     }
