@@ -230,6 +230,25 @@ async function draft(env, max_tokens, system, content) {
 }
 
 const squash = t => String(t).toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+
+/* A cover letter is plain text on every surface that shows it — the web page, the
+   Android screen and the iOS sheet all render it as a string, so a markdown heading
+   arrives as literal asterisks. Found on a real phone 2026-09-19: every letter opened
+   with "**Cover Letter**". The prompt now forbids markdown, and this is the belt to
+   that pair of braces, because a prompt is a request and this is a guarantee. */
+function plainText(t) {
+  return String(t || "")
+    .replace(/^﻿/, "")
+    // a heading line of its own: "# Cover Letter", "**Cover Letter**", "COVER LETTER"
+    .replace(/^\s*(?:#{1,6}\s*)?(?:\*\*|__)?\s*cover letter\s*(?:\*\*|__)?\s*:?\s*\n+/i, "")
+    .replace(/^\s*#{1,6}\s+/gm, "")          // any other heading marker
+    .replace(/\*\*([^*\n]+)\*\*/g, "$1")     // bold
+    .replace(/__([^_\n]+)__/g, "$1")         // bold, the other spelling
+    // Single-asterisk emphasis only when it wraps a word — a lone * is more likely a
+    // bullet the model meant literally than an unclosed italic.
+    .replace(/(^|[\s(])\*(?!\s)([^*\n]+?)\*(?=[\s).,;:!?]|$)/g, "$1$2")
+    .trim();
+}
 // Every Greenhouse posting in the feed is one of these two hosts, and all 63
 // parse: /<board token>/jobs/<id>. The board API below it needs no key.
 const GH_URL = /^https?:\/\/(?:job-boards|boards)\.greenhouse\.io\/([^/?#]+)\/jobs\/(\d+)/;
@@ -392,11 +411,14 @@ export default {
         "Draft a short, specific cover letter (150-200 words) grounded ONLY in the " +
         "candidate profile provided — never invent experience, credentials, or claims. " +
         "Plain professional voice, no flattery padding, no 'I am writing to express'. " +
-        "Open with the single strongest genuine alignment. Sign off as 'the candidate'.",
+        "Open with the single strongest genuine alignment. Sign off as 'the candidate'. " +
+        // It kept opening with a markdown heading, which every client renders as
+        // literal asterisks because a letter is plain text everywhere it is shown.
+        "Write PLAIN TEXT only: no markdown, no ** bold, no headings, and do not title it.",
         `PROFILE:\n${profile}\n\nPOSTING:\n${postingText(p)}`);
       if (d instanceof Response) return d;
       await recordRun(env, g.key, d.usage.input_tokens, d.usage.output_tokens, d.cost);
-      return json(200, { letter: d.text, meta: meta(d, g.spent) });
+      return json(200, { letter: plainText(d.text), meta: meta(d, g.spent) });
     }
 
     // Resume helper: the profile rephrased toward one posting, plus the honest

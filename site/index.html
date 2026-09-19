@@ -1206,7 +1206,10 @@ async function runPipeline(){
   prog.start(); swipeCoach();
   const profile = profileText();
   if (!profile){
-    banner("warn", "Add your resume above — upload a file or paste the text — or score one of the sample candidates under the button.");
+    // Pointed at "the sample candidates under the button" until 2026-09-19, three
+    // months after the samples were removed — a message telling you to use a control
+    // that is not there is worse than no message.
+    banner("warn", "Add your resume above — upload a file, or paste the text.");
     $("#ownText").focus();
     return;
   }

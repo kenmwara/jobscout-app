@@ -58,37 +58,10 @@ import java.time.Instant
 import kotlin.math.cos
 import kotlin.math.sin
 
-data class Persona(val id: String, val name: String, val desc: String, val profile: String)
-
-// Same three personas as the web demo — one candidate lens per run.
-val PERSONAS = listOf(
-    Persona("maya", "Maya — Senior Platform Engineer",
-        "Vancouver · Canadian PR · remote-only · Python/TypeScript, Cloudflare, LLM orchestration",
-        "Senior platform engineer in Vancouver, BC (Canadian PR; no US work authorization — US roles must allow remote-from-Canada). 8 years: Python, TypeScript, Cloudflare Workers/D1, DigitalOcean, FastAPI, nginx. Builds and operates LLM-orchestrated production systems (Claude API) end-to-end solo: trading platform, audit pipelines, edge APIs. Wants: senior/staff platform or AI-infrastructure roles, fully remote."),
-    Persona("riley", "Riley — Customer Support Specialist",
-        "Calgary · 2 yrs SaaS support · Zendesk/Intercom · remote-Canada or hybrid",
-        "Customer support specialist in Calgary, AB (Canadian citizen). 2 years of technical customer support for a Canadian SaaS company: Zendesk, Intercom, Jira; email, chat and escalation triage; CSAT 95%. Writes help-centre articles and runs onboarding calls. Looking for: customer support, customer success or support-operations roles, remote-Canada or Calgary hybrid."),
-    Persona("priya", "Priya — Financial Advisor",
-        "Toronto · LLQP licensed · investments and insurance · hybrid or remote-Canada",
-        "Financial advisor in Toronto, ON (Canadian citizen; LLQP and mutual funds licensed). 6 years advising retail clients on investments, insurance and mortgages at a Canadian bank; portfolio reviews, retirement planning, referrals to wealth specialists. Looking for: financial advisor, investment specialist or client-relationship roles, Toronto hybrid or remote-Canada."),
-)
 
 // The Kenya market (2026-09-15): the same sweep re-gated for a hire based in Kenya,
-// its own candidates and rubric. One app, one package; the market is a switch.
-val PERSONAS_KE = listOf(
-    Persona("wanjiru", "Wanjiru — Software Developer (graduate)",
-        "Nairobi · BSc CS 2025 · Ajira-trained · Python/JS/SQL",
-        "Software developer in Nairobi, Kenya (Kenyan citizen; remote-only; East Africa Time, UTC+3). BSc Computer Science 2025, University of Nairobi. Ajira Digital web-development track. Two internships: Django/PostgreSQL back-end at a fintech startup, React front-end at a digital agency. Python, JavaScript, SQL, Git, basic AWS. Looking for: junior or entry-level software, QA or support-engineering roles, fully remote, contractor or employee."),
-    Persona("brian", "Brian — Customer Support Specialist",
-        "Nakuru · 3 yrs remote support · Zendesk/Intercom · English + Swahili",
-        "Customer support specialist in Nakuru, Kenya (remote-only; East Africa Time, UTC+3). 3 years of remote support for a US SaaS company via Upwork and for a Kenyan BPO: Zendesk, Intercom, HubSpot; email, chat and phone; CSAT 96%. Ajira Digital certified virtual assistant. Fluent English and Swahili. Looking for: remote customer support, customer success or virtual-assistant roles covering EMEA or US-morning hours."),
-    Persona("amina", "Amina — Accountant",
-        "Mombasa · CPA-K · QuickBooks/Xero · remote bookkeeping",
-        "Accountant in Mombasa, Kenya (CPA-K; remote-only; East Africa Time, UTC+3). 6 years: bookkeeping, month-end close, payroll, VAT and tax filings; QuickBooks Online, Xero, Excel, Google Sheets. Two years of remote bookkeeping for UK and Kenyan small businesses. Looking for: remote accounting, bookkeeping or finance-operations roles; contractor arrangements are fine."),
-)
-
+// with its own rubric. One app, one package; the market is a switch.
 val MARKETS = listOf("ca" to "Canada", "ke" to "Kenya")
-fun personasFor(market: String) = if (market == "ke") PERSONAS_KE else PERSONAS
 
 enum class Phase { IDLE, GATES, SCORING, DONE }
 
@@ -98,8 +71,8 @@ const val GATE_STREAM = 6
 /** How many saved jobs list before the rest go behind a tap. Matches the web. */
 const val SAVED_SHOWN = 4
 
-/** Run with nothing chosen. Same words as the web page. */
-const val NO_CANDIDATE = "Choose a candidate above, or upload your resume, and the pipeline scores this morning's postings against it."
+/** Run with no resume. Same words as the web page. */
+const val NO_RESUME = "Add your resume above — upload a file, or paste the text."
 
 
 /** One of the three drafts: not asked for, running, arrived, or refused. */
@@ -121,7 +94,6 @@ data class Apply(
 
 data class Ui(
     val feed: Feed? = null,
-    val personaIdx: Int = -1,           // nothing chosen on open (2026-09-17); -1 = no persona
     val market: String = "ca",
     val update: LatestRelease? = null,   // a newer GitHub release, sideloaded copies only
     val resume: String = "",          // pasted/extracted resume text — in-memory only, never persisted
@@ -193,16 +165,11 @@ class DemoVm(app: Application) : AndroidViewModel(app) {
         else -> "Feed unavailable: ${e.message ?: e::class.java.simpleName}"
     }
 
-    fun pick(i: Int) {
-        Api.ev("sample", personasFor(_ui.value.market).getOrNull(i)?.id, _ui.value.market)
-        _ui.update { it.copy(personaIdx = i) }
-    }
-
     /** Switching market swaps the feed, the candidates and the rubric; a run in progress is left alone. */
     fun setMarket(m: String) {
         if (m == _ui.value.market) return
         // home is cleared with the market: "Manitoba" means nothing in the Kenya feed.
-        _ui.update { it.copy(market = m, personaIdx = -1, home = "", remoteOnly = false,
+        _ui.update { it.copy(market = m, home = "", remoteOnly = false,
                              feed = null, phase = Phase.IDLE, scores = emptyList(), banner = null) }
         loadFeed()
     }
@@ -222,11 +189,11 @@ class DemoVm(app: Application) : AndroidViewModel(app) {
         _ui.update { it.copy(resume = s.take(6000)) }
     }
 
-    /** Same rule as the web demo: pasted text wins once it is longer than 40 chars, else the persona. */
-    private fun profileText(): String? {
-        val own = _ui.value.resume.trim()
-        return if (own.length > 40) own else personasFor(_ui.value.market).getOrNull(_ui.value.personaIdx)?.profile
-    }
+    /* Same rule as the web page: the pasted resume, once it is long enough to be one,
+       or nothing. Three fictional candidates used to sit under the button as a
+       fallback; they were removed on 2026-09-19 because they asked the visitor to do
+       the product's work before it had done any. */
+    private fun profileText(): String? = _ui.value.resume.trim().takeIf { it.length > 40 }
 
     /** Storage Access Framework pick → worker /api/extract → resume text. Bytes live in memory only. */
     fun importResume(uri: Uri) {
@@ -270,7 +237,7 @@ class DemoVm(app: Application) : AndroidViewModel(app) {
         val feed = _ui.value.feed ?: return
         if (_ui.value.phase == Phase.GATES || _ui.value.phase == Phase.SCORING) return
         val profile = profileText() ?: run {
-            _ui.update { it.copy(banner = NO_CANDIDATE) }; return
+            _ui.update { it.copy(banner = NO_RESUME) }; return
         }
         val sel = select(profile, feed, _ui.value.home, _ui.value.remoteOnly)
         Api.ev("run", sel.sector, _ui.value.market)
@@ -426,7 +393,7 @@ fun DemoScreen(vm: DemoVm = viewModel()) {
 
             item { Hero(feed) }
 
-            item { Stage("000", "THE CANDIDATE", "Start with your resume.", "Upload it or paste it, or score a sample candidate instead.") }
+            item { Stage("000", "THE CANDIDATE", "Start with your resume.", "Upload a file, or paste the text.") }
             item {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     MARKETS.forEach { (id, label) -> PillButton(label, filled = id == ui.market) { vm.setMarket(id) } }
@@ -476,10 +443,6 @@ fun DemoScreen(vm: DemoVm = viewModel()) {
             // require being there today.
             if (feed != null && feed.places.options.isNotEmpty()) item { WhereRow(ui, feed, vm) }
             // (WhereRow itself hides the picker when there is only one place to choose between.)
-            // The samples are a fallback, under the real controls, not the front door.
-            itemsIndexed(personasFor(ui.market)) { i, p ->
-                PersonaCard(p, index = i, selected = i == ui.personaIdx && !usingOwn) { vm.pick(i) }
-            }
             item {
                 Button(
                     onClick = vm::run,
@@ -753,26 +716,6 @@ fun PillButton(text: String, color: Color = MidnightViolet, filled: Boolean = fa
 private fun LinkText(text: String, onClick: () -> Unit) {
     Text(text, color = MidnightViolet, fontSize = 14.sp, fontWeight = FontWeight.Medium,
         modifier = Modifier.clip(Pill).clickable(onClick = onClick).padding(vertical = 6.dp, horizontal = 2.dp))
-}
-
-@Composable
-private fun PersonaCard(p: Persona, index: Int, selected: Boolean, onClick: () -> Unit) {
-    val (hue, ground) = PERSONA_HUES[index % PERSONA_HUES.size]
-    Column(
-        Modifier
-            .fillMaxWidth()
-            .then(if (selected) Modifier.warmShadow(8.dp, Card) else Modifier)
-            .background(if (selected) ground else CardBg, Card)
-            .border(if (selected) 1.5.dp else 1.dp, if (selected) hue else Hairline, Card)
-            .clip(Card)
-            .clickable(onClick = onClick)
-            .padding(16.dp)
-    ) {
-        MiniRose(selected = selected, tint = hue, modifier = Modifier.padding(bottom = 10.dp))
-        Text(p.name, fontWeight = FontWeight.Medium, fontSize = 15.sp, color = Ink)
-        Spacer(Modifier.height(2.dp))
-        Text(p.desc, color = Muted, fontSize = 13.sp, lineHeight = 19.sp)
-    }
 }
 
 @Composable

@@ -7,38 +7,10 @@ let gateStream = 6
 /// How many saved jobs list before the rest go behind a tap. Matches the web.
 let savedShown = 4
 
-struct Persona: Identifiable {
-    let id: String, name: String, desc: String, profile: String
-}
 
-// Same three personas as the web demo — one candidate lens per run.
-let personas = [
-    Persona(id: "maya", name: "Maya — Senior Platform Engineer",
-        desc: "Vancouver · Canadian PR · remote-only · Python/TypeScript, Cloudflare, LLM orchestration",
-        profile: "Senior platform engineer in Vancouver, BC (Canadian PR; no US work authorization — US roles must allow remote-from-Canada). 8 years: Python, TypeScript, Cloudflare Workers/D1, DigitalOcean, FastAPI, nginx. Builds and operates LLM-orchestrated production systems (Claude API) end-to-end solo: trading platform, audit pipelines, edge APIs. Wants: senior/staff platform or AI-infrastructure roles, fully remote."),
-    Persona(id: "riley", name: "Riley — Customer Support Specialist",
-        desc: "Calgary · 2 yrs SaaS support · Zendesk/Intercom · remote-Canada or hybrid",
-        profile: "Customer support specialist in Calgary, AB (Canadian citizen). 2 years of technical customer support for a Canadian SaaS company: Zendesk, Intercom, Jira; email, chat and escalation triage; CSAT 95%. Writes help-centre articles and runs onboarding calls. Looking for: customer support, customer success or support-operations roles, remote-Canada or Calgary hybrid."),
-    Persona(id: "priya", name: "Priya — Financial Advisor",
-        desc: "Toronto · LLQP licensed · investments and insurance · hybrid or remote-Canada",
-        profile: "Financial advisor in Toronto, ON (Canadian citizen; LLQP and mutual funds licensed). 6 years advising retail clients on investments, insurance and mortgages at a Canadian bank; portfolio reviews, retirement planning, referrals to wealth specialists. Looking for: financial advisor, investment specialist or client-relationship roles, Toronto hybrid or remote-Canada."),
-]
-
-// The Kenya market (2026-09-15): the same sweep re-gated for a hire based in Kenya,
-// its own candidates and rubric. One app, one bundle; the market is a switch.
-let personasKE = [
-    Persona(id: "wanjiru", name: "Wanjiru — Software Developer (graduate)",
-        desc: "Nairobi · BSc CS 2025 · Ajira-trained · Python/JS/SQL",
-        profile: "Software developer in Nairobi, Kenya (Kenyan citizen; remote-only; East Africa Time, UTC+3). BSc Computer Science 2025, University of Nairobi. Ajira Digital web-development track. Two internships: Django/PostgreSQL back-end at a fintech startup, React front-end at a digital agency. Python, JavaScript, SQL, Git, basic AWS. Looking for: junior or entry-level software, QA or support-engineering roles, fully remote, contractor or employee."),
-    Persona(id: "brian", name: "Brian — Customer Support Specialist",
-        desc: "Nakuru · 3 yrs remote support · Zendesk/Intercom · English + Swahili",
-        profile: "Customer support specialist in Nakuru, Kenya (remote-only; East Africa Time, UTC+3). 3 years of remote support for a US SaaS company via Upwork and for a Kenyan BPO: Zendesk, Intercom, HubSpot; email, chat and phone; CSAT 96%. Ajira Digital certified virtual assistant. Fluent English and Swahili. Looking for: remote customer support, customer success or virtual-assistant roles covering EMEA or US-morning hours."),
-    Persona(id: "amina", name: "Amina — Accountant",
-        desc: "Mombasa · CPA-K · QuickBooks/Xero · remote bookkeeping",
-        profile: "Accountant in Mombasa, Kenya (CPA-K; remote-only; East Africa Time, UTC+3). 6 years: bookkeeping, month-end close, payroll, VAT and tax filings; QuickBooks Online, Xero, Excel, Google Sheets. Two years of remote bookkeeping for UK and Kenyan small businesses. Looking for: remote accounting, bookkeeping or finance-operations roles; contractor arrangements are fine."),
-]
+// The Kenya market (2026-09-15): the same sweep re-gated for a hire based in
+// Kenya, with its own rubric. One app, one bundle; the market is a switch.
 let markets = [("ca", "Canada"), ("ke", "Kenya")]
-func personasFor(_ market: String) -> [Persona] { market == "ke" ? personasKE : personas }
 
 enum Phase { case idle, gates, scoring, done }
 
@@ -66,7 +38,6 @@ struct Apply {
 @MainActor
 final class DemoVM: ObservableObject {
     @Published var feed: Feed?
-    @Published var personaIdx = -1          // nothing chosen on open (2026-09-17); -1 = no persona
     @Published var market = "ca"
     @Published var resume = ""          // pasted resume text — in-memory only, never persisted
     @Published var phase = Phase.idle
@@ -86,16 +57,17 @@ final class DemoVM: ObservableObject {
 
     private let trackerKey = "jobscout.tracker"
 
-    /// Same rule as the web demo: pasted text wins once it is longer than 40 chars, else the persona.
+    /* Same rule as the web page: the pasted resume, once it is long enough to be one,
+       or nothing. Three fictional candidates used to sit under the button as a
+       fallback; they were removed on 2026-09-19 because they asked the visitor to do
+       the product's work before it had done any. */
     var usingOwn: Bool { resume.trimmingCharacters(in: .whitespacesAndNewlines).count > 40 }
     var profileText: String? {
         let own = resume.trimmingCharacters(in: .whitespacesAndNewlines)
-        if own.count > 40 { return own }
-        let ps = personasFor(market)
-        return ps.indices.contains(personaIdx) ? ps[personaIdx].profile : nil
+        return own.count > 40 ? own : nil
     }
-    /// Run with nothing chosen. Same words as the web page.
-    static let noCandidate = "Choose a candidate above, or upload your resume, and the pipeline scores this morning's postings against it."
+    /// Run with no resume. Same words as the web page.
+    static let noResume = "Add your resume above — upload a file, or paste the text."
 
 
     func load() async {
@@ -154,13 +126,13 @@ final class DemoVM: ObservableObject {
         guard m != market, phase != .gates, phase != .scoring else { return }
         // home is cleared with the market: "Manitoba" means nothing in the Kenya feed.
         Api.ev("open", market: m)
-        market = m; personaIdx = -1; home = ""; remoteOnly = false; feed = nil; phase = .idle; scores = []; banner = nil
+        market = m; home = ""; remoteOnly = false; feed = nil; phase = .idle; scores = []; banner = nil
         await load()
     }
 
     func run() async {
         guard let feed, phase != .gates, phase != .scoring else { return }
-        guard let profile = profileText else { banner = Self.noCandidate; return }
+        guard let profile = profileText else { banner = Self.noResume; return }
         let sel = select(profile: profile, feed: feed, home: home, remoteOnly: remoteOnly)
         Api.ev("run", sel.sector, market: market)
         selection = sel
@@ -351,7 +323,7 @@ struct ContentView: View {
                 hero
 
                 StageHeading(bearing: "000", label: "THE CANDIDATE", title: "Start with your resume.",
-                             note: "Upload it or paste it, or score a sample candidate instead.")
+                             note: "Upload a file, or paste the text.")
                 HStack(spacing: 8) {
                     ForEach(markets, id: \.0) { id, label in
                         PillButton(text: label, filled: id == vm.market) { Task { await vm.setMarket(id) } }
@@ -360,11 +332,6 @@ struct ContentView: View {
                 }
                 ownResumeBox
                 whereRow
-                // The samples are a fallback, under the real controls, not the front door.
-                ForEach(Array(personasFor(vm.market).enumerated()), id: \.element.id) { i, p in
-                    personaCard(p, index: i, selected: i == vm.personaIdx && !vm.usingOwn)
-                        .onTapGesture { vm.personaIdx = i; Api.ev("sample", p.id, market: vm.market) }
-                }
                 runButton
 
                 if !vm.scores.isEmpty || vm.banner != nil {
@@ -585,23 +552,6 @@ struct ContentView: View {
         .frame(maxWidth: .infinity, alignment: .leading).padding(14)
         .background(Color(hex: 0xFFF6DC))
         .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-    }
-
-    private func personaCard(_ p: Persona, index: Int, selected: Bool) -> some View {
-        let (hue, ground) = personaHues[index % personaHues.count]
-        return VStack(alignment: .leading, spacing: 2) {
-            MiniRose(selected: selected, tint: hue).padding(.bottom, 8)
-            Text(p.name).font(sans(15, .medium)).foregroundColor(ink)
-            Text(p.desc).font(sans(13)).foregroundColor(muted).lineSpacing(3)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(16)
-        .background(selected ? ground : cardBg)
-        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous)
-            .stroke(selected ? hue : hairline, lineWidth: selected ? 1.5 : 1))
-        .warmShadow(selected ? 16 : 0, y: selected ? 8 : 0)
-        .contentShape(Rectangle())
     }
 
     private func gateRow(_ r: Posting) -> some View {
