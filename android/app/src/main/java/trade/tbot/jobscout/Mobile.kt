@@ -50,7 +50,16 @@ private val Pill9999 = RoundedCornerShape(50)
 
 /** .mhead — brand on the left, market chip hard right. */
 @Composable
-fun MHead(market: String, onMarket: (String) -> Unit) {
+fun MHead(
+    market: String,
+    /* How many postings are kept, and the way in to them. TrackerScreen existed
+       and `trackerOpen` was read in exactly one place and set in none, so the
+       saved list was unreachable on the phone while the web carried "Saved (N)"
+       in its nav the whole time. */
+    saved: Int = 0,
+    onSaved: (() -> Unit)? = null,
+    onMarket: (String) -> Unit,
+) {
     Row(
         Modifier.fillMaxWidth().padding(top = 6.dp, bottom = 14.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -59,6 +68,18 @@ fun MHead(market: String, onMarket: (String) -> Unit) {
         Spacer(Modifier.width(7.dp))
         Text("JobScout", style = H2, fontSize = 15.sp, color = T.ink)
         Spacer(Modifier.weight(1f))
+        if (onSaved != null) {
+            Text(
+                if (saved > 0) "Saved ($saved)" else "Saved",
+                fontSize = 11.sp, fontWeight = FontWeight.Medium,
+                color = if (saved > 0) T.accent else T.text3,
+                modifier = Modifier
+                    .clip(Pill9999)
+                    .clickable(onClick = onSaved)
+                    .padding(horizontal = 8.dp, vertical = 6.dp),
+            )
+            Spacer(Modifier.width(6.dp))
+        }
         /* Both markets, both visible. One pill carrying only the CURRENT market
            meant Kenya did not exist unless you already knew the pill was a
            switch — reported from the phone as "there's no KE button". The web

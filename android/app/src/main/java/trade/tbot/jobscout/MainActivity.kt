@@ -452,7 +452,13 @@ fun DemoScreen(vm: DemoVm = viewModel()) {
                                                ins.calculateBottomPadding() + 32.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
-                item { MHead(ui.market) { vm.setMarket(it) } }
+                item {
+                    MHead(
+                        ui.market,
+                        saved = ui.tracker.size,
+                        onSaved = { trackerOpen = true },
+                    ) { vm.setMarket(it) }
+                }
 
                 ui.error?.let { item { Banner(it, onRetry = { vm.loadFeed() }) } }
                 ui.update?.let { r -> item { UpdateBar(r) } }
