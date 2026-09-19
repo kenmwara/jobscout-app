@@ -428,6 +428,8 @@ fun DemoScreen(vm: DemoVm = viewModel()) {
     // Which slice of the feed the sweep is showing, if any. Set by a tile on the
     // landing or a chip in Browse; cleared by the same chip or by Clear.
     var sector by remember { mutableStateOf<String?>(null) }
+    // Jobs or Companies, the web's segmented control on the sweep.
+    var scope by remember { mutableStateOf("jobs") }
     val ins = WindowInsets.safeDrawing.asPaddingValues()
     val tokens = tokensFor(ui.market)
     val uriHandler = LocalUriHandler.current
@@ -482,10 +484,11 @@ fun DemoScreen(vm: DemoVm = viewModel()) {
                         onSector = { sec -> sector = sec; screen = Screen.BROWSE },
                     )
                     Screen.BROWSE -> browse(
-                        ui, feed, policy, query, sector,
+                        ui, feed, policy, query, sector, scope,
                         onClear = { query = null; sector = null },
                         onOpen = { u -> runCatching { uriHandler.openUri(u) } },
                         onSector = { sec -> sector = if (sector == sec) null else sec },
+                        onScope = { scope = it },
                     ) { policy = it }
                     Screen.MATCHES -> matches(ui, feed, vm)
                 }
@@ -572,15 +575,19 @@ private fun LazyListScope.landing(
             MFilter("See all ${f.passers.size} →", on = false) { onSearch("") }
         }
     }
+    item { MFoot(onOpen) }
 }
 
 /* ── frame 2: Browse ──────────────────────────────────────────────────────
    The whole sweep behind three policy filters, with the count saying how much of
    it you are looking at. */
+/** The web renders sixteen company cards; the phone matches it so the two agree. */
+private const val COMPANY_CAP = 16
+
 private fun LazyListScope.browse(
-    ui: Ui, feed: Feed?, policy: String?, query: String?, sector: String?,
+    ui: Ui, feed: Feed?, policy: String?, query: String?, sector: String?, scope: String,
     onClear: () -> Unit, onOpen: (String) -> Unit, onSector: (String) -> Unit,
-    onPolicy: (String?) -> Unit,
+    onScope: (String) -> Unit, onPolicy: (String?) -> Unit,
 ) {
     val words = query.orEmpty().lowercase().split(" ").filter { it.length > 2 }
     val all = feed?.passers.orEmpty().let { list ->
@@ -627,9 +634,19 @@ private fun LazyListScope.browse(
         }
         item { Spacer(Modifier.height(18.dp)) }
     }
+    /* Jobs or Companies. The web has had the pair since the redesign; the phone
+       only ever showed postings, so "who is hiring today" was a question it
+       could not answer. */
+    item {
+        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            MFilter("Jobs", on = scope == "jobs") { onScope("jobs") }
+            MFilter("Companies", on = scope == "cos") { onScope("cos") }
+        }
+    }
     item {
         MTitle(
             when {
+                scope == "cos" -> "Companies hiring today"
                 words.isNotEmpty() -> "Matching “${query}”"
                 sector != null -> feed?.labels?.get(sector) ?: "Explore today’s sweep"
                 else -> "Explore today’s sweep"
@@ -647,6 +664,23 @@ private fun LazyListScope.browse(
                 }
             }
         }
+    }
+    /* Companies, rolled up from the same rows the Jobs scope would show, so the
+       two tabs never disagree about the day. Capped like the web's, and the
+       count says the cap rather than quoting a total the grid does not render. */
+    val companies = rows.groupBy { it.company }.toList().sortedByDescending { it.second.size }
+    if (scope == "cos") {
+        item { MCount("${minOf(companies.size, COMPANY_CAP)} shown of ${companies.size} companies in today's sweep") }
+        items(companies.take(COMPANY_CAP), key = { it.first }) { (name, ps) ->
+            MJob(
+                title = name,
+                company = "${ps.size} open today  ·  ${ps.count { it.remote_policy == "remote" }} remote",
+                policy = null,
+                onClick = ps.firstOrNull { it.url.isNotEmpty() }?.url?.let { u -> ({ onOpen(u) }) },
+            )
+        }
+        item { MFoot(onOpen) }
+        return
     }
     item { MCount("${rows.size} of ${feed?.postings?.size ?: 0}") }
     /* A search that matches nothing used to leave "0 of 309" over an empty screen

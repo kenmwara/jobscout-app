@@ -270,6 +270,37 @@ fun MTax(label: String, count: Int, onClick: () -> Unit) {
     }
 }
 
+/**
+ * The web's footer, in the phone's language: where the product explains itself
+ * and what it does with your resume. The app had none of these — Play expects a
+ * reachable privacy statement, and "how it works" and the live numbers were
+ * web-only despite describing the same product.
+ */
+@Composable
+fun MFoot(onOpen: (String) -> Unit) {
+    Column(Modifier.fillMaxWidth().padding(top = 26.dp, bottom = 8.dp)) {
+        Text(
+            "Reads your resume, drops what cannot fit, and tells you why about the rest.",
+            fontSize = 11.5.sp, lineHeight = 17.sp, color = T.text3,
+        )
+        Spacer(Modifier.height(12.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            listOf(
+                "How it works" to "https://jobscout.page/#how",
+                "Privacy" to "https://jobscout.page/privacy",
+                "Live stats" to "https://jobscout.page/stats",
+            ).forEach { (label, url) ->
+                Text(
+                    label,
+                    fontSize = 11.sp, fontWeight = FontWeight.Medium, color = T.accent,
+                    modifier = Modifier.clip(Pill9999).clickable { onOpen(url) }
+                        .padding(horizontal = 9.dp, vertical = 6.dp),
+                )
+            }
+        }
+    }
+}
+
 /** .mtitle */
 @Composable
 fun MTitle(text: String) {
