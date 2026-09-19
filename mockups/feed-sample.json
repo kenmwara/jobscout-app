@@ -1,0 +1,908 @@
+{
+ "ca": {
+  "day": "2026-09-18",
+  "labels": {
+   "engineering": "Software & IT",
+   "data": "Data & AI",
+   "analytics": "Analytics & insights",
+   "security": "Cybersecurity",
+   "product_design": "Product & design",
+   "sales_marketing": "Sales & marketing",
+   "finance": "Finance & banking",
+   "operations_support": "Operations & support",
+   "people_hr": "People & HR",
+   "healthcare": "Healthcare",
+   "humanitarian": "Humanitarian & development",
+   "education": "Education",
+   "legal": "Legal & compliance",
+   "construction_trades": "Construction & trades",
+   "hospitality": "Hospitality & tourism",
+   "it_support": "IT support & systems",
+   "agriculture": "Agriculture",
+   "devops_cloud": "DevOps & cloud",
+   "content_comms": "Content & communications",
+   "other": "Other"
+  },
+  "places": {
+   "remote": 184,
+   "unplaced": 23,
+   "options": [
+    {
+     "code": "BC",
+     "label": "British Columbia",
+     "local": 5
+    },
+    {
+     "code": "ON",
+     "label": "Ontario",
+     "local": 72
+    },
+    {
+     "code": "QC",
+     "label": "Quebec",
+     "local": 12
+    },
+    {
+     "code": "AB",
+     "label": "Alberta",
+     "local": 9
+    },
+    {
+     "code": "MB",
+     "label": "Manitoba",
+     "local": 1
+    },
+    {
+     "code": "SK",
+     "label": "Saskatchewan",
+     "local": 0
+    },
+    {
+     "code": "NS",
+     "label": "Nova Scotia",
+     "local": 1
+    },
+    {
+     "code": "NB",
+     "label": "New Brunswick",
+     "local": 0
+    },
+    {
+     "code": "NL",
+     "label": "Newfoundland and Labrador",
+     "local": 0
+    },
+    {
+     "code": "PE",
+     "label": "Prince Edward Island",
+     "local": 0
+    },
+    {
+     "code": "NT",
+     "label": "Northwest Territories",
+     "local": 0
+    },
+    {
+     "code": "NU",
+     "label": "Nunavut",
+     "local": 0
+    },
+    {
+     "code": "YT",
+     "label": "Yukon",
+     "local": 0
+    }
+   ]
+  },
+  "counts": {
+   "pass": 306,
+   "reject": 3
+  },
+  "n": 309,
+  "policy": {
+   "remote": 184,
+   "hybrid": 28,
+   "onsite": 97
+  },
+  "sectorCounts": {
+   "analytics": 24,
+   "construction_trades": 3,
+   "content_comms": 17,
+   "data": 24,
+   "devops_cloud": 24,
+   "education": 9,
+   "engineering": 24,
+   "finance": 25,
+   "healthcare": 5,
+   "it_support": 5,
+   "legal": 11,
+   "operations_support": 24,
+   "other": 24,
+   "people_hr": 16,
+   "product_design": 24,
+   "sales_marketing": 26,
+   "security": 24
+  },
+  "postings": [
+   {
+    "id": "workday:manulife:7f5f025",
+    "sector": "finance",
+    "title": "External Wholesaler Canada Insurance",
+    "company": "Manulife",
+    "location": "CAN, British Columbia - Full Time Remote",
+    "remote_policy": "remote",
+    "places": [
+     "BC"
+    ],
+    "salary": "",
+    "source": "careers:manulife",
+    "posted_at": "2026-09-18"
+   },
+   {
+    "id": "workday:manulife:10aabe7",
+    "sector": "product_design",
+    "title": "Product Owner, Fraud, Waste & Abuse",
+    "company": "Manulife",
+    "location": "CAN, Ontario - Full Time Remote",
+    "remote_policy": "remote",
+    "places": [
+     "ON"
+    ],
+    "salary": "",
+    "source": "careers:manulife",
+    "posted_at": "2026-09-18"
+   },
+   {
+    "id": "workday:manulife:1daa5d5",
+    "sector": "analytics",
+    "title": "Bilingual Disability Case Analyst/Case Manager",
+    "company": "Manulife",
+    "location": "CAN, Quebec - Full Time Remote",
+    "remote_policy": "remote",
+    "places": [
+     "QC"
+    ],
+    "salary": "",
+    "source": "careers:manulife",
+    "posted_at": "2026-09-17"
+   },
+   {
+    "id": "workday:manulife:e230489",
+    "sector": "sales_marketing",
+    "title": "Inside Business Development Manager - Broker Sales",
+    "company": "Manulife",
+    "location": "CAN, Ontario - Full Time Remote",
+    "remote_policy": "remote",
+    "places": [
+     "ON"
+    ],
+    "salary": "",
+    "source": "careers:manulife",
+    "posted_at": "2026-09-17"
+   },
+   {
+    "id": "ashby:oyster:65e78677-d9",
+    "sector": "operations_support",
+    "title": "Customer Success Manager (Americas)",
+    "company": "Oyster",
+    "location": "The Americas",
+    "remote_policy": "remote",
+    "places": [],
+    "salary": "",
+    "source": "careers:oyster",
+    "posted_at": "2026-05-11"
+   },
+   {
+    "id": "ashby:andela:9829c4f1-54",
+    "sector": "engineering",
+    "title": "Staff Fullstack Engineer",
+    "company": "Andela",
+    "location": "North America",
+    "remote_policy": "remote",
+    "places": [],
+    "salary": "",
+    "source": "careers:andela",
+    "posted_at": "2026-03-04"
+   },
+   {
+    "id": "ashby:posthog:693ba66a-1",
+    "sector": "content_comms",
+    "title": "Technical Staff Writer (Blogs & Newsletters)",
+    "company": "Posthog",
+    "location": "Remote",
+    "remote_policy": "remote",
+    "places": [],
+    "salary": "",
+    "source": "careers:posthog",
+    "posted_at": "2026-09-08"
+   },
+   {
+    "id": "ashby:supabase:6c9de03c-",
+    "sector": "devops_cloud",
+    "title": "Platform Engineer, Edge & Networking",
+    "company": "Supabase",
+    "location": "Remote, Global",
+    "remote_policy": "remote",
+    "places": [],
+    "salary": "",
+    "source": "careers:supabase",
+    "posted_at": "2026-09-14"
+   },
+   {
+    "id": "ashby:supabase:8fa1c7a0-",
+    "sector": "security",
+    "title": "Platform Security Engineer (AMER/APAC)",
+    "company": "Supabase",
+    "location": "Remote, Global",
+    "remote_policy": "remote",
+    "places": [],
+    "salary": "",
+    "source": "careers:supabase",
+    "posted_at": "2026-09-02"
+   },
+   {
+    "id": "ashby:supabase:f52fd120-",
+    "sector": "other",
+    "title": "Technical Account Management (TAM) Leader",
+    "company": "Supabase",
+    "location": "Remote, Global",
+    "remote_policy": "remote",
+    "places": [],
+    "salary": "",
+    "source": "careers:supabase",
+    "posted_at": "2026-08-24"
+   },
+   {
+    "id": "ashby:linear:fb4b6076-b9",
+    "sector": "people_hr",
+    "title": "Technical Recruiter",
+    "company": "Linear",
+    "location": "North America",
+    "remote_policy": "remote",
+    "places": [],
+    "salary": "",
+    "source": "careers:linear",
+    "posted_at": "2026-08-14"
+   },
+   {
+    "id": "gh:canonical:6783943",
+    "sector": "data",
+    "title": "MLOps Field Engineer",
+    "company": "Canonical",
+    "location": "Home based - Worldwide",
+    "remote_policy": "remote",
+    "places": [],
+    "salary": "",
+    "source": "careers:canonical",
+    "posted_at": "2026-08-05"
+   },
+   {
+    "id": "gh:canonical:7569101",
+    "sector": "it_support",
+    "title": "Linux Desktop Support Engineer (London UK office)",
+    "company": "Canonical",
+    "location": "Home Based - Worldwide",
+    "remote_policy": "remote",
+    "places": [],
+    "salary": "",
+    "source": "careers:canonical",
+    "posted_at": "2026-08-05"
+   },
+   {
+    "id": "gh:twilio:8084593",
+    "sector": "legal",
+    "title": "Senior Counsel, Commercial",
+    "company": "Twilio",
+    "location": "Remote - Canada",
+    "remote_policy": "remote",
+    "places": [],
+    "salary": "",
+    "source": "careers:twilio",
+    "posted_at": "2026-09-02"
+   },
+   {
+    "id": "wwr:9d40c3209437dfaa",
+    "sector": "healthcare",
+    "title": "Spanish-Speaking Virtual Medical Assistant (Bilingual English/Spanish)",
+    "company": "Advanced Shoulder Knee Ortho",
+    "location": "Anywhere in the World",
+    "remote_policy": "remote",
+    "places": [],
+    "salary": "",
+    "source": "wwr",
+    "posted_at": "2026-07-28"
+   },
+   {
+    "id": "wwr:500b2592a77e46f0",
+    "sector": "education",
+    "title": "Online English Teacher",
+    "company": "Native Camp",
+    "location": "Anywhere in the World",
+    "remote_policy": "remote",
+    "places": [],
+    "salary": "",
+    "source": "wwr",
+    "posted_at": "2026-08-21"
+   },
+   {
+    "id": "himalayas:d146b0ad3af6f1",
+    "sector": "construction_trades",
+    "title": "Civil Engineer",
+    "company": "micro1",
+    "location": "remote",
+    "remote_policy": "remote",
+    "places": [],
+    "salary": "$50–$100",
+    "source": "himalayas",
+    "posted_at": ""
+   },
+   {
+    "id": "workday:sunlife:00800262",
+    "sector": "other",
+    "title": "Director, Claims Risk Management",
+    "company": "Sun Life",
+    "location": "Ontario Telecommuters",
+    "remote_policy": "onsite",
+    "places": [
+     "ON"
+    ],
+    "salary": "",
+    "source": "careers:sunlife",
+    "posted_at": "2026-09-17"
+   }
+  ],
+  "companies": [
+   {
+    "name": "Canonical",
+    "n": 31,
+    "remote": 31,
+    "sectors": [
+     "security",
+     "operations_support"
+    ],
+    "source": "careers:canonical"
+   },
+   {
+    "name": "BMO",
+    "n": 29,
+    "remote": 2,
+    "sectors": [
+     "finance",
+     "analytics"
+    ],
+    "source": "careers:bmo"
+   },
+   {
+    "name": "Manulife",
+    "n": 22,
+    "remote": 5,
+    "sectors": [
+     "finance",
+     "engineering"
+    ],
+    "source": "careers:manulife"
+   },
+   {
+    "name": "CIBC",
+    "n": 20,
+    "remote": 0,
+    "sectors": [
+     "finance",
+     "analytics"
+    ],
+    "source": "careers:cibc"
+   },
+   {
+    "name": "Sun Life",
+    "n": 18,
+    "remote": 0,
+    "sectors": [
+     "finance",
+     "engineering"
+    ],
+    "source": "careers:sunlife"
+   },
+   {
+    "name": "Gitlab",
+    "n": 18,
+    "remote": 18,
+    "sectors": [
+     "security",
+     "product_design"
+    ],
+    "source": "careers:gitlab"
+   },
+   {
+    "name": "Supabase",
+    "n": 16,
+    "remote": 16,
+    "sectors": [
+     "engineering",
+     "product_design"
+    ],
+    "source": "careers:supabase"
+   },
+   {
+    "name": "Linear",
+    "n": 16,
+    "remote": 16,
+    "sectors": [
+     "engineering",
+     "operations_support"
+    ],
+    "source": "careers:linear"
+   },
+   {
+    "name": "TD Bank",
+    "n": 15,
+    "remote": 0,
+    "sectors": [
+     "finance",
+     "other"
+    ],
+    "source": "careers:td"
+   },
+   {
+    "name": "Elastic",
+    "n": 10,
+    "remote": 0,
+    "sectors": [
+     "product_design",
+     "security"
+    ],
+    "source": "careers:elastic"
+   },
+   {
+    "name": "Andela",
+    "n": 9,
+    "remote": 9,
+    "sectors": [
+     "sales_marketing",
+     "product_design"
+    ],
+    "source": "careers:andela"
+   },
+   {
+    "name": "Grafanalabs",
+    "n": 6,
+    "remote": 6,
+    "sectors": [
+     "product_design",
+     "data"
+    ],
+    "source": "careers:grafanalabs"
+   }
+  ]
+ },
+ "ke": {
+  "day": "2026-09-18",
+  "labels": {
+   "engineering": "Software & IT",
+   "data": "Data & AI",
+   "analytics": "Analytics & insights",
+   "security": "Cybersecurity",
+   "product_design": "Product & design",
+   "sales_marketing": "Sales & marketing",
+   "finance": "Finance & banking",
+   "operations_support": "Operations & support",
+   "people_hr": "People & HR",
+   "healthcare": "Healthcare",
+   "humanitarian": "Humanitarian & development",
+   "education": "Education",
+   "legal": "Legal & compliance",
+   "construction_trades": "Construction & trades",
+   "hospitality": "Hospitality & tourism",
+   "it_support": "IT support & systems",
+   "agriculture": "Agriculture",
+   "devops_cloud": "DevOps & cloud",
+   "content_comms": "Content & communications",
+   "other": "Other"
+  },
+  "places": {
+   "remote": 202,
+   "unplaced": 0,
+   "options": [
+    {
+     "code": "KE",
+     "label": "Kenya",
+     "local": 111
+    }
+   ]
+  },
+  "counts": {
+   "pass": 313,
+   "reject": 10
+  },
+  "n": 323,
+  "policy": {
+   "remote": 202,
+   "hybrid": 4,
+   "onsite": 117
+  },
+  "sectorCounts": {
+   "agriculture": 6,
+   "analytics": 18,
+   "construction_trades": 5,
+   "content_comms": 15,
+   "data": 18,
+   "devops_cloud": 24,
+   "education": 10,
+   "engineering": 25,
+   "finance": 28,
+   "healthcare": 16,
+   "hospitality": 1,
+   "humanitarian": 14,
+   "it_support": 6,
+   "legal": 12,
+   "operations_support": 24,
+   "other": 28,
+   "people_hr": 8,
+   "product_design": 24,
+   "sales_marketing": 24,
+   "security": 17
+  },
+  "postings": [
+   {
+    "id": "reliefweb:4227053",
+    "sector": "humanitarian",
+    "title": "Remote evaluation consultant (based in any country)",
+    "company": "Bodmando Consulting Group",
+    "location": "Remote",
+    "remote_policy": "remote",
+    "places": [],
+    "salary": "",
+    "source": "reliefweb",
+    "posted_at": "2026-08-26"
+   },
+   {
+    "id": "reliefweb:4228722",
+    "sector": "education",
+    "title": "Learning & Development Consultant (Project Based | Remote)",
+    "company": "Altamont Group",
+    "location": "Remote",
+    "remote_policy": "remote",
+    "places": [],
+    "salary": "",
+    "source": "reliefweb",
+    "posted_at": "2026-09-07"
+   },
+   {
+    "id": "reliefweb:4230061",
+    "sector": "data",
+    "title": "Consultancy in data science, predictive modelling, remote sensing, time series and methodological support for early warn",
+    "company": "Action Against Hunger",
+    "location": "Remote",
+    "remote_policy": "remote",
+    "places": [],
+    "salary": "",
+    "source": "reliefweb",
+    "posted_at": "2026-09-16"
+   },
+   {
+    "id": "ashby:oyster:51d58fcb-8e",
+    "sector": "engineering",
+    "title": "Senior Engineer (Platform)",
+    "company": "Oyster",
+    "location": "EMEA",
+    "remote_policy": "remote",
+    "places": [
+     "ANY"
+    ],
+    "salary": "",
+    "source": "careers:oyster",
+    "posted_at": "2026-08-10"
+   },
+   {
+    "id": "ashby:oyster:3670104d-08",
+    "sector": "operations_support",
+    "title": "Customer Success Manager (EMEA)",
+    "company": "Oyster",
+    "location": "EMEA",
+    "remote_policy": "remote",
+    "places": [
+     "ANY"
+    ],
+    "salary": "",
+    "source": "careers:oyster",
+    "posted_at": "2026-07-21"
+   },
+   {
+    "id": "ashby:oyster:92ee57c2-7e",
+    "sector": "legal",
+    "title": "Legal Counsel (Employment Products)",
+    "company": "Oyster",
+    "location": "EMEA",
+    "remote_policy": "remote",
+    "places": [
+     "ANY"
+    ],
+    "salary": "",
+    "source": "careers:oyster",
+    "posted_at": "2026-07-17"
+   },
+   {
+    "id": "ashby:oyster:be19a453-c7",
+    "sector": "product_design",
+    "title": "Lead Product Manager",
+    "company": "Oyster",
+    "location": "EMEA",
+    "remote_policy": "remote",
+    "places": [
+     "ANY"
+    ],
+    "salary": "",
+    "source": "careers:oyster",
+    "posted_at": "2026-07-17"
+   },
+   {
+    "id": "ashby:posthog:693ba66a-1",
+    "sector": "content_comms",
+    "title": "Technical Staff Writer (Blogs & Newsletters)",
+    "company": "Posthog",
+    "location": "Remote",
+    "remote_policy": "remote",
+    "places": [],
+    "salary": "",
+    "source": "careers:posthog",
+    "posted_at": "2026-09-08"
+   },
+   {
+    "id": "ashby:posthog:36d5ce14-8",
+    "sector": "security",
+    "title": "Security Engineer",
+    "company": "Posthog",
+    "location": "Remote (EMEA)",
+    "remote_policy": "remote",
+    "places": [
+     "ANY"
+    ],
+    "salary": "",
+    "source": "careers:posthog",
+    "posted_at": "2026-09-11"
+   },
+   {
+    "id": "ashby:posthog:84de4a11-a",
+    "sector": "sales_marketing",
+    "title": "Business Development Lead - Americas",
+    "company": "Posthog",
+    "location": "Remote",
+    "remote_policy": "remote",
+    "places": [],
+    "salary": "",
+    "source": "careers:posthog",
+    "posted_at": "2026-07-02"
+   },
+   {
+    "id": "ashby:supabase:6c9de03c-",
+    "sector": "devops_cloud",
+    "title": "Platform Engineer, Edge & Networking",
+    "company": "Supabase",
+    "location": "Remote, Global",
+    "remote_policy": "remote",
+    "places": [
+     "ANY"
+    ],
+    "salary": "",
+    "source": "careers:supabase",
+    "posted_at": "2026-09-14"
+   },
+   {
+    "id": "ashby:supabase:f52fd120-",
+    "sector": "other",
+    "title": "Technical Account Management (TAM) Leader",
+    "company": "Supabase",
+    "location": "Remote, Global",
+    "remote_policy": "remote",
+    "places": [
+     "ANY"
+    ],
+    "salary": "",
+    "source": "careers:supabase",
+    "posted_at": "2026-08-24"
+   },
+   {
+    "id": "ashby:supabase:59083a14-",
+    "sector": "analytics",
+    "title": "Senior Data Analyst - Marketing",
+    "company": "Supabase",
+    "location": "Remote, Global",
+    "remote_policy": "remote",
+    "places": [
+     "ANY"
+    ],
+    "salary": "",
+    "source": "careers:supabase",
+    "posted_at": "2026-08-04"
+   },
+   {
+    "id": "gh:remotecom:7886253003",
+    "sector": "finance",
+    "title": "Payroll Specialist Lead - France",
+    "company": "Remotecom",
+    "location": "Remote-EMEA",
+    "remote_policy": "remote",
+    "places": [
+     "ANY"
+    ],
+    "salary": "",
+    "source": "careers:remotecom",
+    "posted_at": "2026-09-08"
+   },
+   {
+    "id": "gh:canonical:6762650",
+    "sector": "people_hr",
+    "title": "Senior HR Generalist - EMEA",
+    "company": "Canonical",
+    "location": "Home Based - Worldwide",
+    "remote_policy": "remote",
+    "places": [
+     "ANY"
+    ],
+    "salary": "",
+    "source": "careers:canonical",
+    "posted_at": "2026-08-05"
+   },
+   {
+    "id": "gh:canonical:7569101",
+    "sector": "it_support",
+    "title": "Linux Desktop Support Engineer (London UK office)",
+    "company": "Canonical",
+    "location": "Home Based - Worldwide",
+    "remote_policy": "remote",
+    "places": [
+     "ANY"
+    ],
+    "salary": "",
+    "source": "careers:canonical",
+    "posted_at": "2026-08-05"
+   },
+   {
+    "id": "wwr:9d40c3209437dfaa",
+    "sector": "healthcare",
+    "title": "Spanish-Speaking Virtual Medical Assistant (Bilingual English/Spanish)",
+    "company": "Advanced Shoulder Knee Ortho",
+    "location": "Anywhere in the World",
+    "remote_policy": "remote",
+    "places": [
+     "ANY"
+    ],
+    "salary": "",
+    "source": "wwr",
+    "posted_at": "2026-07-28"
+   },
+   {
+    "id": "himalayas:d146b0ad3af6f1",
+    "sector": "construction_trades",
+    "title": "Civil Engineer",
+    "company": "micro1",
+    "location": "remote",
+    "remote_policy": "remote",
+    "places": [],
+    "salary": "$50–$100",
+    "source": "himalayas",
+    "posted_at": ""
+   }
+  ],
+  "companies": [
+   {
+    "name": "Canonical",
+    "n": 35,
+    "remote": 35,
+    "sectors": [
+     "engineering",
+     "security"
+    ],
+    "source": "careers:canonical"
+   },
+   {
+    "name": "One Acre Fund",
+    "n": 20,
+    "remote": 0,
+    "sectors": [
+     "operations_support",
+     "agriculture"
+    ],
+    "source": "reliefweb"
+   },
+   {
+    "name": "Supabase",
+    "n": 17,
+    "remote": 17,
+    "sectors": [
+     "engineering",
+     "product_design"
+    ],
+    "source": "careers:supabase"
+   },
+   {
+    "name": "International Rescue Committee",
+    "n": 15,
+    "remote": 0,
+    "sectors": [
+     "humanitarian",
+     "operations_support"
+    ],
+    "source": "reliefweb"
+   },
+   {
+    "name": "Remotecom",
+    "n": 11,
+    "remote": 11,
+    "sectors": [
+     "finance",
+     "other"
+    ],
+    "source": "careers:remotecom"
+   },
+   {
+    "name": "M Kopa",
+    "n": 8,
+    "remote": 0,
+    "sectors": [
+     "other",
+     "engineering"
+    ],
+    "source": "careers:m-kopa"
+   },
+   {
+    "name": "Posthog",
+    "n": 6,
+    "remote": 6,
+    "sectors": [
+     "operations_support",
+     "content_comms"
+    ],
+    "source": "careers:posthog"
+   },
+   {
+    "name": "Cloudflare",
+    "n": 6,
+    "remote": 6,
+    "sectors": [
+     "sales_marketing",
+     "engineering"
+    ],
+    "source": "careers:cloudflare"
+   },
+   {
+    "name": "International Union for Conservation of Nature",
+    "n": 5,
+    "remote": 0,
+    "sectors": [
+     "other",
+     "humanitarian"
+    ],
+    "source": "reliefweb"
+   },
+   {
+    "name": "micro1",
+    "n": 5,
+    "remote": 5,
+    "sectors": [
+     "analytics",
+     "construction_trades"
+    ],
+    "source": "himalayas"
+   },
+   {
+    "name": "Oyster",
+    "n": 4,
+    "remote": 4,
+    "sectors": [
+     "engineering",
+     "operations_support"
+    ],
+    "source": "careers:oyster"
+   },
+   {
+    "name": "Datadog",
+    "n": 4,
+    "remote": 4,
+    "sectors": [
+     "engineering"
+    ],
+    "source": "careers:datadog"
+   }
+  ]
+ }
+}

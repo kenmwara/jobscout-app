@@ -1,0 +1,2377 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>JobScout — an LLM reads the job market honestly</title>
+<meta name="description" content="Live demo: Claude scores this morning's real job postings against a real profile — honest verdicts, visible reasoning, and every gate decision shown as a receipt.">
+<!-- OpenGraph. Without these the site served a 200 and a <title> and nothing else, so
+     LinkedIn refused it outright ("We couldn't generate a preview for this link") and
+     every other platform posted a bare grey link. og:image MUST be an absolute URL. -->
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://jobscout.page/">
+<link rel="canonical" href="https://jobscout.page/">
+<meta property="og:site_name" content="JobScout">
+<meta property="og:title" content="JobScout — watch an LLM read the job market honestly">
+<meta property="og:description" content="Real postings, scored live by Claude. Every reason shown.">
+<meta property="og:image" content="https://jobscout.page/icons/og-1280x640.png">
+<meta property="og:image:width" content="1280">
+<meta property="og:image:height" content="640">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="JobScout — an LLM reads the job market honestly">
+<meta name="twitter:description" content="Real postings, scored live by Claude. Every reason shown.">
+<meta name="twitter:image" content="https://jobscout.page/icons/og-1280x640.png">
+<link rel="icon" href="/icons/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/icons/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="icon" href="/icons/favicon-16.png" sizes="16x16" type="image/png">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon-180.png">
+<link rel="manifest" href="/site.webmanifest">
+<meta name="theme-color" content="#080331">
+<link rel="stylesheet" href="fonts-embedded.css">
+<script>if(/^(nairobi|ke)\./.test(location.hostname)||/[?&]market=ke\b/.test(location.search))document.documentElement.dataset.market="ke";</script>
+<style>
+/* ══ JobScout v3 — the Parallel-study redesign, 2026-09-19 ═══════════════
+   Two authored token sets (CA light, KE dark); nothing outside them uses a
+   hex. Notes and what was deliberately not copied: docs/REDESIGN-parallel.md
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* ═══════════════════════════════════════════════════════════════════════
+   TWO AUTHORED TOKEN SETS. Nothing below the token blocks uses a hex.
+   CA = light (the existing JobScout cream + indigo, Brand Kit v2.2).
+   KE = dark  (authored, NOT an inversion — see docs/REDESIGN-parallel.md).
+   ═══════════════════════════════════════════════════════════════════════ */
+html[data-market="ca"]{
+  --canvas:#f4f1ea;        /* page */
+  --canvas-2:#faf8f4;      /* alternating band */
+  --surface:#ffffff;       /* cards, input */
+  --ink:#080331;           /* display + primary text */
+  --text:#1a1636;
+  --text2:#565173;
+  --text3:#83809a;
+  --hair:rgba(8,3,49,.10);
+  --hair2:rgba(8,3,49,.16);
+  --accent:#4865ff;        /* indigo — links, active state */
+  --accent-ink:#ffffff;
+  --live:#ff6d39;          /* the one chromatic dot */
+  --btn:#080331;
+  --btn-ink:#ffffff;
+  --chip:#ffffff;
+  --chip-ink:#080331;
+  --scrim:rgba(8,3,49,.55);
+  --sh-hover:0 6px 27px rgba(8,3,49,.09), 0 1.8px 8px rgba(8,3,49,.05), 0 .75px 3.4px rgba(8,3,49,.04);
+  --trough:rgba(8,3,49,.06);
+  --hero-img:linear-gradient(140deg,#2b2350,#4865ff 48%,#f098d7);
+}
+html[data-market="ke"]{
+  --canvas:#0c0f0d;
+  --canvas-2:#131815;
+  --surface:#181e1a;
+  --ink:#f2f5f1;
+  --text:#e6ebe4;
+  --text2:#a8b3a6;
+  --text3:#7d8a7c;
+  --hair:rgba(242,245,241,.12);
+  --hair2:rgba(242,245,241,.22);
+  --accent:#2fbd6a;        /* Kenya green, lifted for dark ground */
+  --accent-ink:#06120a;
+  --live:#ef4b3c;          /* Kenya red as the live dot */
+  --btn:#2fbd6a;
+  --btn-ink:#06120a;
+  --chip:#1e2621;
+  --chip-ink:#e6ebe4;
+  --scrim:rgba(4,8,5,.62);
+  --sh-hover:0 6px 27px rgba(0,0,0,.45), 0 1.8px 8px rgba(0,0,0,.3);
+  --trough:rgba(242,245,241,.07);
+  --hero-img:linear-gradient(140deg,#06120a,#0b3d22 44%,#2fbd6a);
+}
+:root{
+  --serif:"Newsreader",Georgia,"Times New Roman",serif;
+  --sans:"Inter",-apple-system,system-ui,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  --r-card:20px; --r-input:14px; --r-btn:10px; --r-pill:9999px;
+  --max:1200px;
+  /* motion, measured off the reference's own stylesheet */
+  --ease:cubic-bezier(.22,1,.36,1);        /* easeOutQuint — their workhorse */
+  --spring:cubic-bezier(.22,1.5,.36,1);    /* overshoot — their signature */
+  --t-micro:.18s; --t-ui:.3s; --t-rev:.62s;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{
+  background:var(--canvas); color:var(--text);
+  font:400 16px/1.5 var(--sans); letter-spacing:-.011em;
+  -webkit-font-smoothing:antialiased;
+  transition:background .45s var(--ease), color .45s var(--ease);
+}
+.wrap{max-width:var(--max);margin:0 auto;padding:0 24px}
+a{color:inherit}
+
+/* ── site header ────────────────────────────────────────────────────── */
+header.site{padding:22px 0}
+header.site .row{display:flex;align-items:center;gap:20px}
+.brand{display:flex;align-items:center;gap:10px;font:500 20px/1 var(--serif);color:var(--ink);letter-spacing:-.02em}
+.brand svg{width:26px;height:26px;display:block;fill:var(--accent)}
+nav.main{margin-left:auto;display:flex;align-items:center;gap:8px}
+nav.main a{
+  font:500 14px/1 var(--sans);color:var(--text2);text-decoration:none;
+  padding:9px 12px;border-radius:var(--r-btn)
+}
+nav.main a:hover{color:var(--ink)}
+
+/* The market switch, in their Talent/Employers shape: dead centre of the
+   header, a translucent trough, and the active half a solid light pill with the
+   one soft shadow. Theirs is 12px radius, not a full pill. */
+.mkt{
+  position:absolute;left:50%;transform:translateX(-50%);
+  display:flex;background:var(--trough);border-radius:14px;padding:4px;gap:2px;
+  backdrop-filter:blur(8px);border:1px solid var(--hair)
+}
+.mkt button{
+  appearance:none;border:0;background:transparent;cursor:pointer;
+  font:500 14px/1 var(--sans);color:var(--text2);padding:10px 20px;border-radius:11px;
+  display:flex;align-items:center;gap:8px;transition:all .3s var(--ease)
+}
+.mkt button[aria-pressed="true"]{
+  background:var(--surface);color:var(--ink);box-shadow:var(--sh-hover)
+}
+header.site .row{position:relative}
+@media(max-width:860px){
+  .mkt{position:static;transform:none;margin-left:auto}
+  .mkt button{padding:9px 13px}
+}
+.mkt .flag{width:16px;height:11px;border-radius:2px;display:block}
+
+/* ── hero ───────────────────────────────────────────────────────────── */
+.hero{position:relative;border-radius:var(--r-card);overflow:hidden;margin:6px 0 0;
+      min-height:560px;display:flex;align-items:center;justify-content:center;isolation:isolate}
+.hero .bg{position:absolute;inset:0;background:var(--hero-img);z-index:-2}
+.hero .bg::after{content:"";position:absolute;inset:0;background:var(--scrim)}
+.hero .inner{width:100%;max-width:760px;padding:72px 24px;text-align:center;color:#fff}
+h1.display{
+  font:400 clamp(40px,7.2vw,72px)/1.06 var(--serif);
+  letter-spacing:-.03em;margin:0 0 30px;color:#fff;text-wrap:balance
+}
+h1.display .dot{color:var(--live)}
+
+/* the one box: resume in, run out */
+.box{
+  display:flex;align-items:center;gap:10px;background:var(--surface);
+  border-radius:var(--r-input);padding:8px 8px 8px 20px;box-shadow:var(--sh-hover);
+  text-align:left
+}
+.box .ic{flex:0 0 auto;width:18px;height:18px;opacity:.5}
+/* A textarea, not an input: `<input type=text>` strips newlines on paste, so a
+   pasted resume arrived as one long line and read as a search query. Starts one
+   row tall and grows to about five. */
+.box textarea{
+  flex:1;min-width:0;appearance:none;border:0;background:transparent;outline:none;
+  font:400 16px/1.4 var(--sans);color:var(--ink);padding:12px 0;
+  resize:none;max-height:132px;overflow-y:auto;scrollbar-width:thin
+}
+.box textarea::placeholder{color:var(--text3)}
+.box{align-items:flex-end}
+.box .ic,.box .hint,.box .sep,.box .up,.box .go{margin-bottom:3px}
+.box .go{
+  flex:0 0 auto;width:42px;height:42px;border-radius:var(--r-pill);border:0;cursor:pointer;
+  background:var(--btn);color:var(--btn-ink);font-size:17px;display:grid;place-items:center;
+  transition:transform .25s var(--ease)
+}
+.box .go:hover{transform:translateX(2px)}
+/* Says what Enter will do with what is currently in the box. The box takes a
+   job title OR a whole resume; guessing silently would be the wrong kind of
+   clever, so it states the guess and lets you see it change as you type. */
+.box .hint{
+  flex:0 0 auto;font:500 12px/1 var(--sans);letter-spacing:.01em;
+  color:var(--text2);background:var(--canvas-2);border:1px solid var(--hair);
+  border-radius:var(--r-pill);padding:7px 11px;white-space:nowrap
+}
+.box .hint[hidden]{display:none}
+.box .sep{width:1px;height:26px;background:var(--hair)}
+.box .up{
+  flex:0 0 auto;font:500 13.5px/1 var(--sans);color:var(--text2);
+  padding:10px 12px;border-radius:var(--r-btn);cursor:pointer;white-space:nowrap
+}
+.box .up:hover{background:var(--canvas-2);color:var(--ink)}
+
+/* tab row — ONLY axes the feed actually has */
+.tabs{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:18px}
+.tabs a{
+  font:500 13.5px/1 var(--sans);text-decoration:none;color:#fff;
+  background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.26);
+  padding:10px 17px;border-radius:var(--r-pill);backdrop-filter:blur(6px);
+  transition:all .25s var(--ease)
+}
+.tabs a:hover{background:#fff;color:var(--ink);border-color:#fff}
+.tabs a.all{background:transparent;border-color:rgba(255,255,255,.4)}
+.liveline{
+  margin:24px 0 0;font:500 13.5px/1 var(--sans);color:rgba(255,255,255,.88);
+  display:flex;align-items:center;justify-content:center;gap:8px
+}
+.liveline .pip{width:7px;height:7px;border-radius:50%;background:var(--live);display:block}
+
+/* ── bands ──────────────────────────────────────────────────────────── */
+section.band{padding:88px 0;background:var(--canvas-2);margin-top:0}
+section.plain{padding:88px 0}
+h2.sec{font:400 clamp(26px,3vw,34px)/1.25 var(--serif);letter-spacing:-.02em;color:var(--ink);margin:0 0 8px}
+p.lede{font:400 16px/1.6 var(--sans);color:var(--text2);max-width:520px;margin:0}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:36px}
+.card{
+  background:var(--surface);border:1px solid var(--hair);border-radius:var(--r-card);
+  padding:24px;display:flex;flex-direction:column;justify-content:space-between;gap:26px;
+  transition:box-shadow .3s var(--ease),transform .3s var(--ease)
+}
+.card:hover{box-shadow:var(--sh-hover);transform:translateY(-2px)}
+.card h3{font:400 21px/1.3 var(--serif);letter-spacing:-.02em;color:var(--ink);margin:0 0 7px}
+.card p{margin:0;font:400 14.5px/1.55 var(--sans);color:var(--text2)}
+.mini{
+  background:var(--canvas-2);border:1px solid var(--hair);border-radius:12px;padding:13px;
+  font:500 12.5px/1 var(--sans);color:var(--text3);display:flex;align-items:center;gap:9px
+}
+.mini .badge{margin-left:auto;background:var(--accent);color:var(--accent-ink);border-radius:var(--r-pill);padding:5px 9px;font-size:11.5px}
+.manifesto{font:400 clamp(28px,4.4vw,48px)/1.18 var(--serif);letter-spacing:-.025em;color:var(--ink);margin:0;max-width:820px}
+
+/* ── browse view ────────────────────────────────────────────────────── */
+.browsehead{padding:40px 0 0}
+.browsehead h1{font:400 clamp(30px,4.4vw,46px)/1.1 var(--serif);letter-spacing:-.025em;color:var(--ink);margin:0 0 22px}
+.searchrow{display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--hair);
+           border-radius:var(--r-input);padding:6px 6px 6px 18px}
+.searchrow input{flex:1;border:0;background:transparent;outline:none;font:400 15.5px/1 var(--sans);color:var(--ink);padding:13px 0}
+.filters{display:flex;gap:9px;flex-wrap:wrap;margin:16px 0 0;align-items:center}
+.f{
+  appearance:none;display:inline-flex;align-items:center;gap:8px;cursor:pointer;
+  background:var(--surface);border:1px solid var(--hair);border-radius:var(--r-pill);
+  padding:10px 16px;font:500 13.5px/1 var(--sans);color:var(--text);
+  transition:all .22s var(--ease)
+}
+.f:hover{border-color:var(--hair2)}
+.f[aria-pressed="true"]{background:var(--ink);color:var(--canvas);border-color:var(--ink)}
+.f .n{opacity:.55;font-variant-numeric:tabular-nums}
+.f.sw{padding-left:10px}
+.sw .track{width:32px;height:19px;border-radius:var(--r-pill);background:var(--hair2);position:relative;transition:background .25s var(--ease)}
+.sw .track::after{content:"";position:absolute;top:2px;left:2px;width:15px;height:15px;border-radius:50%;
+                  background:var(--surface);transition:transform .25s var(--ease)}
+.sw[aria-pressed="true"] .track{background:var(--accent)}
+.sw[aria-pressed="true"] .track::after{transform:translateX(13px)}
+.f.right{margin-left:auto}
+/* the sector row on Browse: its own band under the filters, and a single
+   scrollable line on a phone rather than four wrapped ones */
+.secrow{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0 0;
+  padding:14px 0 0;border-top:1px solid var(--hair)}
+.secrow:empty{display:none}
+.secrow button{
+  appearance:none;cursor:pointer;background:transparent;border:1px solid var(--hair);
+  border-radius:var(--r-pill);padding:9px 15px;color:var(--text2);
+  font:500 13.5px/1 var(--sans);transition:all var(--t-micro) var(--ease)
+}
+.secrow button:hover{border-color:var(--hair2);color:var(--ink)}
+.secrow button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:transparent}
+.secrow button .n{opacity:.55;font-variant-numeric:tabular-nums}
+@media(max-width:620px){
+  .secrow{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;
+    margin-right:-16px;padding-right:16px}
+  .secrow::-webkit-scrollbar{display:none}
+  .secrow button{flex:0 0 auto}
+}
+.count{margin:26px 0 14px;font:500 14px/1 var(--sans);color:var(--text2);font-variant-numeric:tabular-nums}
+.jobs{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+.job{
+  background:var(--surface);border:1px solid var(--hair);border-radius:var(--r-card);
+  padding:20px;display:flex;flex-direction:column;justify-content:space-between;gap:26px;
+  min-height:190px;cursor:pointer;transition:box-shadow .3s var(--ease)
+}
+.job:hover{box-shadow:var(--sh-hover)}
+.job .top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.logo{width:34px;height:34px;border-radius:8px;background:var(--canvas-2);border:1px solid var(--hair);
+      display:grid;place-items:center;font:600 13px/1 var(--sans);color:var(--text2);flex:0 0 auto}
+.job .age{font:400 12.5px/1 var(--sans);color:var(--text3);white-space:nowrap}
+.job .co{font:400 14px/1 var(--sans);color:var(--text2);margin:0 0 6px}
+.job .role{font:400 19px/1.3 var(--serif);letter-spacing:-.02em;color:var(--ink);margin:0}
+.job .foot{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.job .loc{font:400 13.5px/1.35 var(--sans);color:var(--text2)}
+.pill{font:500 12.5px/1 var(--sans);border:1px solid var(--hair2);border-radius:var(--r-pill);
+      padding:7px 12px;color:var(--text);white-space:nowrap}
+.pill.on{background:var(--accent);color:var(--accent-ink);border-color:transparent}
+
+/* run-results variant: same card, plus a score */
+/* The bearing rose — the original grade mark, not a generic progress ring.
+   Eight dots on the logo's own ring; the fit lights them clockwise from
+   bearing 000 and the lit ones bloom in order. Nothing rotates, so the number
+   reads the same at any size. */
+.rose{width:64px;height:64px;flex:0 0 auto;display:block}
+.rose .fitnum{font:500 30px/1 var(--serif);text-anchor:middle}
+html.anim .rose .lit{transform:scale(.34);transform-origin:center;transform-box:fill-box;
+  opacity:0;transition:transform .42s var(--ease),opacity .42s var(--ease);
+  transition-delay:calc(var(--i) * 70ms)}
+html.anim .job.arrive .rose .lit,html.anim .job.shown .rose .lit{transform:none;opacity:1}
+.route{
+  font:500 10px/1 var(--sans);letter-spacing:.09em;text-transform:uppercase;
+  border-radius:var(--r-pill);padding:5px 9px;display:inline-block;white-space:nowrap
+}
+.verdict{font:500 13px/1.35 var(--sans);color:var(--text2)}
+
+/* Band colours. The originals were contrast-checked on cream and go muddy on
+   Kenya's near-black, so the dark market gets its own set rather than reusing
+   them. */
+html[data-market="ca"]{--b-auto:#114e0b;--b-ping:#1b1463;--b-unsure:#cc3600;--b-near:#333333;
+  --b-auto-bg:#e3f0e4;--b-ping-bg:#dce4fb;--b-unsure-bg:#ffe6da;--b-near-bg:#e9e8ee}
+html[data-market="ke"]{--b-auto:#5fd98c;--b-ping:#8fb3ff;--b-unsure:#ff9466;--b-near:#a8b3a6;
+  --b-auto-bg:rgba(95,217,140,.14);--b-ping-bg:rgba(143,179,255,.14);
+  --b-unsure-bg:rgba(255,148,102,.14);--b-near-bg:rgba(168,179,166,.14)}
+
+/* ── taxonomy footer ────────────────────────────────────────────────── */
+.taxtabs{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 26px}
+.taxtabs button{
+  appearance:none;cursor:pointer;background:transparent;border:1px solid transparent;
+  font:500 14px/1 var(--sans);color:var(--text2);padding:11px 18px;border-radius:var(--r-pill)
+}
+.taxtabs button[aria-pressed="true"]{background:var(--chip);border-color:var(--hair);color:var(--ink)}
+.taxgrid{display:grid;grid-template-columns:repeat(5,1fr);gap:14px}
+.tax{
+  background:var(--surface);border:1px solid var(--hair);border-radius:14px;padding:18px;
+  text-decoration:none;display:block;transition:border-color .22s var(--ease)
+}
+.tax:hover{border-color:var(--accent)}
+/* the tiles get the same counter-slide: name one way, count the other */
+.tax b,.tax span{display:block;transition:transform .42s var(--spring),color var(--t-ui) var(--ease)}
+html.anim .tax:hover b{transform:translateX(-4px);color:var(--accent)}
+html.anim .tax:hover span{transform:translateX(4px)}
+.tax b{display:block;font:500 15px/1.3 var(--sans);color:var(--ink);margin:0 0 5px}
+.tax span{font:400 13.5px/1 var(--sans);color:var(--text3)}
+footer.site{padding:70px 0 40px;border-top:1px solid var(--hair);margin-top:70px}
+.fgrid{display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr;gap:28px}
+.fgrid h4{font:600 11.5px/1 var(--sans);letter-spacing:.08em;text-transform:uppercase;color:var(--text3);margin:0 0 16px}
+.fgrid a{display:block;font:400 14.5px/1 var(--sans);color:var(--text2);text-decoration:none;margin:0 0 12px}
+.fgrid a:hover{color:var(--ink)}
+.fbrand{font:400 26px/1 var(--serif);color:var(--ink);letter-spacing:-.02em;margin:0 0 10px}
+.fnote{font:400 13.5px/1.6 var(--sans);color:var(--text3);max-width:270px;margin:0}
+.sources{margin-top:44px;padding-top:26px;border-top:1px solid var(--hair);
+         font:400 13px/1.7 var(--sans);color:var(--text3)}
+.sources b{font-weight:500;color:var(--text2)}
+
+/* ── mobile view ────────────────────────────────────────────────────── */
+.phones{display:flex;gap:40px;justify-content:center;flex-wrap:wrap;padding:48px 0 20px}
+.phone{width:300px}
+.phone .label{text-align:center;font:500 12.5px/1 var(--sans);color:var(--text3);margin:0 0 14px;
+              letter-spacing:.05em;text-transform:uppercase}
+.screen{
+  width:300px;height:620px;border-radius:38px;background:var(--canvas);
+  border:9px solid var(--ink);overflow:hidden;position:relative;
+  box-shadow:var(--sh-hover);display:flex;flex-direction:column
+}
+.screen .notch{height:26px;flex:0 0 auto;display:grid;place-items:center}
+.screen .notch i{display:block;width:96px;height:6px;border-radius:9999px;background:var(--hair2)}
+.screen .body{flex:1;overflow:hidden;padding:0 14px 14px}
+.mhead{display:flex;align-items:center;gap:8px;padding:6px 0 14px}
+.mhead .brand{font-size:15px;gap:7px}
+.mhead .brand svg{width:18px;height:18px}
+.mmkt{margin-left:auto;font:500 11px/1 var(--sans);background:var(--chip);border:1px solid var(--hair);
+      border-radius:9999px;padding:6px 10px;color:var(--text2)}
+.mhero{border-radius:16px;background:var(--hero-img);position:relative;padding:26px 16px;overflow:hidden;text-align:center}
+.mhero::before{content:"";position:absolute;inset:0;background:var(--scrim)}
+.mhero>*{position:relative}
+.mhero h2{font:400 27px/1.1 var(--serif);letter-spacing:-.025em;color:#fff;margin:0 0 16px}
+.mhero h2 .dot{color:var(--live)}
+.mbox{background:var(--surface);border-radius:12px;padding:6px 6px 6px 13px;display:flex;align-items:center;gap:7px}
+.mbox span{flex:1;font:400 12.5px/1 var(--sans);color:var(--text3);text-align:left}
+.mbox b{width:30px;height:30px;border-radius:9999px;background:var(--btn);color:var(--btn-ink);
+        display:grid;place-items:center;font-size:13px}
+.mtabs{display:flex;gap:6px;margin-top:12px;justify-content:center;flex-wrap:wrap}
+.mtabs i{font-style:normal;font:500 11px/1 var(--sans);color:#fff;background:rgba(255,255,255,.16);
+         border:1px solid rgba(255,255,255,.26);border-radius:9999px;padding:7px 11px}
+.mlist{margin-top:14px;display:flex;flex-direction:column;gap:10px}
+.mjob{background:var(--surface);border:1px solid var(--hair);border-radius:14px;padding:13px;
+      display:flex;gap:11px;align-items:flex-start}
+.mjob .logo{width:28px;height:28px;font-size:11px}
+.mjob .t{flex:1;min-width:0}
+.mjob .r{font:400 14.5px/1.25 var(--serif);color:var(--ink);margin:0 0 3px;letter-spacing:-.015em;
+         overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mjob .c{font:400 11.5px/1 var(--sans);color:var(--text2);margin:0 0 7px}
+.mjob .p{font:500 10.5px/1 var(--sans);border:1px solid var(--hair2);border-radius:9999px;padding:5px 8px;color:var(--text2)}
+.mfilters{display:flex;gap:6px;margin:0 0 12px;overflow:hidden}
+.mfilters i{font-style:normal;font:500 11px/1 var(--sans);background:var(--chip);border:1px solid var(--hair);
+            border-radius:9999px;padding:8px 11px;color:var(--text2);white-space:nowrap}
+.mfilters i.on{background:var(--ink);color:var(--canvas);border-color:var(--ink)}
+.mcount{font:500 11.5px/1 var(--sans);color:var(--text3);margin:0 0 10px}
+.mtitle{font:400 21px/1.1 var(--serif);color:var(--ink);letter-spacing:-.02em;margin:4px 0 14px}
+
+
+/* ═══ MOTION ════════════════════════════════════════════════════════════
+   Seven moves, all read off the reference's live stylesheet — it runs no
+   keyframe soup, it runs these:
+     reveal     opacity 0→1 + scale(.96) translateY(40px), staggered
+     overshoot  cubic-bezier(.22,1.5,.36,1) at .5s on transform
+     bloom      a ring scaling .55→1.6 as it fades   (prll-nav-mark-bloom)
+     shear      mark halves sliding ±3px past each other (prll-logo-shear)
+     wash       layered radials drifting scale(1)→1.06→1.02 (coach-wash-drift)
+     answer-in  opacity 0 + translateY(4px), per item as results land
+     think      background-position 130%→-30% shimmer while working
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* reveal on scroll — gated on html.anim so the page READS WITH NO JS.
+   Parking content at opacity 0 and waiting for a script is how a page renders
+   blank anywhere a script does not run: a static snapshot, a CSP, a throwing
+   bundle. The default state is the finished state; JS opts in to the motion. */
+html.anim .rv{opacity:0;transform:scale(.96) translateY(40px);
+    transition:opacity .5s var(--ease),transform var(--t-rev) var(--spring)}
+html.anim .rv.in{opacity:1;transform:none}
+
+/* hero entrance — the headline rises a line at a time */
+.display .ln{display:block;overflow:hidden}
+html.anim .display .ln > span{display:block;transform:translateY(105%);
+  transition:transform .85s var(--ease)}
+html.anim .lit .display .ln > span{transform:none}
+.display .ln:nth-child(2) > span{transition-delay:.09s}
+html.anim .herofade{opacity:0;transform:translateY(14px);
+  transition:opacity .6s var(--ease),transform .6s var(--spring)}
+html.anim .lit .herofade{opacity:1;transform:none}
+html.anim .lit .box{transition-delay:.22s}
+html.anim .lit .tabs{transition-delay:.3s}
+html.anim .lit .tabrow2{transition-delay:.36s}
+html.anim .lit .liveline{transition-delay:.48s}
+
+/* wash — the drifting amber/ink light that replaces photography */
+.hero .wash{position:absolute;inset:-25%;z-index:-1;pointer-events:none}
+html.anim .hero .wash{animation:wash 19s ease-in-out infinite alternate}
+@keyframes wash{
+  0%{transform:scale(1) translate(0,0)}
+  50%{transform:scale(1.06) translate(2.5%,-1.5%)}
+  100%{transform:scale(1.02) translate(-1.5%,1%)}
+}
+html[data-market="ca"] .hero .wash{
+  background:radial-gradient(52% 60% at 40% 46%,rgba(255,109,57,.30),transparent 68%),
+             radial-gradient(46% 54% at 66% 58%,rgba(240,152,215,.26),transparent 70%),
+             radial-gradient(60% 70% at 18% 82%,rgba(72,101,255,.34),transparent 72%)}
+html[data-market="ke"] .hero .wash{
+  background:radial-gradient(52% 60% at 42% 44%,rgba(47,189,106,.30),transparent 68%),
+             radial-gradient(44% 52% at 70% 62%,rgba(239,75,60,.20),transparent 70%),
+             radial-gradient(62% 72% at 16% 84%,rgba(11,61,34,.55),transparent 74%)}
+
+/* the mark: shear on hover, bloom on click */
+.mark{position:relative;width:26px;height:26px;display:block;flex:0 0 auto;cursor:pointer}
+.mark svg{position:absolute;inset:0;width:100%;height:100%;fill:var(--accent)}
+.mark .top{clip-path:inset(0 0 50% 0)}
+.mark .bot{clip-path:inset(50% 0 0 0)}
+.brand:hover .mark .top{animation:shear-top .52s var(--ease)}
+.brand:hover .mark .bot{animation:shear-bot .52s var(--ease)}
+@keyframes shear-top{0%{transform:translateX(0)}28%{transform:translateX(-3px)}100%{transform:translateX(0)}}
+@keyframes shear-bot{0%{transform:translateX(0)}28%{transform:translateX(3px)}100%{transform:translateX(0)}}
+.mark .bloom{position:absolute;inset:0;border-radius:50%;
+  border:1.5px solid var(--accent);opacity:0;pointer-events:none}
+.mark.blooming .bloom{animation:bloom .72s var(--ease)}
+@keyframes bloom{0%{opacity:0;transform:scale(.55)}35%{opacity:1}100%{opacity:0;transform:scale(1.6)}}
+
+/* per-item entry as results land */
+@keyframes answer-in{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.job.arrive{animation:answer-in .42s var(--ease) both}
+
+/* the working shimmer */
+.think{position:relative;display:inline-flex;align-items:center;gap:9px;
+  font:500 13.5px/1 var(--sans);color:var(--text2)}
+.think b{font-weight:500;background:linear-gradient(90deg,var(--text3) 20%,var(--ink) 50%,var(--text3) 80%);
+  background-size:220% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;
+  animation:think 1.5s linear infinite}
+@keyframes think{0%{background-position:130% 0}100%{background-position:-30% 0}}
+.cmark{display:block;flex:0 0 auto;border-radius:4px}
+html.anim .cmark{animation:float 2.6s ease-in-out infinite}
+.think .spin{width:13px;height:13px;border-radius:50%;border:2px solid var(--hair2);
+  border-top-color:var(--accent);animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* the ring draws itself */
+.ring .fg{transition:stroke-dashoffset 1.1s var(--ease)}
+
+/* springier interactions than the first pass */
+.job,.card,.tax{transition:box-shadow var(--t-ui) var(--ease),transform .5s var(--spring),border-color var(--t-ui) var(--ease)}
+.job:hover,.tax:hover{transform:translateY(-3px)}
+/* a real lift: four stacked shadows tightening toward the card, so it reads as
+   height rather than a grey halo */
+.job:hover{
+  transform:translateY(-6px);
+  box-shadow:0 28px 50px -12px rgba(8,3,49,.20), 0 12px 24px -8px rgba(8,3,49,.12),
+             0 4px 9px rgba(8,3,49,.07), 0 1px 3px rgba(8,3,49,.05)
+}
+html[data-market="ke"] .job:hover{
+  box-shadow:0 28px 50px -10px rgba(0,0,0,.6), 0 12px 24px -8px rgba(0,0,0,.45),
+             0 4px 9px rgba(0,0,0,.3), 0 0 0 1px rgba(47,189,106,.18)
+}
+.tabs a,.f,.mkt button,.taxtabs button{transition:all var(--t-micro) var(--ease)}
+.tabs a:hover{transform:translateY(-2px)}
+.box{transition:box-shadow var(--t-ui) var(--ease),transform .5s var(--spring)}
+.box:focus-within{transform:translateY(-2px)}
+.box .go{transition:transform .5s var(--spring),background var(--t-micro) var(--ease)}
+.box .go:hover{transform:scale(1.08)}
+.box .go:active{transform:scale(.94)}
+
+/* market switch: the whole page crossfades rather than snapping */
+body{transition:background .5s var(--ease),color .5s var(--ease)}
+.swapping .wrap,.swapping section{transition:opacity .2s var(--ease)}
+.swapping .wrap,.swapping section{opacity:.35}
+
+/* counters line up while they tick */
+.liveline span,.count,.mcount,.f .n{font-variant-numeric:tabular-nums}
+
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;
+    transition-duration:.001ms!important;scroll-behavior:auto!important}
+  .rv,.herofade{opacity:1!important;transform:none!important}
+  .display .ln > span{transform:none!important}
+  .hero .wash{animation:none}
+}
+
+
+/* ═══ BORROWED, SECOND PASS ═════════════════════════════════════════════
+   Read off the reference's stylesheet and its employers view.
+     nprogress   2px bar pinned top with a rotated "peg" glow at the lead edge
+     sonner      toast, scale(.8)→1
+     sk-bounce   three dots, scale 0→1 at 40%, staggered — calmer than a spinner
+     sent-in     opacity + translateY(8px) + scale(.985): their richest entry
+     evidence    a claim with its receipt on hover (their screening criteria)
+     success     ±5px float for a state that resolved well
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* the run takes real seconds, so it gets a real progress bar */
+#nprog{position:fixed;inset:0 0 auto 0;height:2px;z-index:200;pointer-events:none;
+  opacity:0;transition:opacity .25s var(--ease)}
+#nprog.on{opacity:1}
+#nprog .bar{height:100%;width:0;background:var(--live);
+  transition:width .28s var(--ease)}
+#nprog .peg{position:absolute;top:0;height:100%;width:100px;
+  transform:rotate(3deg) translateY(-4px);
+  box-shadow:0 0 10px var(--live),0 0 5px var(--live);
+  transition:left .28s var(--ease)}
+
+/* three dots, not a spinner */
+.dots{display:inline-flex;gap:4px;align-items:center}
+.dots i{width:5px;height:5px;border-radius:50%;background:var(--accent);display:block}
+html.anim .dots i{animation:bounce 1.25s ease-in-out infinite both}
+html.anim .dots i:nth-child(2){animation-delay:.14s}
+html.anim .dots i:nth-child(3){animation-delay:.28s}
+@keyframes bounce{0%,80%,100%{transform:scale(0)}40%{transform:scale(1)}}
+
+/* toast */
+#toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%);z-index:210;
+  display:flex;flex-direction:column;gap:8px;align-items:center;pointer-events:none}
+#toast div{
+  background:var(--ink);color:var(--canvas);border-radius:var(--r-pill);
+  padding:11px 20px;font:500 13.5px/1 var(--sans);box-shadow:var(--sh-hover);
+  white-space:nowrap
+}
+html.anim #toast div{animation:toastin .3s var(--spring) both}
+@keyframes toastin{from{opacity:0;transform:scale(.8)}to{opacity:1;transform:scale(1)}}
+
+/* a claim carries its receipt. Their screening ticks quote the resume on
+   hover; ours already has the strongest and weakest point per posting, so the
+   verdict stops being an assertion you have to take on faith. */
+.ev{display:flex;gap:7px;flex-wrap:wrap;margin:10px 0 0}
+.ev span{
+  position:relative;font:500 12px/1 var(--sans);border-radius:var(--r-pill);
+  padding:6px 11px;cursor:help;border:1px dashed transparent
+}
+.ev .up{color:var(--b-auto);background:var(--b-auto-bg)}
+.ev .down{color:var(--b-unsure);background:var(--b-unsure-bg)}
+.ev span:hover{border-color:currentColor}
+.ev span::after{
+  content:attr(data-ev);position:absolute;left:0;bottom:calc(100% + 9px);
+  width:max-content;max-width:270px;white-space:normal;text-align:left;
+  background:var(--ink);color:var(--canvas);border-radius:12px;padding:10px 13px;
+  font:400 12.5px/1.45 var(--sans);box-shadow:var(--sh-hover);
+  opacity:0;transform:translateY(4px);pointer-events:none;
+  transition:opacity .18s var(--ease),transform .18s var(--ease);z-index:5
+}
+.ev span:hover::after,.ev span:focus-visible::after{opacity:1;transform:none}
+
+/* save */
+.savebtn{
+  appearance:none;background:transparent;border:0;cursor:pointer;padding:4px;
+  line-height:0;color:var(--text3);transition:color var(--t-micro) var(--ease),transform .4s var(--spring)
+}
+.savebtn:hover{color:var(--text)}
+.savebtn[aria-pressed="true"]{color:var(--live)}
+.savebtn[aria-pressed="true"] svg{fill:currentColor}
+.savebtn:active{transform:scale(.85)}
+html.anim .savebtn[aria-pressed="true"]{animation:float 1.6s ease-in-out 1}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+
+/* SHEAR, second attempt. The first sheared two halves of the card's own
+   surface — invisible, because sliding a uniform colour rectangle 3px shows
+   nothing at all. The gesture only reads on something with shape, which is why
+   it works on the wordmark. So it runs on the card's own mark instead: the
+   rose's top four bearings slide left, the bottom four slide right, and the
+   ring visibly breaks and re-forms. */
+html.anim .job .rose{transition:transform .5s var(--spring)}
+html.anim .job .rose circle{transition:transform .5s var(--spring);transform-box:fill-box;transform-origin:center}
+html.anim .job:hover .rose{transform:scale(1.04)}
+/* ±4px and no per-dot scale. At ±7px with the dots also scaling 1.15 they
+   overlapped and the ring read as crumpled rather than opening — the stagger
+   was doing the work, the size was undoing it. */
+html.anim .job:hover .rose circle:nth-child(-n+4){transform:translateX(-4px)}
+html.anim .job:hover .rose circle:nth-child(n+5):not(text){transform:translateX(4px)}
+html.anim .job:hover .rose circle:nth-child(1),html.anim .job:hover .rose circle:nth-child(8){transition-delay:0ms}
+html.anim .job:hover .rose circle:nth-child(2),html.anim .job:hover .rose circle:nth-child(7){transition-delay:45ms}
+html.anim .job:hover .rose circle:nth-child(3),html.anim .job:hover .rose circle:nth-child(6){transition-delay:90ms}
+html.anim .job:hover .rose circle:nth-child(4),html.anim .job:hover .rose circle:nth-child(5){transition-delay:135ms}
+html.anim .job:hover .rose .fitnum{transform:none}
+
+/* On a chip there is no mark to shear, so it gets the literal thing the word
+   means: the box skews, briefly, and returns. */
+/* A pill has no mark to break, but it does have two halves: its label and its
+   count. On hover they part by 4px while the box skews — the same counter-slide,
+   performed by the only two things the chip contains. */
+.secrow button .l,.secrow button .n{display:inline-block;transition:transform .42s var(--spring)}
+html.anim .secrow button{transition:transform .42s var(--spring),background var(--t-ui) var(--ease),border-color var(--t-ui) var(--ease),color var(--t-ui) var(--ease)}
+/* Third go. -7deg + 3px was measurable and invisible; adding a tint and a
+   shadow was still missable at a glance. A chip is small, so the only hover a
+   small thing can own is a full state change: it inverts. */
+.secrow button:hover,html.anim .secrow button:hover{
+  transform:skewX(-9deg) translateY(-5px) scale(1.12);
+  background:var(--accent);color:var(--accent-ink);border-color:transparent;
+  box-shadow:0 14px 34px -6px color-mix(in srgb,var(--accent) 55%,transparent),
+             0 4px 10px rgba(0,0,0,.14)
+}
+.secrow button:hover .n{
+  opacity:1;background:var(--accent-ink);color:var(--accent);
+  border-radius:var(--r-pill);padding:3px 7px;margin-left:2px
+}
+.secrow button .n{transition:transform .42s var(--spring),opacity var(--t-ui) var(--ease)}
+html.anim .secrow button:hover .l{transform:translateX(-4px)}
+html.anim .secrow button:hover .n{transform:translateX(4px);opacity:1}
+html.anim .tabs a:hover{transform:skewX(-7deg) translateY(-3px)}
+
+/* Bloom on click, exactly the mark's: scale .55 -> 1.6 as it fades. */
+.bloomer{position:relative;overflow:hidden}
+/* One ring again — the three arcs read as noise where one clean ring reads as
+   an event. What varies instead is WHERE it goes: each card throws its bloom
+   at a different corner, NW / NE / SE / SW by position in the grid, so a row
+   of them doesn't pulse in unison. */
+.bloomer .bl{
+  position:absolute;left:50%;top:50%;width:150%;aspect-ratio:1;border-radius:50%;
+  transform:translate(-50%,-50%) scale(.5);border:1.5px solid currentColor;
+  opacity:0;pointer-events:none
+}
+.bloomer.blooming .bl{animation:bloomdir .78s var(--ease)}
+@keyframes bloomdir{
+  0%{opacity:0;transform:translate(-50%,-50%) scale(.5)}
+  22%{opacity:1}
+  100%{opacity:0;
+    transform:translate(calc(-50% + var(--bx,0) * 54px), calc(-50% + var(--by,0) * 54px)) scale(1.75)}}
+
+/* their richest entry curve, used for the scored cards */
+@keyframes sent-in{from{opacity:0;transform:translateY(8px) scale(.985)}to{opacity:1;transform:none}}
+.job.arrive{animation:sent-in .44s var(--ease) both}
+
+
+/* ═══ THIRD PASS ════════════════════════════════════════════════════════
+   The hero mark-glow, swipe-to-dismiss, alert bells, company cards.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* THE HERO MARK. Theirs is a 1162x405 ring at opacity .6 holding two copies of
+   one path: a faint white outline, and the same shape filled with a radial
+   white gradient (0.32 -> 0.11 at 50% -> 0) parked at opacity 0 and popped over
+   280ms. Ours is the same idea with our own mark — eight graduated dots — so it
+   is the logo glowing rather than a borrowed arc. */
+.heromark{position:absolute;left:50%;top:46%;width:min(1160px,128%);
+  transform:translate(-50%,-50%);opacity:.55;pointer-events:none;z-index:-1}
+.heromark svg{display:block;width:100%;height:auto;overflow:visible}
+/* On Browse and the results there is no photographic ground to sit on, so the
+   mark drops to a tenth of its hero strength and tints with the accent instead
+   of white - enough to carry the brand, not enough to fight a card. */
+/* 100vw, never wider: at 150% of the containing block this pushed the page
+   into a horizontal scrollbar. overflow:hidden on the ancestor would fix it and
+   silently kill any position:sticky inside, so the element is sized instead. */
+/* #v-browse makes its own stacking context so z-index:-1 means "behind this
+   page's content", not "behind the document background" — which is where the
+   mark was hiding. */
+#v-browse,#v-landing{position:relative;z-index:0}
+.pagemark{top:300px;left:50%;width:min(1400px,100vw);opacity:.5}
+/* .heromark.pagemark, not .pagemark: the white hero rule has identical
+   specificity and is declared first, so it was winning — white at .16 on a
+   cream page is exactly nothing. */
+.heromark.pagemark .ring circle{fill:var(--accent);opacity:.06}
+html[data-market="ke"] .heromark.pagemark .ring circle{opacity:.1}
+.heromark.pagemark .pop{display:none}
+.heromark .ring circle{fill:#fff;opacity:.16}
+.heromark .pop{opacity:0;transition:opacity .28s ease-out}
+.heromark.is-lit .pop{opacity:1}
+html.anim .heromark{animation:markdrift 26s ease-in-out infinite alternate}
+@keyframes markdrift{
+  0%{transform:translate(-50%,-50%) scale(1) rotate(0deg)}
+  100%{transform:translate(-50%,-50%) scale(1.045) rotate(4deg)}
+}
+
+/* SWIPE-OUT. Their keyframe is toast stacking; the useful version here is
+   triage — push a scored card away and the list closes over the gap. */
+.job{position:relative;touch-action:pan-y}
+.job.swiping{transition:none;cursor:grabbing;user-select:none;z-index:2}
+.job.gone{animation:swipeout .34s var(--ease) forwards;pointer-events:none}
+@keyframes swipeout{
+  to{transform:translateX(var(--sx,-120%)) rotate(var(--sr,-6deg));opacity:0}
+}
+/* the age chip carries its own caveat, same pattern as the evidence chips */
+.age{cursor:help;position:relative}
+.age.new{color:var(--live);font-weight:500}
+.age.stale{color:var(--text3);text-decoration:underline dotted}
+.age[data-ev]::after{
+  content:attr(data-ev);position:absolute;right:0;top:calc(100% + 8px);
+  width:max-content;max-width:250px;white-space:normal;text-align:left;
+  background:var(--ink);color:var(--canvas);border-radius:12px;padding:10px 13px;
+  font:400 12.5px/1.45 var(--sans);box-shadow:var(--sh-hover);
+  opacity:0;transform:translateY(-4px);pointer-events:none;
+  transition:opacity .18s var(--ease),transform .18s var(--ease);z-index:6
+}
+.age:hover::after,.age:focus-visible::after{opacity:1;transform:none}
+
+/* Teaching the gesture. Shown once per session, above the results. */
+.coach{
+  grid-column:1/-1;display:flex;align-items:center;gap:16px;margin:0 0 6px;
+  background:var(--surface);border:1px solid var(--hair);border-radius:var(--r-card);
+  padding:16px 18px;font:400 13.5px/1.5 var(--sans);color:var(--text2);
+  box-shadow:var(--sh-hover)
+}
+.coach b{color:var(--ink);font-weight:500}
+.coach .hand{
+  flex:0 0 auto;width:38px;height:38px;border-radius:12px;display:grid;place-items:center;
+  background:var(--b-ping-bg);color:var(--accent);font-size:17px
+}
+html.anim .coach .hand{display:inline-block;animation:nudge 1.9s ease-in-out infinite}
+@keyframes nudge{0%,100%{transform:translateX(-3px)}50%{transform:translateX(3px)}}
+.coach button{
+  margin-left:auto;appearance:none;background:transparent;border:1px solid var(--hair2);
+  border-radius:var(--r-pill);padding:7px 14px;cursor:pointer;
+  font:500 12.5px/1 var(--sans);color:var(--text2)
+}
+.coach button:hover{color:var(--ink);border-color:var(--ink)}
+
+/* the label the drag itself reveals — the gesture explaining itself mid-action */
+.swipehint{
+  position:absolute;left:20px;top:50%;transform:translateY(-50%);
+  font:500 12px/1 var(--sans);letter-spacing:.09em;text-transform:uppercase;
+  color:var(--b-unsure);opacity:0;pointer-events:none;transition:opacity .15s linear
+}
+.job.swiping .swipehint{opacity:var(--hintop,0)}
+
+.job .dismiss{
+  position:absolute;right:12px;bottom:12px;appearance:none;background:transparent;
+  border:1px solid var(--hair);border-radius:50%;cursor:pointer;width:26px;height:26px;
+  color:var(--text3);font:400 15px/1 var(--sans);padding:0;opacity:0;
+  transition:opacity var(--t-micro) var(--ease),color var(--t-micro) var(--ease)
+}
+.job:hover .dismiss,.job .dismiss:focus-visible{opacity:1}
+.job .dismiss:hover{color:var(--b-unsure);border-color:var(--b-unsure)}
+.undo{
+  grid-column:1/-1;display:flex;align-items:center;justify-content:center;gap:12px;
+  border:1px dashed var(--hair2);border-radius:var(--r-card);padding:18px;
+  font:400 14px/1 var(--sans);color:var(--text2)
+}
+.undo button{appearance:none;background:transparent;border:0;cursor:pointer;
+  font:500 14px/1 var(--sans);color:var(--accent);text-decoration:underline}
+
+/* ALERT BELL */
+.bell{
+  appearance:none;background:transparent;border:1px solid var(--hair);cursor:pointer;
+  border-radius:var(--r-pill);padding:9px 14px;color:var(--text2);
+  font:500 13.5px/1 var(--sans);display:inline-flex;align-items:center;gap:7px;
+  transition:all var(--t-micro) var(--ease)
+}
+.bell:hover{border-color:var(--hair2);color:var(--ink)}
+.bell[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:transparent}
+html.anim .bell[aria-pressed="true"] svg{animation:ring .6s var(--ease)}
+@keyframes ring{0%,100%{transform:rotate(0)}20%{transform:rotate(14deg)}45%{transform:rotate(-11deg)}70%{transform:rotate(6deg)}}
+
+/* COMPANY CARDS */
+.sctab{appearance:none;border:0;background:transparent;cursor:pointer;
+  font:500 13.5px/1 var(--sans);color:var(--text2);padding:9px 16px;border-radius:var(--r-pill);
+  transition:all var(--t-micro) var(--ease)}
+.sctab[aria-pressed="true"]{background:var(--ink);color:var(--canvas)}
+.jobs.cos{grid-template-columns:repeat(4,1fr)}
+.co-card{
+  background:var(--surface);border:1px solid var(--hair);border-radius:var(--r-card);
+  padding:20px;display:flex;flex-direction:column;gap:16px;min-height:180px;
+  transition:box-shadow var(--t-ui) var(--ease),transform .5s var(--spring)
+}
+.co-card:hover{box-shadow:var(--sh-hover);transform:translateY(-3px)}
+.co-card .nm{font:400 19px/1.25 var(--serif);letter-spacing:-.02em;color:var(--ink);margin:0}
+.co-card .mix{font:400 13px/1.5 var(--sans);color:var(--text2);margin:0}
+.co-card .stats{display:flex;gap:8px;flex-wrap:wrap;margin-top:auto}
+.co-card .stat{
+  font:500 12.5px/1 var(--sans);border:1px solid var(--hair);border-radius:var(--r-pill);
+  padding:7px 11px;color:var(--text2)
+}
+.co-card .stat b{color:var(--ink);font-weight:600;font-variant-numeric:tabular-nums}
+.co-card .top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.co-card .bell{padding:7px 9px;font-size:0;gap:0}
+@media(max-width:980px){.jobs.cos{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:620px){.jobs.cos{grid-template-columns:1fr}}
+
+.hide{display:none!important}
+@media(max-width:980px){
+  .grid3,.jobs{grid-template-columns:repeat(2,1fr)}
+  .taxgrid{grid-template-columns:repeat(3,1fr)}
+  .fgrid{grid-template-columns:1fr 1fr}
+}
+@media(max-width:620px){
+  .wrap{padding:0 16px}
+  .grid3,.jobs,.taxgrid{grid-template-columns:1fr}
+  .fgrid{grid-template-columns:1fr}
+  /* the switch is the only nav item that must survive; the rest move into the
+     footer, and the switch itself drops to flags so it cannot clip the edge */
+  nav.main a{display:none}
+  .mkt button{padding:8px 11px;font-size:0;gap:0}
+  .mkt .flag{width:22px;height:15px}
+  header.site{padding:16px 0 10px}
+  .hero{min-height:0}
+  .hero .inner{padding:48px 18px}
+  .box{padding:7px 7px 7px 14px;gap:6px}
+  .box .up{padding:9px 8px;font-size:12.5px}
+  .phones{gap:26px}
+  section.band,section.plain{padding:56px 0}
+}
+
+/* ── the results grid: the run renders the same card Browse does ──────── */
+.scores{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:28px;align-items:start}
+@media(max-width:980px){.scores{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:620px){.scores{grid-template-columns:1fr}}
+.scores .nofit{grid-column:1/-1;background:var(--chip);border:1px solid var(--hair);
+  border-radius:var(--r-card);padding:22px 26px;font:400 15px/1.6 var(--sans);color:var(--text2)}
+.scores .nofit b{color:var(--ink);font-weight:500}
+.job .act{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+.job .letterbtn,.job .tailorbtn,.job .plink,.job .savebtn2{
+  appearance:none;cursor:pointer;background:transparent;border:1px solid var(--hair2);
+  border-radius:var(--r-pill);padding:8px 14px;font:500 12.5px/1 var(--sans);
+  color:var(--text);text-decoration:none;transition:all var(--t-micro) var(--ease)}
+.job .letterbtn{background:var(--ink);color:var(--canvas);border-color:transparent}
+.job .letterbtn:hover,.job .tailorbtn:hover,.job .plink:hover{border-color:var(--accent);color:var(--accent)}
+.job .letterbtn:hover{background:var(--accent);color:var(--accent-ink);border-color:transparent}
+.job .lm{margin-top:12px;background:var(--canvas-2);border:1px solid var(--hair);
+  border-radius:14px;padding:14px;font:400 13.5px/1.6 var(--sans);color:var(--text2);white-space:pre-wrap}
+.stage{padding:76px 0 0}
+.stage h2{font:400 clamp(26px,3.2vw,36px)/1.2 var(--serif);letter-spacing:-.02em;color:var(--ink);margin:12px 0 8px}
+.stage .note{font:400 15.5px/1.6 var(--sans);color:var(--text2);max-width:64ch;margin:0 0 6px}
+.bearing{font:500 11px/1 var(--sans);letter-spacing:.14em;text-transform:uppercase;color:var(--text3)}
+.bearing b{color:var(--accent);font-weight:600}
+
+/* ── carried over from v2.2: stages, gates band, carousel, banners, end
+   page. All read var(--*), so the new tokens re-tint them untouched. ── */
+  /* ── stages ───────────────────────────────────────────────────────────── */
+  .stage{padding:64px 0 0;text-align:center}
+  .stage h2{font-family:var(--serif);font-weight:480;font-size:clamp(30px,4vw,48px);line-height:1.1;
+    letter-spacing:-.015em;margin:22px 0 10px;color:var(--ink)}
+  .stage .note{font-size:16.5px;color:var(--text2);margin:0 auto 26px;max-width:64ch;line-height:1.6}
+  .rows{background:var(--surface);border:none;border-radius:var(--card);overflow:hidden;text-align:left;box-shadow:var(--sh-card)}
+  .row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:3px 18px;padding:16px 24px;
+    border-bottom:1px solid var(--hair);opacity:0;transform:translateY(8px)}
+  .row:last-child{border-bottom:0}
+  .row.in{opacity:1;transform:none}
+  .row .t{font-weight:500;font-size:15.5px}
+  .row .t .co{color:var(--text2);font-weight:400}
+  .row .m{font-size:13px;color:var(--text2)}
+  .verdict{font-size:11px;font-weight:500;letter-spacing:.07em;text-transform:uppercase;align-self:center;
+    border-radius:var(--pill);padding:5px 13px;white-space:nowrap}
+  .verdict.pass{color:var(--meadow);background:rgba(50,138,59,.16)}
+  .verdict.reject{color:var(--stone);background:var(--info)}
+  .gatereason{grid-column:1/-1;font-size:13.5px;color:var(--text2)}
+  /* the strike is DRAWN, left to right, once the row has landed */
+  .row.rej .t{color:var(--text3);background:linear-gradient(var(--hair2),var(--hair2)) no-repeat 0 58%/100% 1.5px}
+  @media (prefers-reduced-motion:no-preference){
+    .row{transition:opacity .45s var(--ease),transform .45s var(--ease)}
+    .row.rej .t{background-size:0% 1.5px;transition:background-size .55s var(--ease) .3s}
+    .row.rej.in .t{background-size:100% 1.5px}
+    .row .verdict{transform:scale(.6);opacity:0}
+    .row.in .verdict{transform:none;opacity:1;transition:transform .45s var(--ease) .22s,opacity .3s var(--ease) .22s}
+    .row .gatereason{opacity:0;transform:translateX(-8px)}
+    .row.in .gatereason{opacity:1;transform:none;transition:opacity .4s var(--ease) .15s,transform .4s var(--ease) .15s}
+  }
+
+  /* ── the indigo band, August's "care-obsessed operators" page ───────────
+     THE CURVE IS NOT AN SVG. August's home-hero_background is a 1668px-wide box
+     with border-radius:1600px - wider than the viewport, so only the curved
+     bottom edge shows. Reproduced here, and the radius relaxes to flat as the
+     band scrolls through, via a view() timeline where supported. */
+  .band{position:relative;margin:72px 0 0;padding:74px 0 96px;background:var(--midnight);
+    color:#fff;width:132vw;margin-left:calc(50% - 66vw);border-radius:0 0 1600px 1600px;
+    background-image:radial-gradient(rgba(255,255,255,.045) 1px,transparent 1px);
+    background-size:20px 20px}
+  /* The band is 132vw, so its .wrap centres inside THAT, not inside the
+     viewport. Capped here rather than in a new rule - an added `.band .wrap`
+     has the SAME specificity as this one and loses to it on order. */
+  .band>.wrap{max-width:min(1040px,100vw)}
+  .band .bearing{background:rgba(255,255,255,.12);color:#dce4fb;box-shadow:none}
+  .band .bearing b{color:#fff}
+  .band h2{color:#fff}
+  .band .note{color:#e9edff;font-weight:450}
+  @supports (animation-timeline: view()){
+    @media (prefers-reduced-motion:no-preference){
+      .band{animation:flatten linear both;animation-timeline:view();animation-range:exit 0% exit 90%}
+      @keyframes flatten{to{border-bottom-left-radius:0;border-bottom-right-radius:0}}
+    }
+  }
+
+  /* the three gate checks as August's multi-coloured frames - they RISE into
+     place one after another as the band scrolls in */
+  .gatecards{position:relative;display:grid;gap:16px;margin:34px auto 40px;max-width:900px;padding:22px}
+  @media (min-width:900px){.gatecards{grid-template-columns:repeat(3,1fr);max-width:1060px}
+    .gc{padding:22px 24px}.gc h3{font-size:22px}}
+  .gc{border-radius:var(--card);padding:26px 30px;display:grid;gap:6px 28px;
+    grid-template-columns:minmax(0,1fr);text-align:left;color:var(--ink)}
+  .gc h3{font-family:var(--serif);font-weight:480;font-size:27px;line-height:1.15;margin:0}
+  .gc p{margin:0;font-size:15.5px;line-height:1.6;font-weight:500;color:var(--ink)}
+  .gc-1{background:var(--forest);color:#fff} .gc-1 p{color:#fff}
+  .gc-2{background:var(--ember)}
+  .gc-3{background:var(--blossom)}
+  @media (prefers-reduced-motion:no-preference){
+    .gatecards .gc{opacity:0;transform:translateY(28px) scale(.98)}
+    .gatecards.in .gc{opacity:1;transform:none;transition:opacity .7s var(--ease),transform .7s var(--ease)}
+    .gatecards.in .gc-2{transition-delay:.14s}
+    .gatecards.in .gc-3{transition-delay:.28s}
+  }
+  /* the clockwise-travelling border August draws around this group */
+  .gatecards::before{content:"";position:absolute;inset:0;border-radius:26px;padding:1.5px;
+    background:conic-gradient(from var(--spin,0deg),#328a3b,#ff6d39,#f098d7,#a2baff,#328a3b);
+    -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
+            mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
+    -webkit-mask-composite:xor;mask-composite:exclude;pointer-events:none}
+  @property --spin{syntax:'<angle>';inherits:false;initial-value:0deg}
+  @media (prefers-reduced-motion:no-preference){
+    .gatecards::before{animation:spinborder 14s linear infinite}
+    @keyframes spinborder{to{--spin:360deg}}
+  }
+  .band .rows{background:rgba(255,255,255,.06);box-shadow:none;
+    border:1px solid rgba(255,255,255,.14)}
+  .band .row{border-bottom-color:rgba(255,255,255,.1)}
+  .band .row:hover{background:rgba(255,255,255,.05)}
+  .band .row .t{color:#fff} .band .row .t .co{color:#d6dcff}
+  .band .row .m,.band .row .gatereason{color:#d0d8ff;font-weight:450}
+  .band .row.rej .t{color:#aab5e6;background-image:linear-gradient(#aab5e6,#aab5e6)}
+  .band .verdict.pass{color:#d6ffd9;background:rgba(50,138,59,.42)}
+  .band .verdict.reject{color:#c9d3ff;background:rgba(255,255,255,.12)}
+  .band .status{color:#c9d3ff}
+
+  /* ── scoring: August's "Get to know us" frames - two roomy tinted cards ── */
+  @media (min-width:1060px){
+    .scores{display:grid;grid-template-columns:1fr 1fr;gap:22px}
+    .scard{padding:32px 34px}
+  }
+  .scard{position:relative;background:var(--surface)}
+  .scard:nth-child(4n+1){background:#f4f7f2} .scard:nth-child(4n+2){background:#fdf3ef}
+  .scard:nth-child(4n+3){background:#f5f2fb} .scard:nth-child(4n+4){background:#fdf1f9}
+  .scard .arrow{position:absolute;top:22px;right:22px;width:38px;height:38px;border-radius:100px;
+    background:var(--surface);display:grid;place-items:center;color:var(--indigo);
+    font-size:16px;box-shadow:var(--sh-subtle);transition:background .3s var(--ease)}
+  .scard:hover .arrow{background:var(--indigo);color:#fff}
+
+  /* ── the numbers: a Calendly-style centred carousel ────────────────────
+     One card in focus, the neighbours peeking either side at reduced scale,
+     a segmented progress bar beneath. Scroll-snap does the work; the arrows
+     and the bar just call scrollTo. Values are FILLED FROM THE FEED - the old
+     rail typed "22 / 14 / 8" into the page and called it live. */
+  .metrics{margin:76px 0 0;padding:64px 0 60px;position:relative;
+    background-image:radial-gradient(rgba(8,3,49,.13) 1px,transparent 1px);background-size:14px 14px}
+  .crail{display:flex;gap:22px;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;
+    padding:30px 0 30px;align-items:center}
+  .crail::-webkit-scrollbar{display:none}
+  /* spacers so the first and last card can sit in the centre */
+  .crail::before,.crail::after{content:"";flex:0 0 calc(50% - min(640px,86vw)/2 - 22px)}
+  /* a card arrives from the right faded and small, brightens as it reaches the
+     centre, and STAYS bright once it has been seen - only the unseen fade */
+  .ccard{flex:0 0 min(640px,86vw);scroll-snap-align:center;background:var(--surface);border-radius:28px;
+    box-shadow:var(--sh-card);display:grid;grid-template-columns:1.1fr 1fr;min-height:340px;overflow:hidden;
+    transform:scale(.9);opacity:.35;transition:transform .55s var(--ease),opacity .55s var(--ease)}
+  .ccard.seen{transform:none;opacity:1}
+  .ccard .cl{padding:36px 34px 30px;display:flex;flex-direction:column;justify-content:space-between;text-align:left}
+  .ccard .big{font-family:var(--serif);font-weight:480;font-size:clamp(52px,7vw,76px);line-height:1;letter-spacing:-.025em;color:var(--ink)}
+  .ccard .cap{font-size:19px;line-height:1.4;margin-top:12px;color:var(--ink);font-weight:500}
+  .ccard .foot{font-size:14px;color:var(--text2);margin-top:22px;line-height:1.5}
+  .ccard .cr{margin:16px 16px 16px 0;border-radius:22px;display:grid;place-items:center;padding:28px;
+    font-family:var(--serif);font-weight:480;font-size:23px;line-height:1.25;text-align:center;letter-spacing:-.01em}
+  .m-a .cr{background:var(--midnight);color:#fff}
+  .m-b .cr{background:var(--indigo);color:#fff}
+  .m-c .cr{background:var(--blossom);color:var(--ink)}
+  .m-d .cr{background:var(--forest);color:#fff}
+  .m-e .cr{background:var(--ember);color:var(--ink)}
+  .m-f .cr{background:var(--info);color:var(--ink)}
+  .cnav{display:flex;justify-content:center;align-items:center;gap:22px;margin-top:4px}
+  .cbtn{width:46px;height:46px;border-radius:50%;border:1.5px solid var(--hair2);background:var(--surface);
+    color:var(--ink);font-size:18px;cursor:pointer;box-shadow:var(--sh-subtle);display:grid;place-items:center}
+  .cbtn:hover{background:var(--indigo);border-color:var(--indigo);color:#fff}
+  .cdots{display:flex;gap:6px;align-items:center}
+  .cdots i{width:8px;height:8px;border-radius:8px;background:var(--hair2);cursor:pointer;transition:width .35s var(--ease),background .35s var(--ease)}
+  .cdots i.on{width:56px;background:var(--indigo)}
+  @media (max-width:640px){
+    .ccard{grid-template-columns:1fr;min-height:0}
+    .ccard .cr{margin:0 16px 16px;min-height:120px;font-size:19px}
+  }
+
+  /* ── status / banners ─────────────────────────────────────────────────── */
+  .status{font-size:13.5px;color:var(--text2);padding:16px 2px;display:flex;align-items:center;gap:10px;justify-content:center}
+  .status[hidden]{display:none}
+  .spin{width:14px;height:14px;border:2px solid var(--info);border-top-color:var(--indigo);border-radius:50%;flex:none}
+  @media (prefers-reduced-motion:no-preference){.spin{animation:sp .7s linear infinite}}
+  @keyframes sp{to{transform:rotate(360deg)}}
+  /* while Claude scores, Claude's own mark breathes in place of the spinner */
+  .cmark{width:22px;height:22px;border-radius:50%;flex:none}
+  @media (prefers-reduced-motion:no-preference){.cmark{animation:breathe 1.4s ease-in-out infinite}}
+  @keyframes breathe{50%{transform:scale(.82);opacity:.6}}
+  .banner{border-radius:var(--card);padding:15px 18px;font-size:14.5px;margin:16px auto 0;text-align:left;max-width:1040px}
+  .banner.warn{background:rgba(255,109,57,.12);border:1px solid rgba(204,54,0,.3);color:var(--ember-deep)}
+  .banner.err{background:rgba(204,54,0,.1);border:1px solid rgba(204,54,0,.35);color:var(--ember-deep)}
+
+  /* ── the closing page: Cosmos's "Sign up", element for element ──────────
+     A white sheet. Small image-like tiles drift in the space around one line,
+     one giant black pill and one quiet outlined pill. Below, a single row:
+     links left, the mark centred, links right. Then the wordmark, cropped by
+     the bottom of the page. Nothing else - no numbers, no meta, no prose. */
+  .endpage{position:relative;margin-top:96px;padding:150px 0 0;overflow:hidden;text-align:center;
+    background:var(--surface);border-radius:48px 48px 0 0}
+  .tiles{position:absolute;left:0;right:0;top:0;height:min(600px,66%);pointer-events:none}
+  /* the tiles are pictures, not text: small rounded swatches of the palette,
+     a few carrying the mark, the far ones blurred for depth */
+  .tile{position:absolute;width:var(--s,64px);height:calc(var(--s,64px) * .78);border-radius:calc(var(--s,64px) * .18);
+    background:var(--bg);box-shadow:rgba(75,68,57,.18) 0 10px 24px 0;transform:rotate(var(--r,0deg));opacity:var(--o,.9);
+    filter:blur(var(--b,0px))}
+  .tile svg{width:52%;height:52%;position:absolute;left:24%;top:24%;opacity:.85}
+  .t-indigo{--bg:linear-gradient(135deg,#4865ff,#a2baff)} .t-forest{--bg:linear-gradient(135deg,#328a3b,#9fd8a6)}
+  .t-ember{--bg:linear-gradient(135deg,#ff6d39,#ffb454)} .t-blossom{--bg:linear-gradient(135deg,#f098d7,#ffaefe)}
+  .t-midnight{--bg:linear-gradient(135deg,#1b1463,#4865ff)} .t-info{--bg:linear-gradient(135deg,#dce4fb,#ffffff)}
+  .t-cream{--bg:linear-gradient(135deg,#f8f3eb,#e7e1d6)}
+  @media (prefers-reduced-motion:no-preference){
+    .tile{animation:float var(--d,9s) ease-in-out infinite alternate}
+    @keyframes float{to{transform:rotate(var(--r,0deg)) translateY(-18px)}}
+  }
+  .endpage .inner{position:relative;z-index:1;max-width:820px;margin:0 auto;padding:0 24px}
+  .endpage .dream{font-family:var(--serif);font-weight:480;font-size:27px;color:var(--ink);margin:0 0 22px;letter-spacing:-.01em}
+  .cta{display:inline-block;background:var(--ink);color:#fff;font-family:var(--serif);font-weight:480;font-size:clamp(32px,6vw,66px);
+    letter-spacing:-.02em;border-radius:var(--pill);padding:.38em 1em;text-decoration:none;box-shadow:var(--sh-cta);
+    transition:background .3s var(--ease),transform .3s var(--ease),box-shadow .3s var(--ease)}
+  .cta:hover{background:var(--midnight);text-decoration:none;transform:translateY(-3px);box-shadow:rgba(75,68,57,.2) 0 24px 48px 0}
+  .cta2{display:inline-block;margin:26px 0 0;border:1.5px solid var(--hair2);border-radius:var(--pill);padding:13px 28px;
+    font-size:16.5px;font-weight:500;color:var(--ink);text-decoration:none;background:var(--surface)}
+  .cta2:hover{background:var(--indigo);border-color:var(--indigo);color:#fff;text-decoration:none}
+  .endlinks{position:relative;z-index:1;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:14px 28px;
+    margin:150px auto 0;max-width:1200px;padding:0 28px;font-size:15.5px;font-weight:500}
+  .endlinks div{display:flex;gap:26px;flex-wrap:wrap;align-items:center}
+  .endlinks div:last-child{justify-content:flex-end}
+  .endlinks a{color:var(--text2)} .endlinks a:hover{color:var(--indigo);text-decoration:none}
+  .endlinks .mk{width:32px;height:32px;display:block}
+  /* attribution, not affiliation: Claude does the scoring, Anthropic is not a partner */
+  .claude{display:inline-flex;align-items:center;gap:9px;color:var(--text2);font-weight:500}
+  .claude img{width:24px;height:24px;border-radius:50%}
+  .wordmark{font-family:var(--serif);font-weight:500;font-size:clamp(88px,21.5vw,330px);line-height:.8;letter-spacing:-.05em;
+    color:var(--ink);margin:44px 0 -.2em;white-space:nowrap;text-align:center;user-select:none;position:relative;z-index:1}
+
+  @media (max-width:760px){
+    .runwrap{gap:12px}
+    .run{width:100%}
+    .setup{grid-template-columns:1fr;gap:12px}
+    .setupcard{padding:22px;min-height:0;margin-top:0;border-radius:28px}
+    .setupcard:hover{transform:none}
+    /* on a phone there is no hover, so the mark blooms as soon as the card is on screen */
+    .prose{width:56px;height:56px;margin:16px auto 0}
+    .setupcard .prose circle{fill:var(--pc)}
+    #whereCard .prose circle{fill:#d52b1e}
+    #whereCard .prose circle:nth-child(2n){fill:#8c1512}
+    html[data-market="ke"] #whereCard .prose circle:nth-child(3n+1){fill:#0b0b0b}
+    html[data-market="ke"] #whereCard .prose circle:nth-child(3n+2){fill:#be0027}
+    html[data-market="ke"] #whereCard .prose circle:nth-child(3n){fill:#009a49}
+    .cardnote{margin:14px 0 0}
+  }
+  @media (max-width:640px){
+    /* Side by side, the rose left a ~200px text column and titles broke over
+       five lines. Stacked, the text gets the full width. */
+    .scard{grid-template-columns:minmax(0,1fr);padding:20px 22px;gap:14px}
+    .rose{width:66px}
+    .scard .head{padding-right:46px}
+    header .wrap{padding:10px 12px 10px 16px}
+    header nav .hidesm{display:none}
+    .hero{padding:26px 0 8px}
+    .brand small{display:none}
+    .livechip{white-space:nowrap;font-size:11.5px;padding:5px 10px}
+    header nav{gap:8px;font-size:13px}
+    header nav a.getapp,header nav a.market{padding:8px 11px}
+    .livechip{display:none}      /* the live chip yields to the two pills on a phone */
+    .brand{font-size:19px}
+    .mark{width:26px;height:26px}
+    .bearing{font-size:11px;padding:8px 14px}
+    /* on a phone the tiles are a strip ABOVE the headline, not a field behind it */
+    .endpage{padding-top:200px;border-radius:32px 32px 0 0}
+    .tiles{height:160px}
+    .tile{width:calc(var(--s,64px) * .68);height:calc(var(--s,64px) * .53)}
+    .tile:nth-child(n+9){display:none}
+    .cta{font-size:clamp(26px,7.4vw,66px)}
+    .endlinks{grid-template-columns:1fr;justify-items:center;text-align:center;margin-top:90px}
+    .endlinks div:last-child{justify-content:center}
+  }
+  @media (max-width:380px){
+    header .wrap{padding:9px 8px 9px 12px;gap:8px}
+    header nav{gap:6px;font-size:12.5px}
+    header nav a.getapp,header nav a.market{padding:7px 9px}
+    .brand{font-size:18px}
+    .marketchip{margin-left:8px;padding:5px 9px;font-size:10.5px}
+  }
+</style>
+</head>
+<body id="top">
+
+<div id="nprog"><div class="bar"></div><div class="peg"></div></div>
+<div id="toast" aria-live="polite"></div>
+
+<header class="site">
+  <div class="wrap">
+    <div class="row">
+      <div class="brand">
+        <span class="mark" id="mark" title="JobScout">
+          <svg class="top" viewBox="-3.5 -3.5 31 31" aria-hidden="true"><circle cx="12" cy="1" r="2.275"/><circle cx="19.7782" cy="4.2218" r="2.5694"/><circle cx="23" cy="12" r="2.8639"/><circle cx="19.7782" cy="19.7782" r="3.1583"/><circle cx="12" cy="23" r="3.4527"/><circle cx="4.2218" cy="19.7782" r="3.7471"/><circle cx="1" cy="12" r="4.0416"/><circle cx="4.2218" cy="4.2218" r="4.336"/></svg>
+          <svg class="bot" viewBox="-3.5 -3.5 31 31" aria-hidden="true"><circle cx="12" cy="1" r="2.275"/><circle cx="19.7782" cy="4.2218" r="2.5694"/><circle cx="23" cy="12" r="2.8639"/><circle cx="19.7782" cy="19.7782" r="3.1583"/><circle cx="12" cy="23" r="3.4527"/><circle cx="4.2218" cy="19.7782" r="3.7471"/><circle cx="1" cy="12" r="4.0416"/><circle cx="4.2218" cy="4.2218" r="4.336"/></svg>
+          <span class="bloom"></span>
+        </span>
+        JobScout
+      </div>
+      <div class="mkt" id="mktTop">
+        <button type="button" data-mkt="ca" aria-pressed="true">
+          <svg class="flag" viewBox="0 0 24 16"><rect width="24" height="16" fill="#fff"/><rect width="6" height="16" fill="#d52b1e"/><rect x="18" width="6" height="16" fill="#d52b1e"/><path d="M12 4l1.1 2.6 2.4-1-1 2.4 1.4.6-2.2 1.3.3 1.5-1.6-.7-.4 1.9-.4-1.9-1.6.7.3-1.5L8.1 8.6l1.4-.6-1-2.4 2.4 1z" fill="#d52b1e"/></svg>
+          Canada
+        </button>
+        <button type="button" data-mkt="ke" aria-pressed="false">
+          <svg class="flag" viewBox="0 0 24 16"><rect width="24" height="16" fill="#fff"/><rect width="24" height="4.6" fill="#000"/><rect y="5.6" width="24" height="4.8" fill="#be0027"/><rect y="11.4" width="24" height="4.6" fill="#009a49"/><ellipse cx="12" cy="8" rx="2.3" ry="5" fill="#be0027" stroke="#fff" stroke-width=".7"/></svg>
+          Kenya
+        </button>
+      </div>
+      <nav class="main">
+        <a href="#" class="keep" id="navBrowse">Browse</a>
+        <a href="saved" id="navTrack">Saved (0)</a>
+        <a class="hidesm" href="https://github.com/kenmwara/jobscout-app/blob/main/docs/HOW-IT-WORKS.md" target="_blank" rel="noopener">How it works</a>
+        <a class="hidesm" href="https://github.com/kenmwara/jobscout-app" target="_blank" rel="noopener">Source</a>
+      </nav>
+    </div>
+  </div>
+</header>
+
+<main>
+<div id="v-landing">
+  <div class="wrap">
+    <section class="hero" id="hero">
+      <div class="bg"></div>
+      <div class="wash"></div>
+      <div class="heromark" id="heromark" aria-hidden="true">
+        <svg viewBox="0 0 760 760">
+          <defs>
+            <radialGradient id="markpop" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse"
+              gradientTransform="translate(380 330) scale(330 330)">
+              <stop stop-color="#fff" stop-opacity=".32"/>
+              <stop offset=".5" stop-color="#fff" stop-opacity=".11"/>
+              <stop offset="1" stop-color="#fff" stop-opacity="0"/>
+            </radialGradient>
+          </defs>
+          <g class="ring"><circle cx="380.0" cy="80.0" r="28.4"/><circle cx="592.1" cy="167.9" r="54.1"/><circle cx="680.0" cy="380.0" r="79.8"/><circle cx="592.1" cy="592.1" r="105.5"/><circle cx="380.0" cy="680.0" r="131.2"/><circle cx="167.9" cy="592.1" r="156.9"/><circle cx="80.0" cy="380.0" r="182.6"/><circle cx="167.9" cy="167.9" r="208.3"/></g>
+          <g class="pop" fill="url(#markpop)"><circle cx="380.0" cy="80.0" r="28.4"/><circle cx="592.1" cy="167.9" r="54.1"/><circle cx="680.0" cy="380.0" r="79.8"/><circle cx="592.1" cy="592.1" r="105.5"/><circle cx="380.0" cy="680.0" r="131.2"/><circle cx="167.9" cy="592.1" r="156.9"/><circle cx="80.0" cy="380.0" r="182.6"/><circle cx="167.9" cy="167.9" r="208.3"/></g>
+        </svg>
+      </div>
+      <div class="inner">
+        <h1 class="display">
+          <span class="ln"><span>Find the work</span></span>
+          <span class="ln"><span>made for you<i class="dot" style="font-style:normal">.</i></span></span>
+        </h1>
+        <div class="box herofade">
+          <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
+          <textarea id="ownText" rows="1" maxlength="6000" autocomplete="off"
+            aria-label="Paste your resume or type a job title" placeholder="Paste your resume…"></textarea>
+          <span class="hint" id="boxHint" aria-live="polite" hidden></span>
+          <span class="sep"></span>
+          <label class="up">Upload<input type="file" id="ownFile" accept=".pdf,.docx,.txt,.md,application/pdf" hidden></label>
+          <button class="go" id="runBtn" type="button" aria-label="Run">&#8594;</button>
+        </div>
+        <div class="tabs herofade" id="heroTabs"></div>
+        <div class="tabs tabrow2 herofade" id="heroSectors"></div>
+        <p class="lead herofade" id="sweepline" hidden></p>
+        <div id="banner"></div>
+        <p class="uplstat" id="uplStatus"></p>
+      </div>
+    </section>
+  </div>
+
+  <section class="plain">
+    <div class="wrap">
+      <h2 class="sec">Browse by what the feed actually knows</h2>
+      <p class="lede">Every tile is a real slice of today's sweep. Nothing here is a category we cannot fill.</p>
+      <div style="height:26px"></div>
+      <div class="taxtabs" id="taxTabs">
+        <button data-tax="sector" aria-pressed="true">By sector</button>
+        <button data-tax="policy" aria-pressed="false">Remote / hybrid / on site</button>
+        <button data-tax="place" aria-pressed="false">By province</button>
+      </div>
+      <div class="taxgrid" id="taxGrid"></div>
+    </div>
+  </section>
+
+  <section class="band">
+    <div class="wrap">
+      <h2 class="sec">How JobScout works</h2>
+      <p class="lede">Three steps, and the middle one is the only one that costs anything.</p>
+      <div class="grid3">
+        <div class="card">
+          <div class="mini">Resume · read in the browser<span class="badge">never stored</span></div>
+          <div><h3>Your resume, not a form</h3><p>Upload or paste it. It is read in your browser, scored, and never stored — no account, no profile to keep current. <a href="privacy">What we count</a>.</p></div>
+        </div>
+        <div class="card">
+          <div class="mini"><span id="gateMini">the gate runs first</span><span class="badge">no cost</span></div>
+          <div><h3>A gate before the model</h3><p>Three deterministic checks read every posting before Claude sees one. They cost nothing, and each rejection carries its reason.</p></div>
+        </div>
+        <div class="card">
+          <div class="mini">Fit 0–100 · strongest &amp; weakest<span class="badge">scored</span></div>
+          <div><h3>A number and a reason</h3><p>Every survivor gets a fit and a verdict in plain words. The top match gets a cover letter grounded in your resume alone.</p></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="plain">
+    <div class="wrap">
+      <p class="manifesto">Most job boards show you everything and call it choice. This one reads what you wrote, throws away the share that cannot fit, and tells you why about the rest.</p>
+    </div>
+  </section>
+</div>
+
+<div id="v-browse" class="hide">
+  <div class="heromark pagemark""pagemark" aria-hidden="true">
+        <svg viewBox="0 0 760 760">
+          <defs>
+            <radialGradient id="markpop2" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse"
+              gradientTransform="translate(380 330) scale(330 330)">
+              <stop stop-color="#fff" stop-opacity=".32"/>
+              <stop offset=".5" stop-color="#fff" stop-opacity=".11"/>
+              <stop offset="1" stop-color="#fff" stop-opacity="0"/>
+            </radialGradient>
+          </defs>
+          <g class="ring"><circle cx="380.0" cy="80.0" r="28.4"/><circle cx="592.1" cy="167.9" r="54.1"/><circle cx="680.0" cy="380.0" r="79.8"/><circle cx="592.1" cy="592.1" r="105.5"/><circle cx="380.0" cy="680.0" r="131.2"/><circle cx="167.9" cy="592.1" r="156.9"/><circle cx="80.0" cy="380.0" r="182.6"/><circle cx="167.9" cy="167.9" r="208.3"/></g>
+          <g class="pop" fill="url(#markpop2)"><circle cx="380.0" cy="80.0" r="28.4"/><circle cx="592.1" cy="167.9" r="54.1"/><circle cx="680.0" cy="380.0" r="79.8"/><circle cx="592.1" cy="592.1" r="105.5"/><circle cx="380.0" cy="680.0" r="131.2"/><circle cx="167.9" cy="592.1" r="156.9"/><circle cx="80.0" cy="380.0" r="182.6"/><circle cx="167.9" cy="167.9" r="208.3"/></g>
+        </svg>
+      </div>
+  <div class="wrap">
+    <div class="browsehead">
+      <div style="display:flex;align-items:center;gap:18px;flex-wrap:wrap">
+        <h1 id="browseTitle">Explore today's sweep</h1>
+        <div id="scSeg" style="display:flex;background:var(--chip);border:1px solid var(--hair);
+             border-radius:var(--r-pill);padding:3px;gap:2px;margin-bottom:22px">
+          <button class="sctab" data-sc="jobs" aria-pressed="true">Jobs</button>
+          <button class="sctab" data-sc="cos" aria-pressed="false">Companies</button>
+        </div>
+      </div>
+      <div class="searchrow">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="opacity:.45;flex:0 0 auto"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+        <input type="text" id="browseQ" placeholder="Filter by title, company or keyword">
+      </div>
+      <div class="filters" id="browseFilters"></div>
+      <div class="secrow" id="browseSectors"></div>
+    </div>
+    <p class="count" id="browseCount"></p>
+    <div class="jobs" id="browseJobs"></div>
+  </div>
+</div>
+
+<div class="wrap">
+<section class="tickerwrap" aria-label="Sources swept">
+    <p class="tickerlead">Swept every morning &middot; five boards and ~800 company ATS feeds</p>
+    <div class="ticker" aria-hidden="true">
+      <div class="tickrun"><span class="src"><b>Greenhouse</b><i>ATS</i></span><span class="src"><b>Lever</b><i>ATS</i></span><span class="src"><b>Ashby</b><i>ATS</i></span><span class="src"><b>Workable</b><i>ATS</i></span><span class="src"><b>SmartRecruiters</b><i>ATS</i></span><span class="src"><b>Workday</b><i>ATS</i></span><span class="src"><b>BambooHR</b><i>ATS</i></span><span class="src"><b>Recruitee</b><i>ATS</i></span><span class="src"><b>RemoteOK</b><i>board</i></span><span class="src"><b>We Work Remotely</b><i>board</i></span><span class="src"><b>Hacker News</b><i>board</i></span><span class="src"><b>Wellfound</b><i>board</i></span><span class="src"><b>Remotive</b><i>board</i></span></div><div class="tickrun"><span class="src"><b>Greenhouse</b><i>ATS</i></span><span class="src"><b>Lever</b><i>ATS</i></span><span class="src"><b>Ashby</b><i>ATS</i></span><span class="src"><b>Workable</b><i>ATS</i></span><span class="src"><b>SmartRecruiters</b><i>ATS</i></span><span class="src"><b>Workday</b><i>ATS</i></span><span class="src"><b>BambooHR</b><i>ATS</i></span><span class="src"><b>Recruitee</b><i>ATS</i></span><span class="src"><b>RemoteOK</b><i>board</i></span><span class="src"><b>We Work Remotely</b><i>board</i></span><span class="src"><b>Hacker News</b><i>board</i></span><span class="src"><b>Wellfound</b><i>board</i></span><span class="src"><b>Remotive</b><i>board</i></span></div>
+    </div>
+  </section>
+
+  
+<section class="stage" id="scoreStage" hidden>
+    <div class="bearing"><b>090</b> — SCORING</div>
+    <h2>What Claude makes of them</h2>
+    <p class="note" id="scoreNote">A fit from 0 to 100, a verdict in plain words, the strongest point and the weakest. The rose lights with the score; the top match gets a cover letter grounded in the profile alone.</p>
+    <div class="status" id="scoreStatus"><img class="cmark" src="claude-mark.png" alt="" width="22" height="22"><span>scoring with Claude…</span></div>
+    <div class="scores" id="scores"></div>
+  </section>
+
+  
+</div>
+<section class="stage band" id="gatesStage" hidden>
+    <div class="wrap">
+      <div class="bearing"><b>180</b> — GATES</div>
+      <h2>Why those, and not the rest</h2>
+      <p class="note">Before Claude sees anything, three deterministic checks read every posting from the sweep. They cost nothing, run in an instant, and each rejection carries its reason.</p>
+      <div class="gatecards" id="gatecards">
+        <div class="gc gc-1">
+          <h3>Remote-listed</h3>
+          <p>The posting itself has to say remote — not "flexible", not "hybrid-friendly".</p>
+        </div>
+        <div class="gc gc-2">
+          <h3>Region-eligible</h3>
+          <p>Work authorization, checked against where the role can legally be done.</p>
+        </div>
+        <div class="gc gc-3">
+          <h3>Title in scope</h3>
+          <p>The title has to sit in the bands the candidate is searching. Cheapest gate, biggest cut.</p>
+        </div>
+      </div>
+      <div class="rows" id="gateRows"></div>
+      <div class="rows gatemore" id="gateMore" hidden></div>
+      <div class="gatetoggle"><button id="gateToggle" type="button" hidden></button></div>
+      <div class="status" id="gateStatus" hidden><span class="spin"></span><span></span></div>
+    </div>
+  </section>
+
+</main>
+
+<section class="metrics" aria-label="What the demo actually does">
+  <div class="wrap" style="text-align:center">
+    <div class="bearing"><b>360</b> — THE NUMBERS</div>
+    <h2 style="font-family:var(--serif);font-weight:480;font-size:clamp(30px,4vw,48px);line-height:1.1;margin:22px 0 10px;color:var(--ink)">What is actually running</h2>
+    <p class="note" style="margin:0 auto 6px;font-size:16.5px;color:var(--text2);max-width:64ch">Read from the live pipeline as this page loaded. Nothing here is typed in.</p>
+  </div>
+  <div class="crail" id="crail"></div>
+  <div class="cnav">
+    <button class="cbtn" id="cprev" type="button" aria-label="previous">&#8592;</button>
+    <div class="cdots" id="cdots"></div>
+    <button class="cbtn" id="cnext" type="button" aria-label="next">&#8594;</button>
+  </div>
+</section>
+
+
+<section class="endpage" id="getapp">
+  <div class="tiles" id="tiles" aria-hidden="true"></div>
+  <div class="inner">
+    <p class="dream">Let it read the market for you.</p>
+    <a class="cta" href="https://github.com/kenmwara/jobscout-app/releases/latest/download/JobScout-release.apk">Get the Android app</a>
+    <div><a class="cta2" href="#top">Run it in the browser</a></div>
+  </div>
+  <div class="endlinks">
+    <div>
+      <a href="https://github.com/kenmwara/jobscout-app" target="_blank" rel="noopener">Source</a>
+      <a href="https://tbot.trade/portfolio" target="_blank" rel="noopener">Builder</a>
+      <a href="saved">Saved</a>
+      <a href="privacy">Privacy</a>
+    </div>
+    <svg class="mk" viewBox="0 0 24 24" fill="#4865ff" aria-hidden="true"><circle cx="12.000" cy="1.000" r="2.300"/><circle cx="19.778" cy="4.222" r="2.593"/><circle cx="23.000" cy="12.000" r="2.886"/><circle cx="19.778" cy="19.778" r="3.179"/><circle cx="12.000" cy="23.000" r="3.471"/><circle cx="4.222" cy="19.778" r="3.764"/><circle cx="1.000" cy="12.000" r="4.057"/><circle cx="4.222" cy="4.222" r="4.350"/></svg>
+    <div>
+      <span class="claude"><img src="claude-mark.png" alt="" width="24" height="24">Scored by Claude</span>
+      <a href="mailto:ken@tbot.trade">Contact</a>
+    </div>
+  </div>
+  <div class="wordmark" aria-hidden="true">JobScout</div>
+</section>
+
+
+<script>
+// the old host and the www form both land on the canonical apex, path intact
+if (/(^www\.jobscout\.page$|jobscout\.tbot\.trade$)/.test(location.hostname)) location.replace("https://jobscout.page" + location.pathname + location.search);
+const API = "https://jobscout-app-api.kenmwara.workers.dev";
+/* Markets: "ca" is the operator's own hunt; "ke" is the Kenya market — the same
+   sweep re-gated for a hire based in Kenya, its own personas and rubric.
+   nairobi.jobscout.page opens on it; ?market=ke does too, for testing. */
+const MARKET = (new URLSearchParams(location.search).get("market") || (/^(nairobi|ke)\./.test(location.hostname) ? "ke" : "ca")).toLowerCase() === "ke" ? "ke" : "ca";
+const $ = s => document.querySelector(s);
+const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+const PERSONAS_KE = [
+  { id:"wanjiru", name:"Wanjiru", role:"Software Developer (graduate)", desc:"Nairobi · BSc CS 2025 · Ajira-trained · Python/JS/SQL",
+    profile:"Software developer in Nairobi, Kenya (Kenyan citizen; remote-only; East Africa Time, UTC+3). BSc Computer Science 2025, University of Nairobi. Ajira Digital web-development track. Two internships: Django/PostgreSQL back-end at a fintech startup, React front-end at a digital agency. Python, JavaScript, SQL, Git, basic AWS. Looking for: junior or entry-level software, QA or support-engineering roles, fully remote, contractor or employee." },
+  { id:"brian", name:"Brian", role:"Customer Support Specialist", desc:"Nakuru · 3 yrs remote support · Zendesk/Intercom · English + Swahili",
+    profile:"Customer support specialist in Nakuru, Kenya (remote-only; East Africa Time, UTC+3). 3 years of remote support for a US SaaS company via Upwork and for a Kenyan BPO: Zendesk, Intercom, HubSpot; email, chat and phone; CSAT 96%. Ajira Digital certified virtual assistant. Fluent English and Swahili. Looking for: remote customer support, customer success or virtual-assistant roles covering EMEA or US-morning hours." },
+  { id:"amina", name:"Amina", role:"Accountant", desc:"Mombasa · CPA-K · QuickBooks/Xero · remote bookkeeping",
+    profile:"Accountant in Mombasa, Kenya (CPA-K; remote-only; East Africa Time, UTC+3). 6 years: bookkeeping, month-end close, payroll, VAT and tax filings; QuickBooks Online, Xero, Excel, Google Sheets. Two years of remote bookkeeping for UK and Kenyan small businesses. Looking for: remote accounting, bookkeeping or finance-operations roles; contractor arrangements are fine." }
+];
+const PERSONAS_CA = [
+  { id:"maya", name:"Maya", role:"Senior Platform Engineer", desc:"Vancouver · Canadian PR · remote-only · Python/TypeScript, Cloudflare, LLM orchestration",
+    profile:"Senior platform engineer in Vancouver, BC (Canadian PR; no US work authorization — US roles must allow remote-from-Canada). 8 years: Python, TypeScript, Cloudflare Workers/D1, DigitalOcean, FastAPI, nginx. Builds and operates LLM-orchestrated production systems (Claude API) end-to-end solo: trading platform, audit pipelines, edge APIs. Wants: senior/staff platform or AI-infrastructure roles, fully remote." },
+  { id:"riley", name:"Riley", role:"Customer Support Specialist", desc:"Calgary · 2 yrs SaaS support · Zendesk/Intercom · remote-Canada or hybrid",
+    profile:"Customer support specialist in Calgary, AB (Canadian citizen). 2 years of technical customer support for a Canadian SaaS company: Zendesk, Intercom, Jira; email, chat and escalation triage; CSAT 95%. Writes help-centre articles and runs onboarding calls. Looking for: customer support, customer success or support-operations roles, remote-Canada or Calgary hybrid." },
+  { id:"priya", name:"Priya", role:"Financial Advisor", desc:"Toronto · LLQP licensed · investments and insurance · hybrid or remote-Canada",
+    profile:"Financial advisor in Toronto, ON (Canadian citizen; LLQP and mutual funds licensed). 6 years advising retail clients on investments, insurance and mortgages at a Canadian bank; portfolio reviews, retirement planning, referrals to wealth specialists. Looking for: financial advisor, investment specialist or client-relationship roles, Toronto hybrid or remote-Canada." },
+];
+const PERSONAS = MARKET === "ke" ? PERSONAS_KE : PERSONAS_CA;
+if (MARKET === "ke"){
+  document.title = "JobScout Kenya — an LLM reads the job market honestly";
+  document.querySelector(".hero .sub").textContent = "Real postings, open to a hire based in Kenya. Every reason shown.";
+  const nm = document.querySelector("#navMarket"); nm.textContent = "Canada"; nm.href = "https://jobscout.page";
+  // the Kenya gates are different gates: say what they actually check
+  const gc = document.querySelectorAll("#gatecards .gc");
+  [["In Kenya, or open to it", "A role located in Kenya passes. So does one open worldwide, across EMEA or Africa."],
+   ["No named place elsewhere", "\"Remote\" beside a country or city that is not Kenya is a lock, and the reason says which."],
+   ["Never asks for money", "A fee, a deposit, a paid training — any posting that asks the applicant to pay is rejected outright."]]
+   .forEach(([h, t], i) => { if (gc[i]){ gc[i].querySelector("h3").textContent = h; gc[i].querySelector("p").textContent = t; } });
+}
+
+/* Token names, not hexes: the originals were contrast-checked on cream and go
+   muddy on Kenya's near-black, which now declares its own set. */
+const BAND = f => f >= 80 ? ["auto", "var(--b-auto)", "var(--b-auto-bg)"]
+              : f >= 70 ? ["ping", "var(--b-ping)", "var(--b-ping-bg)"]
+              : f >= 55 ? ["unsure", "var(--b-unsure)", "var(--b-unsure-bg)"]
+                        : ["near-miss", "var(--b-near)", "var(--b-near-bg)"];
+
+/* The bearing rose - the brand mark, carrying the score. Eight dots on the same
+   ring as the logo; fit lights them clockwise from bearing 000 and the lit ones
+   bloom. Nothing rotates, so the score reads the same at any size. */
+const ROSE = Array.from({length: 8}, (_, i) => {
+  const th = (-90 + 45 * i) * Math.PI / 180;
+  return [52 + 38 * Math.cos(th), 52 + 38 * Math.sin(th)];
+});
+function roseSVG(fit){
+  const [, col] = BAND(fit);
+  const lit = Math.max(1, Math.round(Math.max(0, Math.min(100, fit)) / 100 * 8));
+  const dots = ROSE.map(([x, y], i) => i < lit
+    ? `<circle class="lit" style="--i:${i}" cx="${x.toFixed(2)}" cy="${y.toFixed(2)}" r="${(7.87 + i * 1.019).toFixed(2)}" fill="${col}"/>`
+    : `<circle cx="${x.toFixed(2)}" cy="${y.toFixed(2)}" r="${((7.87 + i * 1.019) * 0.42).toFixed(2)}" fill="var(--hair2)"/>`).join("");
+  return `<svg class="rose" viewBox="0 0 104 104" role="img" aria-label="fit ${fit} of 100">
+    ${dots}<text class="fitnum" x="52" y="60.5" fill="${col}">${fit}</text></svg>`;
+}
+
+/* ── counted events ──────────────────────────────────────────────────────────────────────
+ * What happened, never who. The id below is random, per tab, and dies with the tab; it exists
+ * so "opened, ran, applied" can be read as one visit. No resume text, no job title, no company,
+ * no IP. sendBeacon so a click that leaves the page still counts. Never awaited, never throws:
+ * a counter must not be able to break the page.
+ */
+let SID = "";
+try{
+  SID = sessionStorage.getItem("jobscout.sid") || "";
+  if (!/^[a-z0-9]{6,24}$/.test(SID)){
+    SID = Math.random().toString(36).slice(2, 10) + Math.random().toString(36).slice(2, 6);
+    sessionStorage.setItem("jobscout.sid", SID);
+  }
+}catch(e){ SID = Math.random().toString(36).slice(2, 14); }
+function ev(n, d){
+  try{
+    const body = JSON.stringify({ n, d: d == null ? null : String(d), m: MARKET, s: "web", sid: SID });
+    // text/plain, NOT application/json: a Blob with a non-safelisted content type makes
+    // sendBeacon need a CORS preflight, which sendBeacon cannot do, so the browser drops the
+    // request and returns true anyway. Verified on the live site — the json beacon vanished
+    // and the text/plain one landed. The worker parses the body itself, so the header is free.
+    if (navigator.sendBeacon) navigator.sendBeacon(API + "/api/ev", new Blob([body], { type: "text/plain" }));
+    else fetch(API + "/api/ev", { method: "POST", body, keepalive: true });
+  }catch(e){}
+}
+ev("open");
+
+// Nothing is chosen on open (2026-09-17: on a phone the collapsed cards hid that
+// Maya was pre-selected, and a run with no resume read as "the app remembered me").
+let feed = null, selected = null, running = false;
+/* Where the visitor lives, and whether they will consider anything but remote. Both start unset —
+   nothing is chosen for anyone, the same rule the personas follow. */
+let home = "", remoteOnly = false;
+
+/* Could a person living in `home` take this posting? Remote is takeable from anywhere inside its
+   own scope; an onsite or hybrid posting needs you there; and a posting that names no province is
+   ambiguous, not nowhere, so it is kept rather than dropped. Mirrored in Select.kt, Select.swift
+   and tools/demo_eval.py — change the four together. */
+function takeable(p){
+  if (remoteOnly && p.remote_policy !== "remote") return false;
+  if (!home) return true;
+  if (p.remote_policy === "remote") return true;
+  if (!(p.places || []).length) return true;
+  return p.places.includes(home);
+}
+function whyNot(p){
+  if (remoteOnly && p.remote_policy !== "remote")
+    return `you asked for remote only — this one is listed ${esc(p.remote_policy || "onsite")}`;
+  const where = (feed.places?.options || []).find(o => o.code === home);
+  return `you are in ${esc(where ? where.label : home)} — this one needs you in ${esc(p.location || "another province")}`;
+}
+
+/* ── Saved jobs: per-browser, localStorage only, key jobscout.tracker.
+   The list itself lives on saved.html now; this page only saves and counts. ── */
+const TKEY = "jobscout.tracker";
+let tracker = {};
+try{ tracker = JSON.parse(localStorage.getItem(TKEY) || "{}").items || {}; }catch(e){ tracker = {}; }
+function saveTracker(){ try{ localStorage.setItem(TKEY, JSON.stringify({ v:2, items: tracker })); }catch(e){} }
+
+function saveBtn(id){
+  const on = !!tracker[id];
+  return `<button class="savebtn${on ? " on" : ""}" type="button" data-save="${esc(id)}"
+    aria-pressed="${on}">${on ? "✓ Saved" : "Save"}</button>`;
+}
+function toggleSave(id, p, fit){
+  if (!tracker[id]) ev("save", BAND(fit)[0]);
+  if (tracker[id]) delete tracker[id];
+  else tracker[id] = { id, title: p.title || id, company: p.company || "", url: p.url || "",
+                       fit, saved: new Date().toISOString().slice(0, 10) };
+  saveTracker();
+  document.querySelectorAll(`[data-save="${CSS.escape(id)}"]`).forEach(btn => {
+    const on = !!tracker[id];
+    btn.classList.toggle("on", on);
+    btn.setAttribute("aria-pressed", String(on));
+    btn.textContent = on ? "✓ Saved" : "Save";
+  });
+  savedCount();
+}
+function savedCount(){
+  const n = Object.keys(tracker).length;
+  $("#navTrack").textContent = `saved (${n})`;
+}
+function plink(url){
+  return url ? `<a class="plink" href="${esc(url)}" target="_blank" rel="noopener">View posting ↗</a>` : "";
+}
+
+/* The samples are a fallback, so they are chips in a sentence, not cards. The full
+   description rides in the title, which is where a one-line aside belongs. */
+/* Personas removed 2026-09-19: three fictional candidates asked the visitor to
+   do the product's work before it had done any. */
+function renderPersonas(){}
+function markChips(){}
+
+function profileText(){
+  const own = $("#ownText").value.trim();
+  return own.length > 40 ? own : selected?.profile || null;
+}
+
+function banner(kind, text){
+  $("#banner").innerHTML = text ? `<div class="banner ${kind}">${text}</div>` : "";
+}
+
+/* ── the numbers, filled from the feed ─────────────────────────────────── */
+function metricsFor(f){
+  const c = f?.counts || {};
+  const n = f?.postings?.length, p = c.pass, r = c.reject;
+  return [
+    { k:"m-a", big: n ?? "—", cap:"postings curated from this morning's real sweep", foot:"the ledger, not a cached demo set", side:"Real jobs. Real morning." },
+    { k:"m-b", big:"~800", cap:"company ATS feeds swept daily, plus five boards", foot:"Greenhouse, Lever, Ashby, Workable, Workday…", side:"Swept before you wake up." },
+    { k:"m-c", big: p ?? "—", cap:"cleared the deterministic gates today", foot:`${r ?? "—"} rejected, each with its reason on the page`, side:"Free to say no." },
+    { k:"m-d", big:"8", cap:"eligible postings scored per run, in one call to Claude", foot:`scored concurrently on ${model} — the whole run lands in a few seconds`, side:"One call. Eight verdicts." },
+    { k:"m-e", big:"4", cap:"fit bands, and each one picks a different next step", foot:"auto ≥ 80 · ping 70–79 · unsure 55–69 · near-miss below 55", side:"The score picks the route." },
+    { k:"m-f", big:"0", cap:"applications submitted on your behalf", foot:"a human clicks every Submit. Always.", side:"You click. It never does." },
+  ];
+}
+let cards = [], model = "—";
+function renderMetrics(f){
+  const rail = $("#crail");
+  rail.innerHTML = metricsFor(f).map((m, i) => `
+    <div class="ccard ${m.k}${i === 0 ? " on seen" : ""}">
+      <div class="cl"><div><div class="big">${m.big}</div><div class="cap">${m.cap}</div></div><div class="foot">${m.foot}</div></div>
+      <div class="cr">${m.side}</div>
+    </div>`).join("");
+  cards = [...rail.children];
+  $("#cdots").innerHTML = cards.map((_, i) => `<i${i === 0 ? ' class="on"' : ""} data-i="${i}"></i>`).join("");
+  const dots = [...$("#cdots").children];
+  // `on` tracks the centred card for the bar; `seen` is never removed, so a
+  // card brightens once on the way in and stays bright behind you
+  const io = new IntersectionObserver(es => es.forEach(e => {
+    const i = cards.indexOf(e.target);
+    if (e.isIntersecting){
+      cards.forEach((c, j) => c.classList.toggle("on", j === i));
+      cards.slice(0, i + 1).forEach(c => c.classList.add("seen"));
+      dots.forEach((d, j) => d.classList.toggle("on", j === i));
+    }
+  }), { root: rail, threshold: .6 });
+  cards.forEach(c => io.observe(c));
+  const go = i => cards[Math.max(0, Math.min(cards.length - 1, i))]
+    ?.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "nearest", inline: "center" });
+  const cur = () => cards.findIndex(c => c.classList.contains("on"));
+  $("#cprev").onclick = () => go(cur() - 1);
+  $("#cnext").onclick = () => go(cur() + 1);
+  dots.forEach(d => d.onclick = () => go(+d.dataset.i));
+}
+
+/* ── the closing page's drifting tiles: swatches of the palette, placed by
+   hand so none lands on the line, the pill or the button - Cosmos's field of
+   little pictures, in our colours. [x%, y%, size, hue, rotation, blur, opacity] ── */
+const TILES = [
+  [3,10,76,"indigo",-9,0,.95],[11,34,52,"blossom",6,1,.8],[5,62,64,"forest",-4,0,.9],[16,80,44,"cream",10,2,.7],
+  [22,14,58,"ember",8,0,.9],[27,52,40,"info",-12,1.5,.75],[33,74,70,"midnight",4,0,.95],
+  [66,78,56,"blossom",-7,0,.9],[72,12,66,"forest",9,0,.95],[80,44,46,"indigo",-5,1.5,.75],[87,20,58,"ember",-11,0,.9],
+  [93,62,72,"midnight",7,0,.95],[57,6,42,"cream",-3,2,.7],[40,4,50,"info",5,1,.8],[62,50,36,"indigo",12,2.5,.6],[90,84,48,"blossom",-8,1,.8],
+];
+const MARK = `<svg viewBox="0 0 24 24" fill="rgba(255,255,255,.9)"><circle cx="12" cy="1" r="2.3"/><circle cx="19.78" cy="4.22" r="2.59"/><circle cx="23" cy="12" r="2.89"/><circle cx="19.78" cy="19.78" r="3.18"/><circle cx="12" cy="23" r="3.47"/><circle cx="4.22" cy="19.78" r="3.76"/><circle cx="1" cy="12" r="4.06"/><circle cx="4.22" cy="4.22" r="4.35"/></svg>`;
+function renderTiles(){
+  $("#tiles").innerHTML = TILES.map(([x, y, s, hue, r, b, o], i) =>
+    `<span class="tile t-${hue}" style="left:${x}%;top:${y}%;--s:${s}px;--r:${r}deg;--b:${b}px;--o:${o};--d:${7 + (i * 3) % 6}s">${i % 4 === 0 ? MARK : ""}</span>`
+  ).join("");
+}
+
+async function loadFeed(){
+  try{
+    const r = await fetch(API + "/api/feed?market=" + MARKET); feed = await r.json();
+    const c = feed.counts || {};
+    $("#sweepline").hidden = true;
+  }catch(e){
+    // the one thing worth saying up here, and only when it is true
+    $("#sweepline").textContent = "The feed is unreachable right now. Scoring needs the API.";
+    $("#sweepline").hidden = false;
+  }
+  renderMetrics(feed);
+  renderSetup();
+}
+
+/* Every control is built from feed.places, so none of them can offer a place today's sweep
+   cannot honour, and each card carries the number that makes it worth touching. */
+function renderSetup(){
+  heroTabs();
+  taxTiles();
+  syncHint();
+  if (view === "browse") browse();
+}
+
+/* Where-you-can-work and remote-only moved out of the hero and onto Browse,
+   where there are results to narrow. The hero asks one thing. */
+/* One sentence, recomputed from the feed, that adds up. */
+function prefNote(){
+  return;   // the sentence lived under the chooser; the chooser is gone
+  /* eslint-disable no-unreachable */
+  if (!feed || !feed.places){ return; }
+  const all = feed.postings.filter(p => p.gate?.verdict !== "reject");
+  const n = all.filter(takeable).length;
+  const opt = (feed.places.options || []).find(o => o.code === home);
+  const where = opt ? opt.label : (MARKET === "ke" ? "Kenya" : "Canada");
+  // Silent at rest: the cards already carry the numbers, and a sentence repeating them was noise.
+  $("#prefNote").innerHTML = home || remoteOnly
+    ? `Scoring <b>${n}</b> of today's ${all.length} — the rest stay on the page, each with its reason.`
+    : "";
+}
+
+function sleep(ms){ return new Promise(r => setTimeout(r, reduced ? 0 : ms)); }
+
+async function runPipeline(){
+  if (running || !feed?.postings?.length) return;
+  const profile = profileText();
+  if (!profile){
+    banner("warn", "Add your resume above — upload a file or paste the text — or score one of the sample candidates under the button.");
+    $("#ownText").focus();
+    return;
+  }
+  running = true; $("#runBtn").disabled = true; banner("", "");
+
+  $("#gatesStage").hidden = false;
+  $("#gateRows").innerHTML = ""; $("#gateMore").innerHTML = ""; $("#gateMore").hidden = true;
+  $("#scoreStage").hidden = true; $("#scores").innerHTML = "";
+
+  // Only the first few stream. Twenty-two verdicts at once is a wall, and the
+  // point of this section lands in the first handful — so the handful is the
+  // profile's own sector (2026-09-17: a banker was shown six ReliefWeb consultancies
+  // as "the receipts" because they happened to lead the feed). Sector first, then the
+  // rejects (the instructive part), then everything else behind the toggle.
+  const GATE_SHOWN = 6;
+  const gateSector = sectorOf(profile, feed.lexicon || {});
+  const ok = p => p.gate?.verdict !== "reject";
+  const gateOrder = [...feed.postings.filter(p => ok(p) && p.sector === gateSector && takeable(p)),
+                     ...feed.postings.filter(p => !ok(p)),
+                     ...feed.postings.filter(p => ok(p) && !takeable(p)),
+                     ...feed.postings.filter(p => ok(p) && p.sector !== gateSector && takeable(p))];
+  const rows = gateOrder.map((p, i) => {
+    const rej = p.gate?.verdict === "reject";
+    // Three states, never two. "You are in Manitoba and this is a Toronto office job" is not a
+    // rejection by the market, and printing it as one would put words in the market's mouth.
+    const aside = !rej && !takeable(p);
+    const el = document.createElement("div");
+    el.className = "row" + (rej ? " rej" : aside ? " aside" : "");
+    el.innerHTML = `<div><div class="t">${esc(p.title)} <span class="co">· ${esc(p.company)}</span></div>
+      <div class="m">${esc(p.location)} · ${esc(p.source || "board")}</div>
+      <div class="gatereason">${rej ? "✗ " : aside ? "– " : "✓ "}${aside ? whyNot(p) : esc(p.gate?.reason || "")}</div></div>
+      <span class="verdict ${rej ? "reject" : aside ? "aside" : "pass"}">${rej ? "rejected" : aside ? "set aside" : "eligible"}</span>`;
+    (i < GATE_SHOWN ? $("#gateRows") : $("#gateMore")).appendChild(el);
+    if (i >= GATE_SHOWN) el.classList.add("in");
+    return el;
+  });
+  const hidden = Math.max(0, rows.length - GATE_SHOWN);
+  const tog = $("#gateToggle");
+  tog.hidden = !hidden;
+  tog.textContent = `show the other ${hidden} verdicts`;
+  tog.onclick = () => {
+    const open = $("#gateMore").hidden;
+    $("#gateMore").hidden = !open;
+    tog.textContent = open ? "hide them again" : `show the other ${hidden} verdicts`;
+  };
+  // Land on the results, not on the prefilter - the gate list fills in below
+  // while the scoring call is in flight, and reads as the receipts afterwards.
+  $("#scoreStage").hidden = false;
+  $("#scoreStatus").hidden = false;
+  $("#scoreStatus").lastElementChild.textContent = "checking eligibility…";
+  $("#scoreStage").scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "start" });
+  for (const el of rows.slice(0, GATE_SHOWN)){ await sleep(140); el.classList.add("in"); }
+
+  // 2026-09-16: score the sector the profile reads as, not the first eight eligible.
+  // The feed carries ~12 postings per sector and the lexicon that tagged them; the same
+  // lexicon classifies the profile here, so a banker meets banking postings. Fewer than
+  // four in the sector → top up with the rest, and the floor rule below says so honestly.
+  const eligible = feed.postings.filter(p => p.gate?.verdict !== "reject");
+  // The visitor's own constraints are gates like any other: deterministic, free, and each one
+  // that removes a posting owes a reason. eligible = chosen + setAside, always.
+  const chosen = eligible.filter(takeable);
+  const setAside = eligible.filter(p => !takeable(p));
+  const sector = sectorOf(profile, feed.lexicon || {});
+  const inSector = chosen.filter(p => p.sector === sector);
+  // Within the sector, the postings nearest the profile's own words go first (a title
+  // hit counts 3, a summary hit 1), so a wealth advisor meets advisor postings before
+  // tax analysts. Deterministic and free; Claude still does the judging.
+  const STOP = new Set(["experience","looking","remote","years","strong","skills","working","across","within","roles","based","including","ability","seeking","professional","currently","business","company","canada","canadian","kenya","kenyan"]);
+  const words = [...new Set(profile.toLowerCase().match(/[a-z][a-z&-]{4,}/g) || [])].filter(w => !STOP.has(w)).slice(0, 80);
+  // Inverse document frequency over the feed: "senior", "manager", "services" sit in most
+  // postings and must not outrank "advisor" or "mortgage" (mirrors tools/demo_eval.py).
+  // NOTE: the IDF corpus stays the WHOLE eligible feed, not `chosen`. Rarity is a property of
+  // the market, not of what this visitor will consider; narrowing it would make every word in a
+  // small pool look rare and scramble the ranking.
+  const docs = eligible.map(p => ((p.title || "") + " " + (p.summary || "")).toLowerCase());
+  const idf = Object.fromEntries(words.map(w => [w, 1 / Math.log(2 + docs.filter(d => d.includes(w)).length)]));
+  const rel = p => { const t = (p.title || "").toLowerCase(), s = (p.summary || "").toLowerCase(); let n = 0; for (const w of words){ n += (t.includes(w) ? 3 : s.includes(w) ? 1 : 0) * idf[w]; } return n; };
+  const ranked = pool => [...pool].sort((a, b) => rel(b) - rel(a));
+  const passers = (inSector.length >= 4 ? ranked(inSector) : ranked(inSector).concat(ranked(chosen.filter(p => p.sector !== sector)))).slice(0, 8);
+  const label = (feed.labels || {})[sector] || sector;
+  if (!passers.length){
+    // A rule already knew the answer, so nothing is sent and nothing is spent.
+    banner("warn", `Nothing in today's ${eligible.length} eligible postings is open to you with those settings. ` +
+      `No call was made to Claude — a rule already knew, and rules are free. Every posting set aside is listed below, with the reason.`);
+    finish(); return;
+  }
+  ev("run", sector);
+  $("#scoreNote").innerHTML = `Reads as <b>${esc(label)}</b> · ${inSector.length} of ${eligible.length} in that sector · ${passers.length} scored${setAside.length ? ` · ${setAside.length} set aside by your settings` : ""}. A letter or a tailored resume is offered from ${FIT_FLOOR} up.`;
+  await sleep(300);
+  $("#scoreStatus").lastElementChild.textContent = `scoring ${passers.length} ${esc(label)} postings with Claude…`;
+
+  let data;
+  try{
+    const r = await fetch(API + "/api/score", {
+      method: "POST", headers: { "content-type": "application/json" },
+      body: JSON.stringify({ profile, postings: passers, market: MARKET }),
+    });
+    data = await r.json();
+    if (r.status === 429) { banner("warn", "Rate limit reached for this hour — the guard is doing its job. Try again in a bit."); finish(); return; }
+  }catch(e){ banner("err", "Scoring API unreachable: " + e); finish(); return; }
+
+  $("#scoreStatus").hidden = true;
+
+  if (data.breaker){
+    banner("warn", data.detail + (data.cached ? " Showing the cached showcase run:" : ""));
+    if (data.cached?.scores) renderScores(data.cached.scores, passers, profile, data.cached.meta, true);
+    finish(); return;
+  }
+  if (!data.scores){ banner("err", "Unexpected response: " + JSON.stringify(data).slice(0,120)); finish(); return; }
+  renderScores(data.scores, passers, profile, data.meta, false);
+  finish();
+}
+
+const FIT_FLOOR = 55;   // the "unsure" band. Below it nothing is recommended and nothing is drafted.
+
+/* The profile's sector, by the feed's own lexicon (tools/sector.py mirrored): the first
+   300 characters count as the headline (3x), the rest as body (1x). Zero hits → other. */
+function sectorOf(profile, lex){
+  // Headline first, like the feed: if the first 300 characters name a sector, they
+  // decide (the body breaks ties); only a headline with no hit falls back to the body.
+  const t = profile.slice(0, 300).toLowerCase(), b = profile.slice(300, 2800).toLowerCase();
+  const rxEsc = s => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const scores = {};
+  for (const [sec, phrases] of Object.entries(lex)){
+    let th = 0, bh = 0;
+    for (const ph of phrases){
+      const rx = new RegExp("(?<![a-z0-9])" + rxEsc(ph) + "(?![a-z0-9])");
+      const w = ph.trim().split(/\s+/).length;   // a phrase weighs its word count, as in tools/sector.py
+      if (rx.test(t)) th += w; else if (rx.test(b)) bh += w;
+    }
+    scores[sec] = [th, bh];
+  }
+  // Profile mode (tools/sector.py mode="profile"): a resume's first 300 characters are a
+  // name, a phone number and a generic objective — the sector lives in the body. Headline
+  // weighs 3x, but the whole text decides, and fewer than 3 points is not a sector.
+  let best = "other", bestScore = 0;
+  for (const s of Object.keys(scores)){
+    const total = 3 * scores[s][0] + scores[s][1];
+    if (total > bestScore){ best = s; bestScore = total; }
+  }
+  return bestScore >= 3 ? best : "other";
+}
+
+function renderScores(scores, passers, profile, meta, cached){
+  // the band of the best match: the one number that says whether the run was worth anything
+  if (!cached && scores?.length) ev("scored", BAND(Math.max(...scores.map(x => x.fit || 0)))[0]);
+  const byId = Object.fromEntries(passers.map(p => [p.id, p]));
+  const sorted = [...scores].sort((a,b) => b.fit - a.fit);
+  // 2026-09-16: the top card used to get the highlight and the drafting buttons on
+  // position alone, so a 22/100 near-miss was dressed up as the recommendation.
+  const clears = sorted.length > 0 && sorted[0].fit >= FIT_FLOOR;
+  if (sorted.length && !clears){
+    const t = sorted[0], tp = byId[t.id] || {};
+    const nf = document.createElement("div");
+    nf.className = "nofit";
+    nf.innerHTML = `<b>Nothing in today's pool clears the bar for this profile.</b> The nearest was ${t.fit} out of 100 — ${esc(tp.title || t.id)}${tp.company ? " · " + esc(tp.company) : ""}. A cover letter or a tailored resume is only offered from ${FIT_FLOOR} up, so none is offered here. The verdicts below say why.`;
+    $("#scores").appendChild(nf);
+  }
+  sorted.forEach((s, i) => {
+    const p = byId[s.id] || {};
+    const [route, col, bg] = BAND(s.fit);
+    const top = i === 0 && clears && !cached;
+    const el = document.createElement("article");
+    el.className = "job bloomer" + (top ? " top" : "");
+    el.dataset.id = s.id;
+    el.dataset.title = p.title || s.id;
+    const age = ageOf(p);
+    el.innerHTML = `<span class="bl" aria-hidden="true"></span>
+      <div class="top">
+        <span class="logo">${esc((p.company || "?").slice(0, 2).toUpperCase())}</span>
+        <span style="display:flex;align-items:center;gap:10px">
+          ${roseSVG(s.fit)}
+          <button class="savebtn" type="button" data-save="${esc(s.id)}"
+            aria-pressed="false" aria-label="Save ${esc(p.title || s.id)}">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 1 0-7.8 7.8l1 1.1L12 21.2l7.8-7.7 1-1.1a5.5 5.5 0 0 0 0-7.8z"/></svg>
+          </button>
+        </span>
+      </div>
+      <div>
+        <p class="co">${esc(p.company || "")}</p>
+        <h3 class="role">${esc(p.title || s.id)}</h3>
+        <p style="margin:9px 0 0"><span class="route" style="color:${col};background:${bg}">${route}</span>
+          <span class="age${age.days === 0 ? " new" : ""}${age.stale ? " stale" : ""}" tabindex="0" data-ev="${esc(age.ev)}">${esc(age.text)}</span></p>
+        <p class="verdict" style="margin:9px 0 0">${esc(s.verdict || "")}</p>
+        <div class="ev">
+          <span class="up" tabindex="0" data-ev="${esc(s.strongest || "—")}">&#8593; strongest</span>
+          <span class="down" tabindex="0" data-ev="${esc(s.weakest || "—")}">&#8595; weakest</span>
+        </div>
+        <div class="act">${top ? `<button class="letterbtn" type="button">Cover letter &#8594;</button><button class="tailorbtn" type="button">Tailor resume &#8594;</button>` : ""}${plink(p.url)}</div>
+      </div>
+      <div class="foot">
+        <span class="loc">${esc(p.location || "Location not stated")}</span>
+        <span class="pill${p.remote_policy === "remote" ? " on" : ""}">${
+          p.remote_policy === "remote" ? "Remote" : p.remote_policy === "hybrid" ? "Hybrid" : "On site"}</span>
+      </div>`;
+    $("#scores").appendChild(el);
+    setTimeout(() => el.classList.add("in"), reduced ? 0 : 130 * i);
+    const sb = el.querySelector("[data-save]");
+    sb.setAttribute("aria-pressed", String(!!tracker[s.id]));
+    sb.onclick = () => { toggleSave(s.id, p, s.fit); sb.setAttribute("aria-pressed", String(!!tracker[s.id])); };
+    wireSwipe(el);
+    if (top){
+      el.querySelector(".letterbtn").onclick = () => { ev("letter"); draftLetter(el, p, profile, s.fit); };
+      el.querySelector(".tailorbtn").onclick = () => { ev("tailor"); tailorResume(el, p, profile, s.fit); };
+    }
+  });
+  if (meta?.model && meta.model !== model){ model = meta.model; renderMetrics(feed); }
+}
+
+async function draftLetter(card, posting, profile, fit){
+  const btn = card.querySelector(".letterbtn");
+  const label = btn.textContent;
+  // A refused letter must not eat the button's label: the guard message belongs
+  // in the banner, and the button goes back to being a button for a retry.
+  const fail = msg => { banner("warn", msg); btn.disabled = false; btn.textContent = label; };
+  btn.disabled = true; btn.textContent = "drafting…";
+  try{
+    const r = await fetch(API + "/api/letter", {
+      method: "POST", headers: { "content-type": "application/json" },
+      body: JSON.stringify({ profile, posting, fit }),
+    });
+    const d = await r.json();
+    if (d.letter){
+      const div = document.createElement("div");
+      div.className = "letter";
+      div.textContent = d.letter;
+      const lm = document.createElement("div");
+      lm.className = "lm";
+      lm.textContent = "grounded only in the profile shown";
+      div.appendChild(lm);
+      card.appendChild(div);
+      btn.remove();
+    } else if (r.status === 429){
+      fail((d.detail || "Demo cap reached.") + " The per-visitor limit is the guard working — letters resume next hour.");
+    } else {
+      fail(d.detail || d.error || "Letter drafting is unavailable right now.");
+    }
+  }catch(e){ fail("Letter API unreachable: " + e); }
+}
+
+/* The resume helper: the profile reworded toward the posting, and the gaps the
+   candidate fills only if true. Same guards and the same grounding as the letter. */
+async function tailorResume(card, posting, profile, fit){
+  const btn = card.querySelector(".tailorbtn");
+  const label = btn.textContent;
+  const fail = msg => { banner("warn", msg); btn.disabled = false; btn.textContent = label; };
+  btn.disabled = true; btn.textContent = "tailoring…";
+  try{
+    const r = await fetch(API + "/api/tailor", {
+      method: "POST", headers: { "content-type": "application/json" },
+      body: JSON.stringify({ profile, posting, fit }),
+    });
+    const d = await r.json();
+    if (d.summary){
+      const li = xs => xs.map(x => `<li>${esc(x)}</li>`).join("");
+      const div = document.createElement("div");
+      div.className = "letter tailored";
+      div.innerHTML = `<h4>Summary</h4><p>${esc(d.summary)}</p>
+        ${d.bullets?.length ? `<h4>Experience, aimed at this posting</h4><ul>${li(d.bullets)}</ul>` : ""}
+        ${d.gaps?.length ? `<h4>What the posting asks for that the profile does not say</h4><ul class="gaps">${
+          d.gaps.map(g => `<li><b>${esc(g.asks)}</b> — ${esc(g.note)}</li>`).join("")}</ul>` : "<h4>Gaps</h4><p>Nothing the posting asks for is missing from the profile.</p>"}
+        <div class="lm">reworded from the profile above, nothing added — the gaps are yours to fill, and only if true<a>copy</a></div>`;
+      div.querySelector(".lm a").onclick = async ev => {
+        const text = [d.summary, "", ...(d.bullets || []).map(b => "• " + b)].join("\n");
+        try{ await navigator.clipboard.writeText(text); ev.target.textContent = "copied"; }catch{ ev.target.textContent = "select and copy"; }
+      };
+      card.appendChild(div);
+      btn.remove();
+    } else if (r.status === 429){
+      fail((d.detail || "Demo cap reached.") + " The per-visitor limit is the guard working — it resumes next hour.");
+    } else {
+      fail(d.detail || d.error || "Resume tailoring is unavailable right now.");
+    }
+  }catch(e){ fail("Tailor API unreachable: " + e); }
+}
+
+/* Every early exit routes through here, so the spinner is stopped here too. */
+function finish(){
+  running = false; $("#runBtn").disabled = false; $("#scoreStatus").hidden = true;
+  // an aborted run would otherwise leave a "Live scoring" heading over nothing
+  if (!$("#scores").children.length) $("#scoreStage").hidden = true;
+}
+function esc(s){ return String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+
+$("#ownFile").onchange = async () => {
+  const file = $("#ownFile").files[0]; if (!file) return;
+  const lab = $("#ownFile").parentElement, st = $("#uplStatus");
+  lab.classList.add("busy"); st.textContent = "extracting…";
+  try{
+    const r = await fetch(API + "/api/extract", {
+      method: "POST", headers: { "content-type": file.type || "application/octet-stream", "x-filename": file.name }, body: file,
+    });
+    const d = await r.json();
+    if (d.text){
+      $("#ownText").value = d.text;
+      st.textContent = `✓ ${d.chars.toLocaleString()} characters extracted from ${file.name} — review, then run` + (d.chars > 6000 ? " (trimmed to 6,000)" : "");
+      ev("upload", "ok");
+    } else { st.textContent = d.detail || d.error || "extraction unavailable"; ev("upload", "fail"); }
+  }catch(e){ st.textContent = "extract API unreachable"; ev("upload", "fail"); }
+  lab.classList.remove("busy"); $("#ownFile").value = "";
+  if ($("#ownText").value.trim().length > 40) selected = null;   // a resume beats a sample
+  renderSetup();
+};
+// typing a real resume deselects the sample, so the run and the chips never disagree
+let pasted = false;
+$("#ownText").oninput = () => {
+  if ($("#ownText").value.trim().length > 40){
+    selected = null;
+    if (!pasted){ pasted = true; ev("paste"); }   // once a tab: this is a step, not a keystroke
+  }
+  renderSetup();
+};
+$("#homeSel").onchange = e => { home = e.target.value; ev("where", home || "any"); renderSetup(); };
+document.querySelector(".box .go").onclick = submitBox;
+// Leaving for the employer's site is as far as the page can see. Whether it became an
+// application is the visitor's to say, on the saved page.
+document.addEventListener("click", e => {
+  const a = e.target.closest("a.plink"); if (!a) return;
+  ev("apply", (a.closest(".scard")?.querySelector(".verdict")?.textContent || "").trim().slice(0, 16) || null);
+}, true);
+
+// the three gate frames rise once the band scrolls into view
+new IntersectionObserver((es, io) => es.forEach(e => {
+  if (e.isIntersecting){ e.target.classList.add("in"); io.unobserve(e.target); }
+}), { threshold: .25 }).observe($("#gatecards"));
+
+// A resume never survives a reload: browsers restore textarea contents on
+// reload/back, and a tab left open overnight would otherwise run yesterday's
+// page. Fresh state on every open, full stop.
+$("#ownText").value = ""; $("#uplStatus").textContent = "";
+const OPENED = Date.now();
+addEventListener("pageshow", e => { if (e.persisted) location.reload(); });
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible" && !running && Date.now() - OPENED > 6 * 3600e3) location.reload();
+});
+
+renderPersonas();
+renderTiles();
+savedCount();
+loadFeed();
+fetch(API + "/api/health").then(r => r.json()).then(d => { if (d.model){ model = d.model; renderMetrics(feed); } }).catch(()=>{});
+
+/* ══ the redesign's own UI: hero box, tabs, taxonomy, Browse, motion ══ */
+/* Alternating on purpose: the box takes either a job title or a whole resume,
+   and the rotation is the cheapest way to teach that without a label. */
+const PROMPTS = {
+  ca:['Paste your resume…','Type your job title…','Senior Backend Engineer','…or drop a PDF','Customer support, remote'],
+  ke:['Paste your resume…','Type your job title…','Software engineer, Nairobi','…or drop a PDF','Finance analyst, remote']
+};
+let pi=0, ci=0, typing=true, timer;
+function rotate(){
+  const el = document.getElementById('ownText'); if(!el) return;
+  const list = PROMPTS[MARKET], word = list[pi % list.length];
+  el.placeholder = word.slice(0, ci);
+  if(typing){ ci++; if(ci > word.length){ typing=false; timer=setTimeout(rotate,1500); return; } }
+  else { ci--; if(ci===0){ typing=true; pi++; } }
+  timer = setTimeout(rotate, typing ? 55 : 24);
+}
+
+
+/* One box, two jobs. A title searches the sweep; a resume runs the pipeline
+   against it. The split is a guess, so it is shown rather than hidden: the pill
+   inside the box updates as you type, and Upload is always a resume. */
+let query = '';
+function modeOf(t){
+  t = (t || '').trim();
+  if(!t) return 'empty';
+  if(t.length > 180 || /\n/.test(t)) return 'resume';
+  if(/\b(experience|education|skills|r[ée]sum[ée]|curriculum vitae|references)\b/i.test(t)) return 'resume';
+  return 'search';
+}
+function syncHint(){
+  const el = document.getElementById('ownText'), h = document.getElementById('boxHint');
+  if(!el || !h) return;
+  const m = modeOf(el.value);
+  h.hidden = m === 'empty';
+  h.textContent = m === 'resume' ? '↵ score this resume' : '↵ search ' + eligible().length + ' postings';
+}
+function submitBox(){
+  const el = document.getElementById('ownText');
+  if (modeOf(el.value) === 'resume'){ query = ''; runPipeline(); return; }
+  query = el.value.trim(); sector = null; setView('browse');
+}
+
+
+
+
+function heroTabs(){
+  const p = d().policy;
+  const pol = [['Remote',p.remote],['Hybrid',p.hybrid],['On site',p.onsite]].filter(([,n])=>n>0);
+  document.getElementById('heroTabs').innerHTML =
+    pol.map(([t,n]) => `<a href="#" data-tab="${esc(t)}">${esc(t)} <span style="opacity:.6">${n}</span></a>`).join('') +
+    `<a href="#" data-tab="all">All ${eligible().length}</a>`;
+
+  // Top eight, then one link to the rest. All 17-20 fitted, but at Kenya's 20
+  // the row pushes the box up and the fold lands mid-chip.
+  const secs = sectorList();
+  document.getElementById('heroSectors').innerHTML = (secIn === 'browse') ? '' :
+    secs.slice(0,8).map(([sx,n]) =>
+      `<a href="#" data-sec="${esc(sx)}">${esc(label(sx))} <span style="opacity:.6">${n}</span></a>`).join('') +
+    `<a class="all" href="#" data-sec="">All ${secs.length} sectors</a>`;
+
+  document.getElementById('hDay').textContent = d().day;
+  syncHint();
+
+  document.querySelectorAll('#heroTabs a').forEach(a =>
+    a.onclick = e => { e.preventDefault(); sector = null; setView('browse'); });
+  document.querySelectorAll('#heroSectors a').forEach(a =>
+    a.onclick = e => { e.preventDefault(); sector = a.dataset.sec || null; setView('browse'); });
+}
+
+/* a number that ticks up rather than appearing — 700ms, eased */
+function countTo(el, to, fmt){
+  if(!el) return;
+  if(matchMedia('(prefers-reduced-motion: reduce)').matches){ el.textContent = fmt(to); return; }
+  const t0 = performance.now(), dur = 750;
+  (function step(t){
+    const k = Math.min(1, (t - t0) / dur), e = 1 - Math.pow(1 - k, 3);
+    el.textContent = fmt(Math.round(to * e));
+    if(k < 1) requestAnimationFrame(step);
+  })(performance.now());
+}
+
+
+/* Reveal on scroll. A rAF-throttled sweep that re-queries the DOM each time —
+   no observer and no element Set. Both of those broke here for the same reason:
+   taxTiles() and browse() replace innerHTML, so any node captured earlier is
+   detached and its replacement is never registered, and IO additionally misses
+   anything you jump past. Querying is the only thing that cannot go stale.
+   ~50 nodes on a frame we are already spending. */
+function reveal(scope){
+  (scope || document).querySelectorAll('.card,.tax,.job:not(.arrive),h2.sec,p.lede,.manifesto,.fgrid > div')
+    .forEach((el, i) => {
+      if(el.dataset.rv) return;
+      el.dataset.rv = '1';
+      el.classList.add('rv');
+      el.style.transitionDelay = (i % 6) * 65 + 'ms';
+    });
+  sweep();
+}
+/* No rAF latch. A `queued` boolean guarding a requestAnimationFrame looks like
+   a throttle and is actually a trap: rAF is paused while the tab is hidden, the
+   latch never clears, and every later sweep no-ops for the life of the page —
+   reveals silently stop. 56 rect reads per scroll is cheaper than that bug. */
+function sweep(){
+  const fold = innerHeight * 0.92;
+  for(const el of document.querySelectorAll('.rv:not(.in)'))
+    if(el.getBoundingClientRect().top < fold) el.classList.add('in');
+}
+
+/* Light the hero. Synchronous on purpose: the obvious version double-rAFs
+   before adding the class, and rAF is paused while the tab is hidden — open the
+   page in a background tab and the headline never arrives, stuck at
+   translateY(105%) behind its own overflow:hidden. A forced reflow restarts the
+   transition without asking the compositor for permission. */
+function relight(){
+  const b = document.body;
+  b.classList.remove('lit');
+  void b.offsetWidth;
+  b.classList.add('lit');
+}
+
+/* ── taxonomy tiles ───────────────────────────────────────────────── */
+function taxTiles(){
+  let rows;
+  if(tax === 'sector')
+    rows = Object.entries(d().sectorCounts).sort((a,b)=>b[1]-a[1])
+            .filter(([,n])=>n>0).map(([s,n]) => [label(s), `${n} open`]);
+  else if(tax === 'policy')
+    rows = [['Remote', `${d().policy.remote} open`], ['Hybrid', `${d().policy.hybrid} open`],
+            ['On site', `${d().policy.onsite} open`],
+            ['Unsaid', `${d().places.unplaced} postings`]];
+  else
+    rows = d().places.options.map(o => [o.label, `${o.local} on site`]);
+  const html = rows.map(([a,b]) =>
+    `<a class="tax" href="#"><b>${esc(a)}</b><span>${esc(b)}</span></a>`).join('');
+  ['taxGrid','taxGrid2'].forEach(id => { const el=document.getElementById(id); if(el) el.innerHTML = html; });
+  reveal();   // these nodes are new every render; without this they never animate
+}
+
+
+/* POSTED, not first-seen. The sweep has carried a real `posted_at` all along -
+   4,389 of 4,790 ledger rows, 92%, 100% of every source except Himalayas - and
+   publish_feed.py simply never copied it into the public payload. Two sources
+   need normalising on the way through: Workday emits "Posted Today" and
+   WeWorkRemotely emits RFC-822, neither of which is a date. */
+const TODAY = '2026-09-18';
+function ageOf(p){
+  const pa = p.posted_at;
+  if(!pa) return { text: 'date not published', stale: false,
+                   ev: 'This source does not publish a posting date. We will not guess one.' };
+  const days = Math.round((Date.parse(TODAY) - Date.parse(pa)) / 86400000);
+  const text = days <= 0 ? 'posted today' : days === 1 ? 'posted yesterday'
+    : days < 7 ? `posted ${days} days ago`
+    : days < 14 ? 'posted last week'
+    : days < 60 ? `posted ${Math.round(days / 7)} weeks ago`
+    : `posted ${Math.round(days / 30)} months ago`;
+  return { text, days, stale: days >= 30,
+           ev: `Posted ${pa}, straight from the employer's own board.` +
+               (days >= 30 ? ' Old postings are often filled or stale - worth checking before you spend a letter.' : '') };
+}
+
+
+/* Top progress bar. The reference uses nprogress for route changes; here the
+   thing that actually takes seconds is the run, so it drives this. Creeps
+   toward 90% so it never claims to be done before it is. */
+const prog = {
+  el: document.getElementById('nprog'),
+  bar: document.querySelector('#nprog .bar'),
+  peg: document.querySelector('#nprog .peg'),
+  t: null,
+  set(p){ this.bar.style.width = p + '%'; this.peg.style.left = 'calc(' + p + '% - 100px)'; },
+  start(){
+    clearInterval(this.t);
+    this.el.classList.add('on'); this.set(8);
+    let p = 8;
+    this.t = setInterval(() => { p += (90 - p) * 0.12; this.set(p); }, 220);
+  },
+  done(){
+    clearInterval(this.t); this.set(100);
+    setTimeout(() => { this.el.classList.remove('on'); setTimeout(() => this.set(0), 260); }, 240);
+  }
+};
+
+function toast(msg){
+  const host = document.getElementById('toast');
+  const el = document.createElement('div');
+  el.textContent = msg;
+  host.appendChild(el);
+  setTimeout(() => el.remove(), 2400);
+}
+
+
+
+const BELL = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>`;
+
+/* An alert is a promise to tell you later, so it needs somewhere to send. The
+   UI is real here; the channel (email or Telegram, same as the ops feed) has to
+   exist before this can ship. */
+function toggleAlert(key, human){
+  const on = ALERTS.has(key);
+  on ? ALERTS.delete(key) : ALERTS.add(key);
+  toast(on ? `Alert off \u2014 ${human}` : `Alert on \u2014 we\u2019ll flag new ${human} postings`);
+  return !on;
+}
+function wireBells(root){
+  root.querySelectorAll('[data-bell]').forEach(b => b.onclick = e => {
+    e.stopPropagation(); e.preventDefault();
+    b.setAttribute('aria-pressed', String(toggleAlert(b.dataset.bell, b.dataset.human)));
+  });
+}
+
+/* Swipe to dismiss. Pointer events, so a mouse drag and a finger swipe are one
+   code path; past 90px it commits, otherwise it springs back. */
+function wireSwipe(card){
+  const x = card.querySelector('.dismiss');
+  if(x) x.onclick = e => { e.stopPropagation(); dismiss(card, -1); };
+  let x0 = null, dx = 0;
+  card.addEventListener('pointerdown', e => {
+    if(e.target.closest('button,a')) return;
+    x0 = e.clientX; dx = 0;
+    card.classList.add('swiping');
+    card.setPointerCapture(e.pointerId);
+  });
+  card.addEventListener('pointermove', e => {
+    if(x0 === null) return;
+    dx = e.clientX - x0;
+    card.style.transform = `translateX(${dx}px) rotate(${dx / 34}deg)`;
+    card.style.opacity = String(Math.max(.35, 1 - Math.abs(dx) / 460));
+    card.style.setProperty('--hintop', String(Math.min(1, Math.abs(dx) / 90)));
+  });
+  const end = () => {
+    if(x0 === null) return;
+    const far = Math.abs(dx) > 90;
+    card.classList.remove('swiping');
+    x0 = null;
+    if(far) return dismiss(card, Math.sign(dx) || -1);
+    card.style.transform = ''; card.style.opacity = '';
+  };
+  card.addEventListener('pointerup', end);
+  card.addEventListener('pointercancel', end);
+}
+function dismiss(card, dir){
+  const id = card.dataset.id, title = card.dataset.title;
+  card.style.setProperty('--sx', (dir < 0 ? -120 : 120) + '%');
+  card.style.setProperty('--sr', (dir < 0 ? -6 : 6) + 'deg');
+  card.style.transform = ''; card.style.opacity = '';
+  card.classList.add('gone');
+  setTimeout(() => { DISMISSED.add(id); card.remove(); showUndo(id, title); }, 330);
+}
+function showUndo(id, title){
+  const el = document.createElement('div');
+  el.className = 'undo';
+  el.innerHTML = `<span>Dismissed \u201c${esc(title)}\u201d</span><button type="button">Undo</button>`;
+  el.querySelector('button').onclick = () => { DISMISSED.delete(id); browse(view === 'run'); };
+  document.getElementById('browseJobs').prepend(el);
+  setTimeout(() => el.remove(), 5000);
+}
+
+
+
+/* One handler for both: any .bloomer replays the mark's bloom when clicked. */
+document.addEventListener('pointerdown', e => {
+  const b = e.target.closest('.bloomer');
+  if(!b) return;
+  // position in its own row of siblings decides the corner, so neighbours
+  // always throw different ways
+  const sibs = [...b.parentElement.children].filter(x => x.classList.contains('bloomer'));
+  const [bx, by] = CORNERS[sibs.indexOf(b) % 4];
+  b.style.setProperty('--bx', bx);
+  b.style.setProperty('--by', by);
+  b.classList.remove('blooming');
+  void b.offsetWidth;
+  b.classList.add('blooming');
+}, true);
+
+
+/* The gesture is invisible until someone tries it, so it gets told once. */
+function hint(){
+  if(sessionStorage.getItem('js.swipehint')) return;
+  const host = document.getElementById('browseJobs');
+  const el = document.createElement('div');
+  el.className = 'coach';
+  el.innerHTML = `<span class="hand" aria-hidden="true">\u21c4</span>
+    <span><b>Drag a card sideways</b> to dismiss a match you do not want \u2014
+    or click the \u00d7. Nothing is lost; an Undo appears either way.</span>
+    <button type="button" aria-label="Got it">Got it</button>`;
+  el.querySelector('button').onclick = () => {
+    try{ sessionStorage.setItem('js.swipehint','1'); }catch(e){}
+    el.remove();
+  };
+  host.before(el);
+}
+
+/* One handler for both: any .bloomer replays the mark's bloom when clicked. */
+document.addEventListener('pointerdown', e => {
+  const b = e.target.closest('.bloomer');
+  if(!b) return;
+  // position in its own row of siblings decides the corner, so neighbours
+  // always throw different ways
+  const sibs = [...b.parentElement.children].filter(x => x.classList.contains('bloomer'));
+  const [bx, by] = CORNERS[sibs.indexOf(b) % 4];
+  b.style.setProperty('--bx', bx);
+  b.style.setProperty('--by', by);
+  b.classList.remove('blooming');
+  void b.offsetWidth;
+  b.classList.add('blooming');
+}, true);
+
+function wireSaves(scope){
+  scope.querySelectorAll('[data-save]').forEach(b => b.onclick = e => {
+    e.stopPropagation();
+    b.setAttribute('aria-pressed', String(toggleSave(b.dataset.save, b.dataset.title)));
+  });
+}
+
+
+
+addEventListener('scroll', sweep, {passive:true});
+addEventListener('resize', sweep);
+
+/* ── view plumbing. One page, two surfaces: the landing and Browse. ──── */
+let view = 'landing', scope = 'jobs', tax = 'sector', sector = null;   // `query` is declared with the box
+const d = () => feed || { postings: [], places: { options: [], remote: 0, unplaced: 0 },
+                          labels: {}, sectors: [], n: 0, companies: [] };
+const label = sx => (feed && feed.labels && feed.labels[sx]) || sx;
+const sectorList = () => {
+  const c = {};
+  (feed ? feed.postings : []).filter(p => p.gate?.verdict !== 'reject')
+    .forEach(p => { c[p.sector] = (c[p.sector] || 0) + 1; });
+  return Object.entries(c).sort((a, b) => b[1] - a[1]);
+};
+function setView(v){
+  view = v;
+  document.getElementById('v-landing').classList.toggle('hide', v !== 'landing');
+  document.getElementById('v-browse').classList.toggle('hide', v !== 'browse');
+  if (v === 'browse') browse();
+  scrollTo({ top: 0 });
+  relight(); reveal();
+}
+document.getElementById('navBrowse').onclick = e => { e.preventDefault(); query = ''; sector = null; setView('browse'); };
+document.querySelectorAll('.sctab').forEach(b => b.onclick = () => {
+  scope = b.dataset.sc;
+  document.querySelectorAll('.sctab').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+  browse();
+});
+document.querySelectorAll('#taxTabs button').forEach(b => b.onclick = () => {
+  tax = b.dataset.tax;
+  document.querySelectorAll('#taxTabs button').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+  taxTiles();
+});
+document.getElementById('browseQ').addEventListener('input', e => { query = e.target.value.trim(); browse(); e.target.focus(); });
+
+/* The market switch is two origins, so it navigates rather than toggling. */
+document.querySelectorAll('#mktTop [data-mkt]').forEach(b => {
+  b.setAttribute('aria-pressed', String(b.dataset.mkt === MARKET));
+  b.onclick = () => {
+    if (b.dataset.mkt === MARKET) return;
+    location.href = b.dataset.mkt === 'ke' ? 'https://nairobi.jobscout.page/' : 'https://jobscout.page/';
+  };
+});
+
+const mark = document.getElementById('mark');
+mark.onclick = () => { mark.classList.remove('blooming'); void mark.offsetWidth; mark.classList.add('blooming'); };
+const CORNERS = [[-1,-1],[1,-1],[1,1],[-1,1]];
+document.addEventListener('pointerdown', e => {
+  const b = e.target.closest('.bloomer');
+  if (!b) return;
+  const sibs = [...b.parentElement.children].filter(x => x.classList.contains('bloomer'));
+  const [bx, by] = CORNERS[sibs.indexOf(b) % 4];
+  b.style.setProperty('--bx', bx); b.style.setProperty('--by', by);
+  b.classList.remove('blooming'); void b.offsetWidth; b.classList.add('blooming');
+}, true);
+
+(() => {
+  const el = document.getElementById('ownText'), mk = document.getElementById('heromark');
+  const box = document.querySelector('.box');
+  const lit = on => mk && mk.classList.toggle('is-lit', on);
+  const grow = () => { el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 132) + 'px'; };
+  el.addEventListener('input', () => { grow(); syncHint(); renderSetup(); });
+  el.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); submitBox(); } });
+  el.addEventListener('focus', () => lit(true));
+  el.addEventListener('blur', () => lit(false));
+  box.addEventListener('pointerenter', () => lit(true));
+  box.addEventListener('pointerleave', () => { if (document.activeElement !== el) lit(false); });
+})();
+
+reveal(); relight();
+
+/* Companies, rolled up from today's sweep. Only what the feed supports: how
+   many are open, how many remote, the two biggest sectors. No "posted this
+   week" — that would need a per-company date rollup we do not publish. */
+function companyCards(){
+  const by = {};
+  eligible().forEach(p => { (by[p.company] = by[p.company] || []).push(p); });
+  const rows = Object.entries(by).sort((a, b) => b[1].length - a[1].length).slice(0, 16);
+  return rows.map(([name, ps]) => {
+    const secs = Object.entries(ps.reduce((a, p) => (a[p.sector] = (a[p.sector] || 0) + 1, a), {}))
+      .sort((a, b) => b[1] - a[1]).slice(0, 2).map(([sx]) => esc(label(sx))).join(' · ');
+    return `<article class="co-card">
+      <div class="top"><span class="logo">${esc(name.slice(0,2).toUpperCase())}</span>
+        <button class="bell" type="button" data-bell="co:${esc(name)}" data-human="${esc(name)}"
+          aria-pressed="false" aria-label="Alert me about ${esc(name)}">${BELL}</button></div>
+      <div><p class="nm">${esc(name)}</p><p class="mix">${secs}</p></div>
+      <div class="stats"><span class="stat"><b>${ps.length}</b> open today</span>
+        <span class="stat"><b>${ps.filter(p => p.remote_policy === 'remote').length}</b> remote</span></div>
+    </article>`;
+  }).join('');
+}
+
+const eligible = () => (feed ? feed.postings : []).filter(p => p.gate?.verdict !== 'reject');
+</script>
