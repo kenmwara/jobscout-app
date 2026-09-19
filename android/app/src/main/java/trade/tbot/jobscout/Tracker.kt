@@ -39,6 +39,37 @@ fun trackedFor(s: Score, p: Posting?): Tracked =
  * Per-device tracker: one JSON string in SharedPreferences, key and shape identical to
  * web localStorage / iOS UserDefaults ({"v":1,"items":{id:{…}}}). No accounts, nothing sent.
  */
+/**
+ * A search the candidate wants to come back to. The web's bell used to promise
+ * an email nothing sends; it keeps a search on the device instead, and so does
+ * this. Nothing is transmitted and nothing claims to be.
+ */
+@Serializable
+data class Watch(
+    val key: String = "",
+    val human: String = "",
+    val market: String = "ca",
+    val sector: String = "",
+    val at: String = "",
+)
+
+@Serializable
+private data class WatchFile(val v: Int = 1, val items: List<Watch> = emptyList())
+
+object WatchStore {
+    private const val KEY = "jobscout.watch"
+    private val json = Json { ignoreUnknownKeys = true; encodeDefaults = true }
+    private fun prefs(ctx: Context) = ctx.getSharedPreferences("jobscout", Context.MODE_PRIVATE)
+
+    fun load(ctx: Context): List<Watch> {
+        val raw = prefs(ctx).getString(KEY, null) ?: return emptyList()
+        return runCatching { json.decodeFromString<WatchFile>(raw).items }.getOrDefault(emptyList())
+    }
+
+    fun save(ctx: Context, items: List<Watch>) =
+        prefs(ctx).edit().putString(KEY, json.encodeToString(WatchFile(items = items))).apply()
+}
+
 object TrackerStore {
     private const val KEY = "jobscout.tracker"
     private val json = Json { ignoreUnknownKeys = true; encodeDefaults = true }

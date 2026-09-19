@@ -41,6 +41,9 @@ document.documentElement.setAttribute("data-market",
   .row{display:grid;grid-template-columns:64px minmax(0,1fr);gap:2px 18px;padding:18px 22px;border-bottom:1px solid var(--hair);align-items:center}
   .row:last-child{border-bottom:0}
   .rose{width:64px;grid-row:1/4;align-self:center}
+  .wrow{display:flex;align-items:center;gap:12px}
+.wrow .rt{font:500 14.5px/1.4 var(--sans);color:var(--ink);margin:0}
+.wrow .rs{font:400 12px/1.4 var(--sans);color:var(--text3);margin:2px 0 0}
   .rose .fitnum{font-family:var(--serif);font-weight:480;font-size:26px;text-anchor:middle}
   .row .t{font-weight:500;font-size:16px;line-height:1.35}
   .row .t .co{color:var(--text2);font-weight:400}
@@ -94,6 +97,8 @@ document.documentElement.setAttribute("data-market",
   <h1 id="h1">The ones you kept.</h1>
   <p class="sub">Sorted by fit, best first. Applying is always your click.</p>
   <div id="list"></div>
+  <!-- Searches being watched. Kept on this device; nothing is emailed. -->
+  <div id="watched"></div>
   <div class="foot">
     <a class="btn" href="./">Score more postings</a>
     <button class="btn quiet" id="clear" type="button" hidden>Clear all saved</button>
@@ -110,6 +115,31 @@ const TKEY = "jobscout.tracker";
 let tracker = {};
 try{ tracker = JSON.parse(localStorage.getItem(TKEY) || "{}").items || {}; }catch(e){ tracker = {}; }
 function save(){ try{ localStorage.setItem(TKEY, JSON.stringify({ v:2, items: tracker })); }catch(e){} }
+
+/* Searches being watched. The bell used to be an in-memory Set behind a promise
+   of email; it is a list on this device now, and this is where it lives. */
+const WKEY = "jobscout.watch";
+let watched = [];
+try { watched = JSON.parse(localStorage.getItem(WKEY) || "[]"); } catch(e){ watched = []; }
+function saveWatched(){ try{ localStorage.setItem(WKEY, JSON.stringify(watched)); }catch(e){} }
+function renderWatched(){
+  const host = document.getElementById("watched");
+  if (!host) return;
+  if (!watched.length){ host.innerHTML = ""; return; }
+  host.innerHTML = `<h2 class="gtitle">Searches you are watching<span class="tag">on this device</span></h2>`
+    + `<p class="gnote">Nothing is emailed. Each one is a way straight back to that slice of the day.</p>`
+    + watched.map((w, i) => `<div class="row wrow">
+        <div style="flex:1 1 auto">
+          <p class="rt">${esc(w.human || w.key)}</p>
+          <p class="rs">watched since ${esc(w.at || "")}${w.market === "ke" ? " · Kenya" : ""}</p>
+        </div>
+        <a class="btn2" href="${w.market === "ke" ? "https://nairobi.jobscout.page/" : "./"}#browse">Open it \u2192</a>
+        <button class="rm" type="button" data-w="${i}">stop \u00d7</button>
+      </div>`).join("");
+  host.querySelectorAll("[data-w]").forEach(b => b.onclick = () => {
+    watched.splice(+b.dataset.w, 1); saveWatched(); renderWatched();
+  });
+}
 function esc(s){ return String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
 
 // same bands and the same rose as the demo page, so a saved score reads the same here
@@ -168,6 +198,7 @@ const GROUPS = [
     note: "Kept before the pipeline read your resume against it." },
 ];
 function render(){
+  renderWatched();
   const items = Object.values(tracker).sort((x, y) => (y.fit||0) - (x.fit||0));
   const unscored = t => t.fit === null || t.fit === undefined || t.fit === "";
   $("#clear").hidden = !items.length;

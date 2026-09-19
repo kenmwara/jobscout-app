@@ -1582,7 +1582,18 @@ let freshOnly = false;
    it is the matches, and every filter narrows those instead of the feed. */
 let scored = null, scoredProfile = "", scoredNote = "";
 const DISMISSED = new Set();
-const ALERTS = new Set();
+/* Watched searches, kept on the device. Was an in-memory Set that a reload
+   emptied, behind a control that promised an email nothing sends. */
+const WKEY = "jobscout.watch";
+const ALERTS = new Set(((() => {
+  try { return JSON.parse(localStorage.getItem(WKEY) || "[]"); } catch (e) { return []; }
+})()).map(w => w.key));
+let WATCHED = (() => {
+  try { return JSON.parse(localStorage.getItem(WKEY) || "[]"); } catch (e) { return []; }
+})();
+function saveWatched(){
+  try { localStorage.setItem(WKEY, JSON.stringify(WATCHED)); } catch (e) {}
+}
 const TODAY = new Date().toISOString().slice(0, 10);
 
 const eligible = () => (feed ? feed.postings : []).filter(p => p.gate?.verdict !== "reject");
@@ -1736,9 +1747,21 @@ function taxTiles(){
     `<a class="tax" href="#"${d.sec !== undefined ? ` data-sec="${esc(d.sec)}"` : ""}${d.pol ? ` data-pol="${d.pol}"` : ""}${d.place ? ` data-place="${d.place}"` : ""}><b>${esc(a)}</b><span>${esc(b)}</span></a>`).join("");
   /* The landing shows the first six as a preview. Same data, no tabs — the
      axes belong on the page that can act on them. */
+  /* These were <span>s — the same class, the same styling and the same shape as
+     the live tiles on Browse, and inert. Anything that looks like a tile has to
+     behave like one, so each goes where its Browse twin goes. */
   const peek = $("#taxPeek");
-  if (peek) peek.innerHTML = rows.slice(0, 6).map(([a, b]) =>
-    `<span class="tax"><b>${esc(a)}</b><span>${esc(b)}</span></span>`).join("");
+  if (peek){
+    peek.innerHTML = rows.slice(0, 6).map(([a, b, d]) =>
+      `<a class="tax" href="#"${d.sec !== undefined ? ` data-sec="${esc(d.sec)}"` : ""}${d.pol ? ` data-pol="${d.pol}"` : ""}${d.place ? ` data-place="${d.place}"` : ""}><b>${esc(a)}</b><span>${esc(b)}</span></a>`).join("");
+    peek.querySelectorAll(".tax").forEach(t => t.onclick = e => {
+      e.preventDefault();
+      sector = t.dataset.sec || null;
+      policyOnly = t.dataset.pol || "";
+      home = t.dataset.place || "";
+      setView("browse", false, "browseFeed");
+    });
+  }
 
   $("#taxGrid").querySelectorAll(".tax").forEach(t => t.onclick = e => {
     e.preventDefault();
@@ -1836,7 +1859,7 @@ function companyCards(){
       return `<article class="co-card">
         <div class="top"><span class="logo">${esc(name.slice(0, 2).toUpperCase())}</span>
           <button class="bell" type="button" data-bell="co:${esc(name)}" data-human="${esc(name)}"
-            aria-pressed="${ALERTS.has("co:" + name)}" aria-label="Alert me about ${esc(name)}">${BELL}</button></div>
+            aria-pressed="${ALERTS.has("co:" + name)}" aria-label="Watch ${esc(name)}">${BELL}</button></div>
         <div><p class="nm">${esc(name)}</p><p class="mix">${secs}</p></div>
         <div class="stats"><span class="stat"><b>${ps.length}</b> open today</span>
           <span class="stat"><b>${ps.filter(p => p.remote_policy === "remote").length}</b> remote</span></div>
@@ -1867,8 +1890,9 @@ function browse(){
         places.map(o => `<option value="${o.code}"${home === o.code ? " selected" : ""}>${esc(o.label)}${o.local ? ` — ${o.local} on site` : ""}</option>`).join("") + "</select>"
       : "") +
     `<button class="bell right" type="button" data-bell="q:${esc(sector || query || "all")}"
-       data-human="${esc(sector ? label(sector) : (query || "matching"))}"
-       aria-pressed="${ALERTS.has("q:" + (sector || query || "all"))}">${BELL} Alert me</button>`;
+       data-human="${esc(sector ? label(sector) : (query || (MARKET === "ke" ? "today’s Kenya sweep" : "today’s sweep")))}"
+       aria-pressed="${ALERTS.has("q:" + (sector || query || "all"))}">${BELL} <span class="bw">${
+         ALERTS.has("q:" + (sector || query || "all")) ? "Watching" : "Watch this search"}</span></button>`;
 
   /* The sector row belongs to the sweep: seventeen chips carrying the sweep's
      own counts (309, 24, 24 ...). Under "Your matches" above eight scored cards
@@ -2002,22 +2026,34 @@ function go(href){
 }
 
 /* ── alerts. The UI is real; the delivery channel is not built yet. ──────── */
+/* A watch is a search you can come back to, kept on this device. It does not
+   email you, and it no longer says it will. */
 function toggleAlert(key, human){
   const on = ALERTS.has(key);
-  on ? ALERTS.delete(key) : ALERTS.add(key);
-  /* The delivery channel is not built — the comment above has said so since the
-     control shipped, while the toast told the visitor "we'll flag new postings".
-     A promise nothing keeps, made to their face. Say what is true: the interest
-     is recorded, and it is recorded on this device only, because ALERTS is an
-     in-memory Set that a reload empties. */
-  toast(on ? `Alert off — ${human}`
-           : `Noted — ${human}. Alerts are not sending yet; nothing will be emailed.`);
+  if (on){
+    ALERTS.delete(key);
+    WATCHED = WATCHED.filter(w => w.key !== key);
+  } else {
+    ALERTS.add(key);
+    WATCHED.push({ key, human, market: MARKET,
+                   sector: sector || "", policy: policyOnly || "", q: query || "",
+                   at: new Date().toISOString().slice(0, 10) });
+  }
+  saveWatched();
+  toast(on ? `Stopped watching ${human}`
+           : `Watching ${human} — kept on this device, on your Saved page.`);
   return !on;
 }
 function wireBells(root){
   root.querySelectorAll("[data-bell]").forEach(b => b.onclick = e => {
     e.stopPropagation(); e.preventDefault();
-    b.setAttribute("aria-pressed", String(toggleAlert(b.dataset.bell, b.dataset.human)));
+    const on = toggleAlert(b.dataset.bell, b.dataset.human);
+    b.setAttribute("aria-pressed", String(on));
+    /* The word has to follow the state. aria-pressed alone changed nothing a
+       sighted reader could see, so the button said "Watch this search" while
+       already watching it. */
+    const word = b.querySelector(".bw");
+    if (word) word.textContent = on ? "Watching" : "Watch this search";
   });
 }
 

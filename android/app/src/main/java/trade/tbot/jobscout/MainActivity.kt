@@ -120,10 +120,11 @@ data class Ui(
     val draftsFor: String = "",
     val error: String? = null,
     val tracker: Map<String, Tracked> = emptyMap(),   // per-device pipeline — the only thing persisted
+    val watched: List<Watch> = emptyList(),           // searches kept on the device; nothing is sent
 )
 
 class DemoVm(app: Application) : AndroidViewModel(app) {
-    private val _ui = MutableStateFlow(Ui(tracker = TrackerStore.load(app)))
+    private val _ui = MutableStateFlow(Ui(tracker = TrackerStore.load(app), watched = WatchStore.load(app)))
     val ui = _ui.asStateFlow()
 
     init { loadFeed(); checkForUpdate(); Api.ev("open", market = _ui.value.market) }
@@ -293,6 +294,17 @@ class DemoVm(app: Application) : AndroidViewModel(app) {
         )
     }
 
+    /** Watch this slice of the day, or stop. Mirrors the web's bell exactly:
+     *  kept on the device, listed on the Saved screen, nothing emailed. */
+    fun toggleWatch(key: String, human: String, sector: String) {
+        val now = _ui.value.watched
+        val next = if (now.any { it.key == key }) now.filter { it.key != key }
+                   else now + Watch(key, human, _ui.value.market, sector,
+                                    java.time.LocalDate.now().toString())
+        WatchStore.save(getApplication(), next)
+        _ui.update { it.copy(watched = next) }
+    }
+
     fun openApply(posting: Posting) {
         val profile = profileText().orEmpty()
         val fit = _ui.value.scores.firstOrNull { it.id == posting.id }?.fit ?: 0
@@ -430,6 +442,10 @@ fun DemoScreen(vm: DemoVm = viewModel()) {
     var sector by remember { mutableStateOf<String?>(null) }
     // Jobs or Companies, the web's segmented control on the sweep.
     var scope by remember { mutableStateOf("jobs") }
+    /* Postings put away, and the last one, so it can come back. The web has had
+       dismiss-with-undo since the redesign and the phone had nothing. */
+    val dismissed = remember { mutableStateListOf<String>() }
+    var lastDismissed by remember { mutableStateOf<Pair<String, String>?>(null) }
     val ins = WindowInsets.safeDrawing.asPaddingValues()
     val tokens = tokensFor(ui.market)
     val uriHandler = LocalUriHandler.current
@@ -484,17 +500,24 @@ fun DemoScreen(vm: DemoVm = viewModel()) {
                         onSector = { sec -> sector = sec; screen = Screen.BROWSE },
                     )
                     Screen.BROWSE -> browse(
-                        ui, feed, policy, query, sector, scope,
+                        ui, feed, policy, query, sector, scope, dismissed,
                         onClear = { query = null; sector = null },
                         onOpen = { u -> runCatching { uriHandler.openUri(u) } },
                         onSector = { sec -> sector = if (sector == sec) null else sec },
                         onScope = { scope = it },
+                        onWatch = { k, h, sec -> vm.toggleWatch(k, h, sec) },
+                        onDismiss = { id, title -> dismissed.add(id); lastDismissed = id to title },
+                        undo = lastDismissed,
+                        onUndo = {
+                            lastDismissed?.let { dismissed.remove(it.first) }
+                            lastDismissed = null
+                        },
                     ) { policy = it }
                     Screen.MATCHES -> matches(ui, feed, vm)
                 }
             }
 
-            if (trackerOpen) TrackerScreen(vm, ui.tracker) { trackerOpen = false }
+            if (trackerOpen) TrackerScreen(vm, ui.tracker, ui.watched) { trackerOpen = false }
             ui.apply?.let { a -> ApplyScreen(vm, a, vm::closeApply) }
         }
     }
@@ -586,8 +609,12 @@ private const val COMPANY_CAP = 16
 
 private fun LazyListScope.browse(
     ui: Ui, feed: Feed?, policy: String?, query: String?, sector: String?, scope: String,
+    dismissed: List<String>,
     onClear: () -> Unit, onOpen: (String) -> Unit, onSector: (String) -> Unit,
-    onScope: (String) -> Unit, onPolicy: (String?) -> Unit,
+    onScope: (String) -> Unit, onDismiss: (String, String) -> Unit,
+    onWatch: (String, String, String) -> Unit,
+    undo: Pair<String, String>?, onUndo: () -> Unit,
+    onPolicy: (String?) -> Unit,
 ) {
     val words = query.orEmpty().lowercase().split(" ").filter { it.length > 2 }
     val all = feed?.passers.orEmpty().let { list ->
@@ -601,7 +628,8 @@ private fun LazyListScope.browse(
         }
     }
     // A tile on the landing, or a tile here, narrows the grid to one slice.
-    val bySector = if (sector == null) all else all.filter { it.sector == sector }
+    val kept = all.filter { it.id !in dismissed }
+    val bySector = if (sector == null) kept else kept.filter { it.sector == sector }
     /* The policy counts describe what the chips would DO, so they count the rows
        the chips can actually reach. Counting `all` here put "Remote 191" over a
        grid of 24 finance postings. */
@@ -641,6 +669,13 @@ private fun LazyListScope.browse(
         Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             MFilter("Jobs", on = scope == "jobs") { onScope("jobs") }
             MFilter("Companies", on = scope == "cos") { onScope("cos") }
+            /* The web's bell. It keeps the search on the device and lists it on
+               the Saved screen; it does not email, and does not say it will. */
+            val wkey = "q:" + (sector ?: query ?: "all")
+            val watching = ui.watched.any { it.key == wkey }
+            MFilter(if (watching) "Watching" else "Watch", on = watching) {
+                onWatch(wkey, sector?.let { feed?.labels?.get(it) ?: it } ?: query ?: "today's sweep", sector ?: "")
+            }
         }
     }
     item {
@@ -697,10 +732,24 @@ private fun LazyListScope.browse(
             MFilter("Clear and see all ${feed.passers.size}", on = false) { onPolicy(null); onClear() }
         }
     }
+    undo?.let { (_, title) ->
+        item {
+            Row(
+                Modifier.fillMaxWidth().clip(Pill).background(T.chip)
+                    .border(1.dp, T.hair, Pill).padding(horizontal = 14.dp, vertical = 11.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text("Dismissed “$title”", fontSize = 12.5.sp, color = T.text2,
+                     modifier = Modifier.weight(1f), maxLines = 1)
+                MFilter("Undo", on = false, onClick = onUndo)
+            }
+        }
+    }
     // Same hole as the web had: a browse row that does nothing when tapped.
     items(rows, key = { it.id }) { p ->
         MJob(p.title, p.company, policy = p.remote_policy,
-             onClick = p.url.takeIf { it.isNotEmpty() }?.let { u -> ({ onOpen(u) }) })
+             onClick = p.url.takeIf { it.isNotEmpty() }?.let { u -> ({ onOpen(u) }) },
+             onDismiss = { onDismiss(p.id, p.title) })
     }
 }
 
@@ -1030,7 +1079,12 @@ private fun StageChip(stage: String, onStage: (String) -> Unit) {
 
 /** Full-screen tracker: tracked postings grouped by stage. Back / Close dismisses. */
 @Composable
-private fun TrackerScreen(vm: DemoVm, tracker: Map<String, Tracked>, onClose: () -> Unit) {
+private fun TrackerScreen(
+    vm: DemoVm,
+    tracker: Map<String, Tracked>,
+    watched: List<Watch>,
+    onClose: () -> Unit,
+) {
     var confirmClear by remember { mutableStateOf(false) }
     var savedOpen by remember { mutableStateOf(false) }
     // An overlay in the activity's own window, not a Dialog: a Dialog gets its own
@@ -1074,6 +1128,34 @@ private fun TrackerScreen(vm: DemoVm, tracker: Map<String, Tracked>, onClose: ()
                 }
                 if (tracker.isNotEmpty())
                     item { LinkText("Clear all") { confirmClear = true } }
+
+                /* Searches being watched, the same list the web's Saved page
+                   shows. Nothing is emailed; each is a way back to that slice. */
+                if (watched.isNotEmpty()) {
+                    item {
+                        Spacer(Modifier.height(10.dp))
+                        Text("Searches you are watching", style = H2, fontSize = 19.sp)
+                        Spacer(Modifier.height(4.dp))
+                        Text("Kept on this device. Nothing is emailed.",
+                             color = Text3, fontSize = 13.sp, lineHeight = 19.sp)
+                    }
+                    items(watched, key = { it.key }) { w ->
+                        Row(
+                            Modifier.fillMaxWidth().background(CardBg, Pill)
+                                .padding(horizontal = 16.dp, vertical = 12.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Column(Modifier.weight(1f)) {
+                                Text(w.human, color = Ink, fontSize = 14.sp, fontWeight = FontWeight.Medium, maxLines = 1)
+                                Text(
+                                    "watching since ${w.at}" + if (w.market == "ke") "  ·  Kenya" else "",
+                                    color = Text3, fontSize = 12.sp,
+                                )
+                            }
+                            LinkText("stop") { vm.toggleWatch(w.key, w.human, w.sector) }
+                        }
+                    }
+                }
             }
         }
         if (confirmClear) AlertDialog(

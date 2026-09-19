@@ -326,6 +326,9 @@ fun MJob(
        and nothing on it suggested that. The web has carried the label since
        the redesign. */
     action: String? = null,
+    /** Put this posting away, with one undo. The web has had dismiss since the
+     *  redesign; the phone had no way to say "not this one". */
+    onDismiss: (() -> Unit)? = null,
 ) {
     Row(
         Modifier.fillMaxWidth()
@@ -382,6 +385,14 @@ fun MJob(
                         .padding(horizontal = 8.dp, vertical = 5.dp),
                 )
             }
+        }
+        if (onDismiss != null) {
+            Text(
+                "×",
+                fontSize = 17.sp, color = T.text3,
+                modifier = Modifier.clip(Pill9999).clickable(onClick = onDismiss)
+                    .padding(horizontal = 8.dp, vertical = 2.dp),
+            )
         }
     }
 }
