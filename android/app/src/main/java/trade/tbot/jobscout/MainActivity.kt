@@ -24,11 +24,13 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -367,160 +369,138 @@ private val RESUME_MIMES = arrayOf(
     "text/markdown",
 )
 
+/** Which of the mockup's three mobile screens is showing. */
+enum class Screen { LANDING, BROWSE, MATCHES }
+
 @Composable
 fun DemoScreen(vm: DemoVm = viewModel()) {
     val ui by vm.ui.collectAsState()
     val feed = ui.feed
-    // the resume is the point of the app, so its box is open on arrival
-    var ownOpen by remember { mutableStateOf(true) }
     var trackerOpen by remember { mutableStateOf(false) }
-    var gatesOpen by remember { mutableStateOf(false) }
-    val usingOwn = ui.resume.trim().length > 40
+    var screen by remember { mutableStateOf(Screen.LANDING) }
+    var policy by remember { mutableStateOf<String?>(null) }
     val ins = WindowInsets.safeDrawing.asPaddingValues()
+    val tokens = tokensFor(ui.market)
 
-    Box(Modifier.fillMaxSize().background(CanvasBg).dots()) {
-        LazyColumn(
-            Modifier.fillMaxSize(),
-            // Content scrolls under the transparent bars; the padding keeps the first
-            // and last items clear of them.
-            contentPadding = PaddingValues(16.dp, ins.calculateTopPadding() + 12.dp, 16.dp, ins.calculateBottomPadding() + 40.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            item { Header(feed, ui.tracker.size) { trackerOpen = true } }
-            // (the Saved overlay is composed after this list, at the end of the Box)
-            ui.error?.let { item { Banner(it, onRetry = { vm.loadFeed() }) } }
-            ui.update?.let { r -> item { UpdateBar(r) } }
+    // A run moves you to the matches, which is the mockup's third frame; nothing else
+    // navigates on its own.
+    LaunchedEffect(ui.scores.isNotEmpty()) { if (ui.scores.isNotEmpty()) screen = Screen.MATCHES }
 
-            item { Hero(feed) }
+    CompositionLocalProvider(LocalTokens provides tokens) {
+        Box(Modifier.fillMaxSize().background(T.canvas)) {
+            LazyColumn(
+                Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(14.dp, ins.calculateTopPadding() + 6.dp, 14.dp,
+                                               ins.calculateBottomPadding() + 32.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                item { MHead(ui.market) { vm.setMarket(it) } }
 
-            item { Stage("000", "THE CANDIDATE", "Start with your resume.", "Upload a file, or paste the text.") }
-            item {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    MARKETS.forEach { (id, label) -> PillButton(label, filled = id == ui.market) { vm.setMarket(id) } }
-                }
-            }
-            item {
-                // Same affordance as the web demo: hidden behind a toggle, processed in memory only.
-                Column {
-                    LinkText(if (ownOpen) "Hide the resume box" else "Add your resume") { ownOpen = !ownOpen }
-                    if (ownOpen) {
-                        // Storage Access Framework picker — no storage permission, the user picks one document.
-                        val picker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
-                            uri?.let(vm::importResume)
-                        }
-                        Spacer(Modifier.height(8.dp))
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            if (ui.uploading) {
-                                CircularProgressIndicator(Modifier.size(16.dp), color = Indigo, strokeWidth = 2.dp)
-                                Spacer(Modifier.width(10.dp))
-                            }
-                            PillButton(if (ui.uploading) "Extracting…" else "Upload resume (PDF, DOCX, TXT)",
-                                enabled = !ui.uploading) { picker.launch(RESUME_MIMES) }
-                        }
-                        ui.uploadStatus?.let {
-                            Text(it, color = Muted, fontSize = 12.sp, modifier = Modifier.padding(top = 8.dp))
-                        }
-                        Spacer(Modifier.height(10.dp))
-                        OutlinedTextField(
-                            value = ui.resume, onValueChange = vm::setResume,
-                            modifier = Modifier.fillMaxWidth(), minLines = 4, maxLines = 8,
-                            placeholder = { Text("Paste plain resume text (max 6,000 chars)…", color = Text3) },
-                            shape = Card,
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = Indigo, unfocusedBorderColor = Hair2,
-                                focusedContainerColor = CardBg, unfocusedContainerColor = CardBg),
-                        )
-                        Text(
-                            (if (usingOwn) "Using your own resume for this run. " else "") +
-                                "Processed in memory for this run only. Never stored, never logged.",
-                            color = Text3, fontSize = 12.sp, modifier = Modifier.padding(top = 6.dp),
-                        )
-                    }
-                }
-            }
-            // Where you live changes which postings you could actually take. Rendered from
-            // feed.places, so a province only appears with the number of postings that really
-            // require being there today.
-            if (feed != null && feed.places.options.isNotEmpty()) item { WhereRow(ui, feed, vm) }
-            // (WhereRow itself hides the picker when there is only one place to choose between.)
-            item {
-                Button(
-                    onClick = vm::run,
-                    enabled = feed != null && ui.phase != Phase.GATES && ui.phase != Phase.SCORING,
-                    modifier = Modifier.fillMaxWidth().height(54.dp).warmShadow(12.dp, Pill),
-                    shape = Pill,
-                    colors = ButtonDefaults.buttonColors(containerColor = Indigo, disabledContainerColor = Lavender,
-                        disabledContentColor = MidnightViolet),
-                ) {
-                    Text(
-                        when (ui.phase) {
-                            Phase.GATES -> "Running the gates…"
-                            Phase.SCORING -> "Scoring live with Claude…"
-                            else -> "Run the pipeline"
-                        },
-                        fontSize = 16.sp, fontWeight = FontWeight.Medium,
-                    )
-                }
-            }
-
-            if (ui.scores.isNotEmpty() || ui.banner != null) {
-                item { Stage("090", "SCORING", "What Claude makes of them",
-                    ui.selection?.note() ?: "A fit from 0 to 100, a verdict in plain words, the strongest point and the weakest. The rose lights with the score.") }
+                ui.error?.let { item { Banner(it, onRetry = { vm.loadFeed() }) } }
+                ui.update?.let { r -> item { UpdateBar(r) } }
                 ui.banner?.let { item { Banner(it) } }
-                val byId = feed?.passers?.associateBy { it.id } ?: emptyMap()
-                val sorted = ui.scores.sortedByDescending { it.fit }
-                // Below the floor nothing is recommended: say so, name the nearest, and draft nothing.
-                sorted.firstOrNull()?.takeIf { it.fit < FIT_FLOOR }?.let { top -> item { Banner(nofitNote(top.fit, byId[top.id], top.id)) } }
-                itemsIndexed(sorted) { i, s ->
-                    val p = byId[s.id]
-                    val t = ui.tracker[s.id] ?: trackedFor(s, p)
-                    ScoreCard(s, p, t, isSaved = ui.tracker.containsKey(s.id), first = i == 0,
-                        // Every card that clears the bar offers the page, not only the top
-                        // one: the second-best match is a real application too. Below the
-                        // floor it offers the posting alone, because every step behind that
-                        // page would be refused (the worker enforces the same floor).
-                        canApply = !ui.fromCache && s.fit >= FIT_FLOOR,
-                        onStage = { vm.setStage(t, it) }) { p?.let(vm::openApply) }
+
+                when (screen) {
+                    Screen.LANDING -> landing(ui, feed, vm, policy) { p ->
+                        policy = p
+                        // Choosing a policy is how you get from the hero into the sweep,
+                        // which is what the mockup's second frame is.
+                        if (p != null) screen = Screen.BROWSE
+                    }
+                    Screen.BROWSE -> browse(ui, feed, policy) { policy = it }
+                    Screen.MATCHES -> matches(ui, feed, vm)
                 }
             }
 
-            if (ui.phase != Phase.IDLE && feed != null) {
-                item { Stage("180", "GATES", "Why those, and not the rest",
-                    "Before Claude sees anything, three deterministic checks read every posting. They cost nothing, and each rejection carries its reason.") }
-                // Six stream; the rest sit behind a tap. The full list is a wall,
-                // and the point of this section lands in the first handful.
-                item {
-                    val shown = if (gatesOpen) feed.rejects else feed.rejects.take(GATE_STREAM)
-                    Column(Modifier.fillMaxWidth().warmShadow(10.dp, Card).background(CardBg, Card).clip(Card)) {
-                        shown.forEachIndexed { i, r ->
-                            AnimatedVisibility(
-                                visible = gatesOpen || i < ui.gatesShown,
-                                enter = fadeIn() + slideInVertically { it / 3 },
-                            ) {
-                                Column {
-                                    if (i > 0) HorizontalDivider(color = Hairline, thickness = 1.dp)
-                                    GateRow(r)
-                                }
-                            }
-                        }
-                    }
-                    if (feed.rejects.size > GATE_STREAM) {
-                        Spacer(Modifier.height(12.dp))
-                        PillButton(
-                            if (gatesOpen) "hide them again"
-                            else "show the other ${feed.rejects.size - GATE_STREAM} verdicts",
-                        ) { gatesOpen = !gatesOpen }
-                    }
+            if (trackerOpen) TrackerScreen(vm, ui.tracker) { trackerOpen = false }
+            ui.apply?.let { a -> ApplyScreen(vm, a, vm::closeApply) }
+        }
+    }
+
+    // Back walks the three frames in the order they were entered, then leaves.
+    BackHandler(enabled = screen != Screen.LANDING && ui.apply == null && !trackerOpen) {
+        screen = if (screen == Screen.MATCHES) Screen.BROWSE else Screen.LANDING
+    }
+}
+
+/* ── frame 1: Landing ─────────────────────────────────────────────────────
+   Hero, the morning's number, and the first two postings — enough to show the
+   sweep is real without becoming the list. */
+private fun LazyListScope.landing(
+    ui: Ui, feed: Feed?, vm: DemoVm, policy: String?, onPolicy: (String?) -> Unit,
+) {
+    item {
+        MHero(
+            resume = ui.resume, onResume = vm::setResume, onRun = vm::run,
+            policy = policy, onPolicy = onPolicy,
+        )
+    }
+    item {
+        MCount(
+            if (feed == null) "loading this morning's sweep…"
+            else "${feed.postings.size} swept this morning",
+            Modifier.padding(top = 2.dp),
+        )
+    }
+    feed?.passers?.take(2)?.forEach { p ->
+        item { MJob(p.title, p.company, policy = p.remote_policy) }
+    }
+}
+
+/* ── frame 2: Browse ──────────────────────────────────────────────────────
+   The whole sweep behind three policy filters, with the count saying how much of
+   it you are looking at. */
+private fun LazyListScope.browse(ui: Ui, feed: Feed?, policy: String?, onPolicy: (String?) -> Unit) {
+    val all = feed?.passers.orEmpty()
+    val counts = POLICIES.associate { (id, _) -> id to all.count { matchesPolicy(it, id) } }
+    val rows = if (policy == null) all else all.filter { matchesPolicy(it, policy) }
+
+    item { MTitle("Explore today’s sweep") }
+    item {
+        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            POLICIES.forEach { (id, label) ->
+                val n = counts[id] ?: 0
+                // The mockup labels a filter with its count, and drops the count when
+                // there is nothing to count rather than printing a zero.
+                MFilter(if (n > 0) "$label $n" else label, on = policy == id) {
+                    onPolicy(if (policy == id) null else id)
                 }
             }
         }
-        if (trackerOpen) TrackerScreen(vm, ui.tracker) { trackerOpen = false }
-        // Over everything, tracker included: an application is the one thing on
-        // screen while it is being prepared.
-        ui.apply?.let { a -> ApplyScreen(vm, a, vm::closeApply) }
     }
+    item { MCount("${rows.size} of ${feed?.postings?.size ?: 0}") }
+    items(rows, key = { it.id }) { p -> MJob(p.title, p.company, policy = p.remote_policy) }
+}
 
+/* ── frame 3: After a run ─────────────────────────────────────────────────
+   The scored eight, each carrying its rose and its band. */
+private fun LazyListScope.matches(ui: Ui, feed: Feed?, vm: DemoVm) {
+    val byId = feed?.passers?.associateBy { it.id } ?: emptyMap()
+    val sorted = ui.scores.sortedByDescending { it.fit }
 
+    item { MTitle("Your matches") }
+    item { MCount("${sorted.size} survived the gate of ${feed?.postings?.size ?: 0}") }
+
+    // Below the floor nothing is recommended: say so, name the nearest, draft nothing.
+    sorted.firstOrNull()?.takeIf { it.fit < FIT_FLOOR }?.let { top ->
+        item { Banner(nofitNote(top.fit, byId[top.id], top.id)) }
+    }
+    items(sorted, key = { it.id }) { s ->
+        val p = byId[s.id]
+        MJob(
+            title = p?.title ?: s.id,
+            company = p?.company.orEmpty(),
+            fit = s.fit,
+            onClick = if (s.fit >= FIT_FLOOR && !ui.fromCache && p != null) ({ vm.openApply(p) }) else null,
+        )
+    }
+}
+
+/** onsite covers everything that is neither remote nor hybrid, including unstated. */
+private fun matchesPolicy(p: Posting, id: String): Boolean = when (id) {
+    "remote" -> p.remote_policy == "remote"
+    "hybrid" -> p.remote_policy == "hybrid"
+    else -> p.remote_policy != "remote" && p.remote_policy != "hybrid"
 }
 
 // ── the brand mark: August's geometry (8 dots, ring r=11 in a 24 box, cropped by

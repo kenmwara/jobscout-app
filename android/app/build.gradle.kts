@@ -50,6 +50,18 @@ android {
         compose = true
         buildConfig = true   // BuildConfig.VERSION_NAME feeds the update check
     }
+
+    /* The UI contract is checked on the JVM, not on a device. The Compose screens
+       are graded against the mockup's own structure, and this machine can run
+       neither an emulator (the hypervisor driver needs admin) nor adb to the
+       phone. Robolectric renders Compose off-device, so the check runs anywhere
+       Gradle does — including CI, for free. */
+    testOptions {
+        unitTests {
+            isIncludeAndroidResources = true
+            isReturnDefaultValues = true
+        }
+    }
 }
 
 dependencies {
@@ -60,4 +72,11 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
+
+    testImplementation("junit:junit:4.13.2")
+    testImplementation("org.robolectric:robolectric:4.13")
+    testImplementation("androidx.test.ext:junit:1.2.1")
+    testImplementation(platform("androidx.compose:compose-bom:2024.10.01"))
+    testImplementation("androidx.compose.ui:ui-test-junit4")
+    debugImplementation("androidx.compose.ui:ui-test-manifest")
 }
