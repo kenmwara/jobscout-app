@@ -8,6 +8,11 @@ import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import kotlinx.coroutines.delay
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -253,6 +258,30 @@ fun resumeText(r: ResumeResponse): String = buildString {
 }
 
 /**
+ * A copy control for one answer. Reuses PillButton so it is the same object the
+ * rest of the page already uses, with a clipboard glyph in front of the word —
+ * an icon alone is a guess, and a word alone is easy to skim past in a list of
+ * ten questions.
+ */
+@Composable
+private fun CopyChip(text: String) {
+    val clip = LocalClipboardManager.current
+    var copied by remember(text) { mutableStateOf(false) }
+    LaunchedEffect(copied) {
+        if (copied) { delay(1600); copied = false }
+    }
+    Box(Modifier.padding(top = 8.dp)) {
+        PillButton(
+            if (copied) "⧉  Copied" else "⧉  Copy",
+            color = if (copied) Forest else Muted,
+        ) {
+            clip.setText(AnnotatedString(text))
+            copied = true
+        }
+    }
+}
+
+/**
  * The employer's questions. Two classes are shown and never drafted — anything
  * personal (demographics, salary, criminal history, citizenship) and plain identity
  * fields — and each says so in its own words rather than sitting there blank.
@@ -288,6 +317,12 @@ private fun Answers(r: AnswersResponse) {
                             Text(q.answer, color = Muted, fontSize = 14.sp, lineHeight = 21.sp,
                                 modifier = Modifier.padding(top = 4.dp))
                         }
+                        /* One button per answer. You are in the employer's form
+                           with a single field focused; what you need is that one
+                           answer, not the whole block to pick apart. Only drafted
+                           answers get one — a button that pastes "yours to answer"
+                           into an employer's textarea is a trap. */
+                        CopyChip(q.answer)
                         if (q.from.isNotEmpty()) Text(
                             "from your resume: “${q.from}”",
                             color = Text3, fontSize = 12.sp, lineHeight = 18.sp,

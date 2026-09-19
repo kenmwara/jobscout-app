@@ -6,6 +6,7 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.printToString
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -50,29 +51,55 @@ class MockupMatchTest {
     }
 
     // ── frame 1 ────────────────────────────────────────────────────────────
-    @Test fun `landing carries the mockup's head, hero and first two postings`() {
+    /* NOTE on what this file can and cannot see: it composes the components
+       itself rather than calling landing()/browse(), so it tests the pieces, not
+       the screen. That is why a whole landing restructure once passed it
+       untouched — it was asserting a count string the test itself had written. */
+    @Test fun `landing carries the head, the hero and the feed`() {
         val t = tree("ca") {
             MHead("ca") {}
             MHero(resume = "", onResume = {}, onRun = {}, policy = null, onPolicy = {},
                   onUpload = {}, uploading = false, hint = null)
-            MCount("309 swept this morning")
+            MTitle("Browse by what the feed actually knows")
+            MTax("Finance & banking", 24) {}
+            MTitle("Explore today’s sweep")
             postings.take(2).forEach { MJob(it.title, it.company, policy = it.remote_policy) }
         }
         listOf(
-            "JobScout", "Canada",
+            "JobScout",
+            // BOTH markets, always. One pill carrying only the current market meant
+            // Kenya did not exist unless you already knew the pill was a switch.
+            "Canada", "Kenya",
             "Find the work", "made for you.",
             "Paste your resume",
             // The upload control lives in the box. It was dropped in the v3 rebuild
-            // and there was then no way to upload a file at all — reported from a
-            // real phone before any test caught it, which is why it is asserted now.
+            // and there was then no way to upload a file at all.
             "Upload",
             "Remote", "Hybrid", "On site",
-            "309 swept this morning",
+            // The feed, above the sweep: the web's order, asked for on the phone too.
+            "Browse by what the feed actually knows", "Finance & banking", "24 open",
+            "Explore today’s sweep",
             "External Wholesaler Canada Insurance", "Manulife",
-        ).forEach { assertTrue("landing is missing \"$it\"\n$t", t.contains(it)) }
+        ).forEach { assertTrue("landing is missing \"$it\" in:\n$t", t.contains(it)) }
+    }
 
-        // exactly two postings on the landing, as the mockup shows
-        assertEquals("landing shows two postings", 2, Regex("Manulife").findAll(t).count())
+    @Test fun `a scored card says what tapping it does, and only above the floor`() {
+        /* The card WAS clickable and said so nowhere: the whole row opened the
+           application page with no label and no button. Reported from the phone
+           as "there is no prepare application button". */
+        // Both cards in ONE composition: the rule allows a single setContent per
+        // test, so two tree() calls throw rather than fail on the assertion.
+        val t = tree("ca") {
+            MJob("Above the floor", "A company", fit = 72, onClick = {},
+                 action = "Prepare application →")
+            MJob("Below the floor", "B company", fit = 28, onClick = null, action = null)
+        }
+        assertTrue("a card above the floor must name its action:\n$t",
+                   t.contains("Prepare application"))
+        assertEquals(
+            "exactly one card offers it — below the floor nothing is drafted:\n$t",
+            1, Regex("Prepare application").findAll(t).count(),
+        )
     }
 
     // ── frame 2 ────────────────────────────────────────────────────────────

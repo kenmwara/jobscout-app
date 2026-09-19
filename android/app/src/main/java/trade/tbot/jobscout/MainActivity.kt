@@ -324,7 +324,18 @@ class DemoVm(app: Application) : AndroidViewModel(app) {
         call: suspend (String, Posting, Int) -> Pair<T?, String?>,
     ) {
         val a = _ui.value.apply ?: return
-        val profile = profileText() ?: return
+        /* Every step is written FROM the resume, and the resume is whatever is in
+           the box on the landing screen. Clear that box and this used to `return`
+           in silence: three buttons still sitting there, each doing nothing when
+           pressed, with no way to find out why. Say it instead. The web has
+           always shown "Paste your resume" in this case. */
+        val profile = profileText() ?: run {
+            patch(_ui.value.apply?.posting?.id ?: return) {
+                put(it, Step(error = "Your resume is not in the box any more — paste it back on the " +
+                    "first screen and this can be written from it."))
+            }
+            return
+        }
         if (get(a).busy) return
         val id = a.posting.id
         Api.ev(name, market = _ui.value.market)
@@ -414,6 +425,9 @@ fun DemoScreen(vm: DemoVm = viewModel()) {
         uri?.let(vm::importResume)
     }
     var query by remember { mutableStateOf<String?>(null) }
+    // Which slice of the feed the sweep is showing, if any. Set by a tile on the
+    // landing or a chip in Browse; cleared by the same chip or by Clear.
+    var sector by remember { mutableStateOf<String?>(null) }
     val ins = WindowInsets.safeDrawing.asPaddingValues()
     val tokens = tokensFor(ui.market)
     val uriHandler = LocalUriHandler.current
@@ -457,11 +471,15 @@ fun DemoScreen(vm: DemoVm = viewModel()) {
                         },
                         onMatches = { screen = Screen.MATCHES },
                         onOpen = { u -> runCatching { uriHandler.openUri(u) } },
+                        // A tile is a way INTO the sweep, narrowed to it —
+                        // exactly what clicking one does on the web.
+                        onSector = { sec -> sector = sec; screen = Screen.BROWSE },
                     )
                     Screen.BROWSE -> browse(
-                        ui, feed, policy, query,
-                        onClear = { query = null },
+                        ui, feed, policy, query, sector,
+                        onClear = { query = null; sector = null },
                         onOpen = { u -> runCatching { uriHandler.openUri(u) } },
+                        onSector = { sec -> sector = if (sector == sec) null else sec },
                     ) { policy = it }
                     Screen.MATCHES -> matches(ui, feed, vm)
                 }
@@ -484,7 +502,7 @@ fun DemoScreen(vm: DemoVm = viewModel()) {
 private fun LazyListScope.landing(
     ui: Ui, feed: Feed?, vm: DemoVm, policy: String?, onPolicy: (String?) -> Unit,
     onUpload: () -> Unit, onSearch: (String) -> Unit, onMatches: () -> Unit,
-    onOpen: (String) -> Unit,
+    onOpen: (String) -> Unit, onSector: (String) -> Unit,
 ) {
     item {
         MHero(
@@ -506,14 +524,35 @@ private fun LazyListScope.landing(
     if (ui.scores.isNotEmpty()) item {
         MFilter("← your ${ui.scores.size} matches", on = false, onClick = onMatches)
     }
-    item {
-        MCount(
-            if (feed == null) "loading this morning's sweep…"
-            else "${feed.postings.size} swept this morning",
-            Modifier.padding(top = 2.dp),
-        )
+    /* "318 swept this morning" was a number you could not act on, over two rows
+       and a button. The web answers this with the feed's own shape — what the
+       day is MADE of — so the phone does too, and the same heading names it. */
+    item { MTitle("Browse by what the feed actually knows") }
+    if (feed == null) item { MCount("loading this morning's sweep…") }
+    feed?.let { f ->
+        val by = f.passers.groupingBy { it.sector }.eachCount()
+            .toList().sortedByDescending { it.second }
+        item {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                by.take(8).chunked(2).forEach { pair ->
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        pair.forEach { (sec, n) ->
+                            Box(Modifier.weight(1f)) {
+                                MTax(f.labels[sec] ?: sec, n) { onSector(sec) }
+                            }
+                        }
+                        if (pair.size == 1) Spacer(Modifier.weight(1f))
+                    }
+                }
+            }
+        }
+        item { Spacer(Modifier.height(6.dp)) }
+        item { MTitle("Explore today's sweep") }
+        item { MCount("${f.passers.size} of ${f.postings.size} swept this morning") }
     }
-    feed?.passers?.take(2)?.forEach { p ->
+    /* Four rows, not two. Two was what the mockup's 620px frame held; a real
+       phone is 2340px and the page ended in a screenful of nothing. */
+    feed?.passers?.take(4)?.forEach { p ->
         item {
             MJob(p.title, p.company, policy = p.remote_policy,
                  onClick = p.url.takeIf { it.isNotEmpty() }?.let { u -> ({ onOpen(u) }) })
@@ -533,8 +572,9 @@ private fun LazyListScope.landing(
    The whole sweep behind three policy filters, with the count saying how much of
    it you are looking at. */
 private fun LazyListScope.browse(
-    ui: Ui, feed: Feed?, policy: String?, query: String?,
-    onClear: () -> Unit, onOpen: (String) -> Unit, onPolicy: (String?) -> Unit,
+    ui: Ui, feed: Feed?, policy: String?, query: String?, sector: String?,
+    onClear: () -> Unit, onOpen: (String) -> Unit, onSector: (String) -> Unit,
+    onPolicy: (String?) -> Unit,
 ) {
     val words = query.orEmpty().lowercase().split(" ").filter { it.length > 2 }
     val all = feed?.passers.orEmpty().let { list ->
@@ -547,10 +587,49 @@ private fun LazyListScope.browse(
             words.all { hay.contains(it) }
         }
     }
-    val counts = POLICIES.associate { (id, _) -> id to all.count { matchesPolicy(it, id) } }
-    val rows = if (policy == null) all else all.filter { matchesPolicy(it, policy) }
+    // A tile on the landing, or a tile here, narrows the grid to one slice.
+    val bySector = if (sector == null) all else all.filter { it.sector == sector }
+    /* The policy counts describe what the chips would DO, so they count the rows
+       the chips can actually reach. Counting `all` here put "Remote 191" over a
+       grid of 24 finance postings. */
+    val counts = POLICIES.associate { (id, _) -> id to bySector.count { matchesPolicy(it, id) } }
+    val rows = if (policy == null) bySector else bySector.filter { matchesPolicy(it, policy) }
 
-    item { MTitle(if (words.isEmpty()) "Explore today’s sweep" else "Matching “${query}”") }
+    /* The feed first, then the sweep - the same order the web uses, so a phone
+       and a laptop are describing one product. The tiles are the day's own
+       shape; tapping one narrows the grid below rather than leaving the page. */
+    feed?.let { f ->
+        val by = f.passers.groupingBy { it.sector }.eachCount()
+            .toList().sortedByDescending { it.second }
+        item { MTitle("Browse by what the feed actually knows") }
+        item {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                by.take(10).chunked(2).forEach { pair ->
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        pair.forEach { (sec, n) ->
+                            Box(Modifier.weight(1f)) {
+                                MTax(
+                                    (f.labels[sec] ?: sec) + if (sector == sec) "  ×" else "",
+                                    n,
+                                ) { onSector(sec) }
+                            }
+                        }
+                        if (pair.size == 1) Spacer(Modifier.weight(1f))
+                    }
+                }
+            }
+        }
+        item { Spacer(Modifier.height(18.dp)) }
+    }
+    item {
+        MTitle(
+            when {
+                words.isNotEmpty() -> "Matching “${query}”"
+                sector != null -> feed?.labels?.get(sector) ?: "Explore today’s sweep"
+                else -> "Explore today’s sweep"
+            },
+        )
+    }
     item {
         Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             POLICIES.forEach { (id, label) ->
@@ -605,6 +684,9 @@ private fun LazyListScope.matches(ui: Ui, feed: Feed?, vm: DemoVm) {
             company = p?.company.orEmpty(),
             fit = s.fit,
             onClick = if (s.fit >= FIT_FLOOR && !ui.fromCache && p != null) ({ vm.openApply(p) }) else null,
+            // Same wording as the web's card, and shown on exactly the cards that
+            // can act on it — below the floor nothing is drafted, so nothing is offered.
+            action = if (s.fit >= FIT_FLOOR && !ui.fromCache && p != null) "Prepare application →" else null,
         )
     }
 }

@@ -132,7 +132,13 @@ p.lede{font:400 16px/1.6 var(--sans);color:var(--text2);max-width:520px;margin:0
 .manifesto{font:400 clamp(28px,4.4vw,48px)/1.18 var(--serif);letter-spacing:-.025em;color:var(--ink);margin:0;max-width:820px}
 
 /* ── browse view ────────────────────────────────────────────────────── */
-.browsehead{padding:40px 0 0}
+.feedhead{padding:40px 0 4px}
+.feedh1{font:400 clamp(30px,4.4vw,46px)/1.1 var(--serif);letter-spacing:-.025em;color:var(--ink);margin:0 0 10px}
+.feedhead .lede{margin:0 0 22px}
+.feedhead .taxgrid{margin-bottom:34px}
+.feedsplit{height:1px;background:var(--hair);margin:8px 0 4px}
+.taxall{display:inline-block}
+.browsehead{padding:22px 0 0}
 .browsehead h1{font:400 clamp(30px,4.4vw,46px)/1.1 var(--serif);letter-spacing:-.025em;color:var(--ink);margin:0 0 22px}
 .searchrow{display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--hair);
            border-radius:var(--r-input);padding:6px 6px 6px 18px}
@@ -869,7 +875,7 @@ html.anim .bell[aria-pressed="true"] svg{animation:ring .6s var(--ease)}
       <nav class="main">
         <a href="#" class="keep" id="navBrowse">Browse</a>
         <a href="saved" id="navSaved">Saved (0)</a>
-        <a href="https://github.com/kenmwara/jobscout-app/blob/main/docs/HOW-IT-WORKS.md" target="_blank" rel="noopener">How it works</a>
+        <a href="#how">How it works</a>
       </nav>
     </div>
   </header>
@@ -921,18 +927,17 @@ html.anim .bell[aria-pressed="true"] svg{animation:ring .6s var(--ease)}
   <section class="plain">
     <div class="wrap">
       <h2 class="sec">Browse by what the feed actually knows</h2>
-      <p class="lede">Every tile below is a real slice of today's sweep. Nothing here is a category we cannot fill.</p>
+      <p class="lede">Every tile is a real slice of today’s sweep. Nothing here is a category we cannot fill.</p>
       <div style="height:26px"></div>
-      <div class="taxtabs" id="taxTabs">
-        <button data-tax="sector" aria-pressed="true">By sector</button>
-        <button data-tax="policy" aria-pressed="false">Remote / hybrid / on site</button>
-        <button data-tax="place" aria-pressed="false">By province</button>
-      </div>
-      <div class="taxgrid" id="taxGrid"></div>
+      <!-- A preview. The tiles themselves, and the sweep under them, are one
+           page away — the same page the nav's Browse points at. -->
+      <div class="taxgrid" id="taxPeek"></div>
+      <div style="height:18px"></div>
+      <a class="btn2 taxall" href="#" id="taxAll">Browse the whole feed →</a>
     </div>
   </section>
 
-  <section class="band">
+  <section class="band" id="how">
     <div class="wrap">
       <h2 class="sec">How JobScout works</h2>
       <p class="lede">Three steps, and the middle one is the only one that costs anything.</p>
@@ -976,9 +981,21 @@ html.anim .bell[aria-pressed="true"] svg{animation:ring .6s var(--ease)}
         </svg>
       </div>
   <div class="wrap">
+    <!-- The feed first: what the day is made of, before the day itself. -->
+    <div class="feedhead" id="browseFeed">
+      <h1 class="feedh1">Browse by what the feed actually knows</h1>
+      <p class="lede">Every tile is a real slice of today’s sweep. Nothing here is a category we cannot fill.</p>
+      <div class="taxtabs" id="taxTabs">
+        <button data-tax="sector" aria-pressed="true">By sector</button>
+        <button data-tax="policy" aria-pressed="false">Remote / hybrid / on site</button>
+        <button data-tax="place" aria-pressed="false">By province</button>
+      </div>
+      <div class="taxgrid" id="taxGrid"></div>
+    </div>
+
     <div class="browsehead">
       <div style="display:flex;align-items:center;gap:18px;flex-wrap:wrap">
-        <h1 id="browseTitle">Explore today's sweep</h1>
+        <h1 id="browseTitle">Explore today’s sweep</h1>
         <div id="scSeg" style="display:flex;background:var(--chip);border:1px solid var(--hair);
              border-radius:var(--r-pill);padding:3px;gap:2px;margin-bottom:22px">
           <button class="sctab" data-sc="jobs" aria-pressed="true">Jobs</button>
@@ -1015,7 +1032,7 @@ html.anim .bell[aria-pressed="true"] svg{animation:ring .6s var(--ease)}
       <div>
         <h4>Product</h4>
         <a href="https://github.com/kenmwara/jobscout-app/releases/latest">Android app</a><a href="https://github.com/kenmwara/jobscout-app#native-apps-kotlin--swift">iPhone app</a>
-        <a href="https://github.com/kenmwara/jobscout-app/blob/main/docs/HOW-IT-WORKS.md" target="_blank" rel="noopener">How it works</a><a href="stats">Live stats</a>
+        <a href="#how">How it works</a><a href="stats">Live stats</a>
       </div>
       <div>
         <h4>Markets</h4>
@@ -1717,6 +1734,12 @@ function taxTiles(){
   }
   $("#taxGrid").innerHTML = rows.map(([a, b, d]) =>
     `<a class="tax" href="#"${d.sec !== undefined ? ` data-sec="${esc(d.sec)}"` : ""}${d.pol ? ` data-pol="${d.pol}"` : ""}${d.place ? ` data-place="${d.place}"` : ""}><b>${esc(a)}</b><span>${esc(b)}</span></a>`).join("");
+  /* The landing shows the first six as a preview. Same data, no tabs — the
+     axes belong on the page that can act on them. */
+  const peek = $("#taxPeek");
+  if (peek) peek.innerHTML = rows.slice(0, 6).map(([a, b]) =>
+    `<span class="tax"><b>${esc(a)}</b><span>${esc(b)}</span></span>`).join("");
+
   $("#taxGrid").querySelectorAll(".tax").forEach(t => t.onclick = e => {
     e.preventDefault();
     sector = t.dataset.sec || null;
@@ -1930,12 +1953,18 @@ function browse(){
 /* A view change is a page as far as the person is concerned, so it gets a
    history entry. Without one, Back left the site's first view — the landing
    page — and took the search with it. */
-function setView(v, fromPop){
+/* `anchor` is an element id to land on instead of the top. It has to be handled
+   HERE rather than by the caller: html{scroll-behavior:smooth} means the
+   scrollTo below starts an animation, and a scrollIntoView issued afterwards is
+   simply overridden by the one already in flight. */
+function setView(v, fromPop, anchor){
   view = v;
   $("#v-landing").classList.toggle("hide", v !== "landing");
   $("#v-browse").classList.toggle("hide", v !== "browse");
   if (v === "browse") browse();
-  scrollTo({ top: 0 });
+  const target = anchor && document.getElementById(anchor);
+  if (target) target.scrollIntoView({ block: "start" });
+  else scrollTo({ top: 0 });
   relight(); reveal();
   if (!fromPop) history.pushState(snapshot(), "", v === "browse" ? "#browse" : "#");
 }
@@ -2156,6 +2185,22 @@ document.querySelector(".box .go").onclick = submitBox;
 })();
 
 /* the footer's own links drive the same views as the nav */
+/* "How it works" names a strip that lives inside the landing view, so from
+   Browse the anchor resolved against a hidden element and went nowhere. Switch
+   the view first, then scroll — in that order, or the target has no box yet. */
+document.querySelectorAll('a[href="#how"]').forEach(a => a.onclick = e => {
+  e.preventDefault();
+  setView("landing", false, "how");
+});
+
+/* The landing's preview needs a way through to the real thing. */
+const taxAll = document.getElementById("taxAll");
+if (taxAll) taxAll.onclick = e => {
+  e.preventDefault();
+  sector = null; policyOnly = ""; query = ""; home = "";
+  setView("browse", false, "browseFeed");
+};
+
 document.querySelectorAll('footer.site [data-go]').forEach(a => a.onclick = e => {
   e.preventDefault();
   const go = a.dataset.go;

@@ -59,18 +59,29 @@ fun MHead(market: String, onMarket: (String) -> Unit) {
         Spacer(Modifier.width(7.dp))
         Text("JobScout", style = H2, fontSize = 15.sp, color = T.ink)
         Spacer(Modifier.weight(1f))
-        // The chip is the market switch: the mockup shows one flag, and tapping it is
-        // how you get the other market without a second row of controls.
-        Text(
-            if (market == "ke") "🇰🇪 Kenya" else "🇨🇦 Canada",
-            fontSize = 11.sp, fontWeight = FontWeight.Medium, color = T.text2,
-            modifier = Modifier
-                .clip(Pill9999)
-                .background(T.chip)
-                .border(1.dp, T.hair, Pill9999)
-                .clickable { onMarket(if (market == "ke") "ca" else "ke") }
-                .padding(horizontal = 10.dp, vertical = 6.dp),
-        )
+        /* Both markets, both visible. One pill carrying only the CURRENT market
+           meant Kenya did not exist unless you already knew the pill was a
+           switch — reported from the phone as "there's no KE button". The web
+           has always shown the pair; this is the same control. */
+        Row(
+            Modifier.clip(Pill9999).background(T.chip).border(1.dp, T.hair, Pill9999).padding(3.dp),
+            horizontalArrangement = Arrangement.spacedBy(2.dp),
+        ) {
+            listOf("ca" to "🇨🇦 Canada", "ke" to "🇰🇪 Kenya").forEach { (id, label) ->
+                val on = market == id
+                Text(
+                    label,
+                    fontSize = 11.sp,
+                    fontWeight = if (on) FontWeight.SemiBold else FontWeight.Medium,
+                    color = if (on) T.ink else T.text3,
+                    modifier = Modifier
+                        .clip(Pill9999)
+                        .background(if (on) T.surface else Color.Transparent)
+                        .clickable(enabled = !on) { onMarket(id) }
+                        .padding(horizontal = 9.dp, vertical = 5.dp),
+                )
+            }
+        }
     }
 }
 
@@ -138,10 +149,16 @@ private fun MBox(
             .padding(start = 13.dp, top = 6.dp, end = 6.dp, bottom = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
+        /* maxLines is load-bearing. Without it an uploaded resume — 1,800 words —
+           grew this field down past the fold and pushed the whole page off the
+           screen, which is what the operator saw after tapping Upload. Six
+           lines is enough to see that the right document arrived; the field
+           scrolls its own overflow from there. */
         BasicTextField(
             value = resume,
             onValueChange = onResume,
-            modifier = Modifier.weight(1f),
+            modifier = Modifier.weight(1f).heightIn(max = 108.dp),
+            maxLines = 6,
             textStyle = TextStyle(
                 fontFamily = Sans, fontSize = 12.5.sp, color = T.text,
             ),
@@ -211,6 +228,27 @@ fun MCount(text: String, modifier: Modifier = Modifier) {
     Text(text, fontSize = 11.5.sp, fontWeight = FontWeight.Medium, color = T.text3, modifier = modifier)
 }
 
+/**
+ * .tax — one slice of the feed: a name and how much of today it is. The web
+ * has had these since the redesign; the phone showed a bare count instead, so
+ * the landing said "318 swept this morning" and stopped.
+ */
+@Composable
+fun MTax(label: String, count: Int, onClick: () -> Unit) {
+    Column(
+        Modifier
+            .clip(CardShape)
+            .background(T.surface)
+            .border(1.dp, T.hair, CardShape)
+            .clickable(onClick = onClick)
+            .padding(horizontal = 13.dp, vertical = 11.dp),
+    ) {
+        Text(label, fontSize = 13.sp, fontWeight = FontWeight.Medium, color = T.ink, maxLines = 1)
+        Spacer(Modifier.height(3.dp))
+        Text("$count open", fontSize = 11.5.sp, color = T.text3)
+    }
+}
+
 /** .mtitle */
 @Composable
 fun MTitle(text: String) {
@@ -230,6 +268,12 @@ fun MJob(
     policy: String? = null,
     fit: Int? = null,
     onClick: (() -> Unit)? = null,
+    /* The word for what tapping does. A scored card WAS clickable and said so
+       nowhere — reported from the phone as "there is no prepare application
+       button", and it was right: the whole card opened the application page
+       and nothing on it suggested that. The web has carried the label since
+       the redesign. */
+    action: String? = null,
 ) {
     Row(
         Modifier.fillMaxWidth()
@@ -262,11 +306,22 @@ fun MJob(
             Spacer(Modifier.height(7.dp))
             if (fit != null) {
                 val (fg, bg) = T.band(fit)
-                Text(
-                    T.bandWord(fit).uppercase(),
-                    fontSize = 10.5.sp, fontWeight = FontWeight.Medium, letterSpacing = 0.06.em, color = fg,
-                    modifier = Modifier.clip(Pill9999).background(bg).padding(horizontal = 8.dp, vertical = 5.dp),
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    Text(
+                        T.bandWord(fit).uppercase(),
+                        fontSize = 10.5.sp, fontWeight = FontWeight.Medium, letterSpacing = 0.06.em, color = fg,
+                        modifier = Modifier.clip(Pill9999).background(bg).padding(horizontal = 8.dp, vertical = 5.dp),
+                    )
+                    if (action != null) Text(
+                        action,
+                        fontSize = 10.5.sp, fontWeight = FontWeight.SemiBold, color = T.accent, maxLines = 1,
+                        modifier = Modifier.clip(Pill9999).border(1.dp, T.accent, Pill9999)
+                            .padding(horizontal = 9.dp, vertical = 5.dp),
+                    )
+                }
             } else {
                 Text(
                     policyLabel(policy),

@@ -77,6 +77,14 @@ document.documentElement.setAttribute("data-market",
   .q{padding:16px 0;border-top:1px solid var(--hair)}
   .q:first-child{border-top:0;padding-top:4px}
   .q .lbl{font:500 14.5px/1.5 var(--sans);color:var(--ink);margin:0 0 3px}
+.q .qtop{display:flex;align-items:flex-start;gap:12px;justify-content:space-between}
+.q .qtop .lbl{flex:1 1 auto;margin-right:0}
+.qcopy{flex:0 0 auto;display:inline-flex;align-items:center;gap:5px;cursor:pointer;
+  font:500 11.5px/1 var(--sans);color:var(--ink-2);background:var(--chip);
+  border:1px solid var(--hair);border-radius:999px;padding:5px 9px;white-space:nowrap}
+.qcopy:hover{background:var(--canvas-2);color:var(--ink)}
+.qcopy:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.qcopy.ok{color:var(--b-auto);border-color:var(--b-auto)}
   .q .lbl i{font-style:normal;color:var(--live);font-weight:500}
   .q .ans{font:400 15.5px/1.6 var(--sans);color:var(--text);margin:8px 0 0;
     background:var(--canvas-2);border-left:2px solid var(--b-auto);padding:11px 14px;border-radius:0 8px 8px 0}
@@ -251,6 +259,14 @@ if (qid && tracker[qid] && S.posting?.id !== qid) {
 }
 
 const p = S.posting;
+
+/* Two overlapping sheets — the clipboard shape every form on the web uses, so
+   it needs no label to be understood. The word rides alongside it anyway,
+   because an icon alone is a guess. */
+const COPYICON = `<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor"
+  stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+  <rect x="9" y="9" width="11" height="11" rx="2"/>
+  <path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>`;
 
 const BAND = f => f >= 80 ? ["auto","var(--b-auto)","var(--b-auto-bg)"]
               : f >= 70 ? ["ping","var(--b-ping)","var(--b-ping-bg)"]
@@ -554,12 +570,36 @@ $("#do-answers").onclick = async () => {
     if (!Array.isArray(d.questions))
       return failed("answers", d.detail || d.error || "The form could not be read right now.", "Read the form");
     const qs = d.questions;
-    $("#out-answers").innerHTML = qs.map(q => `
+    $("#out-answers").innerHTML = qs.map((q, i) => `
       <div class="q">
-        <p class="lbl">${esc(q.label)}${q.required ? ' <i>required</i>' : ""}</p>
+        <div class="qtop">
+          <p class="lbl">${esc(q.label)}${q.required ? ' <i>required</i>' : ""}</p>
+          ${q.answer ? `<button class="qcopy" type="button" data-q="${i}"
+             aria-label="Copy the answer to &quot;${esc(q.label)}&quot;">${COPYICON}<span>Copy</span></button>` : ""}
+        </div>
         ${q.answer ? `<p class="ans">${esc(q.answer)}</p>` : `<p class="yours">${esc(q.why || "yours to answer")}</p>`}
         ${q.from ? `<p class="cite">from your resume: &ldquo;${esc(q.from)}&rdquo;</p>` : ""}
       </div>`).join("");
+    /* One field at a time is how a form is actually filled. Only answered
+       questions get a button: there is nothing of yours to paste into the
+       others, and a button that pastes "yours to answer" into an employer's
+       textarea is a trap, not a convenience. */
+    $("#out-answers").querySelectorAll(".qcopy").forEach(b => b.onclick = async () => {
+      const text = qs[+b.dataset.q].answer || "";
+      const label = b.querySelector("span");
+      try { await navigator.clipboard.writeText(text); }
+      catch {
+        const ans = b.closest(".q").querySelector(".ans");
+        if (ans){
+          const r = document.createRange(); r.selectNodeContents(ans);
+          const sel = getSelection(); sel.removeAllRanges(); sel.addRange(r);
+          try { document.execCommand("copy"); } catch { /* the selection is the fallback */ }
+        }
+      }
+      label.textContent = "Copied";
+      b.classList.add("ok");
+      setTimeout(() => { label.textContent = "Copy"; b.classList.remove("ok"); }, 1600);
+    });
     const left = qs.filter(q => !q.answer).length;
     $("#st-answers").textContent = left ? `${qs.length - left} of ${qs.length} answered` : `all ${qs.length} answered`;
     $("#st-answers").className = "state " + (left ? "part" : "done");

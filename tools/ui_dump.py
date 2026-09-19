@@ -43,7 +43,33 @@ def nodes(xml):
     return out
 
 
+def say(msg):
+    """stdout here is cp1252 and the app's labels carry arrows and flags."""
+    print(msg.encode("ascii", "replace").decode("ascii"))
+
+
+def tap(label):
+    """Find a node by its visible text and tap its centre, from a FRESH dump.
+
+    Every stale-coordinate miss in this session came from dumping, thinking,
+    and then tapping a screen that had scrolled underneath. Dump and tap in one
+    breath and that whole class of miss goes away.
+    """
+    for n in nodes(dump()):
+        text = n["text"] or n["desc"]
+        if label.lower() in text.lower():
+            subprocess.run([ADB, "shell", "input", "tap", str(n["cx"]), str(n["cy"])],
+                           env=ENV, capture_output=True, timeout=30)
+            # The console is cp1252 and the app's own labels carry arrows.
+            say("tapped %r at (%d,%d)" % (text[:44], n["cx"], n["cy"]))
+            return 0
+    say("NOT FOUND: %r" % label)
+    return 1
+
+
 def main():
+    if "--tap" in sys.argv:
+        return tap(sys.argv[sys.argv.index("--tap") + 1])
     ns = nodes(dump())
     only = "--tappable" in sys.argv
     for n in ns:
@@ -58,4 +84,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main() or 0)
