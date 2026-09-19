@@ -166,11 +166,15 @@ p.lede{font:400 16px/1.6 var(--sans);color:var(--text2);max-width:520px;margin:0
   .secrow button{flex:0 0 auto}
 }
 .count{margin:26px 0 14px;font:500 14px/1 var(--sans);color:var(--text2);font-variant-numeric:tabular-nums}
-.jobs{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;align-items:start}
+/* stretch, not start: with align-items:start every card sized to its own verdict
+   text, so a row of three came out three different heights and the grid read as
+   broken. The card is already a flex column, so stretching it pins the footer to
+   the bottom and the row lines up. */
+.jobs{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;align-items:stretch}
 .job{
   background:var(--surface);border:1px solid var(--hair);border-radius:var(--r-card);
   padding:20px;display:flex;flex-direction:column;justify-content:space-between;gap:26px;
-  min-height:190px;cursor:pointer;transition:box-shadow .3s var(--ease)
+  min-height:190px;height:100%;cursor:pointer;transition:box-shadow .3s var(--ease)
 }
 .job:hover{box-shadow:var(--sh-hover)}
 .job .top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
@@ -466,6 +470,9 @@ html.anim #toast div{animation:toastin .3s var(--spring) both}
 .ev span:hover::after,.ev span:focus-visible::after{opacity:1;transform:none}
 
 /* save */
+.job .role a{color:inherit;text-decoration:none}
+.job .role a:hover{text-decoration:underline;text-underline-offset:3px}
+.job{cursor:pointer}
 .savebtn{
   appearance:none;background:transparent;border:0;cursor:pointer;padding:4px;
   line-height:0;color:var(--text3);transition:color var(--t-micro) var(--ease),transform .4s var(--spring)
@@ -1430,7 +1437,7 @@ function scoreCard(x, i){
           <span class="down" tabindex="0" data-ev="${esc(x.weakest || "\u2014")}">\u2193 weakest</span>
         </div>
         <div class="act">${x.fit >= FIT_FLOOR
-          ? `<button class="applybtn" type="button">${x.top ? "Prepare application \u2192" : "Open application \u2192"}</button>`
+          ? `<button class="applybtn" type="button">Prepare application \u2192</button>`
           : ""}${plink(p.url)}</div>
       </div>
       <div class="foot">
@@ -1492,6 +1499,17 @@ $("#ownText").oninput = () => {
 /* removed with the chooser (2026-09-19): #homeSel, #modeBtn and #runBtn replaced by the box and the filters */
 // Leaving for the employer's site is as far as the page can see. Whether it became an
 // application is the visitor's to say, on the saved page.
+/* A card opens its posting. Every browse card carried a data-id that nothing
+   ever read, and no handler on .job, so the whole grid was inert — you could
+   save a posting but not open it. The title is a real link for the keyboard and
+   for middle-click; this makes the rest of the card agree with it. */
+document.addEventListener("click", e => {
+  if (e.target.closest(".savebtn, a, button, .age")) return;
+  const card = e.target.closest(".job"); if (!card) return;
+  const link = card.querySelector(".role a");
+  if (link) link.click();
+});
+
 document.addEventListener("click", e => {
   const a = e.target.closest("a.plink"); if (!a) return;
   ev("apply", (a.closest(".scard")?.querySelector(".verdict")?.textContent || "").trim().slice(0, 16) || null);
@@ -1718,7 +1736,10 @@ function browseCard(p){
           aria-label="Save ${esc(p.title)}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 1 0-7.8 7.8l1 1.1L12 21.2l7.8-7.7 1-1.1a5.5 5.5 0 0 0 0-7.8z"/></svg></button>
       </span>
     </div>
-    <div><p class="co">${esc(p.company || "")}</p><h3 class="role">${esc(p.title || "")}</h3></div>
+    <div><p class="co">${esc(p.company || "")}</p>
+      <h3 class="role">${p.url
+        ? `<a href="${esc(p.url)}" target="_blank" rel="noopener">${esc(p.title || "")}</a>`
+        : esc(p.title || "")}</h3></div>
     <div class="foot">
       <span class="loc">${esc(p.location || "Location not stated")}</span>
       <span class="pill${p.remote_policy === "remote" ? " on" : ""}">${

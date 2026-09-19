@@ -65,6 +65,25 @@ private const val SCORED = 8
 private val STOP = setOf("experience","looking","remote","years","strong","skills","working","across","within","roles","based","including","ability","seeking","professional","currently","business","company","canada","canadian","kenya","kenyan")
 private val WORD = Regex("[a-z][a-z&-]{4,}")
 
+/* Resume, or a job title? The box takes both, so something has to tell them
+   apart. Mirror of modeOf() in site/index.html — the web has distinguished them
+   since the single-box redesign; the app just never asked the question and
+   refused anything under forty characters instead.
+
+   Length alone is the wrong test: "Senior Staff Platform Engineer, Vancouver BC"
+   is 44 characters and is plainly a search. A resume is long, or has line
+   breaks, or says one of the words a resume says. */
+private val RESUME_WORDS =
+    Regex("""\b(experience|education|skills|resume|résumé|curriculum vitae|references)\b""",
+          RegexOption.IGNORE_CASE)
+
+fun looksLikeResume(text: String): Boolean {
+    val t = text.trim()
+    if (t.isEmpty()) return false
+    if (t.length > 180 || t.contains('\n')) return true
+    return RESUME_WORDS.containsMatchIn(t)
+}
+
 /** Profile mode (tools/sector.py mode="profile"): headline weighs 3x, the whole text decides, under 3 points is not a sector. */
 fun sectorOf(profile: String, lex: Map<String, List<String>>): String {
     val t = profile.take(300).lowercase()

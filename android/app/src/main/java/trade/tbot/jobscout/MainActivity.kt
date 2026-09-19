@@ -416,6 +416,7 @@ fun DemoScreen(vm: DemoVm = viewModel()) {
     var query by remember { mutableStateOf<String?>(null) }
     val ins = WindowInsets.safeDrawing.asPaddingValues()
     val tokens = tokensFor(ui.market)
+    val uriHandler = LocalUriHandler.current
 
     // A run moves you to the matches, which is the mockup's third frame; nothing else
     // navigates on its own.
@@ -455,8 +456,13 @@ fun DemoScreen(vm: DemoVm = viewModel()) {
                             if (p != null) screen = Screen.BROWSE
                         },
                         onMatches = { screen = Screen.MATCHES },
+                        onOpen = { u -> runCatching { uriHandler.openUri(u) } },
                     )
-                    Screen.BROWSE -> browse(ui, feed, policy, query) { policy = it }
+                    Screen.BROWSE -> browse(
+                        ui, feed, policy, query,
+                        onClear = { query = null },
+                        onOpen = { u -> runCatching { uriHandler.openUri(u) } },
+                    ) { policy = it }
                     Screen.MATCHES -> matches(ui, feed, vm)
                 }
             }
@@ -478,6 +484,7 @@ fun DemoScreen(vm: DemoVm = viewModel()) {
 private fun LazyListScope.landing(
     ui: Ui, feed: Feed?, vm: DemoVm, policy: String?, onPolicy: (String?) -> Unit,
     onUpload: () -> Unit, onSearch: (String) -> Unit, onMatches: () -> Unit,
+    onOpen: (String) -> Unit,
 ) {
     item {
         MHero(
@@ -487,7 +494,7 @@ private fun LazyListScope.landing(
                surfaces did it. A short entry is a SEARCH now: it filters today's
                sweep by those words, costs nothing, and returns something. Only a
                real resume is worth sending to Claude. */
-            onRun = { if (ui.resume.trim().length > 40) vm.run() else onSearch(ui.resume.trim()) },
+            onRun = { if (looksLikeResume(ui.resume)) vm.run() else onSearch(ui.resume.trim()) },
             policy = policy, onPolicy = onPolicy,
             onUpload = onUpload, uploading = ui.uploading, hint = ui.uploadStatus,
         )
@@ -507,7 +514,10 @@ private fun LazyListScope.landing(
         )
     }
     feed?.passers?.take(2)?.forEach { p ->
-        item { MJob(p.title, p.company, policy = p.remote_policy) }
+        item {
+            MJob(p.title, p.company, policy = p.remote_policy,
+                 onClick = p.url.takeIf { it.isNotEmpty() }?.let { u -> ({ onOpen(u) }) })
+        }
     }
     /* Two postings is what the mockup's 620px frame holds. A real phone is 2340px,
        so the page ended in a screenful of nothing and read as if something had
@@ -523,7 +533,8 @@ private fun LazyListScope.landing(
    The whole sweep behind three policy filters, with the count saying how much of
    it you are looking at. */
 private fun LazyListScope.browse(
-    ui: Ui, feed: Feed?, policy: String?, query: String?, onPolicy: (String?) -> Unit,
+    ui: Ui, feed: Feed?, policy: String?, query: String?,
+    onClear: () -> Unit, onOpen: (String) -> Unit, onPolicy: (String?) -> Unit,
 ) {
     val words = query.orEmpty().lowercase().split(" ").filter { it.length > 2 }
     val all = feed?.passers.orEmpty().let { list ->
@@ -550,7 +561,25 @@ private fun LazyListScope.browse(
         }
     }
     item { MCount("${rows.size} of ${feed?.postings?.size ?: 0}") }
-    items(rows, key = { it.id }) { p -> MJob(p.title, p.company, policy = p.remote_policy) }
+    /* A search that matches nothing used to leave "0 of 309" over an empty screen
+       with no way out — the same dead end as the empty matches frame. Say what
+       happened and offer the way back. */
+    if (rows.isEmpty() && feed != null) item {
+        Column {
+            Text(
+                if (words.isEmpty()) "Nothing in today's sweep fits that filter."
+                else "Nothing in today's ${feed.passers.size} postings matches “$query”.",
+                color = T.text2, fontSize = 14.sp, lineHeight = 21.sp,
+            )
+            Spacer(Modifier.height(12.dp))
+            MFilter("Clear and see all ${feed.passers.size}", on = false) { onPolicy(null); onClear() }
+        }
+    }
+    // Same hole as the web had: a browse row that does nothing when tapped.
+    items(rows, key = { it.id }) { p ->
+        MJob(p.title, p.company, policy = p.remote_policy,
+             onClick = p.url.takeIf { it.isNotEmpty() }?.let { u -> ({ onOpen(u) }) })
+    }
 }
 
 /* ── frame 3: After a run ─────────────────────────────────────────────────
