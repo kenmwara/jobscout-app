@@ -223,6 +223,9 @@ footer.site{padding:70px 0 40px;border-top:1px solid var(--hair);margin-top:70px
 .btn2{border-color:var(--hair2);color:var(--text);background:transparent}
 .btn2:hover{border-color:var(--accent);color:var(--accent)}
 .btn[disabled],.btn2[disabled]{opacity:.5;cursor:default;pointer-events:none}
+/* a class that sets display beats the hidden attribute, and Copy/Download
+   were showing on a step that had not run yet */
+[hidden]{display:none !important}
 .panel{background:var(--surface);border:1px solid var(--hair);border-radius:var(--r-card);padding:26px 28px}
 .eyebrow{font:500 12px/1 var(--sans);letter-spacing:.09em;text-transform:uppercase;color:var(--text3);margin:0 0 10px}
 h1.display,h2.sec{text-wrap:balance}
