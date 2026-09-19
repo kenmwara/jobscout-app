@@ -1233,7 +1233,6 @@ async function runPipeline(){
   const chosen = eligible.filter(takeable);
   const setAside = eligible.filter(p => !takeable(p));
   const sector = sectorOf(profile, feed.lexicon || {});
-  const inSector = chosen.filter(p => p.sector === sector);
   // Within the sector, the postings nearest the profile's own words go first (a title
   // hit counts 3, a summary hit 1), so a wealth advisor meets advisor postings before
   // tax analysts. Deterministic and free; Claude still does the judging.
@@ -1247,8 +1246,33 @@ async function runPipeline(){
   const docs = eligible.map(p => ((p.title || "") + " " + (p.summary || "")).toLowerCase());
   const idf = Object.fromEntries(words.map(w => [w, 1 / Math.log(2 + docs.filter(d => d.includes(w)).length)]));
   const rel = p => { const t = (p.title || "").toLowerCase(), s = (p.summary || "").toLowerCase(); let n = 0; for (const w of words){ n += (t.includes(w) ? 3 : s.includes(w) ? 1 : 0) * idf[w]; } return n; };
-  const ranked = pool => [...pool].sort((a, b) => rel(b) - rel(a));
-  const passers = (inSector.length >= 4 ? ranked(inSector) : ranked(inSector).concat(ranked(chosen.filter(p => p.sector !== sector)))).slice(0, 8);
+  /* Six from the sector the profile reads as, two from outside it.
+
+     Sector was a hard GATE until 2026-09-19: four in-sector postings hid the
+     other three hundred, so a resume spanning two fields only ever met one.
+     Making it a mere weight swung too far the other way — a thin profile's
+     noise words put a video editor in a new graduate's eight — so it is a
+     split instead. The six are the sector's best; the two have to beat the
+     median of those six to take a slot, which noise cannot do. */
+  const myLevel = levelOfProfile(profile);
+  const gap = p => Math.abs(levelOf(p.title) - myLevel);
+  // The ends are category errors, not near misses: a lead does not apply to a
+  // 2027 internship, and a graduate is not the VP.
+  const sane = p => !(gap(p) >= 2 && (levelOf(p.title) <= 1 || myLevel <= 1));
+  const score = p => rel(p) / (1 + 0.55 * gap(p));
+  const by = (a, b) => score(b) - score(a);
+
+  const pool = chosen.filter(sane);
+  const usable = pool.length >= 8 ? pool : chosen;
+  const mine = usable.filter(p => p.sector === sector).sort(by);
+  const rest = usable.filter(p => p.sector !== sector).sort(by);
+
+  const best = mine.slice(0, 6);
+  const mid = best.length ? score(best[Math.floor((best.length - 1) / 2)]) : 0;
+  const other = rest.filter(p => rel(p) > 0 && score(p) >= mid).slice(0, 8 - best.length);
+  // Short of eight either way, the ranking fills the rest.
+  const passers = [...new Set([...best, ...other, ...mine, ...rest])].slice(0, 8);
+
   const label = (feed.labels || {})[sector] || sector;
   if (!passers.length){
     // A rule already knew the answer, so nothing is sent and nothing is spent.
@@ -1287,6 +1311,29 @@ const FIT_FLOOR = 55;   // the "unsure" band. Below it nothing is recommended an
 
 /* The profile's sector, by the feed's own lexicon (tools/sector.py mirrored): the first
    300 characters count as the headline (3x), the rest as body (1x). Zero hits → other. */
+/* Roughly where a posting sits, 0 = internship to 4 = executive. Titles are
+   the only honest source: a summary saying "senior engineers will thrive" is
+   describing colleagues, not the role. */
+function levelOf(title){
+  const t = " " + String(title || "").toLowerCase() + " ";
+  if (/\b(intern|internship|co-?op|new ?grad|graduate program|apprentice|trainee)\b/.test(t)) return 0;
+  if (/\b(junior|jr\.?|entry.level|associate)\b/.test(t)) return 1;
+  if (/\b(chief|c[te]o\b|vp\b|vice president|head of|director)\b/.test(t)) return 4;
+  if (/\b(senior|sr\.?|staff|principal|lead|manager)\b/.test(t)) return 3;
+  return 2;
+}
+/* And the candidate's own, from what they call themselves and how long they
+   have been at it. Deliberately generous downwards: a lead can take a mid
+   role, so only the ends are ruled out. */
+function levelOfProfile(profile){
+  const t = String(profile || "").toLowerCase();
+  const yrs = Math.max(0, ...[...t.matchAll(/(\d{1,2})\+?\s*years?/g)].map(m => +m[1]).filter(n => n < 45));
+  if (/\b(chief|founder|vp\b|vice president|head of|director)\b/.test(t.slice(0, 400))) return 4;
+  if (/\b(senior|staff|principal|lead|manager)\b/.test(t.slice(0, 400)) || yrs >= 5) return 3;
+  if (/\b(junior|graduate|intern|entry.level)\b/.test(t.slice(0, 400)) && yrs < 2) return 1;
+  return yrs >= 2 ? 2 : 1;
+}
+
 function sectorOf(profile, lex){
   // Headline first, like the feed: if the first 300 characters name a sector, they
   // decide (the body breaks ties); only a headline with no hit falls back to the body.
