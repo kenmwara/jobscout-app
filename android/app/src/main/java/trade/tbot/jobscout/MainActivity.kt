@@ -386,6 +386,14 @@ fun DemoScreen(vm: DemoVm = viewModel()) {
     // navigates on its own.
     LaunchedEffect(ui.scores.isNotEmpty()) { if (ui.scores.isNotEmpty()) screen = Screen.MATCHES }
 
+    // Switching market throws the scores away — they were about the other country's
+    // feed. Staying on the matches frame then strands you on "0 survived the gate of
+    // 323" with nothing under it, which is what the first Kenya run actually did.
+    LaunchedEffect(ui.market) {
+        screen = Screen.LANDING
+        policy = null
+    }
+
     CompositionLocalProvider(LocalTokens provides tokens) {
         Box(Modifier.fillMaxSize().background(T.canvas)) {
             LazyColumn(
