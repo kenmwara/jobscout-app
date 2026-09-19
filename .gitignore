@@ -12,3 +12,6 @@ android/gradlew*
 ios/JobScout.xcodeproj/
 ios/Info.plist
 ios/build/
+
+# Kotlin compiler scratch — build noise, never source
+android/.kotlin/
