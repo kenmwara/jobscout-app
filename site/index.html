@@ -84,6 +84,14 @@ h1.display .dot{color:var(--live)}
   padding:10px 12px;border-radius:var(--r-btn);cursor:pointer;white-space:nowrap
 }
 .box .up:hover{background:var(--canvas-2);color:var(--ink)}
+/* The file input used to carry `hidden`, which is display:none, which takes it
+   out of the tab order — so Upload, the one control that takes your resume,
+   could not be reached by keyboard at all and never appeared in the
+   accessibility tree. Visually gone, still focusable. */
+.box .up input[type=file]{position:absolute;width:1px;height:1px;padding:0;margin:0;
+  opacity:0;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+.box .up:focus-within{background:var(--canvas-2);color:var(--ink);
+  outline:2px solid var(--accent);outline-offset:2px}
 .box .up .clip{display:none;width:17px;height:17px}
 
 /* tab row — ONLY axes the feed actually has */
@@ -898,7 +906,7 @@ html.anim .bell[aria-pressed="true"] svg{animation:ring .6s var(--ease)}
             aria-label="Paste your resume or type a job title" placeholder="Paste your resume…"></textarea>
           <span class="hint" id="boxHint" aria-live="polite" hidden></span>
           <span class="sep"></span>
-          <label class="up"><svg class="clip" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true"><path d="M21.4 11.05 12.25 20.2a5.5 5.5 0 0 1-7.78-7.78l9.19-9.19a3.67 3.67 0 1 1 5.18 5.19l-9.2 9.19a1.83 1.83 0 1 1-2.59-2.6l8.49-8.48"/></svg><span>Upload</span><input type="file" id="ownFile" accept=".pdf,.docx,.txt,.md,application/pdf" hidden></label>
+          <label class="up"><svg class="clip" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true"><path d="M21.4 11.05 12.25 20.2a5.5 5.5 0 0 1-7.78-7.78l9.19-9.19a3.67 3.67 0 1 1 5.18 5.19l-9.2 9.19a1.83 1.83 0 1 1-2.59-2.6l8.49-8.48"/></svg><span>Upload</span><input type="file" id="ownFile" accept=".pdf,.docx,.txt,.md,application/pdf"></label>
           <button class="go" id="runBtn" type="button" aria-label="Run">&#8594;</button>
         </div>
         <div class="tabs herofade" id="heroTabs"></div>
@@ -1214,11 +1222,6 @@ function sleep(ms){ return new Promise(r => setTimeout(r, reduced ? 0 : ms)); }
 
 async function runPipeline(){
   if (running || !feed?.postings?.length) return;
-  /* A sector or a search left over from Browse would silently narrow the eight
-     the run just produced — and the sector chips are hidden while a run is on
-     screen, so there would be no control left to unset it. Cleared here rather
-     than at the call sites: the upload path and the arrow both land here. */
-  sector = null; query = "";
   prog.start(); swipeCoach();
   const profile = profileText();
   if (!profile){
@@ -1619,7 +1622,14 @@ function submitBox(){
   const el = $("#ownText");
   // A sector picked in Browse before pasting would silently narrow the eight,
   // and with the chip row hidden during a run there would be nothing to unset.
-  if (modeOf(el.value) === "resume"){ query = ""; runPipeline(); return; }
+  /* A sector left over from Browse would silently narrow the eight the run is
+     about to produce, and the sector chips are hidden while a run is on screen,
+     so there would be no control left to unset it. Reset here and not inside
+     runPipeline: that function declares its own `const sector` further down, so
+     assigning the global from its opening lines is a temporal-dead-zone throw —
+     which is an unhandled rejection inside an async function, i.e. a run that
+     dies in total silence. It did, for an hour, until the arrow was clicked. */
+  if (modeOf(el.value) === "resume"){ query = ""; sector = null; runPipeline(); return; }
   query = el.value.trim(); sector = null; setView("browse");
 }
 
