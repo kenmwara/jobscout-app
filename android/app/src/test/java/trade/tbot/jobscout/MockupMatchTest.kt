@@ -53,7 +53,8 @@ class MockupMatchTest {
     @Test fun `landing carries the mockup's head, hero and first two postings`() {
         val t = tree("ca") {
             MHead("ca") {}
-            MHero(resume = "", onResume = {}, onRun = {}, policy = null, onPolicy = {})
+            MHero(resume = "", onResume = {}, onRun = {}, policy = null, onPolicy = {},
+                  onUpload = {}, uploading = false, hint = null)
             MCount("309 swept this morning")
             postings.take(2).forEach { MJob(it.title, it.company, policy = it.remote_policy) }
         }
@@ -61,6 +62,10 @@ class MockupMatchTest {
             "JobScout", "Canada",
             "Find the work", "made for you.",
             "Paste your resume",
+            // The upload control lives in the box. It was dropped in the v3 rebuild
+            // and there was then no way to upload a file at all — reported from a
+            // real phone before any test caught it, which is why it is asserted now.
+            "Upload",
             "Remote", "Hybrid", "On site",
             "309 swept this morning",
             "External Wholesaler Canada Insurance", "Manulife",

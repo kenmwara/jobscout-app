@@ -409,6 +409,11 @@ fun DemoScreen(vm: DemoVm = viewModel()) {
     var trackerOpen by remember { mutableStateOf(false) }
     var screen by remember { mutableStateOf(Screen.LANDING) }
     var policy by remember { mutableStateOf<String?>(null) }
+    // Storage Access Framework: no storage permission, the user picks one document.
+    val picker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        uri?.let(vm::importResume)
+    }
+    var query by remember { mutableStateOf<String?>(null) }
     val ins = WindowInsets.safeDrawing.asPaddingValues()
     val tokens = tokensFor(ui.market)
 
@@ -441,6 +446,8 @@ fun DemoScreen(vm: DemoVm = viewModel()) {
                 when (screen) {
                     Screen.LANDING -> landing(
                         ui, feed, vm, policy,
+                        onUpload = { picker.launch(RESUME_MIMES) },
+                        onSearch = { q -> query = q; screen = Screen.BROWSE },
                         onPolicy = { p ->
                             policy = p
                             // Choosing a policy is how you get from the hero into the
@@ -449,7 +456,7 @@ fun DemoScreen(vm: DemoVm = viewModel()) {
                         },
                         onMatches = { screen = Screen.MATCHES },
                     )
-                    Screen.BROWSE -> browse(ui, feed, policy) { policy = it }
+                    Screen.BROWSE -> browse(ui, feed, policy, query) { policy = it }
                     Screen.MATCHES -> matches(ui, feed, vm)
                 }
             }
@@ -470,12 +477,19 @@ fun DemoScreen(vm: DemoVm = viewModel()) {
    sweep is real without becoming the list. */
 private fun LazyListScope.landing(
     ui: Ui, feed: Feed?, vm: DemoVm, policy: String?, onPolicy: (String?) -> Unit,
-    onMatches: () -> Unit,
+    onUpload: () -> Unit, onSearch: (String) -> Unit, onMatches: () -> Unit,
 ) {
     item {
         MHero(
-            resume = ui.resume, onResume = vm::setResume, onRun = vm::run,
+            resume = ui.resume, onResume = vm::setResume,
+            /* The box promised "or a job title" and then refused anything under
+               forty characters with a banner telling you to paste a resume. Both
+               surfaces did it. A short entry is a SEARCH now: it filters today's
+               sweep by those words, costs nothing, and returns something. Only a
+               real resume is worth sending to Claude. */
+            onRun = { if (ui.resume.trim().length > 40) vm.run() else onSearch(ui.resume.trim()) },
             policy = policy, onPolicy = onPolicy,
+            onUpload = onUpload, uploading = ui.uploading, hint = ui.uploadStatus,
         )
     }
     /* A way back to a run you already paid for. Without this the matches were
@@ -495,17 +509,34 @@ private fun LazyListScope.landing(
     feed?.passers?.take(2)?.forEach { p ->
         item { MJob(p.title, p.company, policy = p.remote_policy) }
     }
+    /* Two postings is what the mockup's 620px frame holds. A real phone is 2340px,
+       so the page ended in a screenful of nothing and read as if something had
+       failed to load. The way into the rest of the sweep belongs here. */
+    feed?.let { f ->
+        item {
+            MFilter("See all ${f.passers.size} →", on = false) { onSearch("") }
+        }
+    }
 }
 
 /* ── frame 2: Browse ──────────────────────────────────────────────────────
    The whole sweep behind three policy filters, with the count saying how much of
    it you are looking at. */
-private fun LazyListScope.browse(ui: Ui, feed: Feed?, policy: String?, onPolicy: (String?) -> Unit) {
-    val all = feed?.passers.orEmpty()
+private fun LazyListScope.browse(
+    ui: Ui, feed: Feed?, policy: String?, query: String?, onPolicy: (String?) -> Unit,
+) {
+    val words = query.orEmpty().lowercase().split(" ").filter { it.length > 2 }
+    val all = feed?.passers.orEmpty().let { list ->
+        if (words.isEmpty()) list
+        else list.filter { p ->
+            val hay = (p.title + " " + p.company + " " + p.summary).lowercase()
+            words.all { hay.contains(it) }
+        }
+    }
     val counts = POLICIES.associate { (id, _) -> id to all.count { matchesPolicy(it, id) } }
     val rows = if (policy == null) all else all.filter { matchesPolicy(it, policy) }
 
-    item { MTitle("Explore today’s sweep") }
+    item { MTitle(if (words.isEmpty()) "Explore today’s sweep" else "Matching “${query}”") }
     item {
         Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             POLICIES.forEach { (id, label) ->

@@ -80,7 +80,11 @@ fun MHead(market: String, onMarket: (String) -> Unit) {
  * takes the display type down to nothing.
  */
 @Composable
-fun MHero(resume: String, onResume: (String) -> Unit, onRun: () -> Unit, policy: String?, onPolicy: (String?) -> Unit) {
+fun MHero(
+    resume: String, onResume: (String) -> Unit, onRun: () -> Unit,
+    policy: String?, onPolicy: (String?) -> Unit,
+    onUpload: () -> Unit, uploading: Boolean, hint: String?,
+) {
     Box(
         Modifier.fillMaxWidth().clip(HeroShape).background(T.hero)
     ) {
@@ -95,7 +99,15 @@ fun MHero(resume: String, onResume: (String) -> Unit, onRun: () -> Unit, policy:
                 letterSpacing = (-0.025).em, color = Color.White,
             )
             Spacer(Modifier.height(16.dp))
-            MBox(resume = resume, onResume = onResume, onRun = onRun)
+            MBox(resume = resume, onResume = onResume, onRun = onRun,
+                 onUpload = onUpload, uploading = uploading)
+            // What the extractor said, next to the control that caused it
+            // rather than three sections away.
+            hint?.let {
+                Spacer(Modifier.height(8.dp))
+                Text(it, fontSize = 11.5.sp, lineHeight = 16.sp,
+                     color = Color.White.copy(alpha = .85f))
+            }
             Spacer(Modifier.height(12.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 POLICIES.forEach { (id, label) ->
@@ -117,7 +129,10 @@ val POLICIES = listOf("remote" to "Remote", "hybrid" to "Hybrid", "onsite" to "O
 
 /** .mbox — the paste field with the go button inside it, not beside it. */
 @Composable
-private fun MBox(resume: String, onResume: (String) -> Unit, onRun: () -> Unit) {
+private fun MBox(
+    resume: String, onResume: (String) -> Unit, onRun: () -> Unit,
+    onUpload: () -> Unit, uploading: Boolean,
+) {
     Row(
         Modifier.fillMaxWidth().clip(BoxShape).background(T.surface)
             .padding(start = 13.dp, top = 6.dp, end = 6.dp, bottom = 6.dp),
@@ -133,12 +148,22 @@ private fun MBox(resume: String, onResume: (String) -> Unit, onRun: () -> Unit) 
             cursorBrush = SolidColor(T.accent),
             decorationBox = { inner ->
                 if (resume.isEmpty()) {
-                    Text("Paste your resume…", fontSize = 12.5.sp, color = T.text3)
+                    Text("Paste your resume, or a job title…", fontSize = 12.5.sp, color = T.text3)
                 }
                 inner()
             },
         )
-        Spacer(Modifier.width(7.dp))
+        // The upload control sits INSIDE the box, where the web puts it. The v3
+        // rebuild dropped it and left importResume with no caller, so there was
+        // no way to upload a file at all.
+        Text(
+            if (uploading) "Reading…" else "Upload",
+            fontSize = 12.sp, fontWeight = FontWeight.Medium, color = T.accent, maxLines = 1,
+            modifier = Modifier.clip(Pill9999)
+                .clickable(enabled = !uploading, onClick = onUpload)
+                .padding(horizontal = 8.dp, vertical = 6.dp),
+        )
+        Spacer(Modifier.width(4.dp))
         Box(
             Modifier.size(30.dp).clip(Pill9999).background(T.btn).clickable(onClick = onRun),
             contentAlignment = Alignment.Center,
