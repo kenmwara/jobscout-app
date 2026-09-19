@@ -51,10 +51,73 @@ block — nothing structural.
 
 ## Repo conventions
 
-- `site/` — Pages app, single self-contained build (Brand Kit v2.2: the indigo bearing rose on cream, tokens in the private repo).
+- `site/` — Pages app (Brand Kit v2.2: the indigo bearing rose on cream). `base.css` holds
+  the design language every page shares; page-specific rules follow it in each page's own
+  `<style>`. A page that redefines a token drifts, so none of them do.
 - `worker/` — the API Worker (wrangler), D1-backed guards.
 - `tools/` — droplet-side feed publisher (Python, runs beside the private pipeline; publishes sanitized JSON only).
+- `android/`, `ios/` — the native clients. Same worker API, same picker.
 - This repo goes **public** at polish time — code quality is part of the exhibit.
+
+### Building Android without CI
+
+Codemagic minutes run out, and a build you cannot run is a build you find out about late.
+The whole toolchain fetches headlessly and the debug APK builds locally in ~2½ minutes:
+
+```bash
+# once: JDK 21 (already present), then the SDK
+mkdir -p ~/android-sdk/cmdline-tools && cd ~/android-sdk
+curl -sSLo cmdtools.zip https://dl.google.com/android/repository/commandlinetools-win-11076708_latest.zip
+unzip -q cmdtools.zip -d cmdline-tools && mv cmdline-tools/cmdline-tools cmdline-tools/latest
+yes | cmdline-tools/latest/bin/sdkmanager --sdk_root=$HOME/android-sdk --licenses
+cmdline-tools/latest/bin/sdkmanager --sdk_root=$HOME/android-sdk \
+  "platforms;android-36" "build-tools;35.0.0" "platform-tools"
+```
+
+```bash
+# every build — tools/gradle.sh fetches its own pinned Gradle, so none is needed on PATH
+export ANDROID_HOME=$HOME/android-sdk ANDROID_SDK_ROOT=$HOME/android-sdk
+bash tools/gradle.sh :app:assembleDebug -p android --console=plain
+# → android/app/build/outputs/apk/debug/app-debug.apk
+```
+
+Do not pass `-q`: it hides the task list, so a run that did nothing looks identical to a run
+that compiled. Check for `> Task :app:compileDebugKotlin` and the APK's timestamp instead.
+CI is still the only path to a **signed release** build.
+
+### The picker has four implementations, and they must agree
+
+Which eight postings meet Claude is decided client-side, so the same logic is written four
+times: `site/index.html` (`runPipeline`), `android/…/Select.kt`, `ios/Sources/Select.swift`
+and `demo_eval.py` in the **jobscout** repo, which is the fixture harness. **Change all four
+together.** A banker on the phone must meet the banking postings they would meet on the site.
+
+Two checks, and between them they cover it:
+
+- `bash tools/check_picker.sh` — 12 fixtures against `Select.kt`. It needs kotlinc and
+  neither Gradle, the Android SDK nor a device, because `Select.kt` is pure logic. A check
+  that needs a CI credit is a check that stops being run.
+- `venv/bin/python tools/demo_eval.py` on the droplet — 66 profile fixtures against the real
+  daily feed. ⚠ It carries its **own copy** of the picker: on 2026-09-18 it reported 66/66
+  after a picker rewrite it had never received, so it was grading the old code. If you change
+  the picker and demo_eval passes first time, check that you changed demo_eval too.
+
+The rules the fixtures encode, each of which exists because it failed:
+
+1. **Level distance costs, and the ends are dropped.** `levelOf` reads a title 0–4; a lead is
+   not shown a 2027 internship and a graduate is not shown the VP. Only titles are read — a
+   summary saying "senior engineers will thrive" is describing colleagues.
+2. **Short of eight, return fewer.** Falling back to the unfiltered pool handed every
+   category error straight back on a thin day.
+3. **Sector is a split, not a gate.** Six from the sector the profile reads as, two from
+   outside that must beat the six's median. As a gate, four in-sector postings hid the other
+   three hundred; as a mere weight, a thin profile's noise words put a video editor in a new
+   graduate's eight.
+4. **A tail slot needs evidence, and the sector counts as evidence.** Outside the sector,
+   require word overlap. Inside it, do not: a pharmacist writes "medication" where the
+   posting says "Patient", so overlap is zero and the job is still right. Requiring it
+   in-sector dropped four of five healthcare postings and filled the slots with every
+   "Manager, …" in the feed, off the one word in "pharmacy manager".
 
 ## Honesty rules (inherited from the fleet)
 
