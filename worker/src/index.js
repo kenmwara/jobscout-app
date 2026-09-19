@@ -479,7 +479,15 @@ export default {
           scan(sec.heading);
           for (const it of sec.items || []) { scan(it.title); scan(it.meta); (it.bullets || []).forEach(scan); }
         }
-        return [...hard].filter(t => !flat.includes(squash(t)));
+        // A plural of something the resume names is not an invention. The real
+        // run refused twice over "SDKs" for a resume that says "Anthropic SDK",
+        // which is the guard crying wolf — and a guard nobody trusts is worse
+        // than none. Singular and plural both count as present.
+        const here = t => {
+          const q = squash(t);
+          return flat.includes(q) || (q.endsWith("s") && flat.includes(q.slice(0, -1)));
+        };
+        return [...hard].filter(t => !here(t));
       };
 
       let d = await draft(env, 2600, SYS, ASK);
