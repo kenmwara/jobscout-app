@@ -1326,6 +1326,7 @@ function renderScores(scores, passers, profile, meta, cached){
   scoredProfile = profile;
   scoredNote = `reads as ${label(sectorOf(profile, feed.lexicon || {}))}`;
   scored = sorted.map((x, i) => ({ ...x, p: byId[x.id] || {}, top: i === 0 && clears && !cached }));
+  keepRun();
   browse();
 }
 
@@ -1442,6 +1443,7 @@ document.addEventListener("visibilitychange", () => {
 
 savedCount();
 loadFeed().then(() => {
+  recallRun();
   const st = history.state;
   if (st && st.v) restore(st);
   else if (location.hash === "#browse") setView("browse");
@@ -1732,7 +1734,7 @@ function browse(){
       ` <button class="allsweep" type="button">show the whole sweep instead</button>`);
     $("#browseCount").querySelector(".allsweep").onclick = () => {
       scored = null; remoteOnly = false; sector = null; policyOnly = ""; query = "";
-      $("#browseQ").value = ""; browse();
+      $("#browseQ").value = ""; keepRun(); browse();
     };
     host.innerHTML = "";
     // The honest headline when a run finds nothing worth applying to. It is
@@ -1779,6 +1781,21 @@ function setView(v, fromPop){
   scrollTo({ top: 0 });
   relight(); reveal();
   if (!fromPop) history.pushState(snapshot(), "", v === "browse" ? "#browse" : "#");
+}
+
+/* The run outlives a navigation, so coming back lands on the matches rather
+   than on 309 postings you have already been through. */
+const RUNKEY = "jobscout.run";
+function keepRun(){
+  try{ scored
+    ? sessionStorage.setItem(RUNKEY, JSON.stringify({ scored, profile: scoredProfile, note: scoredNote }))
+    : sessionStorage.removeItem(RUNKEY); }catch(e){}
+}
+function recallRun(){
+  try{
+    const r = JSON.parse(sessionStorage.getItem(RUNKEY) || "null");
+    if (r?.scored?.length){ scored = r.scored; scoredProfile = r.profile || ""; scoredNote = r.note || ""; }
+  }catch(e){}
 }
 
 /* Enough to put a view back the way it was found. */
