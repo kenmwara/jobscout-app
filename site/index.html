@@ -1973,7 +1973,13 @@ function go(href){
 function toggleAlert(key, human){
   const on = ALERTS.has(key);
   on ? ALERTS.delete(key) : ALERTS.add(key);
-  toast(on ? `Alert off — ${human}` : `Alert on — we’ll flag new ${human} postings`);
+  /* The delivery channel is not built — the comment above has said so since the
+     control shipped, while the toast told the visitor "we'll flag new postings".
+     A promise nothing keeps, made to their face. Say what is true: the interest
+     is recorded, and it is recorded on this device only, because ALERTS is an
+     in-memory Set that a reload empties. */
+  toast(on ? `Alert off — ${human}`
+           : `Noted — ${human}. Alerts are not sending yet; nothing will be emailed.`);
   return !on;
 }
 function wireBells(root){
