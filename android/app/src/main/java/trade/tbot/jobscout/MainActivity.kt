@@ -527,7 +527,7 @@ fun DemoScreen(vm: DemoVm = viewModel()) {
 //    the square) with OUR one difference — radii graduate 2.30 → 4.35 clockwise
 //    from bearing 000, so it reads as a sweep, not a wheel.
 @Composable
-private fun Mark(dp: Dp = 28.dp, tint: Color = Indigo) {
+fun Mark(dp: Dp = 28.dp, tint: Color = Indigo) {
     Canvas(Modifier.size(dp).clip(RoundedCornerShape(6.dp))) {
         val u = size.width / 24f
         val c = center
