@@ -12,8 +12,9 @@
 <link rel="manifest" href="/site.webmanifest">
 <meta name="theme-color" content="#080331">
 <link rel="stylesheet" href="fonts-embedded.css">
+<link rel="stylesheet" href="base.css">
 <style>
-  :root{--indigo:#4865ff;--ink:#080331;--midnight:#1b1463;--canvas:#f8f3eb;--surface:#fff;
+:root{--indigo:#4865ff;--ink:#080331;--midnight:#1b1463;--canvas:#f8f3eb;--surface:#fff;
     --text:#080331;--text2:#4a4560;--text3:#6b6780;--hair:rgba(8,3,49,.10);--hair2:rgba(8,3,49,.18);
     --info:#dce4fb;--meadow:#114e0b;--ember:#cc3600;
     --serif:"Newsreader",Georgia,serif;--sans:"Inter",-apple-system,system-ui,sans-serif;
@@ -26,12 +27,6 @@
   header{padding:14px 0 0}
   header .pill{display:flex;align-items:center;gap:12px;background:var(--surface);border-radius:1600px;box-shadow:var(--sh);padding:12px 18px}
   .brand{font-family:var(--serif);font-weight:400;font-size:21px;letter-spacing:-.01em;color:var(--ink);text-decoration:none}
-  header nav{margin-left:auto;font-size:14px;font-weight:500;display:flex;gap:16px}
-  header nav a{color:var(--text2);text-decoration:none}
-  header nav a:hover{color:var(--indigo)}
-  .bearing{display:inline-block;margin-top:44px;font-size:12px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);
-    background:var(--surface);border-radius:1600px;padding:9px 18px;box-shadow:var(--sh)}
-  .bearing b{color:var(--indigo);font-weight:500}
   h1{font-family:var(--serif);font-weight:400;font-size:clamp(34px,6vw,46px);line-height:1.08;letter-spacing:-.02em;margin:18px 0 8px;text-wrap:balance}
   .sub{color:var(--text2);font-size:17px;margin:0 0 20px;max-width:64ch}
   h2{font-family:var(--serif);font-weight:400;font-size:26px;letter-spacing:-.015em;margin:44px 0 10px}
@@ -71,16 +66,23 @@
 </head>
 <body>
 <div class="wrap">
-<header><div class="pill">
-  <svg width="26" height="26" viewBox="0 0 24 24" aria-hidden="true"><g fill="#4865ff">
-    <circle cx="12" cy="1" r="2.3"/><circle cx="19.78" cy="4.22" r="2.59"/><circle cx="23" cy="12" r="2.89"/><circle cx="19.78" cy="19.78" r="3.18"/>
-    <circle cx="12" cy="23" r="3.47"/><circle cx="4.22" cy="19.78" r="3.76"/><circle cx="1" cy="12" r="4.06"/><circle cx="4.22" cy="4.22" r="4.35"/></g></svg>
-  <a class="brand" href="./">JobScout</a>
-  <nav><a href="./">demo</a><a href="privacy">privacy</a></nav>
-</div></header>
+<div class="wrap">
+  <header class="site">
+    <div class="row">
+      <a class="brand" href="./">
+        <svg viewBox="-3.5 -3.5 31 31" aria-hidden="true"><circle cx="12" cy="1" r="2.275"/><circle cx="19.7782" cy="4.2218" r="2.5694"/><circle cx="23" cy="12" r="2.8639"/><circle cx="19.7782" cy="19.7782" r="3.1583"/><circle cx="12" cy="23" r="3.4527"/><circle cx="4.2218" cy="19.7782" r="3.7471"/><circle cx="1" cy="12" r="4.0416"/><circle cx="4.2218" cy="4.2218" r="4.336"/></svg>
+        JobScout
+      </a>
+      <nav class="main" style="margin-left:auto;display:flex;gap:8px;align-items:center">
+        <a href="./">Browse</a>
+        <a href="privacy">Privacy</a>
+      </nav>
+    </div>
+  </header>
+</div>
 
 <main>
-  <div class="bearing"><b>270</b> — EVIDENCE</div>
+  <p class="eyebrow">Evidence</p>
   <h1>What people actually do.</h1>
   <p class="sub">Every step of the funnel, counted. Aggregates only — no personal data is recorded and none is shown here. What each event contains is written out on the <a href="privacy">privacy page</a>.</p>
 
@@ -197,5 +199,28 @@ async function load(){
 }
 renderRange(); load();
 </script>
+
+<div class="wrap">
+  <footer class="site">
+    <div class="fgrid">
+      <div>
+        <p class="fbrand">JobScout</p>
+        <p class="fnote">Reads your resume, drops what cannot fit, and tells you why about the rest.</p>
+      </div>
+      <div>
+        <h4>Find work</h4>
+        <a href="./">Browse today&rsquo;s sweep</a><a href="saved">Saved jobs</a>
+      </div>
+      <div>
+        <h4>Markets</h4>
+        <a href="https://jobscout.page/">Canada</a><a href="https://nairobi.jobscout.page/">Kenya</a>
+      </div>
+      <div>
+        <h4>Legal</h4>
+        <a href="privacy">Privacy</a><a href="privacy#counted">What we count</a>
+      </div>
+    </div>
+  </footer>
+</div>
 </body>
 </html>

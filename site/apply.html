@@ -1,0 +1,528 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Application — JobScout</title>
+<meta name="description" content="One posting, everything you need to apply: a cover letter, your resume aimed at it, and the employer's own screening questions answered from your profile.">
+<meta name="robots" content="noindex">
+<link rel="icon" href="/icons/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/icons/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="icon" href="/icons/favicon-16.png" sizes="16x16" type="image/png">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon-180.png">
+<link rel="manifest" href="/site.webmanifest">
+<meta name="theme-color" content="#080331">
+<link rel="stylesheet" href="fonts-embedded.css">
+<link rel="stylesheet" href="base.css">
+<style>
+  /* ── the application: one posting, top to bottom ──────────────────────
+     Three things to take with you and one link out. Each step says what it
+     is, what it is grounded in, and whether it is done — so the page can be
+     read as a checklist rather than a pile of generated text. */
+  main{padding:8px 0 40px}
+  .head{display:flex;gap:26px;align-items:flex-start;flex-wrap:wrap;
+    padding:26px 0 30px;border-bottom:1px solid var(--hair);margin-bottom:34px}
+  .head .who{flex:1 1 320px;min-width:0}
+  .head h1{font:450 clamp(28px,4.2vw,44px)/1.1 var(--serif);letter-spacing:-.025em;
+    color:var(--ink);margin:0 0 12px}
+  .head .meta{display:flex;align-items:center;gap:12px;flex-wrap:wrap;
+    font:400 14px/1 var(--sans);color:var(--text2)}
+  .head .fit{display:flex;align-items:center;gap:14px;flex:0 0 auto}
+  .head .go{display:flex;gap:10px;flex-wrap:wrap;margin-top:20px}
+
+  .step{margin:0 0 20px}
+  .step .bar{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin:0 0 4px}
+  .step h2{font:450 23px/1.2 var(--serif);letter-spacing:-.015em;color:var(--ink);margin:0}
+  .step .state{font:500 11.5px/1 var(--sans);letter-spacing:.08em;text-transform:uppercase;
+    padding:6px 11px;border-radius:var(--r-pill);background:var(--chip);color:var(--text3);
+    border:1px solid var(--hair)}
+  .step .state.done{background:var(--b-auto-bg);color:var(--b-auto);border-color:transparent}
+  .step .state.part{background:var(--b-unsure-bg);color:var(--b-unsure);border-color:transparent}
+  .step .lede{font:400 15px/1.6 var(--sans);color:var(--text2);margin:0 0 16px;max-width:64ch}
+  .step .acts{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px;align-items:center}
+  .step .grounded{font:400 12.5px/1.5 var(--sans);color:var(--text3);margin:0;max-width:40ch}
+
+  .out{margin-top:6px}
+  .out p{margin:0 0 14px;font:400 16px/1.68 var(--sans);color:var(--text)}
+  .out h4{font:600 11.5px/1 var(--sans);letter-spacing:.08em;text-transform:uppercase;
+    color:var(--text3);margin:22px 0 11px}
+  .out h4:first-child{margin-top:0}
+  .out ul{margin:0 0 14px;padding-left:20px}
+  .out li{font:400 15.5px/1.62 var(--sans);color:var(--text);margin:0 0 9px}
+  .out .gaps li b{color:var(--ink);font-weight:600}
+
+  /* the rebuilt resume, shown as the page of paper it will be */
+  .doc{background:var(--canvas-2);border:1px solid var(--hair);border-radius:12px;
+    padding:30px 32px;margin:0 0 6px}
+  .doc .dname{font:600 21px/1.2 var(--sans);color:var(--ink);margin:0 0 4px;letter-spacing:-.01em}
+  .doc .dcontact{font:400 13.5px/1.5 var(--sans);color:var(--text3);margin:0 0 10px}
+  .doc .dhead{font:400 15px/1.5 var(--sans);color:var(--text2);font-style:italic;margin:0 0 6px}
+  .doc .dsec{margin-top:22px}
+  .doc .dsec h5{font:600 11px/1 var(--sans);letter-spacing:.11em;text-transform:uppercase;
+    color:var(--text3);margin:0 0 12px;padding-bottom:7px;border-bottom:1px solid var(--hair)}
+  .doc .ditem{margin:0 0 15px}
+  .doc .dtitle{font:600 15px/1.35 var(--sans);color:var(--ink);margin:0}
+  .doc .dmeta{font:400 13px/1.4 var(--sans);color:var(--text3);margin:2px 0 0}
+  .doc .ditem ul{margin:7px 0 0;padding-left:18px}
+  .doc .ditem li{font:400 14.5px/1.55 var(--sans);color:var(--text);margin:0 0 5px}
+  @media(max-width:620px){ .doc{padding:20px 18px} }
+
+  /* the screening questions: the employer's own wording, then the answer */
+  .q{padding:16px 0;border-top:1px solid var(--hair)}
+  .q:first-child{border-top:0;padding-top:4px}
+  .q .lbl{font:500 14.5px/1.5 var(--sans);color:var(--ink);margin:0 0 3px}
+  .q .lbl i{font-style:normal;color:var(--live);font-weight:500}
+  .q .ans{font:400 15.5px/1.6 var(--sans);color:var(--text);margin:8px 0 0;
+    background:var(--canvas-2);border-left:2px solid var(--b-auto);padding:11px 14px;border-radius:0 8px 8px 0}
+  .q .yours{font:400 14px/1.5 var(--sans);color:var(--b-unsure);margin:6px 0 0}
+  .q .cite{font:400 12.5px/1.5 var(--sans);color:var(--text3);margin:7px 0 0}
+
+  .waiting{display:flex;align-items:center;gap:12px;font:400 15px/1 var(--sans);color:var(--text2);padding:6px 0 4px}
+  .cmark{display:block;flex:0 0 auto;border-radius:4px}
+  @media (prefers-reduced-motion:no-preference){ .cmark{animation:breathe 2.6s ease-in-out infinite} }
+  @keyframes breathe{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+
+  .note{font:400 14px/1.6 var(--sans);color:var(--text2);margin:0 0 18px}
+  .warn{background:var(--b-unsure-bg);color:var(--b-unsure);border-radius:12px;padding:13px 16px;
+    font:400 14.5px/1.55 var(--sans);margin:0 0 18px}
+  #profileBox{width:100%;min-height:150px;resize:vertical;border:1px solid var(--hair2);
+    border-radius:12px;padding:14px;font:400 15px/1.6 var(--sans);color:var(--ink);
+    background:var(--surface);outline:none}
+  #profileBox:focus{border-color:var(--accent)}
+  .empty{text-align:center;padding:80px 0}
+  .empty p{font:400 21px/1.4 var(--serif);color:var(--ink);margin:0 0 8px}
+  @media(max-width:620px){
+    .head{gap:18px;padding:18px 0 24px}
+    .head .fit{order:-1}
+  }
+</style>
+</head>
+<body id="top">
+
+<div class="wrap">
+  <header class="site">
+    <div class="row">
+      <a class="brand" href="./">
+        <svg viewBox="-3.5 -3.5 31 31" aria-hidden="true"><circle cx="12" cy="1" r="2.275"/><circle cx="19.7782" cy="4.2218" r="2.5694"/><circle cx="23" cy="12" r="2.8639"/><circle cx="19.7782" cy="19.7782" r="3.1583"/><circle cx="12" cy="23" r="3.4527"/><circle cx="4.2218" cy="19.7782" r="3.7471"/><circle cx="1" cy="12" r="4.0416"/><circle cx="4.2218" cy="4.2218" r="4.336"/></svg>
+        JobScout
+      </a>
+      <nav class="main" style="margin-left:auto;display:flex;gap:8px;align-items:center">
+        <a href="./">Browse</a>
+        <a href="saved">Saved jobs</a>
+      </nav>
+    </div>
+  </header>
+</div>
+
+<main class="wrap" id="main">
+  <div class="empty" id="empty" hidden>
+    <p>No application open.</p>
+    <p class="note">Run the pipeline, then choose <b>Prepare application</b> on a match &mdash; or pick one from your saved jobs.</p>
+    <a class="btn" href="./">Run the pipeline</a>
+  </div>
+
+  <div id="app" hidden>
+    <div class="head">
+      <div class="who">
+        <p class="eyebrow" id="co"></p>
+        <h1 id="role"></h1>
+        <p class="meta" id="meta"></p>
+        <div class="go">
+          <a class="btn" id="openLink" target="_blank" rel="noopener">Open the application &#8599;</a>
+          <button class="btn2" type="button" id="markApplied">I applied</button>
+        </div>
+      </div>
+      <div class="fit" id="fit"></div>
+    </div>
+
+    <div id="needProfile" hidden>
+      <div class="panel" style="margin-bottom:28px">
+        <p class="eyebrow">First</p>
+        <h2 style="font:450 23px/1.2 var(--serif);margin:0 0 10px;color:var(--ink)">Paste your resume</h2>
+        <p class="note">You came here from your saved jobs, so this page does not have your resume &mdash; nothing about you is
+          kept between visits. Paste it once and the three steps below can be drafted. It is read in the browser and
+          sent only to score this one posting.</p>
+        <textarea id="profileBox" placeholder="Paste your resume&hellip;"></textarea>
+        <div class="acts" style="margin-top:14px"><button class="btn" type="button" id="useProfile">Use this</button></div>
+      </div>
+    </div>
+
+    <div id="steps" hidden>
+      <section class="step panel" id="s-letter">
+        <div class="bar"><h2>Cover letter</h2><span class="state" id="st-letter">not drafted</span></div>
+        <p class="lede">A short letter for this posting, built from your resume alone &mdash; no invented experience, no credentials you did not list.</p>
+        <div class="out" id="out-letter"></div>
+        <div class="acts">
+          <button class="btn" type="button" id="do-letter">Draft it</button>
+          <button class="btn2" type="button" id="cp-letter" hidden>Copy</button>
+          <button class="btn2" type="button" id="dl-letter" hidden>Download</button>
+          <p class="grounded" id="gr-letter"></p>
+        </div>
+      </section>
+
+      <section class="step panel" id="s-tailor">
+        <div class="bar"><h2>Your resume, rebuilt for this job</h2><span class="state" id="st-tailor">not built</span></div>
+        <p class="lede">Your whole resume &mdash; every role, school and certificate &mdash; reordered and reworded toward this
+          posting, as a document to attach. Nothing is added: whatever the posting wants that you have not done is
+          listed underneath for you to add yourself, and only if it is true.</p>
+        <div class="out" id="out-tailor"></div>
+        <div class="acts">
+          <button class="btn" type="button" id="do-tailor">Build it</button>
+          <button class="btn2" type="button" id="dl-tailor" hidden>Download .docx</button>
+          <button class="btn2" type="button" id="dt-tailor" hidden>.txt</button>
+          <button class="btn2" type="button" id="cp-tailor" hidden>Copy</button>
+          <p class="grounded" id="gr-tailor"></p>
+        </div>
+      </section>
+
+      <section class="step panel" id="s-answers">
+        <div class="bar"><h2>Their screening questions</h2><span class="state" id="st-answers">not read</span></div>
+        <p class="lede">The questions on the employer's own form, read before you open it, with the ones your resume settles already answered.</p>
+        <div class="out" id="out-answers"></div>
+        <div class="acts">
+          <button class="btn" type="button" id="do-answers">Read the form</button>
+          <button class="btn2" type="button" id="cp-answers" hidden>Copy all</button>
+          <p class="grounded" id="gr-answers"></p>
+        </div>
+      </section>
+    </div>
+  </div>
+</main>
+
+<div class="wrap">
+  <footer class="site">
+    <div class="fgrid">
+      <div>
+        <p class="fbrand">JobScout</p>
+        <p class="fnote">Nothing on this page is submitted for you. Every field is yours to check, and the Submit button is yours to press.</p>
+      </div>
+      <div>
+        <h4>Find work</h4>
+        <a href="./">Browse today&rsquo;s sweep</a><a href="saved">Saved jobs</a>
+      </div>
+      <div>
+        <h4>Markets</h4>
+        <a href="https://jobscout.page/">Canada</a><a href="https://nairobi.jobscout.page/">Kenya</a>
+      </div>
+      <div>
+        <h4>Legal</h4>
+        <a href="privacy">Privacy</a><a href="privacy#counted">What we count</a>
+      </div>
+    </div>
+  </footer>
+</div>
+
+<script>
+const $ = s => document.querySelector(s);
+const API = "https://jobscout-app-api.kenmwara.workers.dev";
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+document.documentElement.classList.add("anim");
+
+/* The demo hands this page the posting and the resume through sessionStorage:
+   same browser, same tab, gone when the tab closes. Arriving from the saved
+   list instead means there is no resume — this page asks for one rather than
+   keeping anything between visits. */
+let S = {};
+try { S = JSON.parse(sessionStorage.getItem("jobscout.apply") || "{}"); } catch (e) {}
+
+const TKEY = "jobscout.tracker";
+let tracker = {};
+try { tracker = JSON.parse(localStorage.getItem(TKEY) || "{}").items || {}; } catch (e) {}
+
+// opened from the saved list: the posting is in the tracker, the resume is not
+const qid = new URLSearchParams(location.search).get("id");
+if (qid && tracker[qid] && S.posting?.id !== qid) {
+  const t = tracker[qid];
+  S = { posting: { id: t.id, title: t.title, company: t.company, url: t.url }, fit: t.fit, profile: "" };
+}
+
+const p = S.posting;
+
+const BAND = f => f >= 80 ? ["auto","var(--b-auto)","var(--b-auto-bg)"]
+              : f >= 70 ? ["ping","var(--b-ping)","var(--b-ping-bg)"]
+              : f >= 55 ? ["unsure","var(--b-unsure)","var(--b-unsure-bg)"]
+                        : ["near-miss","var(--b-near)","var(--b-near-bg)"];
+const ROSE = Array.from({length:8}, (_,i) => { const th = (-90 + 45*i) * Math.PI/180;
+  return [52 + 38*Math.cos(th), 52 + 38*Math.sin(th)]; });
+function roseSVG(fit){
+  const f = Math.max(0, Math.min(100, +fit || 0)), col = BAND(f)[1];
+  const lit = Math.max(1, Math.round(f / 100 * 8));
+  return `<svg class="rose" viewBox="0 0 104 104" role="img" aria-label="fit ${f} of 100">` +
+    ROSE.map(([x,y],i) => i < lit
+      ? `<circle cx="${x.toFixed(2)}" cy="${y.toFixed(2)}" r="${(7.87+i*1.019).toFixed(2)}" fill="${col}"/>`
+      : `<circle cx="${x.toFixed(2)}" cy="${y.toFixed(2)}" r="${((7.87+i*1.019)*0.42).toFixed(2)}" fill="var(--hair2)"/>`).join("") +
+    `<text class="fitnum" x="52" y="60.5" fill="${col}">${f}</text></svg>`;
+}
+const plural = (n, unit) => `posted ${n} ${unit}${n === 1 ? "" : "s"} ago`;
+function ago(iso){
+  if (!iso) return "";
+  const d = Math.floor((Date.now() - Date.parse(iso)) / 86400e3);
+  if (!Number.isFinite(d)) return "";
+  return d <= 0 ? "posted today" : d === 1 ? "posted yesterday"
+    : d < 7 ? `posted ${d} days ago`
+    : d < 60 ? plural(Math.round(d / 7), "week") : plural(Math.round(d / 30), "month");
+}
+
+function render(){
+  $("#co").textContent = p.company || "";
+  $("#role").textContent = p.title || p.id;
+  const bits = [ago(p.posted_at), p.location, p.remote_policy === "remote" ? "Remote"
+    : p.remote_policy === "hybrid" ? "Hybrid" : p.remote_policy ? "On site" : ""].filter(Boolean);
+  $("#meta").innerHTML = bits.map(b => `<span>${esc(b)}</span>`).join('<span style="opacity:.4">&middot;</span>');
+  if (Number.isFinite(+S.fit)){
+    const [route, col, bg] = BAND(+S.fit);
+    $("#fit").innerHTML = roseSVG(+S.fit) + `<span class="route" style="color:${col};background:${bg}">${route}</span>`;
+  }
+  const link = $("#openLink");
+  if (p.url) link.href = p.url; else { link.hidden = true; }
+  if (tracker[p.id]?.status === "applied") applied();
+
+  if (S.profile) $("#steps").hidden = false;
+  else $("#needProfile").hidden = false;
+}
+$("#useProfile").onclick = () => {
+  const v = $("#profileBox").value.trim();
+  if (v.length < 40) return;
+  S.profile = v;
+  try { sessionStorage.setItem("jobscout.apply", JSON.stringify(S)); } catch (e) {}
+  $("#needProfile").hidden = true;
+  $("#steps").hidden = false;
+};
+function applied(){
+  const b = $("#markApplied");
+  b.textContent = "Marked as applied";
+  b.disabled = true;
+}
+$("#markApplied").onclick = () => {
+  const t = tracker[p.id] || (tracker[p.id] = { id: p.id, title: p.title, company: p.company, url: p.url,
+    fit: S.fit, saved: new Date().toISOString().slice(0,10) });
+  t.status = "applied";
+  try { localStorage.setItem(TKEY, JSON.stringify({ v:2, items: tracker })); } catch (e) {}
+  applied();
+};
+
+/* Each step is the same shape: ask once, show the result, offer it back as
+   text. A step that has already run is never asked again. */
+const slug = (`${p?.company || ""}-${p?.title || ""}`).toLowerCase()
+  .replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 60);
+const asProse = t => String(t).split(/\n{2,}/).map(x => x.trim())
+  .filter(x => x && !/^-{3,}$/.test(x))
+  .map(x => `<p>${esc(x).replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>").replace(/\n/g, "<br>")}</p>`).join("");
+
+function waiting(id, what){
+  $("#out-" + id).innerHTML = `<div class="waiting"><img class="cmark" src="claude-mark.png" alt="" width="20" height="20"><span>${esc(what)}…</span></div>`;
+  $("#do-" + id).disabled = true;
+}
+function download(blob, name){
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = name; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+}
+function offer(id, plain, name){
+  const cp = $("#cp-" + id), dl = $("#dl-" + id);
+  cp.hidden = false;
+  cp.onclick = async () => {
+    try { await navigator.clipboard.writeText(plain); cp.textContent = "Copied"; }
+    catch { cp.textContent = "Select and copy"; }
+  };
+  if (dl){
+    dl.hidden = false;
+    dl.onclick = () => download(new Blob([plain], { type: "text/plain;charset=utf-8" }), name);
+  }
+}
+
+/* ── a real .docx, because a resume has to be attachable ──────────────────
+   Every ATS in the feed takes .docx and parses it better than anything else,
+   so the download is the real format rather than a .txt the candidate has to
+   reformat. A .docx is three XML files in a zip; stored uncompressed, that is
+   a CRC and a couple of headers, which is cheaper than shipping a library. */
+const CRC = (() => {
+  const t = new Uint32Array(256);
+  for (let i = 0; i < 256; i++){
+    let c = i;
+    for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1;
+    t[i] = c >>> 0;
+  }
+  return bytes => {
+    let c = 0xFFFFFFFF;
+    for (let i = 0; i < bytes.length; i++) c = t[(c ^ bytes[i]) & 0xFF] ^ (c >>> 8);
+    return (c ^ 0xFFFFFFFF) >>> 0;
+  };
+})();
+function zip(files){
+  const enc = new TextEncoder(), parts = [], dir = [];
+  let at = 0;
+  const u16 = n => [n & 255, (n >>> 8) & 255];
+  const u32 = n => [n & 255, (n >>> 8) & 255, (n >>> 16) & 255, (n >>> 24) & 255];
+  for (const [name, text] of files){
+    const nm = enc.encode(name), body = enc.encode(text), crc = CRC(body);
+    // 0 = stored. No deflate, so no compressor: a resume is a few KB.
+    const head = [...u32(0x04034b50), ...u16(20), ...u16(0), ...u16(0), ...u16(0), ...u16(0),
+                  ...u32(crc), ...u32(body.length), ...u32(body.length), ...u16(nm.length), ...u16(0)];
+    parts.push(new Uint8Array(head), nm, body);
+    dir.push({ nm, crc, len: body.length, at });
+    at += head.length + nm.length + body.length;
+  }
+  const central = [];
+  for (const e of dir)
+    central.push(new Uint8Array([...u32(0x02014b50), ...u16(20), ...u16(20), ...u16(0), ...u16(0),
+      ...u16(0), ...u16(0), ...u32(e.crc), ...u32(e.len), ...u32(e.len), ...u16(e.nm.length),
+      ...u16(0), ...u16(0), ...u16(0), ...u16(0), ...u32(0), ...u32(e.at)]), e.nm);
+  const cLen = central.reduce((n, p) => n + p.length, 0);
+  const end = new Uint8Array([...u32(0x06054b50), ...u16(0), ...u16(0),
+    ...u16(dir.length), ...u16(dir.length), ...u32(cLen), ...u32(at), ...u16(0)]);
+  return new Blob([...parts, ...central, end],
+    { type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document" });
+}
+const xe = s => String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+function docx(r){
+  const para = (text, o = {}) =>
+    `<w:p><w:pPr>${o.ind ? '<w:ind w:left="284" w:hanging="170"/>' : ""}` +
+    `<w:spacing w:before="${o.before || 0}" w:after="${o.after ?? 60}"/></w:pPr>` +
+    `<w:r><w:rPr>${o.b ? "<w:b/>" : ""}${o.i ? "<w:i/>" : ""}` +
+    `<w:sz w:val="${o.sz || 20}"/><w:szCs w:val="${o.sz || 20}"/>` +
+    `${o.caps ? '<w:caps/>' : ""}${o.grey ? '<w:color w:val="595959"/>' : ""}</w:rPr>` +
+    `<w:t xml:space="preserve">${xe(text)}</w:t></w:r></w:p>`;
+  let body = para(r.name, { b: true, sz: 34, after: 40 });
+  if (r.contact) body += para(r.contact, { sz: 18, grey: true, after: 60 });
+  if (r.headline) body += para(r.headline, { i: true, sz: 21, after: 180 });
+  for (const sec of r.sections){
+    body += para(sec.heading, { b: true, caps: true, sz: 19, before: 220, after: 80 });
+    for (const it of sec.items){
+      if (it.title) body += para(it.title, { b: true, sz: 21, after: it.meta ? 20 : 60 });
+      if (it.meta) body += para(it.meta, { sz: 18, grey: true, after: 60 });
+      for (const b of it.bullets) body += para("•  " + b, { sz: 20, ind: true, after: 40 });
+    }
+  }
+  return zip([
+    ["[Content_Types].xml",
+     '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+     '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">' +
+     '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>' +
+     '<Default Extension="xml" ContentType="application/xml"/>' +
+     '<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>' +
+     '</Types>'],
+    ["_rels/.rels",
+     '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+     '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+     '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>' +
+     '</Relationships>'],
+    ["word/document.xml",
+     '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+     '<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>' +
+     body +
+     '<w:sectPr><w:pgSz w:w="11906" w:h="16838"/>' +
+     '<w:pgMar w:top="1134" w:right="1134" w:bottom="1134" w:left="1134"/></w:sectPr>' +
+     '</w:body></w:document>'],
+  ]);
+}
+const resumeText = r => [r.name, r.contact, "", r.headline, ""].filter(x => x !== undefined).join("\n")
+  + r.sections.map(sec => "\n" + sec.heading.toUpperCase() + "\n" +
+      sec.items.map(it => [it.title, it.meta, ...it.bullets.map(b => "  • " + b)]
+        .filter(Boolean).join("\n")).join("\n\n")).join("\n");
+function failed(id, msg, label){
+  $("#out-" + id).innerHTML = `<div class="warn">${esc(msg)}</div>`;
+  const b = $("#do-" + id);
+  b.disabled = false; b.textContent = label;
+}
+const post = (path) => fetch(API + path, {
+  method: "POST", headers: { "content-type": "application/json" },
+  body: JSON.stringify({ profile: S.profile, posting: p, fit: S.fit }),
+}).then(r => r.json().then(d => ({ r, d })));
+
+$("#do-letter").onclick = async () => {
+  waiting("letter", "drafting the letter");
+  try{
+    const { r, d } = await post("/api/letter");
+    if (!d.letter) return failed("letter", d.detail || d.error || "Letter drafting is unavailable right now.", "Draft it");
+    $("#out-letter").innerHTML = asProse(d.letter);
+    $("#st-letter").textContent = "drafted"; $("#st-letter").className = "state done";
+    $("#do-letter").hidden = true;
+    $("#gr-letter").textContent = "Grounded only in the resume you gave.";
+    offer("letter", d.letter, `cover-letter-${slug}.txt`);
+  }catch(e){ failed("letter", "Letter API unreachable: " + e, "Draft it"); }
+};
+
+$("#do-tailor").onclick = async () => {
+  waiting("tailor", "rebuilding your resume for this job");
+  try{
+    const { r, d } = await post("/api/resume");
+    if (!Array.isArray(d.sections))
+      return failed("tailor", d.detail || d.error || "The resume could not be built right now.", "Build it");
+
+    // the document, then — separately, never inside it — what it does not say
+    $("#out-tailor").innerHTML =
+      `<div class="doc">
+        <p class="dname">${esc(d.name)}</p>
+        ${d.contact ? `<p class="dcontact">${esc(d.contact)}</p>` : ""}
+        ${d.headline ? `<p class="dhead">${esc(d.headline)}</p>` : ""}
+        ${d.sections.map(sec => `<div class="dsec"><h5>${esc(sec.heading)}</h5>` +
+          sec.items.map(it => `<div class="ditem">
+            ${it.title ? `<p class="dtitle">${esc(it.title)}</p>` : ""}
+            ${it.meta ? `<p class="dmeta">${esc(it.meta)}</p>` : ""}
+            ${it.bullets.length ? `<ul>${it.bullets.map(b => `<li>${esc(b)}</li>`).join("")}</ul>` : ""}
+          </div>`).join("") + `</div>`).join("")}
+      </div>` +
+      (d.gaps?.length
+        ? `<h4>Not in the document &mdash; add these yourself, only if true</h4><ul class="gaps">${
+            d.gaps.map(g => `<li><b>${esc(g.asks)}</b> &mdash; ${esc(g.note)}</li>`).join("")}</ul>`
+        : `<h4>Gaps</h4><p>Nothing the posting asks for is missing from your resume.</p>`);
+
+    $("#st-tailor").textContent = d.gaps?.length
+      ? `built · ${d.gaps.length} to add yourself` : "built";
+    $("#st-tailor").className = "state " + (d.gaps?.length ? "part" : "done");
+    $("#do-tailor").hidden = true;
+    $("#gr-tailor").textContent = "Your own resume, reordered and reworded. Every employer, date and number in it came from the copy you gave.";
+
+    const plain = resumeText(d);
+    $("#dl-tailor").hidden = false;
+    $("#dl-tailor").onclick = () => download(docx(d), `resume-${slug}.docx`);
+    $("#dt-tailor").hidden = false;
+    $("#dt-tailor").onclick = () => download(
+      new Blob([plain], { type: "text/plain;charset=utf-8" }), `resume-${slug}.txt`);
+    const cp = $("#cp-tailor");
+    cp.hidden = false;
+    cp.onclick = async () => {
+      try { await navigator.clipboard.writeText(plain); cp.textContent = "Copied"; }
+      catch { cp.textContent = "Select and copy"; }
+    };
+  }catch(e){ failed("tailor", "Resume API unreachable: " + e, "Build it"); }
+};
+
+/* Last, so everything render() reaches for is already defined. */
+if (!p || !p.title) $("#empty").hidden = false;
+else { $("#app").hidden = false; render(); }
+
+$("#do-answers").onclick = async () => {
+  waiting("answers", "reading the employer's form");
+  try{
+    const { r, d } = await post("/api/answers");
+    if (d.unsupported){
+      $("#out-answers").innerHTML = `<div class="warn">${esc(d.detail)}</div>`;
+      $("#st-answers").textContent = "not published"; $("#st-answers").className = "state";
+      $("#do-answers").hidden = true;
+      $("#gr-answers").textContent = d.host
+        ? `${d.host} does not publish its form, so its questions cannot be read ahead of time.` : "";
+      return;
+    }
+    if (!Array.isArray(d.questions))
+      return failed("answers", d.detail || d.error || "The form could not be read right now.", "Read the form");
+    const qs = d.questions;
+    $("#out-answers").innerHTML = qs.map(q => `
+      <div class="q">
+        <p class="lbl">${esc(q.label)}${q.required ? ' <i>required</i>' : ""}</p>
+        ${q.answer ? `<p class="ans">${esc(q.answer)}</p>` : `<p class="yours">${esc(q.why || "yours to answer")}</p>`}
+        ${q.from ? `<p class="cite">from your resume: &ldquo;${esc(q.from)}&rdquo;</p>` : ""}
+      </div>`).join("");
+    const left = qs.filter(q => !q.answer).length;
+    $("#st-answers").textContent = left ? `${qs.length - left} of ${qs.length} answered` : `all ${qs.length} answered`;
+    $("#st-answers").className = "state " + (left ? "part" : "done");
+    $("#do-answers").hidden = true;
+    $("#gr-answers").textContent = "Read from the employer's own form. Anything your resume does not settle is left for you.";
+    offer("answers", qs.map(q => `${q.label}${q.required ? " [required]" : ""}\n${q.answer || "— " + (q.why || "yours to answer")}`).join("\n\n"), null);
+  }catch(e){ failed("answers", "Answers API unreachable: " + e, "Read the form"); }
+};
+</script>
+</body>
+</html>

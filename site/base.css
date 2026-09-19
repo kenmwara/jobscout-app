@@ -1,0 +1,233 @@
+/* JobScout — the design language, shared by every page.
+   Extracted from index.html on 2026-09-19 so saved, privacy, stats and the
+   application page cannot drift away from the demo they belong to.
+   Page-specific rules stay in each page's own <style>, which follows this. */
+
+/* ═══ CARRIED FROM v2.2, and load-bearing ══════════════════════════════════
+   Dropping this block is what broke the first deploy. It holds:
+     · body{overflow-x:hidden} — the ONLY thing containing the gates band,
+       which is 132vw wide on purpose, and the carousel's off-canvas cards.
+       Without it the whole page scrolled sideways.
+     · .wrap, the base html/body/link rules, ::selection.
+     · the v2.2 token names the carried sections still reference (--midnight,
+       --info, --pill, --card, the shadow set). :root is demoted to `html`
+       here so the redesign's own token block — same specificity, declared
+       after — wins on every name the two share.
+   ══════════════════════════════════════════════════════════════════════ */
+  /* ── JobScout v2.2 — August Health language ──────────────────────────────
+     Cream canvas, indigo ink, editorial serif against Inter, pill geometry,
+     warm-brown shadows. Tokens mirror jobscout/brandkit/tokens.
+     Contrast measured on cream #f8f3eb: deep-ink 17.8, midnight 14.3,
+     stone 11.4, meadow 9.0, ember-deep 4.6, indigo 4.2, forest 3.9.
+     Indigo and forest are FILL/large-text only — never body copy.
+
+     v2.2 (2026-09-14): the serif runs at 450–500 instead of 400 and every
+     small size came up a step — Newsreader 400 on cream read thin on a phone.
+     Candidate cards borrow Steep's "one lit card" layout, the numbers are a
+     Calendly-style centred carousel, and the page closes on a Cosmos-style
+     CTA over a cropped wordmark.                                          ── */
+  html{
+    --indigo:#4865ff; --ink:#080331; --midnight:#1b1463; --lavender:#a2baff; --stone:#333333;
+    --canvas:#f8f3eb; --surface:#ffffff; --tinted:#f098d7; --accent:#ffaefe;
+    --vibrant:#ff6d39; --info:#dce4fb;
+    --forest:#328a3b; --meadow:#114e0b; --ember:#ff6d39; --ember-deep:#cc3600;
+    --blossom:#f098d7; --petal:#ffaefe;
+
+    /* fit bands — product logic. text colour is contrast-checked on cream. */
+    --auto:#114e0b;      --auto-fill:#328a3b;
+    --ping:#1b1463;      --ping-fill:#4865ff;
+    --unsure:#cc3600;    --unsure-fill:#ff6d39;
+    --nearmiss:#333333;  --nearmiss-fill:#dce4fb;
+
+    --text:#080331; --text2:#4a4560; --text3:#6b6780;
+    --hair:rgba(8,3,49,.10); --hair2:rgba(8,3,49,.18);
+
+    --serif:"Newsreader",Georgia,"Times New Roman",serif;
+    --sans:"Inter",-apple-system,system-ui,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --mono:"JetBrains Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+
+    --pill:1600px; --card:16px;
+    --sh-cta:rgba(75,68,57,.1) 0 12px 24px 0, rgba(75,68,57,.1) 0 48px 48px 0;
+    --sh-card:rgba(75,68,57,.1) 0 48px 48px 0;
+    --sh-subtle:rgba(75,68,57,.05) 0 4px 4px 0, rgba(75,68,57,.08) 0 32px 16px 0;
+    --sh-btn:rgba(99,91,79,.08) 0 8px 16px 0, rgba(99,91,79,.04) 0 32px 32px 0;
+    --ease:cubic-bezier(.22,1,.36,1);
+  }
+
+  /* August's measured transitions: background-color .3s, colour .3s, box-shadow .2s.
+     Restrained - no transforms on hover anywhere on the reference. */
+  a,button,.upl,.letterbtn,.tailorbtn,.pill,select.stage,.verdict{
+    transition:background-color .3s var(--ease),color .3s var(--ease),
+               border-color .3s var(--ease),box-shadow .2s var(--ease)}
+  .run:hover{filter:none;transform:none;background:var(--midnight);box-shadow:var(--sh-cta)}
+  .scard.in:hover{box-shadow:rgba(75,68,57,.26) 0 40px 72px 0}
+  .row:hover{background:rgba(72,101,255,.035)}
+  header nav a:hover{color:var(--indigo);text-decoration:none}
+  .pill:hover{background:var(--lavender)}
+  *{box-sizing:border-box}
+  /* The hero circles bleed past the viewport edges, as August's do. Clip rather
+     than scroll - overflow-x:clip does not create a scroll container, so sticky
+     positioning on the header keeps working (overflow:hidden would break it). */
+  html{overflow-x:clip;scroll-behavior:smooth}
+  body{overflow-x:clip}
+  body{margin:0;background:var(--canvas);color:var(--text);font-family:var(--sans);font-size:16.5px;line-height:1.6;-webkit-font-smoothing:antialiased}
+  body{background-image:radial-gradient(rgba(8,3,49,.07) 1px,transparent 1px);background-size:24px 24px;background-attachment:fixed}
+  .wrap{max-width:1200px;margin:0 auto;padding:0 24px}
+  main.wrap{max-width:1040px}
+  a{color:var(--midnight);text-decoration:none}
+  a:hover{text-decoration:underline;text-underline-offset:3px}
+  button{font:inherit;cursor:pointer}
+  ::selection{background:var(--accent)}
+  @media (prefers-reduced-motion:reduce){ html{scroll-behavior:auto} }
+
+
+
+
+/* ══ JobScout v3 — the Parallel-study redesign, 2026-09-19 ═══════════════
+   Two authored token sets (CA light, KE dark); nothing outside them uses a
+   hex. Notes and what was deliberately not copied: docs/REDESIGN-parallel.md
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* ═══════════════════════════════════════════════════════════════════════
+   TWO AUTHORED TOKEN SETS. Nothing below the token blocks uses a hex.
+   CA = light (the existing JobScout cream + indigo, Brand Kit v2.2).
+   KE = dark  (authored, NOT an inversion — see docs/REDESIGN-parallel.md).
+   ═══════════════════════════════════════════════════════════════════════ */
+html,
+html[data-market="ca"]{
+  --canvas:#f4f1ea;        /* page */
+  --canvas-2:#faf8f4;      /* alternating band */
+  --surface:#ffffff;       /* cards, input */
+  --ink:#080331;           /* display + primary text */
+  --text:#1a1636;
+  --text2:#565173;
+  --text3:#83809a;
+  --hair:rgba(8,3,49,.10);
+  --hair2:rgba(8,3,49,.16);
+  --accent:#4865ff;        /* indigo — links, active state */
+  --accent-ink:#ffffff;
+  --live:#ff6d39;          /* the one chromatic dot */
+  --btn:#080331;
+  --btn-ink:#ffffff;
+  --chip:#ffffff;
+  --chip-ink:#080331;
+  --scrim:rgba(8,3,49,.55);
+  --sh-hover:0 6px 27px rgba(8,3,49,.09), 0 1.8px 8px rgba(8,3,49,.05), 0 .75px 3.4px rgba(8,3,49,.04);
+  --trough:rgba(8,3,49,.06);
+  --hero-img:linear-gradient(140deg,#2b2350,#4865ff 48%,#f098d7);
+}
+html[data-market="ke"]{
+  --canvas:#0c0f0d;
+  --canvas-2:#131815;
+  --surface:#181e1a;
+  --ink:#f2f5f1;
+  --text:#e6ebe4;
+  --text2:#a8b3a6;
+  --text3:#7d8a7c;
+  --hair:rgba(242,245,241,.12);
+  --hair2:rgba(242,245,241,.22);
+  --accent:#2fbd6a;        /* Kenya green, lifted for dark ground */
+  --accent-ink:#06120a;
+  --live:#ef4b3c;          /* Kenya red as the live dot */
+  --btn:#2fbd6a;
+  --btn-ink:#06120a;
+  --chip:#1e2621;
+  --chip-ink:#e6ebe4;
+  --scrim:rgba(4,8,5,.62);
+  --sh-hover:0 6px 27px rgba(0,0,0,.45), 0 1.8px 8px rgba(0,0,0,.3);
+  --trough:rgba(242,245,241,.07);
+  --hero-img:linear-gradient(140deg,#06120a,#0b3d22 44%,#2fbd6a);
+}
+:root{
+  --serif:"Newsreader",Georgia,"Times New Roman",serif;
+  --sans:"Inter",-apple-system,system-ui,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  --r-card:20px; --r-input:14px; --r-btn:10px; --r-pill:9999px;
+  --max:1200px;
+  /* motion, measured off the reference's own stylesheet */
+  --ease:cubic-bezier(.22,1,.36,1);        /* easeOutQuint — their workhorse */
+  --spring:cubic-bezier(.22,1.5,.36,1);    /* overshoot — their signature */
+  --t-micro:.18s; --t-ui:.3s; --t-rev:.62s;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{
+  background:var(--canvas); color:var(--text);
+  font:400 16px/1.5 var(--sans); letter-spacing:-.011em;
+  -webkit-font-smoothing:antialiased;
+  transition:background .45s var(--ease), color .45s var(--ease);
+}
+.wrap{max-width:var(--max);margin:0 auto;padding:0 24px}
+a{color:inherit}
+
+/* ── site header ────────────────────────────────────────────────────── */
+header.site{padding:22px 0}
+header.site .row{display:flex;align-items:center;gap:20px;position:relative}
+.brand{display:flex;align-items:center;gap:10px;font:500 20px/1 var(--serif);color:var(--ink);letter-spacing:-.02em}
+.brand svg{width:26px;height:26px;display:block;fill:var(--accent)}
+nav.main{margin-left:auto;display:flex;align-items:center;gap:8px}
+nav.main a{
+  font:500 14px/1 var(--sans);color:var(--text2);text-decoration:none;
+  padding:9px 12px;border-radius:var(--r-btn)
+}
+nav.main a:hover{color:var(--ink)}
+
+/* The market switch, in their Talent/Employers shape: dead centre of the
+   header, a translucent trough, and the active half a solid light pill with the
+   one soft shadow. Theirs is 12px radius, not a full pill. */
+.mkt{
+  position:absolute;left:50%;transform:translateX(-50%);
+  display:flex;background:var(--trough);border-radius:14px;padding:4px;gap:2px;
+  backdrop-filter:blur(8px);border:1px solid var(--hair)
+}
+.mkt button{
+  appearance:none;border:0;background:transparent;cursor:pointer;
+  font:500 14px/1 var(--sans);color:var(--text2);padding:10px 20px;border-radius:11px;
+  display:flex;align-items:center;gap:8px;transition:all .3s var(--ease)
+}
+.mkt button[aria-pressed="true"]{
+  background:var(--surface);color:var(--ink);box-shadow:var(--sh-hover)
+}
+@media(max-width:860px){
+  .mkt{position:static;transform:none;margin-left:auto}
+  .mkt button{padding:9px 13px}
+}
+.mkt .flag{width:16px;height:11px;border-radius:2px;display:block}
+
+/* ── footer ────────────────────────────────────────── */
+footer.site{padding:70px 0 40px;border-top:1px solid var(--hair);margin-top:70px}
+.fgrid{display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr;gap:28px}
+.fgrid h4{font:600 11.5px/1 var(--sans);letter-spacing:.08em;text-transform:uppercase;color:var(--text3);margin:0 0 16px}
+.fgrid a{display:block;font:400 14.5px/1 var(--sans);color:var(--text2);text-decoration:none;margin:0 0 12px}
+.fgrid a:hover{color:var(--ink)}
+.fbrand{font:400 26px/1 var(--serif);color:var(--ink);letter-spacing:-.02em;margin:0 0 10px}
+.fnote{font:400 13.5px/1.6 var(--sans);color:var(--text3);max-width:270px;margin:0}
+.sources{margin-top:44px;padding-top:26px;border-top:1px solid var(--hair);
+         font:400 13px/1.7 var(--sans);color:var(--text3)}
+.sources b{font-weight:500;color:var(--text2)}
+
+/* ── components every page shares ────────────────────────────────────────
+   Copied out of index.html so a saved score, an application and the demo
+   all draw the same rose and the same band pill. */
+.rose{width:64px;height:64px;flex:0 0 auto;display:block}
+.rose .fitnum{font:500 30px/1 var(--serif);text-anchor:middle}
+.route{font:500 10px/1 var(--sans);letter-spacing:.09em;text-transform:uppercase;
+  border-radius:var(--r-pill);padding:5px 9px;display:inline-block;white-space:nowrap}
+.verdict{font:500 13px/1.35 var(--sans);color:var(--text2)}
+.age{color:var(--text3);font:400 13px/1 var(--sans)}
+.age.new{color:var(--live);font-weight:500}
+.btn,.btn2{display:inline-flex;align-items:center;gap:8px;text-decoration:none;white-space:nowrap;
+  font:500 14.5px/1 var(--sans);padding:13px 22px;border-radius:var(--r-btn);cursor:pointer;
+  border:1px solid transparent;transition:all var(--t-micro) var(--ease)}
+.btn{background:var(--ink);color:var(--canvas)}
+.btn:hover{background:var(--accent);color:var(--accent-ink)}
+.btn2{border-color:var(--hair2);color:var(--text);background:transparent}
+.btn2:hover{border-color:var(--accent);color:var(--accent)}
+.btn[disabled],.btn2[disabled]{opacity:.5;cursor:default;pointer-events:none}
+.panel{background:var(--surface);border:1px solid var(--hair);border-radius:var(--r-card);padding:26px 28px}
+.eyebrow{font:500 12px/1 var(--sans);letter-spacing:.09em;text-transform:uppercase;color:var(--text3);margin:0 0 10px}
+h1.display,h2.sec{text-wrap:balance}
+@media(max-width:620px){
+  .panel{padding:20px 18px}
+  .fgrid{grid-template-columns:1fr 1fr}
+}
+@media(max-width:420px){ .fgrid{grid-template-columns:1fr} }

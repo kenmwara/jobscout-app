@@ -13,8 +13,9 @@
 <link rel="manifest" href="/site.webmanifest">
 <meta name="theme-color" content="#080331">
 <link rel="stylesheet" href="fonts-embedded.css">
+<link rel="stylesheet" href="base.css">
 <style>
-  :root{--indigo:#4865ff;--ink:#080331;--midnight:#1b1463;--canvas:#f8f3eb;--surface:#fff;
+:root{--indigo:#4865ff;--ink:#080331;--midnight:#1b1463;--canvas:#f8f3eb;--surface:#fff;
     --text:#080331;--text2:#4a4560;--text3:#6b6780;--hair:rgba(8,3,49,.10);--hair2:rgba(8,3,49,.18);--info:#dce4fb;--lavender:#a2baff;
     --serif:"Newsreader",Georgia,serif;--sans:"Inter",-apple-system,system-ui,sans-serif;--ease:cubic-bezier(.22,1,.36,1);
     --sh:rgba(75,68,57,.05) 0 4px 4px 0,rgba(75,68,57,.08) 0 32px 16px 0;--sh-card:rgba(75,68,57,.1) 0 48px 48px 0}
@@ -25,12 +26,6 @@
   header{padding:14px 0 0;position:sticky;top:0;z-index:5}
   header .pill{display:flex;align-items:center;gap:12px;background:var(--surface);border-radius:1600px;box-shadow:var(--sh);padding:12px 18px}
   .brand{font-family:var(--serif);font-weight:450;font-size:21px;letter-spacing:-.01em;color:var(--ink);text-decoration:none}
-  header nav{margin-left:auto;font-size:14px;font-weight:500;display:flex;gap:18px}
-  header nav a{color:var(--text2);text-decoration:none;white-space:nowrap}
-  header nav a:hover{color:var(--indigo)}
-  .bearing{display:inline-block;margin-top:44px;font-size:12px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);
-    background:var(--surface);border-radius:1600px;padding:9px 18px;box-shadow:var(--sh)}
-  .bearing b{color:var(--indigo);font-weight:500}
   h1{font-family:var(--serif);font-weight:480;font-size:clamp(34px,6vw,48px);line-height:1.08;letter-spacing:-.02em;margin:18px 0 8px;text-wrap:balance}
   h1 .n{color:var(--indigo)}
   .sub{color:var(--text2);font-size:17px;margin:0 0 34px;max-width:56ch;text-wrap:pretty}
@@ -69,20 +64,30 @@
   .empty p{color:var(--text2);margin:0 0 22px}
   .fine{font-size:13px;color:var(--text3);margin-top:30px;line-height:1.7}
   @media (max-width:560px){ .row{grid-template-columns:52px minmax(0,1fr);padding:16px} .rose{width:52px} }
+  /* the one action on a kept row that leads somewhere */
+  .plink.go{background:var(--ink);color:var(--canvas);border-color:transparent}
+  .plink.go:hover{background:var(--accent);color:var(--accent-ink)}
 </style>
 </head>
 <body>
 <div class="wrap">
-<header><div class="pill">
-  <svg width="26" height="26" viewBox="0 0 24 24" aria-hidden="true"><g fill="#4865ff">
-    <circle cx="12" cy="1" r="2.3"/><circle cx="19.78" cy="4.22" r="2.59"/><circle cx="23" cy="12" r="2.89"/><circle cx="19.78" cy="19.78" r="3.18"/>
-    <circle cx="12" cy="23" r="3.47"/><circle cx="4.22" cy="19.78" r="3.76"/><circle cx="1" cy="12" r="4.06"/><circle cx="4.22" cy="4.22" r="4.35"/></g></svg>
-  <a class="brand" href="./">JobScout</a>
-  <nav><a href="./">← back to the demo</a></nav>
-</div></header>
+<div class="wrap">
+  <header class="site">
+    <div class="row">
+      <a class="brand" href="./">
+        <svg viewBox="-3.5 -3.5 31 31" aria-hidden="true"><circle cx="12" cy="1" r="2.275"/><circle cx="19.7782" cy="4.2218" r="2.5694"/><circle cx="23" cy="12" r="2.8639"/><circle cx="19.7782" cy="19.7782" r="3.1583"/><circle cx="12" cy="23" r="3.4527"/><circle cx="4.2218" cy="19.7782" r="3.7471"/><circle cx="1" cy="12" r="4.0416"/><circle cx="4.2218" cy="4.2218" r="4.336"/></svg>
+        JobScout
+      </a>
+      <nav class="main" style="margin-left:auto;display:flex;gap:8px;align-items:center">
+        <a href="./">Browse</a>
+        <a href="privacy">Privacy</a>
+      </nav>
+    </div>
+  </header>
+</div>
 
 <main>
-  <div class="bearing"><b>270</b> — SAVED</div>
+  <p class="eyebrow">Saved</p>
   <h1 id="h1">The ones you kept.</h1>
   <p class="sub">Sorted by fit, best first. Applying is always your click.</p>
   <div id="list"></div>
@@ -105,13 +110,18 @@ function save(){ try{ localStorage.setItem(TKEY, JSON.stringify({ v:2, items: tr
 function esc(s){ return String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
 
 // same bands and the same rose as the demo page, so a saved score reads the same here
-const BAND = f => f >= 80 ? ["auto","#114e0b"] : f >= 70 ? ["ping","#1b1463"] : f >= 55 ? ["unsure","#cc3600"] : ["near-miss","#333333"];
+/* Tokens, not hexes: the same bands the demo draws, and they re-tint with the market. */
+const BAND = f => f >= 80 ? ["auto", "var(--b-auto)"] : f >= 70 ? ["ping", "var(--b-ping)"]
+              : f >= 55 ? ["unsure", "var(--b-unsure)"] : ["near-miss", "var(--b-near)"];
 const ROSE = Array.from({length: 8}, (_, i) => { const th = (-90 + 45 * i) * Math.PI / 180; return [52 + 38 * Math.cos(th), 52 + 38 * Math.sin(th)]; });
 function roseSVG(fit){
   const f = Math.max(0, Math.min(100, +fit || 0)), [, col] = BAND(f);
   const lit = Math.max(1, Math.round(f / 100 * 8));
   return `<svg class="rose" viewBox="0 0 104 104" role="img" aria-label="fit ${f} of 100">` +
-    ROSE.map(([x, y], i) => `<circle cx="${x.toFixed(2)}" cy="${y.toFixed(2)}" r="${i < lit ? 13 : 5.5}" fill="${i < lit ? col : "rgba(8,3,49,.18)"}"/>`).join("") +
+    ROSE.map(([x, y], i) => {
+      const r = 7.87 + i * 1.019;
+      return `<circle cx="${x.toFixed(2)}" cy="${y.toFixed(2)}" r="${(i < lit ? r : r * 0.42).toFixed(2)}" fill="${i < lit ? col : "var(--hair2)"}"/>`;
+    }).join("") +
     `<text class="fitnum" x="52" y="61" fill="${col}">${f}</text></svg>`;
 }
 /* The shortlist is the only place that can answer "did it go anywhere". The mark stays in this
@@ -160,7 +170,7 @@ function render(){
       <div class="row">${roseSVG(t.fit)}
         <div class="t">${esc(t.title)}${t.company ? ` <span class="co">· ${esc(t.company)}</span>` : ""}</div>
         <div class="m">${t.saved ? "saved " + esc(t.saved) : "saved"}</div>
-        <div class="ctl">${t.url ? `<a class="plink" href="${esc(t.url)}" target="_blank" rel="noopener">View posting ↗</a>` : ""}
+        <div class="ctl"><a class="plink go" href="apply?id=${encodeURIComponent(t.id)}">Prepare application →</a>${t.url ? `<a class="plink" href="${esc(t.url)}" target="_blank" rel="noopener">View posting ↗</a>` : ""}
           <select class="st" data-st="${esc(t.id)}" data-set="${t.status ? 1 : 0}" aria-label="What happened with this application">
             ${STATUS.map(([v, lbl]) => `<option value="${v}"${t.status === v || (!t.status && !v) ? " selected" : ""}>${lbl}</option>`).join("")}
           </select>
@@ -183,5 +193,28 @@ $("#list").addEventListener("change", e => {
 $("#clear").onclick = () => { if (confirm("Clear your saved jobs? This only affects this browser.")){ tracker = {}; save(); render(); } };
 render();
 </script>
+
+<div class="wrap">
+  <footer class="site">
+    <div class="fgrid">
+      <div>
+        <p class="fbrand">JobScout</p>
+        <p class="fnote">Reads your resume, drops what cannot fit, and tells you why about the rest.</p>
+      </div>
+      <div>
+        <h4>Find work</h4>
+        <a href="./">Browse today&rsquo;s sweep</a><a href="saved">Saved jobs</a>
+      </div>
+      <div>
+        <h4>Markets</h4>
+        <a href="https://jobscout.page/">Canada</a><a href="https://nairobi.jobscout.page/">Kenya</a>
+      </div>
+      <div>
+        <h4>Legal</h4>
+        <a href="privacy">Privacy</a><a href="privacy#counted">What we count</a>
+      </div>
+    </div>
+  </footer>
+</div>
 </body>
 </html>
