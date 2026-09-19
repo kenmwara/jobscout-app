@@ -251,6 +251,61 @@ const ok = (m) => console.log(`  ok    ${m}`);
   if (checked) ok(`${checked} in-page anchors all resolve`);
 }
 
+/* ── 14. An IIFE may not touch a binding declared below it ────────────────
+   `view = "browse"` inside an IIFE that runs before `let view` is reached: a
+   ReferenceError that killed every line of script after it. The markup all
+   arrived and nothing worked. (The sibling shape — a function assigning a name
+   it also declares locally — is check 10.)
+
+   Scoped to IIFE bodies on purpose. An earlier cut tried to infer "runs at load"
+   by counting braces across the whole file, but the slice spans markup and
+   template literals, so the depth was meaningless and the check silently
+   matched nothing. Finding the blocks by their own delimiters is exact. */
+{
+  const script = html.slice(html.indexOf("<script>"), html.lastIndexOf("</script>"));
+  const lines = script.split("\n");
+
+  const declaredAt = new Map();
+  lines.forEach((l, i) => {
+    const m = /^(?:let|var)\s+(.+?);\s*$/.exec(l);
+    if (!m) return;
+    for (const part of m[1].split(",")) {
+      const name = part.trim().split(/[\s=]/)[0];
+      if (/^[A-Za-z_$][\w$]*$/.test(name) && !declaredAt.has(name)) declaredAt.set(name, i);
+    }
+  });
+
+  // Every `(function ...(){` / `(() => {` at column 0, to its `})();`
+  const bodies = [];
+  lines.forEach((l, i) => {
+    if (!/^\(\s*(?:function|\(|async)/.test(l)) return;
+    for (let j = i + 1; j < lines.length && j < i + 200; j++) {
+      if (/^\}\s*\)\s*\(\s*\)\s*;?\s*$/.test(lines[j])) { bodies.push([i, j]); return; }
+    }
+  });
+
+  const offenders = [];
+  for (const [from, to] of bodies) {
+    for (const [name, declLine] of declaredAt) {
+      if (declLine <= to || name.length < 3) continue;   // declared after this IIFE
+      // Inside a TEMPLATE LITERAL a single backslash-w collapses to "w", so this
+      // regex silently became [^.w$]name s*= and could never match. Doubled.
+      // Inside a TEMPLATE LITERAL a lone backslash-w collapses to "w", so this
+      // silently became [^.w$]name s*= and could never match anything.
+      const assign = new RegExp(`(^|[^.\\w$])${name}\\s*=[^=]`);
+      for (let i = from; i <= to; i++) {
+        const l = lines[i];
+        if (!assign.test(l) || /^\s*(\/\/|\*|\/\*)/.test(l) || /<\/?[a-zA-Z]/.test(l)) continue;
+        if (new RegExp(`(let|var|const)\\s+${name}\\b`).test(l)) continue;
+        offenders.push(`${name} assigned at script line ${i + 1}, inside an IIFE, declared at ${declLine + 1}`);
+        break;
+      }
+    }
+  }
+  if (offenders.length) offenders.forEach((o) => bad(`temporal dead zone: ${o}`));
+  else ok(`${bodies.length} IIFE bodies, none touching a binding declared below`);
+}
+
 console.log("");
 console.log(fail ? `${fail} FAILED` : "ALL GREEN");
 process.exit(fail ? 1 : 0);

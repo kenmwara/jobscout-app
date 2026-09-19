@@ -1558,10 +1558,14 @@ savedCount();
    to landing before redirecting back to matches". The grid fills in when the
    feed lands; the right frame is on screen from the start. */
 (function firstView(){
+  /* Paint the right frame before the feed is fetched. Touches the DOM ONLY:
+     `view` is declared with `let` further down, so assigning it from here is a
+     temporal-dead-zone throw — and a throw here kills every line after it. The
+     variable is set where it is declared, from the same flag. */
   const wantBrowse = history.state?.v === "browse" || location.hash === "#browse"
-    || (() => { try { return !!sessionStorage.getItem(RUNKEY); } catch (e) { return false; } })();
+    || (() => { try { return !!sessionStorage.getItem("jobscout.run"); } catch (e) { return false; } })();
+  window.__openOnBrowse = wantBrowse;
   if (!wantBrowse) return;
-  view = "browse";
   $("#v-landing").classList.add("hide");
   $("#v-browse").classList.remove("hide");
 })();
@@ -1590,7 +1594,7 @@ loadFeed().then(() => {
    context that never runs it still gets a whole page. */
 document.documentElement.classList.add("anim");
 
-let view = "landing", scope = "jobs", tax = "sector", sector = null, query = "";
+let view = window.__openOnBrowse ? "browse" : "landing", scope = "jobs", tax = "sector", sector = null, query = "";
 let freshOnly = false;
 /* A run's results. Null means the grid is the whole sweep; an array means
    it is the matches, and every filter narrows those instead of the feed. */
