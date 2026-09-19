@@ -28,8 +28,8 @@ struct Step<T> {
  because each costs a call and not everyone wants all three.
  */
 struct Apply {
-    let posting: Posting
-    let fit: Int
+    var posting: Posting
+    var fit: Int
     var letter = Step<String>()
     var resume = Step<ResumeResponse>()
     var answers = Step<AnswersResponse>()
@@ -50,6 +50,13 @@ final class DemoVM: ObservableObject {
     @Published var home = ""               // province the visitor lives in; "" = anywhere
     @Published var remoteOnly = false
     @Published var apply: Apply?           // the open application page, or none
+    /* Drafts survive closing the page. Each one costs a Claude call, so throwing
+       three away because someone looked at the posting is expensive in the one
+       currency the user actually pays. Keyed by posting; `draftsFor` is the
+       resume they were written from, because a letter drafted for one profile
+       shown against another is worse than no letter. */
+    @Published var drafts: [String: Apply] = [:]
+    @Published var draftsFor = ""
     @Published var error: String?
     @Published var uploading = false
     @Published var uploadStatus: String?
@@ -210,12 +217,37 @@ final class DemoVM: ObservableObject {
     // MARK: - The application page
 
     func openApply(_ posting: Posting) {
+        let profile = profileText ?? ""
         let fit = scores.first(where: { $0.id == posting.id })?.fit ?? 0
         Api.ev("apply_open", band(fit).0, market: market)
-        apply = Apply(posting: posting, fit: fit)
+        // A different resume invalidates every draft at once — they were all
+        // written from the old one.
+        if draftsFor != profile { drafts = [:]; draftsFor = profile }
+        if var kept = drafts[posting.id] {
+            // Reuse the drafts, but take the fit from the run that is current.
+            kept.posting = posting
+            kept.fit = fit
+            apply = kept
+        } else {
+            apply = Apply(posting: posting, fit: fit)
+        }
+        drafts[posting.id] = apply
     }
 
-    func closeApply() { apply = nil }
+    func closeApply() {
+        if let a = apply { drafts[a.posting.id] = a }
+        apply = nil
+    }
+
+    /// Write to one application by POSTING, not to "whatever is on screen". A draft
+    /// takes seconds to come back and the page can be closed before it does.
+    private func put<T>(_ id: String, _ keyPath: WritableKeyPath<Apply, Step<T>>, _ step: Step<T>) {
+        if var stored = drafts[id] ?? (apply?.posting.id == id ? apply : nil) {
+            stored[keyPath: keyPath] = step
+            drafts[id] = stored
+            if apply?.posting.id == id { apply = stored }
+        }
+    }
 
     /**
      The three drafts share a shape: mark busy, call, and store either the result or
@@ -232,17 +264,17 @@ final class DemoVM: ObservableObject {
         _ call: (String, Posting, Int) async throws -> (T?, String?)
     ) async {
         guard let a = apply, let profile = profileText, !a[keyPath: keyPath].busy else { return }
+        let id = a.posting.id
         Api.ev(name, market: market)
-        apply?[keyPath: keyPath] = Step(busy: true)
+        put(id, keyPath, Step(busy: true))
         do {
             let (data, why) = try await call(profile, a.posting, a.fit)
-            // The page can be closed, or another posting opened, while a call is in
-            // flight — only write back if this is still the same application.
-            guard apply?.posting.id == a.posting.id else { return }
-            apply?[keyPath: keyPath] = Step(data: data, error: why)
+            // The page may have been closed while this was in flight. It still
+            // lands — against the posting it was asked for, not against whatever
+            // happens to be on screen.
+            put(id, keyPath, Step(data: data, error: why))
         } catch {
-            guard apply?.posting.id == a.posting.id else { return }
-            apply?[keyPath: keyPath] = Step(error: "That call didn't get through: \(error.localizedDescription)")
+            put(id, keyPath, Step(error: "That call didn't get through: \(error.localizedDescription)"))
         }
     }
 

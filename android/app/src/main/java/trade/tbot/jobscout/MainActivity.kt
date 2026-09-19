@@ -111,6 +111,13 @@ data class Ui(
     val fromCache: Boolean = false,
     val banner: String? = null,
     val apply: Apply? = null,           // the open application page, or none
+    /* Drafts survive closing the page. Each one costs a Claude call, so throwing
+       three away because someone looked at the posting is expensive in the one
+       currency the user actually pays. Keyed by posting; `draftsFor` is the resume
+       they were written from, because a letter drafted for one profile shown
+       against another is worse than no letter. */
+    val drafts: Map<String, Apply> = emptyMap(),
+    val draftsFor: String = "",
     val error: String? = null,
     val tracker: Map<String, Tracked> = emptyMap(),   // per-device pipeline — the only thing persisted
 )
@@ -271,16 +278,38 @@ class DemoVm(app: Application) : AndroidViewModel(app) {
 
     // ── The application page ────────────────────────────────────────────────
 
-    /** Only the apply block changes, and only while it is open. */
-    private fun patch(f: (Apply) -> Apply) = _ui.update { u -> u.copy(apply = u.apply?.let(f)) }
-
-    fun openApply(posting: Posting) {
-        val fit = _ui.value.scores.firstOrNull { it.id == posting.id }?.fit ?: 0
-        Api.ev("apply_open", bandFor(fit).first, _ui.value.market)
-        _ui.update { it.copy(apply = Apply(posting, fit)) }
+    /**
+     * Update one application by POSTING, not by "whatever is on screen". A draft
+     * takes seconds to come back and the page can be closed before it does; keying
+     * the write to the posting means the result still lands, and is there when the
+     * card is opened again.
+     */
+    private fun patch(id: String, f: (Apply) -> Apply) = _ui.update { u ->
+        val target = u.drafts[id] ?: u.apply?.takeIf { it.posting.id == id } ?: return@update u
+        val next = f(target)
+        u.copy(
+            apply = if (u.apply?.posting?.id == id) next else u.apply,
+            drafts = u.drafts + (id to next),
+        )
     }
 
-    fun closeApply() = _ui.update { it.copy(apply = null) }
+    fun openApply(posting: Posting) {
+        val profile = profileText().orEmpty()
+        val fit = _ui.value.scores.firstOrNull { it.id == posting.id }?.fit ?: 0
+        Api.ev("apply_open", bandFor(fit).first, _ui.value.market)
+        _ui.update { u ->
+            // A different resume invalidates every draft at once — they were all
+            // written from the old one.
+            val kept = if (u.draftsFor == profile) u.drafts else emptyMap()
+            // Reuse the drafts, but take the fit from the run that is current.
+            val open = kept[posting.id]?.copy(posting = posting, fit = fit) ?: Apply(posting, fit)
+            u.copy(apply = open, drafts = kept + (posting.id to open), draftsFor = profile)
+        }
+    }
+
+    fun closeApply() = _ui.update { u ->
+        u.copy(apply = null, drafts = u.apply?.let { u.drafts + (it.posting.id to it) } ?: u.drafts)
+    }
 
     /**
      * The three drafts share a shape: mark busy, call, and store either the result
@@ -297,12 +326,13 @@ class DemoVm(app: Application) : AndroidViewModel(app) {
         val a = _ui.value.apply ?: return
         val profile = profileText() ?: return
         if (get(a).busy) return
+        val id = a.posting.id
         Api.ev(name, market = _ui.value.market)
-        patch { put(it, Step(busy = true)) }
+        patch(id) { put(it, Step(busy = true)) }
         viewModelScope.launch {
             runCatching { call(profile, a.posting, a.fit) }
-                .onSuccess { (data, why) -> patch { put(it, Step(data = data, error = why)) } }
-                .onFailure { e -> patch { put(it, Step(error = "That call didn't get through: ${e.message}")) } }
+                .onSuccess { (data, why) -> patch(id) { put(it, Step(data = data, error = why)) } }
+                .onFailure { e -> patch(id) { put(it, Step(error = "That call didn't get through: ${e.message}")) } }
         }
     }
 
