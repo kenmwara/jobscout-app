@@ -14,6 +14,12 @@
 <meta name="theme-color" content="#080331">
 <link rel="stylesheet" href="fonts-embedded.css">
 <link rel="stylesheet" href="base.css">
+<script>/* The dark set is gated on data-market; every page has to stamp it or
+   nairobi serves Kenya content in Canada's colours. Same rule as index. */
+document.documentElement.setAttribute("data-market",
+  (new URLSearchParams(location.search).get("market") ||
+   (/^(nairobi|ke)\./.test(location.hostname) ? "ke" : "ca")).toLowerCase() === "ke" ? "ke" : "ca");</script>
+
 <style>
 :root{--indigo:#4865ff;--ink:#080331;--midnight:#1b1463;--canvas:#f8f3eb;--surface:#fff;
     --text:#080331;--text2:#4a4560;--text3:#6b6780;--hair:rgba(8,3,49,.10);--hair2:rgba(8,3,49,.18);--info:#dce4fb;--lavender:#a2baff;
