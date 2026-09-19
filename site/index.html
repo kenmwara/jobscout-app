@@ -108,26 +108,6 @@
   @media (prefers-reduced-motion:reduce){ html{scroll-behavior:auto} }
 
 
-/* the source ticker, which lived at the tail of the chooser block */
-  /* Source ticker - August's own logoTickerClient: translateX(0 -> -100%) over 100s
-     linear infinite. The track holds two identical runs so the wrap is seamless. */
-  .tickerwrap{margin:54px 0 4px;overflow:hidden;position:relative;
-    width:100vw;margin-left:calc(50% - 50vw);
-    -webkit-mask-image:linear-gradient(90deg,transparent,#000 6%,#000 94%,transparent);
-            mask-image:linear-gradient(90deg,transparent,#000 6%,#000 94%,transparent)}
-  .tickerlead{font-size:12px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;
-    color:var(--text2);text-align:center;margin:0 0 20px}
-  .ticker{display:flex;width:max-content;gap:0}
-  @media (prefers-reduced-motion:no-preference){.ticker{animation:tick 100s linear infinite}}
-  @keyframes tick{from{transform:translateX(0)}to{transform:translateX(-50%)}}
-  .tickrun{display:flex;align-items:center;gap:44px;padding-right:44px;flex:none}
-  .src{display:inline-flex;align-items:center;gap:10px;white-space:nowrap;
-    font-size:15px;font-weight:500;color:var(--text2)}
-  .src b{font-family:var(--serif);font-weight:450;font-size:24px;color:var(--ink)}
-  /* the source type as a chip, so each entry reads as one object */
-  .src i{font-style:normal;font-size:11px;font-weight:500;letter-spacing:.07em;text-transform:uppercase;
-    color:var(--midnight);background:var(--info);border-radius:var(--pill);padding:4px 10px}
-
 
 
 /* ══ JobScout v3 — the Parallel-study redesign, 2026-09-19 ═══════════════
@@ -291,6 +271,7 @@ h1.display .dot{color:var(--live)}
   padding:10px 12px;border-radius:var(--r-btn);cursor:pointer;white-space:nowrap
 }
 .box .up:hover{background:var(--canvas-2);color:var(--ink)}
+.box .up .clip{display:none;width:17px;height:17px}
 
 /* tab row — ONLY axes the feed actually has */
 .tabs{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:18px}
@@ -913,9 +894,11 @@ html.anim .bell[aria-pressed="true"] svg{animation:ring .6s var(--ease)}
   .wrap{padding:0 16px}
   .grid3,.jobs,.taxgrid{grid-template-columns:1fr}
   .fgrid{grid-template-columns:1fr}
-  /* the switch is the only nav item that must survive; the rest move into the
-     footer, and the switch itself drops to flags so it cannot clip the edge */
+  /* On a phone the switch drops to flags so it cannot clip the edge, and the
+     nav keeps only Browse — the rest are in the footer, which is 4,000px away.
+     Browse carries .keep for exactly this reason. */
   nav.main a{display:none}
+  nav.main a.keep{display:inline-flex;padding:9px 10px}
   .mkt button{padding:8px 11px;font-size:0;gap:0}
   .mkt .flag{width:22px;height:15px}
   header.site{padding:16px 0 10px}
@@ -923,30 +906,12 @@ html.anim .bell[aria-pressed="true"] svg{animation:ring .6s var(--ease)}
   .hero .inner{padding:48px 18px}
   .box{padding:7px 7px 7px 14px;gap:6px}
   .box .up{padding:9px 8px;font-size:12.5px}
+  .box .up span{display:none}
+  .box .up .clip{display:block}
   .phones{gap:26px}
   section.band,section.plain{padding:56px 0}
 }
 
-/* ── the closing page, v3 ───────────────────────────────────────────────
-   The v2.2 ending was a 200px wordmark, a full-width pill and a field of
-   floating tiles — a different page pretending to be the same one. This is the
-   reference's ending instead: one line, two buttons, then the links. */
-.endpage{background:var(--canvas-2);border-top:1px solid var(--hair);
-  margin-top:90px;padding:86px 0 40px}
-.endpage .tiles,.endpage .wordmark{display:none}
-.ctarow{display:flex;align-items:center;justify-content:space-between;gap:28px;flex-wrap:wrap;
-  padding-bottom:64px;border-bottom:1px solid var(--hair)}
-.dream{font:400 clamp(26px,3.4vw,40px)/1.15 var(--serif);letter-spacing:-.025em;color:var(--ink);margin:0;max-width:16ch}
-.ctas{display:flex;gap:12px;flex-wrap:wrap}
-.cta,.cta2{
-  display:inline-flex;align-items:center;text-decoration:none;white-space:nowrap;
-  font:500 15px/1 var(--sans);padding:16px 26px;border-radius:var(--r-pill);
-  transition:all var(--t-micro) var(--ease)}
-.cta{background:var(--ink);color:var(--canvas);box-shadow:var(--sh-hover)}
-.cta:hover{background:var(--accent);color:var(--accent-ink)}
-.cta2{border:1px solid var(--hair2);color:var(--text)}
-.cta2:hover{border-color:var(--accent);color:var(--accent)}
-footer.site{padding:56px 0 0;border-top:0;margin-top:0}
 
 /* ── the results grid: the run renders the same card Browse does ──────── */
 .scores{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:28px;align-items:start}
@@ -1035,7 +1000,6 @@ footer.site{padding:56px 0 0;border-top:0;margin-top:0}
     .mark{width:26px;height:26px}
     .bearing{font-size:11px;padding:8px 14px}
     /* on a phone the tiles are a strip ABOVE the headline, not a field behind it */
-    .endpage{padding-top:200px;border-radius:32px 32px 0 0}
     .tiles{height:160px}
     .tile{width:calc(var(--s,64px) * .68);height:calc(var(--s,64px) * .53)}
     .tile:nth-child(n+9){display:none}
@@ -1117,7 +1081,7 @@ footer.site{padding:56px 0 0;border-top:0;margin-top:0}
             aria-label="Paste your resume or type a job title" placeholder="Paste your resume…"></textarea>
           <span class="hint" id="boxHint" aria-live="polite" hidden></span>
           <span class="sep"></span>
-          <label class="up">Upload<input type="file" id="ownFile" accept=".pdf,.docx,.txt,.md,application/pdf" hidden></label>
+          <label class="up"><svg class="clip" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true"><path d="M21.4 11.05 12.25 20.2a5.5 5.5 0 0 1-7.78-7.78l9.19-9.19a3.67 3.67 0 1 1 5.18 5.19l-9.2 9.19a1.83 1.83 0 1 1-2.59-2.6l8.49-8.48"/></svg><span>Upload</span><input type="file" id="ownFile" accept=".pdf,.docx,.txt,.md,application/pdf" hidden></label>
           <button class="go" id="runBtn" type="button" aria-label="Run">&#8594;</button>
         </div>
         <div class="tabs herofade" id="heroTabs"></div>
@@ -1814,8 +1778,8 @@ function submitBox(){
 
 /* The rotation teaches the dual affordance without a label. */
 const PROMPTS = MARKET === "ke"
-  ? ["Paste your resume…", "Type your job title…", "Software engineer, Nairobi", "…or drop a PDF"]
-  : ["Paste your resume…", "Type your job title…", "Senior Backend Engineer", "…or drop a PDF"];
+  ? ["Paste your resume…", "Type your job title…", "Software engineer", "…or drop a PDF"]
+  : ["Paste your resume…", "Type your job title…", "Backend Engineer", "…or drop a PDF"];
 let _pi = 0, _ci = 0, _typing = true, _timer;
 function rotate(){
   const el = $("#ownText");
