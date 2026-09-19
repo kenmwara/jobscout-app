@@ -102,6 +102,23 @@ const val SAVED_SHOWN = 4
 const val NO_CANDIDATE = "Choose a candidate above, or upload your resume, and the pipeline scores this morning's postings against it."
 
 
+/** One of the three drafts: not asked for, running, arrived, or refused. */
+data class Step<T>(val busy: Boolean = false, val data: T? = null, val error: String? = null)
+
+/**
+ * One application, being prepared. Mirrors site/apply.html: a cover letter, the
+ * candidate's own resume rebuilt for this job, and the employer's screening
+ * questions answered from the profile — each asked for separately, because each
+ * costs a call and not everyone wants all three.
+ */
+data class Apply(
+    val posting: Posting,
+    val fit: Int,
+    val letter: Step<String> = Step(),
+    val resume: Step<ResumeResponse> = Step(),
+    val answers: Step<AnswersResponse> = Step(),
+)
+
 data class Ui(
     val feed: Feed? = null,
     val personaIdx: Int = -1,           // nothing chosen on open (2026-09-17); -1 = no persona
@@ -119,9 +136,7 @@ data class Ui(
     val meta: Meta? = null,
     val fromCache: Boolean = false,
     val banner: String? = null,
-    val letterText: String? = null,
-    val letterBusy: Boolean = false,
-    val letterTitle: String = "Grounded cover letter",
+    val apply: Apply? = null,           // the open application page, or none
     val error: String? = null,
     val tracker: Map<String, Tracked> = emptyMap(),   // per-device pipeline — the only thing persisted
 )
@@ -285,43 +300,66 @@ class DemoVm(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    fun draftLetter(posting: Posting) {
+    // ── The application page ────────────────────────────────────────────────
+
+    /** Only the apply block changes, and only while it is open. */
+    private fun patch(f: (Apply) -> Apply) = _ui.update { u -> u.copy(apply = u.apply?.let(f)) }
+
+    fun openApply(posting: Posting) {
+        val fit = _ui.value.scores.firstOrNull { it.id == posting.id }?.fit ?: 0
+        Api.ev("apply_open", bandFor(fit).first, _ui.value.market)
+        _ui.update { it.copy(apply = Apply(posting, fit)) }
+    }
+
+    fun closeApply() = _ui.update { it.copy(apply = null) }
+
+    /**
+     * The three drafts share a shape: mark busy, call, and store either the result
+     * or one sentence saying why not. A breaker (the day's budget spent) and a
+     * refusal (the model tried to invent something) both arrive as `detail`, and
+     * both are worth reading — so neither is swallowed into "unavailable".
+     */
+    private fun <T> draft(
+        name: String,
+        get: (Apply) -> Step<T>,
+        put: (Apply, Step<T>) -> Apply,
+        call: suspend (String, Posting, Int) -> Pair<T?, String?>,
+    ) {
+        val a = _ui.value.apply ?: return
         val profile = profileText() ?: return
+        if (get(a).busy) return
+        Api.ev(name, market = _ui.value.market)
+        patch { put(it, Step(busy = true)) }
         viewModelScope.launch {
-            val fit = _ui.value.scores.firstOrNull { it.id == posting.id }?.fit ?: 0
-            _ui.update { it.copy(letterBusy = true, letterText = null, letterTitle = "Grounded cover letter") }
-            runCatching { Api.letter(profile, posting, fit) }
-                .onSuccess { r ->
-                    _ui.update { it.copy(letterBusy = false,
-                        letterText = if (r.breaker || r.error != null) (r.detail ?: "Unavailable.") else r.letter) }
-                }
-                .onFailure { e -> _ui.update { it.copy(letterBusy = false, letterText = "Letter failed: ${e.message}") } }
+            runCatching { call(profile, a.posting, a.fit) }
+                .onSuccess { (data, why) -> patch { put(it, Step(data = data, error = why)) } }
+                .onFailure { e -> patch { put(it, Step(error = "That call didn't get through: ${e.message}")) } }
         }
     }
 
-    /** The resume helper shares the letter sheet: same guards, same grounding, one more section. */
-    fun tailorResume(posting: Posting) {
-        val profile = profileText() ?: return
-        viewModelScope.launch {
-            val fit = _ui.value.scores.firstOrNull { it.id == posting.id }?.fit ?: 0
-            _ui.update { it.copy(letterBusy = true, letterText = null, letterTitle = "Tailored resume") }
-            runCatching { Api.tailor(profile, posting, fit) }
-                .onSuccess { r ->
-                    val text = if (r.breaker || r.error != null) (r.detail ?: "Unavailable.") else buildString {
-                        append(r.summary)
-                        if (r.bullets.isNotEmpty()) { append("\n\nEXPERIENCE, AIMED AT THIS POSTING\n"); r.bullets.forEach { append("• ").append(it).append('\n') } }
-                        append("\nWHAT THE POSTING ASKS FOR THAT THE PROFILE DOES NOT SAY\n")
-                        if (r.gaps.isEmpty()) append("Nothing — the profile covers what the posting asks for.\n")
-                        r.gaps.forEach { append("– ").append(it.asks).append(": ").append(it.note).append('\n') }
-                        append("\nReworded from the profile only, nothing added. The gaps are yours to fill, and only if true.")
-                    }
-                    _ui.update { it.copy(letterBusy = false, letterText = text) }
-                }
-                .onFailure { e -> _ui.update { it.copy(letterBusy = false, letterText = "Tailoring failed: ${e.message}") } }
+    fun draftLetter() = draft("letter", { it.letter }, { a, s -> a.copy(letter = s) }) { p, post, fit ->
+        val r = Api.letter(p, post, fit)
+        if (r.breaker || r.error != null) null to (r.detail ?: r.error ?: "Unavailable.") else r.letter to null
+    }
+
+    fun buildResume() = draft("tailor", { it.resume }, { a, s -> a.copy(resume = s) }) { p, post, fit ->
+        val r = Api.resume(p, post, fit)
+        if (r.breaker || r.error != null) null to (r.detail ?: r.error ?: "Unavailable.") else r to null
+    }
+
+    /**
+     * `unsupported` is not a failure: it means this employer's board does not publish
+     * its form, which is worth saying plainly rather than showing as an error.
+     */
+    fun readAnswers() = draft("apply_open", { it.answers }, { a, s -> a.copy(answers = s) }) { p, post, fit ->
+        val r = Api.answers(p, post, fit)
+        when {
+            r.unsupported -> r to null
+            r.breaker || r.error != null -> null to (r.detail ?: r.error ?: "Unavailable.")
+            else -> r to null
         }
     }
 
-    fun dismissLetter() = _ui.update { it.copy(letterText = null, letterBusy = false) }
 
     // ── Tracker (per device, persisted on every change) ──────────────────────
     private fun setTracker(items: Map<String, Tracked>) {
@@ -474,8 +512,12 @@ fun DemoScreen(vm: DemoVm = viewModel()) {
                     val p = byId[s.id]
                     val t = ui.tracker[s.id] ?: trackedFor(s, p)
                     ScoreCard(s, p, t, isSaved = ui.tracker.containsKey(s.id), first = i == 0,
-                        showLetter = i == 0 && !ui.fromCache && s.fit >= FIT_FLOOR,
-                        onStage = { vm.setStage(t, it) }, onTailor = { vm.tailorResume(it) }) { vm.draftLetter(it) }
+                        // Every card that clears the bar offers the page, not only the top
+                        // one: the second-best match is a real application too. Below the
+                        // floor it offers the posting alone, because every step behind that
+                        // page would be refused (the worker enforces the same floor).
+                        canApply = !ui.fromCache && s.fit >= FIT_FLOOR,
+                        onStage = { vm.setStage(t, it) }) { p?.let(vm::openApply) }
                 }
             }
 
@@ -510,23 +552,11 @@ fun DemoScreen(vm: DemoVm = viewModel()) {
             }
         }
         if (trackerOpen) TrackerScreen(vm, ui.tracker) { trackerOpen = false }
+        // Over everything, tracker included: an application is the one thing on
+        // screen while it is being prepared.
+        ui.apply?.let { a -> ApplyScreen(vm, a, vm::closeApply) }
     }
 
-    if (ui.letterBusy || ui.letterText != null) {
-        AlertDialog(
-            onDismissRequest = vm::dismissLetter,
-            containerColor = CardBg, shape = Card,
-            confirmButton = { TextButton(onClick = vm::dismissLetter) { Text("Close", color = MidnightViolet) } },
-            title = { Text(ui.letterTitle, style = H2, fontSize = 24.sp) },
-            text = {
-                if (ui.letterBusy) Row(verticalAlignment = Alignment.CenterVertically) {
-                    CircularProgressIndicator(Modifier.size(20.dp), color = Indigo, strokeWidth = 2.dp)
-                    Spacer(Modifier.width(12.dp))
-                    Text("Drafting from the profile only — it cannot invent experience…", color = Muted)
-                } else Text(ui.letterText ?: "", color = Ink, fontSize = 15.sp, lineHeight = 24.sp)
-            },
-        )
-    }
 
 }
 
@@ -659,7 +689,7 @@ fun isNewer(tag: String, installed: String): Boolean {
 
 /** Small uppercase pill — route bands, gate verdicts. */
 @Composable
-private fun Chip(text: String, color: Color, ground: Color = color.copy(alpha = 0.16f)) {
+fun Chip(text: String, color: Color, ground: Color = color.copy(alpha = 0.16f)) {
     Text(text, color = color, fontSize = 10.5.sp, fontWeight = FontWeight.Medium, letterSpacing = 0.09.em,
         maxLines = 1,
         modifier = Modifier.background(ground, Pill).padding(horizontal = 11.dp, vertical = 4.dp))
@@ -709,7 +739,7 @@ private fun WhereRow(ui: Ui, feed: Feed, vm: DemoVm) {
 }
 
 @Composable
-private fun PillButton(text: String, color: Color = MidnightViolet, filled: Boolean = false, enabled: Boolean = true,
+fun PillButton(text: String, color: Color = MidnightViolet, filled: Boolean = false, enabled: Boolean = true,
                        onClick: () -> Unit) {
     Text(text, color = if (enabled) color else Text3, fontSize = 13.5.sp, fontWeight = FontWeight.Medium, maxLines = 1,
         modifier = Modifier
@@ -764,8 +794,8 @@ private fun GateRow(r: Posting) {
 
 @Composable
 private fun ScoreCard(
-    s: Score, posting: Posting?, tracked: Tracked, isSaved: Boolean, first: Boolean, showLetter: Boolean,
-    onStage: (String) -> Unit, onTailor: (Posting) -> Unit, onLetter: (Posting) -> Unit,
+    s: Score, posting: Posting?, tracked: Tracked, isSaved: Boolean, first: Boolean, canApply: Boolean,
+    onStage: (String) -> Unit, onApply: () -> Unit,
 ) {
     val (route, bandColor) = bandFor(s.fit)
     Column(
@@ -795,10 +825,11 @@ private fun ScoreCard(
         }
         // Opening the posting IS how a user applies — the app never submits anything.
         PostingActions(tracked.stage, posting?.url.orEmpty(), onStage, tracked = isSaved)
-        // The two Claude drafts get their own row: four pills do not fit a phone's width.
-        if (showLetter && posting != null) Row(Modifier.padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            PillButton("Draft a letter", filled = true) { onLetter(posting) }
-            PillButton("Tailor the resume", filled = true) { onTailor(posting) }
+        // One door instead of two pills. Until 2026-09-19 the card offered "Draft a
+        // letter" and "Tailor the resume" side by side, which put the work before the
+        // job it was for; the page holds all three steps and the posting they belong to.
+        if (canApply && posting != null) Row(Modifier.padding(top = 8.dp)) {
+            PillButton("Prepare application →", filled = true, onClick = onApply)
         }
     }
 }

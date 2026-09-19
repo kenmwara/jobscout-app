@@ -124,6 +124,62 @@ data class TailorResponse(
     val detail: String? = null,
 )
 
+/* ── /api/resume — the whole resume rewritten for one posting ──────────────
+   Not /api/tailor's summary-and-bullets: this is every role, school and
+   certificate the profile contains, reordered and reworded for this job, so
+   each application carries a different document. The worker refuses a draft
+   that names an employer, date, number or tool the profile does not, so a
+   200 here is already grounded. `gaps` deliberately sit OUTSIDE the document
+   — they are what the resume does not say, and only the candidate may add
+   them. See worker/src/index.js. */
+@Serializable data class ResumeItem(val title: String = "", val meta: String = "", val bullets: List<String> = emptyList())
+@Serializable data class ResumeSection(val heading: String = "", val items: List<ResumeItem> = emptyList())
+
+@Serializable
+data class ResumeResponse(
+    val name: String = "",
+    val contact: String = "",
+    val headline: String = "",
+    val sections: List<ResumeSection> = emptyList(),
+    val gaps: List<Gap> = emptyList(),
+    val meta: Meta? = null,
+    val breaker: Boolean = false,
+    val error: String? = null,
+    val invented: List<String> = emptyList(),   // error == "ungrounded": what it tried to add
+    val detail: String? = null,
+)
+
+/* ── /api/answers — the employer's own screening questions ─────────────────
+   Greenhouse and Ashby both publish a job's form with no key, so the
+   questions can be read and answered BEFORE the posting is opened. Two
+   classes are shown and never drafted: anything personal (demographics,
+   salary, criminal history, passport/citizenship) and plain identity fields
+   — `why` says which. `unsupported` means the board does not publish. */
+@Serializable
+data class Question(
+    val label: String = "",
+    val required: Boolean = false,
+    val type: String = "",
+    val options: List<String> = emptyList(),
+    val answer: String = "",
+    val from: String = "",      // the phrase in the profile that establishes it
+    val why: String = "",       // set when it is the candidate's to answer
+)
+
+@Serializable
+data class AnswersResponse(
+    val source: String = "",
+    val url: String = "",
+    val questions: List<Question> = emptyList(),
+    val drafted: Int = 0,
+    val unsupported: Boolean = false,
+    val host: String = "",
+    val meta: Meta? = null,
+    val breaker: Boolean = false,
+    val error: String? = null,
+    val detail: String? = null,
+)
+
 /** GitHub's latest release — the update check for sideloaded copies. Public API, no auth. */
 @Serializable
 data class LatestRelease(val tag_name: String = "", val html_url: String = "")
@@ -204,6 +260,21 @@ object Api {
     suspend fun tailor(profile: String, posting: Posting, fit: Int): TailorResponse =
         json.decodeFromString(call(
             Request.Builder().url("$API_BASE/api/tailor")
+                .post(json.encodeToString(LetterBody(profile, posting, fit)).toRequestBody(jsonMedia))
+                .build()
+        ))
+
+    /** Same body as letter/tailor — the worker's one guard reads {profile, posting, fit}. */
+    suspend fun resume(profile: String, posting: Posting, fit: Int): ResumeResponse =
+        json.decodeFromString(call(
+            Request.Builder().url("$API_BASE/api/resume")
+                .post(json.encodeToString(LetterBody(profile, posting, fit)).toRequestBody(jsonMedia))
+                .build()
+        ))
+
+    suspend fun answers(profile: String, posting: Posting, fit: Int): AnswersResponse =
+        json.decodeFromString(call(
+            Request.Builder().url("$API_BASE/api/answers")
                 .post(json.encodeToString(LetterBody(profile, posting, fit)).toRequestBody(jsonMedia))
                 .build()
         ))

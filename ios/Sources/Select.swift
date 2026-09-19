@@ -11,6 +11,43 @@ private let scored = 8
 private let stop: Set<String> = ["experience","looking","remote","years","strong","skills","working","across","within","roles","based","including","ability","seeking","professional","currently","business","company","canada","canadian","kenya","kenyan"]
 
 /// Profile mode (tools/sector.py mode="profile"): headline weighs 3x, the whole text decides, under 3 points is not a sector.
+/* ── How senior is this, and how senior are you ──────────────────────────
+   Added 2026-09-19 with the picker rewrite. Without it nothing knew what a job's
+   level was, and "Summer Intern 2027" ranked into a technical lead's eight on word
+   overlap alone. Mirrors levelOf/levelOfProfile in site/index.html and Select.kt. */
+private func hits(_ s: String, _ pattern: String) -> Bool {
+    s.range(of: pattern, options: [.regularExpression]) != nil
+}
+
+/// Roughly where a posting sits, 0 = internship to 4 = executive. Titles are the only
+/// honest source: a summary saying "senior engineers will thrive" describes colleagues.
+func levelOf(_ title: String) -> Int {
+    let t = " " + title.lowercased() + " "
+    if hits(t, #"\b(intern|internship|co-?op|new ?grad|graduate program|apprentice|trainee)\b"#) { return 0 }
+    if hits(t, #"\b(junior|jr\.?|entry.level|associate)\b"#) { return 1 }
+    if hits(t, #"\b(chief|c[te]o\b|vp\b|vice president|head of|director)\b"#) { return 4 }
+    if hits(t, #"\b(senior|sr\.?|staff|principal|lead|manager)\b"#) { return 3 }
+    return 2
+}
+
+/// And the candidate's own. Deliberately generous downwards: a lead can take a mid
+/// role, so only the ends are ruled out.
+func levelOfProfile(_ profile: String) -> Int {
+    let t = profile.lowercased()
+    var yrs = 0
+    if let rx = try? NSRegularExpression(pattern: #"(\d{1,2})\+?\s*years?"#) {
+        for m in rx.matches(in: t, range: NSRange(t.startIndex..., in: t)) {
+            guard let r = Range(m.range(at: 1), in: t), let n = Int(t[r]), n < 45 else { continue }
+            yrs = max(yrs, n)
+        }
+    }
+    let head = String(t.prefix(400))
+    if hits(head, #"\b(chief|founder|vp\b|vice president|head of|director)\b"#) { return 4 }
+    if hits(head, #"\b(senior|staff|principal|lead|manager)\b"#) || yrs >= 5 { return 3 }
+    if hits(head, #"\b(junior|graduate|intern|entry.level)\b"#) && yrs < 2 { return 1 }
+    return yrs >= 2 ? 2 : 1
+}
+
 func sectorOf(_ profile: String, lex: [String: [String]]) -> String {
     let t = String(profile.prefix(300)).lowercased()
     let b = String(profile.dropFirst(300).prefix(2500)).lowercased()
@@ -88,16 +125,58 @@ func select(profile: String, feed: Feed, home: String = "", remoteOnly: Bool = f
         }
         return n
     }
+    /* Six from the sector the profile reads as, two from outside it.
+
+       Sector was a hard GATE until 2026-09-19: four in-sector postings hid the other
+       three hundred, so a resume spanning two fields only ever met one. Making it a
+       mere weight swung too far the other way — a thin profile's noise words put a
+       video editor in a new graduate's eight — so it is a split instead. The six are
+       the sector's best; the two have to beat the median of those six. */
+    let myLevel = levelOfProfile(profile)
+    func gap(_ p: Posting) -> Int { abs(levelOf(p.title) - myLevel) }
+    // The ends are category errors, not near misses: a lead does not apply to a 2027
+    // internship, and a graduate is not the VP. Nothing falls back to the unfiltered
+    // pool when this leaves fewer than eight — fewer is the honest answer.
+    func sane(_ p: Posting) -> Bool { !(gap(p) >= 2 && (levelOf(p.title) <= 1 || myLevel <= 1)) }
+    let usable = eligible.filter(sane)
+
+    // Scored once per posting, not once per comparison.
+    var relBy: [String: Double] = [:], scoreBy: [String: Double] = [:]
+    for p in usable {
+        let r = rel(p)
+        relBy[p.id] = r
+        scoreBy[p.id] = r / (1 + 0.55 * Double(gap(p)))
+    }
+    func relOf(_ p: Posting) -> Double { relBy[p.id] ?? 0 }
+    func score(_ p: Posting) -> Double { scoreBy[p.id] ?? 0 }
+
     struct Ranked { let i: Int; let p: Posting; let r: Double }
     func ranked(_ pool: [Posting]) -> [Posting] {
         var rs: [Ranked] = []
-        for (i, p) in pool.enumerated() { rs.append(Ranked(i: i, p: p, r: rel(p))) }
+        for (i, p) in pool.enumerated() { rs.append(Ranked(i: i, p: p, r: score(p))) }
         rs.sort { a, b in a.r == b.r ? a.i < b.i : a.r > b.r }   // stable, like the page's sort
         return rs.map { $0.p }
     }
-    var pool = ranked(inSector)
-    if inSector.count < 4 { pool += ranked(eligible.filter { ($0.sector ?? "") != sector }) }
-    let picked = Array(pool.prefix(scored))
+    let mine = ranked(usable.filter { ($0.sector ?? "") == sector })
+    let rest = ranked(usable.filter { ($0.sector ?? "") != sector })
+    let best = Array(mine.prefix(6))
+    let mid = best.isEmpty ? 0 : score(best[(best.count - 1) / 2])
+    let other = Array(rest.filter { relOf($0) > 0 && score($0) >= mid }.prefix(scored - best.count))
+
+    /* Short of eight either way, the ranking fills the rest — but only with postings
+       there is some evidence for, and there are two kinds. Either will do: the
+       posting is in the sector the profile reads as (the feed's lexicon put it
+       there, which is better evidence than word overlap and independent of it — a
+       pharmacist writes "medication" where the posting says "Patient"), or the
+       profile's words touch it. Outside the sector there is no other evidence, and
+       without that a video editor reached a CS graduate. */
+    var picked: [Posting] = []
+    var taken = Set<String>()
+    for p in best + other + mine + rest
+    where ((p.sector ?? "") == sector || relOf(p) > 0) && taken.insert(p.id).inserted {
+        picked.append(p)
+        if picked.count == scored { break }
+    }
     return Selection(sector: sector, label: feed.labels?[sector] ?? sector, inSector: inSector.count, eligible: eligible.count, postings: picked)
 }
 

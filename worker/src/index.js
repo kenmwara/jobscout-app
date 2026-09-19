@@ -79,6 +79,11 @@ const EV_NAMES = new Set([
   "scored",     // the run came back                    detail: band of the top match
   "letter",     // asked for a cover letter
   "tailor",     // asked for a tailored resume
+  // Distinct from "apply": this is opening OUR application page, which is now
+  // the step the funnel turns on, and "apply" is still leaving for the
+  // employer's own form. The page has fired this since the 09-19 redesign and
+  // every one was dropped here until the name was added (2026-09-19).
+  "apply_open", // opened the application page          detail: band
   "apply",      // opened a posting at the source       detail: band
   "save",       // kept a posting on the shortlist
   "outcome",    // marked what happened                 detail: one of OUTCOMES below

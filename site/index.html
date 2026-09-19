@@ -1262,16 +1262,29 @@ async function runPipeline(){
   const score = p => rel(p) / (1 + 0.55 * gap(p));
   const by = (a, b) => score(b) - score(a);
 
-  const pool = chosen.filter(sane);
-  const usable = pool.length >= 8 ? pool : chosen;
+  // Short of eight, this fell back to the UNFILTERED pool — which handed every
+  // category error straight back, so a thin day put 2027 internships in a technical
+  // lead's eight after all, and the directorship back in front of a graduate. A
+  // category error is never the lesser evil: fewer than eight is the honest answer.
+  const usable = chosen.filter(sane);
   const mine = usable.filter(p => p.sector === sector).sort(by);
   const rest = usable.filter(p => p.sector !== sector).sort(by);
 
   const best = mine.slice(0, 6);
   const mid = best.length ? score(best[Math.floor((best.length - 1) / 2)]) : 0;
   const other = rest.filter(p => rel(p) > 0 && score(p) >= mid).slice(0, 8 - best.length);
-  // Short of eight either way, the ranking fills the rest.
-  const passers = [...new Set([...best, ...other, ...mine, ...rest])].slice(0, 8);
+  /* Short of eight either way, the ranking fills the rest — but only with postings
+     there is some evidence for, and there are two kinds. Either will do:
+       · it is in the sector the profile reads as. The feed's own lexicon put it
+         there, which is better evidence than word overlap and independent of it —
+         a pharmacist writes "medication" where the posting says "Patient", so rel
+         is 0 and the job is still right. Requiring overlap here dropped four of
+         five healthcare postings and filled the slots with every "Manager, …" in
+         the feed, off the one word "manager".
+       · or the profile's words touch it. Outside the sector there is no other
+         evidence, and without this a video editor reached a CS graduate. */
+  const passers = [...new Set([...best, ...other, ...mine, ...rest])]
+    .filter(p => p.sector === sector || rel(p) > 0).slice(0, 8);
 
   const label = (feed.labels || {})[sector] || sector;
   if (!passers.length){
