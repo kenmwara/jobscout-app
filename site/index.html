@@ -1877,6 +1877,20 @@ function browse(){
      rewriting it under the caret eats the space the user just typed. */
   const qbox = $("#browseQ");
   if (qbox && document.activeElement !== qbox && qbox.value !== query) qbox.value = query || "";
+
+  /* Your matches outrank the feed. Eight scored cards cost eight Claude calls;
+     the feed is free and always there. With the feed first they sat below
+     seventeen sector tiles and a scroll — so when a run is on screen the whole
+     feed block moves below it, and comes back on top when there is no run. */
+  const feedBlock = $("#browseFeed"), head = $("#browseHeadWrap") || $(".browsehead");
+  if (feedBlock && head && feedBlock.parentElement === head.parentElement) {
+    const wantAfter = !!scored;
+    const isAfter = !!(head.compareDocumentPosition(feedBlock) & Node.DOCUMENT_POSITION_FOLLOWING);
+    if (wantAfter !== isAfter) {
+      if (wantAfter) head.parentElement.appendChild(feedBlock);
+      else head.parentElement.insertBefore(feedBlock, head);
+    }
+  }
   const all = feed.postings.length;
   host.classList.toggle("cos", scope === "cos" && !scored);
   $("#scSeg").classList.toggle("hide", !!scored);
