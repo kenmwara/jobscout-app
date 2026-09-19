@@ -1748,7 +1748,10 @@ function scoredRows(){
    called "Fraud Inbound Analyst" the same way. Every word must appear, in any
    order. Both filter chains call this — they had the same bug twice. */
 function hitsQuery(p){
-  const hay = (p.title + " " + p.company + " " + (p.location || "")).toLowerCase();
+  // Title, company, where, and what the posting says. The web searched
+  // title+company+location and Android searched title+company+summary, so the
+  // same query answered 1 on one client and 3 on the other. One field list.
+  const hay = (p.title + " " + p.company + " " + (p.location || "") + " " + (p.summary || "")).toLowerCase();
   const q = query.toLowerCase().trim();
   // Words of three letters or more, every one of them — the same rule the
   // Android client has always used. Dropping the short ones keeps "Head of

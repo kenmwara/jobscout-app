@@ -540,7 +540,10 @@ private fun LazyListScope.browse(
     val all = feed?.passers.orEmpty().let { list ->
         if (words.isEmpty()) list
         else list.filter { p ->
-            val hay = (p.title + " " + p.company + " " + p.summary).lowercase()
+            // Same four fields as site/index.html hitsQuery(). Android left out
+            // the location and the web left out the summary, so "Fraud Analyst"
+            // answered 3 here and 1 there for the same feed.
+            val hay = (p.title + " " + p.company + " " + p.location + " " + p.summary).lowercase()
             words.all { hay.contains(it) }
         }
     }
