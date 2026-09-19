@@ -42,6 +42,27 @@ func personasFor(_ market: String) -> [Persona] { market == "ke" ? personasKE : 
 
 enum Phase { case idle, gates, scoring, done }
 
+/// One of the three drafts: not asked for, running, arrived, or refused.
+struct Step<T> {
+    var busy = false
+    var data: T?
+    var error: String?
+}
+
+/**
+ One application, being prepared. Mirrors site/apply.html and Apply.kt: a cover
+ letter, the candidate's own resume rebuilt for this job, and the employer's
+ screening questions answered from the profile — each asked for separately,
+ because each costs a call and not everyone wants all three.
+ */
+struct Apply {
+    let posting: Posting
+    let fit: Int
+    var letter = Step<String>()
+    var resume = Step<ResumeResponse>()
+    var answers = Step<AnswersResponse>()
+}
+
 @MainActor
 final class DemoVM: ObservableObject {
     @Published var feed: Feed?
@@ -57,9 +78,7 @@ final class DemoVM: ObservableObject {
     @Published var selection: Selection?   // which postings met Claude, and why (sector + counts)
     @Published var home = ""               // province the visitor lives in; "" = anywhere
     @Published var remoteOnly = false
-    @Published var letterText: String?
-    @Published var letterBusy = false
-    @Published var letterTitle = "Grounded cover letter"
+    @Published var apply: Apply?           // the open application page, or none
     @Published var error: String?
     @Published var uploading = false
     @Published var uploadStatus: String?
@@ -216,39 +235,70 @@ final class DemoVM: ObservableObject {
         UserDefaults.standard.set(d, forKey: trackerKey)
     }
 
-    func draftLetter(_ posting: Posting) async {
-        guard let profile = profileText else { return }
-        letterBusy = true; letterText = nil; letterTitle = "Grounded cover letter"
-        do {
-            let fit = scores.first(where: { $0.id == posting.id })?.fit ?? 0
-            let r = try await Api.letter(profile: profile, posting: posting, fit: fit)
-            letterText = (r.breaker || r.error != nil) ? (r.detail ?? "Unavailable.") : r.letter
-        } catch {
-            letterText = "Letter failed: \(error.localizedDescription)"
-        }
-        letterBusy = false
+    // MARK: - The application page
+
+    func openApply(_ posting: Posting) {
+        let fit = scores.first(where: { $0.id == posting.id })?.fit ?? 0
+        Api.ev("apply_open", band(fit).0, market: market)
+        apply = Apply(posting: posting, fit: fit)
     }
 
-    /// The resume helper shares the letter sheet: same guards, same grounding, one more section.
-    func tailorResume(_ posting: Posting) async {
-        guard let profile = profileText else { return }
-        letterBusy = true; letterText = nil; letterTitle = "Tailored resume"
+    func closeApply() { apply = nil }
+
+    /**
+     The three drafts share a shape: mark busy, call, and store either the result or
+     one sentence saying why not. A breaker (the day's budget spent) and a refusal
+     (the model tried to invent something) both arrive as `detail`, and both are
+     worth reading — so neither is swallowed into "unavailable".
+
+     `keyPath` is what keeps this to one function instead of three near-copies: the
+     step being filled is the only thing that differs.
+     */
+    private func draft<T>(
+        _ name: String,
+        _ keyPath: WritableKeyPath<Apply, Step<T>>,
+        _ call: (String, Posting, Int) async throws -> (T?, String?)
+    ) async {
+        guard let a = apply, let profile = profileText, !a[keyPath: keyPath].busy else { return }
+        Api.ev(name, market: market)
+        apply?[keyPath: keyPath] = Step(busy: true)
         do {
-            let fit = scores.first(where: { $0.id == posting.id })?.fit ?? 0
-            let r = try await Api.tailor(profile: profile, posting: posting, fit: fit)
-            if r.breaker || r.error != nil { letterText = r.detail ?? "Unavailable." } else {
-                var t = r.summary
-                if !r.bullets.isEmpty { t += "\n\nEXPERIENCE, AIMED AT THIS POSTING\n" + r.bullets.map { "• " + $0 }.joined(separator: "\n") }
-                t += "\n\nWHAT THE POSTING ASKS FOR THAT THE PROFILE DOES NOT SAY\n"
-                t += r.gaps.isEmpty ? "Nothing — the profile covers what the posting asks for."
-                                    : r.gaps.map { "– \($0.asks): \($0.note)" }.joined(separator: "\n")
-                t += "\n\nReworded from the profile only, nothing added. The gaps are yours to fill, and only if true."
-                letterText = t
-            }
+            let (data, why) = try await call(profile, a.posting, a.fit)
+            // The page can be closed, or another posting opened, while a call is in
+            // flight — only write back if this is still the same application.
+            guard apply?.posting.id == a.posting.id else { return }
+            apply?[keyPath: keyPath] = Step(data: data, error: why)
         } catch {
-            letterText = "Tailoring failed: \(error.localizedDescription)"
+            guard apply?.posting.id == a.posting.id else { return }
+            apply?[keyPath: keyPath] = Step(error: "That call didn't get through: \(error.localizedDescription)")
         }
-        letterBusy = false
+    }
+
+    func draftLetter() async {
+        await draft("letter", \.letter) { p, post, fit in
+            let r = try await Api.letter(profile: p, posting: post, fit: fit)
+            if r.breaker || r.error != nil { return (nil, r.detail ?? r.error ?? "Unavailable.") }
+            return (r.letter, nil)
+        }
+    }
+
+    func buildResume() async {
+        await draft("tailor", \.resume) { p, post, fit in
+            let r = try await Api.resume(profile: p, posting: post, fit: fit)
+            if r.breaker || r.error != nil { return (nil, r.detail ?? r.error ?? "Unavailable.") }
+            return (r, nil)
+        }
+    }
+
+    /// `unsupported` is not a failure: it means this employer's board does not publish
+    /// its form, which is worth saying plainly rather than showing as an error.
+    func readAnswers() async {
+        await draft("apply_open", \.answers) { p, post, fit in
+            let r = try await Api.answers(profile: p, posting: post, fit: fit)
+            if r.unsupported { return (r, nil) }
+            if r.breaker || r.error != nil { return (nil, r.detail ?? r.error ?? "Unavailable.") }
+            return (r, nil)
+        }
     }
 }
 
@@ -328,7 +378,12 @@ struct ContentView: View {
                         bannerView(nofitNote(fit: top.fit, posting: byId[top.id], id: top.id))
                     }
                     ForEach(Array(sorted.enumerated()), id: \.element.id) { i, s in
-                        scoreCard(s, posting: byId[s.id], first: i == 0, showLetter: i == 0 && !vm.fromCache && s.fit >= fitFloor)
+                        // Every card that clears the bar offers the page, not only the
+                        // top one: the second-best match is a real application too.
+                        // Below the floor it offers the posting alone, because every
+                        // step behind that page would be refused.
+                        scoreCard(s, posting: byId[s.id], first: i == 0,
+                                  canApply: !vm.fromCache && s.fit >= fitFloor)
                     }
                 }
 
@@ -364,9 +419,9 @@ struct ContentView: View {
         .background(ZStack { canvasBg; Dots() }.ignoresSafeArea())
         .sheet(isPresented: $showTracker) { TrackerView(vm: vm) }
         .task { Api.ev("open", market: vm.market); await vm.load() }
-        .sheet(isPresented: .init(get: { vm.letterBusy || vm.letterText != nil },
-                                  set: { if !$0 { vm.letterText = nil; vm.letterBusy = false } })) {
-            letterSheet
+        .sheet(isPresented: .init(get: { vm.apply != nil },
+                                  set: { if !$0 { vm.closeApply() } })) {
+            ApplyView(vm: vm)
         }
     }
 
@@ -520,26 +575,6 @@ struct ContentView: View {
         .warmShadow(24, y: 12)
     }
 
-    private var letterSheet: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            Text(vm.letterTitle).font(serif(24)).foregroundColor(ink)
-            if vm.letterBusy {
-                HStack(spacing: 12) {
-                    ProgressView().tint(indigo)
-                    Text("Drafting from the profile only — it cannot invent experience…")
-                        .font(sans(15)).foregroundColor(muted)
-                }
-            } else {
-                ScrollView { Text(vm.letterText ?? "").font(sans(15)).foregroundColor(ink).lineSpacing(6) }
-            }
-            Spacer()
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(20)
-        .background(canvasBg)
-        .presentationDetents([.medium, .large])
-    }
-
     private func bannerView(_ t: String, onRetry: (() -> Void)? = nil) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             Text(t).font(sans(13)).foregroundColor(Color(hex: 0x8A6D00)).lineSpacing(3)
@@ -582,7 +617,7 @@ struct ContentView: View {
         .padding(.horizontal, 18).padding(.vertical, 13)
     }
 
-    private func scoreCard(_ s: Score, posting: Posting?, first: Bool, showLetter: Bool) -> some View {
+    private func scoreCard(_ s: Score, posting: Posting?, first: Bool, canApply: Bool) -> some View {
         let (route, bandColor) = band(s.fit)
         return VStack(alignment: .leading, spacing: 0) {
             HStack(alignment: .top, spacing: 14) {
@@ -617,11 +652,12 @@ struct ContentView: View {
                 Spacer(minLength: 0)
             }
             .padding(.top, 14)
-            // The two Claude drafts get their own row: four pills do not fit a phone's width.
-            if showLetter, let posting {
+            // One door instead of two pills. Until 2026-09-19 the card offered "Draft a
+            // letter" and "Tailor the resume" side by side, which put the work before the
+            // job it was for; the page holds all three steps and the posting they belong to.
+            if canApply, let posting {
                 HStack(spacing: 8) {
-                    PillButton(text: "Draft a letter", filled: true) { Task { await vm.draftLetter(posting) } }
-                    PillButton(text: "Tailor the resume", filled: true) { Task { await vm.tailorResume(posting) } }
+                    PillButton(text: "Prepare application →", filled: true) { vm.openApply(posting) }
                     Spacer(minLength: 0)
                 }
                 .padding(.top, 8)

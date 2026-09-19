@@ -93,6 +93,69 @@ struct TailorResponse: Codable {
     var detail: String?
 }
 
+/* /api/resume — the whole resume rewritten for one posting.
+
+   Not /api/tailor's summary-and-bullets: this is every role, school and certificate
+   the profile contains, reordered and reworded for this job, so each application
+   carries a different document. The worker refuses a draft naming an employer, date,
+   number or tool the profile does not, so a 200 here is already grounded. `gaps` sit
+   OUTSIDE the document deliberately — they are what the resume does not say, and only
+   the candidate may add them. */
+struct ResumeItem: Codable {
+    var title = ""
+    var meta = ""
+    var bullets: [String] = []
+}
+
+struct ResumeSection: Codable {
+    var heading = ""
+    var items: [ResumeItem] = []
+}
+
+struct ResumeResponse: Codable {
+    var name = ""
+    var contact = ""
+    var headline = ""
+    var sections: [ResumeSection] = []
+    var gaps: [Gap] = []
+    var meta: Meta?
+    var breaker = false
+    var error: String?
+    var invented: [String] = []   // error == "ungrounded": what it tried to add
+    var detail: String?
+}
+
+/* /api/answers — the employer's own screening questions.
+
+   Greenhouse and Ashby both publish a job's form with no key, so the questions can be
+   read and answered before the posting is opened. Two classes are shown and never
+   drafted: anything personal (demographics, salary, criminal history, citizenship) and
+   plain identity fields — `why` says which. `unsupported` means the board does not
+   publish, which is not a failure. */
+struct Question: Codable, Identifiable {
+    var label = ""
+    var required = false
+    var type = ""
+    var options: [String] = []
+    var answer = ""
+    var from = ""     // the phrase in the profile that establishes it
+    var why = ""      // set when it is the candidate's to answer
+    var id: String { label }
+}
+
+struct AnswersResponse: Codable {
+    var source = ""
+    var url = ""
+    var questions: [Question] = []
+    var drafted = 0
+    var unsupported = false
+    var host = ""
+    var meta: Meta?
+    var breaker = false
+    var error: String?
+    var detail: String?
+}
+
 /// /api/extract — every field optional because the error shapes (413/415/422)
 /// carry only error+detail.
 struct ExtractResponse: Codable {
@@ -148,6 +211,17 @@ enum Api {
     static func tailor(profile: String, posting: Posting, fit: Int) async throws -> TailorResponse {
         struct Body: Encodable { let profile: String; let posting: Posting; let fit: Int }
         return try await post("api/tailor", Body(profile: profile, posting: posting, fit: fit))
+    }
+
+    /// Same body as letter/tailor — the worker's one guard reads {profile, posting, fit}.
+    static func resume(profile: String, posting: Posting, fit: Int) async throws -> ResumeResponse {
+        struct Body: Encodable { let profile: String; let posting: Posting; let fit: Int }
+        return try await post("api/resume", Body(profile: profile, posting: posting, fit: fit))
+    }
+
+    static func answers(profile: String, posting: Posting, fit: Int) async throws -> AnswersResponse {
+        struct Body: Encodable { let profile: String; let posting: Posting; let fit: Int }
+        return try await post("api/answers", Body(profile: profile, posting: posting, fit: fit))
     }
 
     /// Raw file bytes as the request body — the worker extracts text in memory and stores nothing.
