@@ -221,6 +221,36 @@ const ok = (m) => console.log(`  ok    ${m}`);
   else ok("the resume input stays focusable");
 }
 
+/* ── 13. A #fragment must exist on the page it points at ───────────────────
+   Five pages footer-link to "privacy#counted". privacy.html had the section —
+   "What is counted" — and no id on it, so every one of those links quietly
+   landed at the top of the page instead. Nothing checked fragments at all. */
+{
+  const pages = ["index.html", "apply.html", "saved.html", "privacy.html", "stats.html"];
+  const src = Object.fromEntries(pages.map(f => [f, readFileSync(join(root, "site", f), "utf8")]));
+  const idsOf = (html) => new Set(
+    [...html.matchAll(/\sid="([^"]+)"/g)].map(m => m[1])
+      .concat([...html.matchAll(/<a[^>]+name="([^"]+)"/g)].map(m => m[1])));
+
+  let checked = 0;
+  for (const page of pages) {
+    for (const m of src[page].matchAll(/href="([^"]*#[^"]+)"/g)) {
+      const [target, frag] = m[1].split("#");
+      if (!frag || frag === "top") continue;          // "#top" is the page itself
+      // Where does it point? Same page when the target is empty, else a sibling
+      // page written without its .html extension, the way Pages serves them.
+      const file = target === "" ? page : (target.endsWith(".html") ? target : target + ".html");
+      if (!src[file]) continue;                        // external or dynamic
+      checked++;
+      // A fragment built by script is fine as long as SOMETHING writes that id.
+      const scripted = new RegExp(`id="\\$\\{|id = "${frag}"|getElementById\\("${frag}"\\)`).test(src[file]);
+      if (!idsOf(src[file]).has(frag) && !scripted)
+        bad(`${page} links to ${m[1]} and ${file} has no "${frag}" — the link lands at the top`);
+    }
+  }
+  if (checked) ok(`${checked} in-page anchors all resolve`);
+}
+
 console.log("");
 console.log(fail ? `${fail} FAILED` : "ALL GREEN");
 process.exit(fail ? 1 : 0);
