@@ -608,7 +608,7 @@ struct ContentView: View {
 
                 StageHeading(bearing: "045", label: "THE FEED",
                              title: "Browse by what the feed actually knows",
-                             note: "Every tile is a real slice of today\u2019s sweep. Nothing here is a category we cannot fill.")
+                             note: "Every tile is a real slice of today’s sweep. Nothing here is a category we cannot fill.")
                 FlowTiles(items: counted.prefix(10).map { ($0.0, feed.labels?[$0.0] ?? $0.0, $0.1) },
                           selected: sector) { tapped in
                     sector = (sector == tapped) ? nil : tapped
@@ -616,8 +616,8 @@ struct ContentView: View {
                 }
 
                 StageHeading(bearing: "070", label: "THE SWEEP",
-                             title: sector.flatMap { feed.labels?[$0] } ?? "Explore today\u2019s sweep",
-                             note: "\(rows.count) of \(feed.postings.count) swept this morning. Tap one to open the posting on the employer\u2019s own site.")
+                             title: sector.flatMap { feed.labels?[$0] } ?? "Explore today’s sweep",
+                             note: "\(rows.count) of \(feed.postings.count) swept this morning. Tap one to open the posting on the employer’s own site.")
                 VStack(spacing: 0) {
                     ForEach(Array(shown.enumerated()), id: \.element.id) { i, p in
                         if i > 0 { Divider().overlay(hairline) }
