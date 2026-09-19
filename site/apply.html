@@ -413,7 +413,10 @@ function docx(r){
   let body = para(r.name, { b: true, sz: 34, after: 40 });
   if (r.contact) body += para(r.contact, { sz: 18, grey: true, after: 60 });
   if (r.headline) body += para(r.headline, { i: true, sz: 21, after: 180 });
-  for (const sec of r.sections){
+  // A model with nothing for a heading still emits the heading. An EXPERIENCE
+  // label with no rows under it reads as a bug in the document someone is about
+  // to send, so empty sections are dropped (seen on a phone, 2026-09-19).
+  for (const sec of r.sections.filter(x => (x.items || []).length)){
     body += para(sec.heading, { b: true, caps: true, sz: 19, before: 220, after: 80 });
     for (const it of sec.items){
       if (it.title) body += para(it.title, { b: true, sz: 21, after: it.meta ? 20 : 60 });
@@ -444,7 +447,7 @@ function docx(r){
   ]);
 }
 const resumeText = r => [r.name, r.contact, "", r.headline, ""].filter(x => x !== undefined).join("\n")
-  + r.sections.map(sec => "\n" + sec.heading.toUpperCase() + "\n" +
+  + r.sections.filter(sec => (sec.items || []).length).map(sec => "\n" + sec.heading.toUpperCase() + "\n" +
       sec.items.map(it => [it.title, it.meta, ...it.bullets.map(b => "  • " + b)]
         .filter(Boolean).join("\n")).join("\n\n")).join("\n");
 function failed(id, msg, label){
@@ -483,7 +486,7 @@ $("#do-tailor").onclick = async () => {
         <p class="dname">${esc(d.name)}</p>
         ${d.contact ? `<p class="dcontact">${esc(d.contact)}</p>` : ""}
         ${d.headline ? `<p class="dhead">${esc(d.headline)}</p>` : ""}
-        ${d.sections.map(sec => `<div class="dsec"><h5>${esc(sec.heading)}</h5>` +
+        ${d.sections.filter(sec => (sec.items || []).length).map(sec => `<div class="dsec"><h5>${esc(sec.heading)}</h5>` +
           sec.items.map(it => `<div class="ditem">
             ${it.title ? `<p class="dtitle">${esc(it.title)}</p>` : ""}
             ${it.meta ? `<p class="dmeta">${esc(it.meta)}</p>` : ""}

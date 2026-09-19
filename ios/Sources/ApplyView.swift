@@ -193,7 +193,8 @@ struct RebuiltResume: View {
             }
             .textSelection(.enabled)
 
-            ForEach(Array(r.sections.enumerated()), id: \.offset) { _, sec in
+            // An empty section is a heading with nothing under it — dropped, not shown.
+            ForEach(Array(r.sections.filter { !$0.items.isEmpty }.enumerated()), id: \.offset) { _, sec in
                 Text(sec.heading.uppercased())
                     .font(sans(12, .medium)).foregroundColor(indigo).tracking(0.8)
                     .padding(.top, 16).padding(.bottom, 6)
@@ -249,7 +250,7 @@ func resumeText(_ r: ResumeResponse) -> String {
     if !r.name.isEmpty { out += r.name + "\n" }
     if !r.contact.isEmpty { out += r.contact + "\n" }
     if !r.headline.isEmpty { out += "\n" + r.headline + "\n" }
-    for sec in r.sections {
+    for sec in r.sections where !sec.items.isEmpty {
         out += "\n" + sec.heading.uppercased() + "\n"
         for item in sec.items {
             out += item.title

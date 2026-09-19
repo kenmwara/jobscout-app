@@ -195,7 +195,11 @@ private fun RebuiltResume(r: ResumeResponse) {
                 if (r.contact.isNotEmpty()) Text(r.contact, color = Text3, fontSize = 13.sp)
                 if (r.headline.isNotEmpty())
                     Text(r.headline, color = Ink, fontSize = 15.sp, lineHeight = 23.sp, modifier = Modifier.padding(top = 8.dp))
-                r.sections.forEach { sec ->
+                // A model that has nothing for a heading still emits the heading;
+                // an EXPERIENCE label with no rows under it reads as a bug, so the
+                // empty ones are dropped rather than shown. (Seen on the emulator
+                // 2026-09-19 with a profile that named no employers.)
+                r.sections.filter { it.items.isNotEmpty() }.forEach { sec ->
                     Text(
                         sec.heading.uppercase(), color = Indigo, fontSize = 12.sp,
                         fontWeight = FontWeight.Medium, letterSpacing = 0.08.em,
@@ -237,7 +241,7 @@ fun resumeText(r: ResumeResponse): String = buildString {
     if (r.name.isNotEmpty()) appendLine(r.name)
     if (r.contact.isNotEmpty()) appendLine(r.contact)
     if (r.headline.isNotEmpty()) { appendLine(); appendLine(r.headline) }
-    r.sections.forEach { sec ->
+    r.sections.filter { it.items.isNotEmpty() }.forEach { sec ->
         appendLine(); appendLine(sec.heading.uppercase())
         sec.items.forEach { it ->
             append(it.title)
