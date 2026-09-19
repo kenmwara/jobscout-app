@@ -385,7 +385,7 @@ export default {
       const g = await guarded(request, env, "resume rebuilding resumes tomorrow");
       if (g instanceof Response) return g;
       const { profile, p } = g;
-      const d = await draft(env, 2600,
+      const SYS =
         "You rewrite a candidate's entire resume for one job posting. Return JSON only, no prose, no code fence: " +
         '{"name": string, "contact": string, "headline": string, ' +
         '"sections": [{"heading": string, "items": [{"title": string, "meta": string, "bullets": [string]}]}], ' +
@@ -400,32 +400,62 @@ export default {
         "qualification in your output must already appear in the profile. Rewording is the job; adding is not. " +
         "If the posting asks for something the profile does not have, leave it out of the resume and put it in gaps: " +
         "asks = the requirement in the posting's words; note = one sentence on what the candidate could add here, " +
-        "and only if it is true of them. Up to 5. These are the lines they add themselves before they send it.",
-        `PROFILE:\n${profile}\n\nPOSTING:\n${postingText(p)}`);
-      if (d instanceof Response) return d;
-      const out = parseJson(d.text);
-      if (!out || !Array.isArray(out.sections))
-        return json(502, { error: "upstream", detail: "The model did not return a usable resume. Nothing was charged to you." });
+        "and only if it is true of them. Up to 5. These are the lines they add themselves before they send it.";
+      const ASK = `PROFILE:\n${profile}\n\nPOSTING:\n${postingText(p)}`;
 
       // The guard prose cannot enforce. Acronyms, CamelCase names, versions and
       // every number are exactly what a rewrite invents — an employer that was
-      // never there, a percentage nobody measured. Each one has to be in the
-      // original or the draft is refused outright; a resume is signed by the
-      // candidate, so a single fabricated line is the whole thing ruined.
-      const hard = new Set();
-      const scan = t => String(t || "").match(HARD_TOKEN)?.forEach(x => hard.add(x));
-      scan(out.headline);
-      for (const sec of out.sections) {
-        scan(sec.heading);
-        for (const it of sec.items || []) { scan(it.title); scan(it.meta); (it.bullets || []).forEach(scan); }
-      }
+      // never there, a percentage nobody measured — so each one has to be in the
+      // original. A resume is signed by the candidate, and one fabricated line
+      // ruins the whole document, so the bar does not bend.
+      //
+      // It does get a second go. The first draft usually trips on one category
+      // word in the headline ("DevOps" for a resume that never says DevOps),
+      // and throwing the document away over that is brittle; naming the tokens
+      // and asking again fixes it for the price of one more call. Twice is
+      // enough — a model that invents again after being shown the list is not
+      // going to stop, and the candidate gets the refusal instead.
       const flat = squash(profile);
-      const invented = [...hard].filter(t => !flat.includes(squash(t)));
+      const ungrounded = out => {
+        const hard = new Set();
+        const scan = t => String(t || "").match(HARD_TOKEN)?.forEach(x => hard.add(x));
+        scan(out.headline);
+        for (const sec of out.sections) {
+          scan(sec.heading);
+          for (const it of sec.items || []) { scan(it.title); scan(it.meta); (it.bullets || []).forEach(scan); }
+        }
+        return [...hard].filter(t => !flat.includes(squash(t)));
+      };
+
+      let d = await draft(env, 2600, SYS, ASK);
+      if (d instanceof Response) return d;
+      let out = parseJson(d.text);
+      let spentIn = d.usage.input_tokens, spentOut = d.usage.output_tokens, cost = d.cost;
+      let invented = out && Array.isArray(out.sections) ? ungrounded(out) : null;
+
+      if (invented?.length) {
+        const d2 = await draft(env, 2600,
+          SYS + " Your last attempt used these, which do NOT appear in the profile: " +
+          invented.slice(0, 12).join(", ") +
+          ". Rewrite without them — use only the words the profile itself uses.", ASK);
+        if (!(d2 instanceof Response)) {
+          const out2 = parseJson(d2.text);
+          spentIn += d2.usage.input_tokens; spentOut += d2.usage.output_tokens; cost += d2.cost;
+          if (out2 && Array.isArray(out2.sections)) {
+            const inv2 = ungrounded(out2);
+            if (!inv2.length) { out = out2; invented = []; }
+            else invented = inv2;
+          }
+        }
+      }
+
+      if (!out || !Array.isArray(out.sections))
+        return json(502, { error: "upstream", detail: "The model did not return a usable resume. Nothing was charged to you." });
       if (invented.length)
         return json(502, { error: "ungrounded", invented: invented.slice(0, 8),
-          detail: `The draft used ${invented.length} thing${invented.length > 1 ? "s" : ""} your resume does not contain (${invented.slice(0, 3).join(", ")}). It was refused rather than shown.` });
+          detail: `The draft used ${invented.length} thing${invented.length > 1 ? "s" : ""} your resume does not contain (${invented.slice(0, 3).join(", ")}), twice. It was refused rather than shown to you.` });
 
-      await recordRun(env, g.key, d.usage.input_tokens, d.usage.output_tokens, d.cost);
+      await recordRun(env, g.key, spentIn, spentOut, cost);
       return json(200, {
         name: String(out.name || "").slice(0, 120),
         contact: String(out.contact || "").slice(0, 300),
@@ -443,7 +473,8 @@ export default {
         gaps: Array.isArray(out.gaps)
           ? out.gaps.filter(x => x && typeof x.asks === "string").slice(0, 5)
               .map(x => ({ asks: x.asks, note: typeof x.note === "string" ? x.note : "" })) : [],
-        meta: meta(d, g.spent),
+        // both calls, on the runs where the guard asked for a second
+        meta: meta({ cost }, g.spent),
       });
     }
 
