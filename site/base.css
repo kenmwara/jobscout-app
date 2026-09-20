@@ -64,7 +64,10 @@
                border-color .3s var(--ease),box-shadow .2s var(--ease)}
   .run:hover{filter:none;transform:none;background:var(--midnight);box-shadow:var(--sh-cta)}
   .scard.in:hover{box-shadow:rgba(75,68,57,.26) 0 40px 72px 0}
-  .row:hover{background:rgba(72,101,255,.035)}
+  /* Scoped to the saved page's LIST rows. Bare .row also matched the site
+     header's layout row, so hovering anything in the header washed the whole
+     bar - "a highlight across the entire title bar". */
+  .rows .row:hover{background:rgba(72,101,255,.035)}
   header nav a:hover{color:var(--indigo);text-decoration:none}
   .pill:hover{background:var(--lavender)}
   *{box-sizing:border-box}
