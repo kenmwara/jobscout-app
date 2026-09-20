@@ -620,16 +620,49 @@ export default {
       if (g instanceof Response) return g;
       const { profile, p } = g;
 
-      let asked, source;
+      /* The questions every application asks, for when the employer's own form
+         cannot be read. Two are built from the posting, because where the work
+         is and how it is arranged is the part that actually varies. The rest
+         are the same on every form in the feed.
+
+         Deliberately NOT here: salary expectations, how you heard about us,
+         and anything about race, gender, disability or veteran status. The
+         drafting prompt refuses those anyway; leaving them out of the list
+         means the candidate is not even prompted to think we would. */
+      const genericForm = (posting) => {
+        const place = [posting.location, posting.remote_policy].filter(Boolean).join(", ");
+        return [
+          { label: "Are you legally authorised to work in the country this role is based in?",
+            required: true, type: "text", options: [] },
+          { label: "Where are you currently located?", required: true, type: "text", options: [] },
+          { label: place
+              ? `This role is listed as ${place}. Can you work on those terms?`
+              : "Can you work on the terms this role is listed under?",
+            required: true, type: "text", options: [] },
+          { label: "What is your notice period, or your earliest start date?",
+            required: false, type: "text", options: [] },
+          { label: "How many years of relevant experience do you have for this role?",
+            required: false, type: "text", options: [] },
+          { label: "Why are you interested in this role?", required: false, type: "textarea", options: [] },
+          { label: "LinkedIn profile", required: false, type: "text", options: [] },
+          { label: "Portfolio or GitHub", required: false, type: "text", options: [] },
+        ];
+      };
+
+      let asked, source, generic = false;
       try {
         asked = await readForm(p.url);
         source = asked && asked.source;
       } catch (e) {
-        return json(200, { unsupported: true, host: hostOf(p.url),
-          detail: "The employer's form could not be read just now. Nothing was charged to you." });
+        asked = null;
       }
-      if (!asked) return json(200, { unsupported: true, host: hostOf(p.url),
-        detail: "This employer's form is not published, so the questions cannot be read before you open it." });
+      /* Not being able to read their form is not a reason to send someone to
+         it empty-handed. The questions are not a mystery. */
+      if (!asked) {
+        generic = true;
+        source = hostOf(p.url);
+        asked = { fields: genericForm(p) };
+      }
       asked = asked.fields;
       // Shown, never drafted. Seeing that a form asks at all is the point of
       // reading it early; answering on someone's behalf is a different thing.
@@ -641,7 +674,7 @@ export default {
                      options: q.options, answer: "", from: "", why: never(q.label || "") }));
 
       if (!drafting.length)
-        return json(200, { source, url: p.url, questions: yours, drafted: 0 });
+        return json(200, { source, url: p.url, questions: yours, drafted: 0, generic });
 
       const ask = drafting.map((q, i) =>
         `${i + 1}. ${q.label}${q.required ? " [required]" : ""} (${q.type})` +
@@ -691,6 +724,10 @@ export default {
         source, url: p.url,
         questions: [...yours, ...questions],
         drafted: questions.filter(q => q.answer).length,
+        // The page must be able to say whether these are THEIR questions or
+        // the usual ones — presenting a stand-in as the employer's own form
+        // would be the kind of quiet lie this product exists not to tell.
+        generic,
         meta: meta(d, g.spent),
       });
     }

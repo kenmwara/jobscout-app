@@ -454,9 +454,22 @@ function readable(id, title, now){
   const b = document.createElement("button");
   b.className = "readmore"; b.type = "button";
   b.textContent = "Read the whole thing \u2192";
+  /* A marker for where the document lives on the card, so it can go back to
+     exactly the same place. */
+  const home = document.createComment("out-" + id);
+  out.before(home);
+
   b.onclick = () => {
+    closeWin();                                   // whatever was in it, home first
+    winOwner = { out, home };
     $("#docTitle").textContent = title;
-    $("#docBody").innerHTML = out.innerHTML;
+    /* MOVE the node, do not copy its markup. `innerHTML` clones the buttons
+       and leaves their handlers behind — which is why every per-answer copy
+       icon in this window was dead while "Copy all" worked: that one is a
+       real button on the card, reached through the footer. One DOM, one set
+       of handlers, wherever the reader is looking. */
+    out.classList.remove("clipped");
+    $("#docBody").replaceChildren(out);
     /* The window carries the same actions the card does, driven by clicking
        the originals — so Copy and Download keep their one implementation and
        their "Copied" feedback, wherever they are pressed from. */
@@ -472,10 +485,33 @@ function readable(id, title, now){
     $("#docModal").showModal();
   };
   // The way back in, always: a document you closed has to be findable.
-  out.after(b);
+  home.after(b);
   if (now) b.onclick();
 }
-$("#docClose").onclick = () => $("#docModal").close();
+
+/* Which document the window is holding, so it can be put back exactly where
+   it came from. */
+let winOwner = null;
+
+/* The one way to close it. The restore used to hang off the dialog's `close`
+   event — and this Chrome does not fire `close`, it fires `toggle`, so the
+   window shut with the document still inside and the card was left showing a
+   link to an empty section. Every path that closes calls this instead, and
+   both events call it too, so whichever one a browser raises the document
+   comes home. Idempotent: calling it twice costs nothing. */
+function closeWin(){
+  if (winOwner){
+    const { out, home } = winOwner;
+    winOwner = null;
+    home.after(out);
+    if (out.scrollHeight > 300) out.classList.add("clipped");
+  }
+  if ($("#docModal").open) $("#docModal").close();
+}
+$("#docClose").onclick = closeWin;
+for (const ev of ["close", "toggle"])
+  $("#docModal").addEventListener(ev, () => { if (!$("#docModal").open) closeWin(); });
+addEventListener("keydown", e => { if (e.key === "Escape" && $("#docModal").open) closeWin(); });
 /* A click on the backdrop reports the DIALOG ITSELF as its target, because
    the backdrop is the dialog's own pseudo-element and the sheet is a child —
    so target identity tells "outside" from "inside" exactly, with no geometry.
@@ -483,7 +519,7 @@ $("#docClose").onclick = () => $("#docModal").close();
    coordinates reads as 0,0 and closed the window from inside it.) <dialog>
    does not do this natively; Escape it already handles. */
 $("#docModal").addEventListener("click", e => {
-  if (e.target === $("#docModal")) $("#docModal").close();
+  if (e.target === $("#docModal")) closeWin();
 });
 function download(blob, name){
   const a = document.createElement("a");
@@ -740,9 +776,22 @@ $("#do-answers").onclick = async () => {
     $("#st-answers").textContent = left ? `${qs.length - left} of ${qs.length} answered` : `all ${qs.length} answered`;
     $("#st-answers").className = "state " + (left ? "part" : "done");
     $("#do-answers").hidden = true;
-    $("#gr-answers").textContent = "Read from the employer's own form. Anything your resume does not settle is left for you.";
+    /* Whose questions these are is not a detail. Presenting the standard set
+       as the employer's own form would be the kind of quiet lie this product
+       exists not to tell, so the badge, the lede and the footnote all say it. */
+    if (d.generic){
+      $("#st-answers").textContent += " \u00b7 the usual ones";
+      $("#s-answers .lede").textContent =
+        `${d.source || "This employer"} keeps its form behind a login, so nobody can read it ahead of time. `
+        + `These are the questions almost every application asks, answered from your resume with the same `
+        + `rules: nothing invented, and anything your resume does not settle left for you.`;
+      $("#gr-answers").textContent = "The usual questions, not this employer's — check them "
+        + "against the real form when you open it. Some of these will not be there, and it may ask something else.";
+    } else {
+      $("#gr-answers").textContent = "Read from the employer's own form. Anything your resume does not settle is left for you.";
+    }
     offer("answers", qs.map(q => `${q.label}${q.required ? " [required]" : ""}\n${q.answer || "— " + (q.why || "yours to answer")}`).join("\n\n"), null);
-    readable("answers", "Their screening questions");
+    readable("answers", "Their screening questions", true);
   }catch(e){ failed("answers", "Answers API unreachable: " + e, "Get their questions"); }
 };
 </script>
