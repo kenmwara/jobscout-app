@@ -129,6 +129,22 @@
 </style>
 </head>
 <body>
+<!-- THE PAGE MARK: the eight-dot rose at page scale, pinned to the viewport
+     like the halo. A body-level sibling, not inside .wrap. Rules in base.css. -->
+<div class="heromark pagemark" aria-hidden="true">
+        <svg viewBox="0 0 760 760">
+          <defs>
+            <radialGradient id="markpop2" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse"
+              gradientTransform="translate(380 330) scale(330 330)">
+              <stop stop-color="#fff" stop-opacity=".32"/>
+              <stop offset=".5" stop-color="#fff" stop-opacity=".11"/>
+              <stop offset="1" stop-color="#fff" stop-opacity="0"/>
+            </radialGradient>
+          </defs>
+          <g class="ring"><circle cx="380.0" cy="80.0" r="28.4"/><circle cx="592.1" cy="167.9" r="54.1"/><circle cx="680.0" cy="380.0" r="79.8"/><circle cx="592.1" cy="592.1" r="105.5"/><circle cx="380.0" cy="680.0" r="131.2"/><circle cx="167.9" cy="592.1" r="156.9"/><circle cx="80.0" cy="380.0" r="182.6"/><circle cx="167.9" cy="167.9" r="208.3"/></g>
+          <g class="pop" fill="url(#markpop2)"><circle cx="380.0" cy="80.0" r="28.4"/><circle cx="592.1" cy="167.9" r="54.1"/><circle cx="680.0" cy="380.0" r="79.8"/><circle cx="592.1" cy="592.1" r="105.5"/><circle cx="380.0" cy="680.0" r="131.2"/><circle cx="167.9" cy="592.1" r="156.9"/><circle cx="80.0" cy="380.0" r="182.6"/><circle cx="167.9" cy="167.9" r="208.3"/></g>
+        </svg>
+      </div>
 <div class="wrap">
 <div class="wrap">
   <header class="site">
@@ -333,5 +349,10 @@ render();
     </div>
   </footer>
 </div>
+<script>
+/* The same switch index.html throws: the mark drifts only where the reader
+   has not asked for reduced motion. */
+if (!matchMedia("(prefers-reduced-motion: reduce)").matches) document.documentElement.classList.add("anim");
+</script>
 </body>
 </html>

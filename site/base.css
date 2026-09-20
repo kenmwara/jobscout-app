@@ -380,6 +380,43 @@ body{
 .wrap{max-width:var(--max);margin:0 auto;padding:0 24px}
 a{color:inherit}
 
+/* ── THE PAGE MARK — the second thing in the ground, and it is one layer ──
+   The eight-dot rose at page scale, behind the matches and behind /saved,
+   at a whisper of the brand colour. PINNED TO THE VIEWPORT like the halo,
+   so cards scroll over both and the ground is the ground all the way down;
+   it used to be absolute at top:300px and scrolled away while the halo
+   stayed. Lives here rather than on each page because two copies of one
+   layer is how the halo drifted; the pages carry only the markup.
+
+   z-index:-1 puts it behind the page's content and ABOVE the halo, because
+   the halo is <html>'s own background and paints before any descendant.
+   Each page gives the mark's container position:relative;z-index:0 so the
+   -1 is scoped to that page's content and not to the document. */
+.heromark.pagemark{
+  position:fixed;left:50%;top:50%;width:min(1400px,100vw);
+  transform:translate(-50%,-50%);opacity:.5;pointer-events:none;z-index:-1}
+.heromark.pagemark svg{display:block;width:100%;height:auto;overflow:visible}
+.heromark.pagemark .pop{display:none}
+/* .06 indigo on cream and .055 lavender on ink are the same whisper -
+   1.051 and 1.110 against their own grounds; a single number is not. */
+.heromark.pagemark .ring circle{fill:var(--accent);opacity:.06}
+@media (prefers-color-scheme: dark){
+  :root[data-theme="system"] .heromark.pagemark .ring circle{opacity:.055}}
+:root[data-theme="dark"] .heromark.pagemark .ring circle{opacity:.055}
+/* It wanders: a slow figure over 48s, a few percent each way, with the old
+   breath (scale 1.045) and lean (4deg) kept. Slow enough that nothing on
+   the page ever seems to be reacting to it. Off entirely for a reader who
+   asked for reduced motion - this is decoration, and it is large. */
+html.anim .heromark.pagemark{animation:markwander 48s ease-in-out infinite}
+@keyframes markwander{
+  0%  {transform:translate(-50%,-50%) scale(1)     rotate(0deg)}
+  25% {transform:translate(-47%,-52%) scale(1.03)  rotate(2deg)}
+  50% {transform:translate(-51%,-47%) scale(1.045) rotate(4deg)}
+  75% {transform:translate(-53%,-51%) scale(1.02)  rotate(1deg)}
+  100%{transform:translate(-50%,-50%) scale(1)     rotate(0deg)}
+}
+@media (prefers-reduced-motion:reduce){ html.anim .heromark.pagemark{animation:none} }
+
 /* ── MARKET — two places, never a third ─────────────────────────
    The hero gradient and the tint under the active market chip. The hero is a
    dark BLOCK in both themes, not the page, so its text is always cream.
