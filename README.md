@@ -195,13 +195,16 @@ caption anyway.
 
 ## Deploying
 
-> **Codemagic queues an iOS and an Android build on every push to `main`** —
-> it ignores `[skip ci]` and has no path filter, so a tools-only push queues
-> two builds. On the free/PAYG plan they run one at a time on a Mac mini;
-> a backlog looks like "queued" forever with no error. Cancel via the API
-> with a JSON body (`POST /builds/<id>/cancel -d '{}'`; an empty POST is 411).
-> And `[skip ci]` on the HEAD commit of a push skips the **GitHub** deploy
-> for the whole push, so a site commit beneath it never deploys — push site
+> **Codemagic's changeset is computed since the last *successful* build.**
+> `codemagic.yaml` filters on `android/` and `ios/` (and excludes `**/*.md`),
+> but while no build has succeeded, every later non-Markdown push still
+> "contains" the last native change and queues an iOS and an Android build
+> again — a tools-only push queued two, and `[skip ci]` does not stop it.
+> Builds run one at a time on a Mac mini, so a backlog reads as "queued"
+> forever with no error; cancel through the API with a JSON body
+> (`POST /builds/<id>/cancel -d '{}'` — an empty POST is 411). Separately,
+> `[skip ci]` on the HEAD commit of a push skips the **GitHub** deploy for
+> the whole push, so a site commit beneath it never deploys — push site
 > commits on their own, or `gh workflow run deploy.yml --ref main`.
 
 Both halves deploy from a push to `main`, and neither needs a command run by hand.
