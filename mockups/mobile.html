@@ -157,6 +157,22 @@ p.sub{font:400 13.5px/1.5 var(--sans);color:var(--text2);margin:0 0 16px}
 .chips i{font:500 12px/1 var(--sans);font-style:normal;padding:8px 12px;border-radius:var(--r-pill);
   background:rgba(248,243,235,.14);color:#f8f3eb}
 
+/* The panel is a CARD, on --surface, because it is the most important thing
+   on the screen when it appears - not a tinted notice. Section 16's rule:
+   above pill scale a surface is neutral and the band colour moves to the
+   label. The asks keep the unsure rung, which is what they are. */
+.nofit{background:var(--surface);border:1px solid var(--hair);border-radius:var(--r-card);
+  padding:15px 16px;margin:0 0 12px;box-shadow:var(--sh-card,none)}
+.nofit .lead{font:400 13px/1.6 var(--sans);color:var(--text);margin:0 0 11px}
+.nofit .lead b{font-weight:600;color:var(--ink)}
+.nofit .k{font:500 10.5px/1 var(--sans);letter-spacing:.09em;text-transform:uppercase;
+  color:var(--b-unsure);margin:0 0 8px}
+.nofit .asks{list-style:none;margin:0 0 12px;padding:0;display:grid;gap:7px}
+.nofit .asks li{padding:10px 12px;border-radius:var(--r-input);background:var(--b-unsure-bg);
+  font:400 12px/1.5 var(--sans);color:var(--answer-body)}
+.nofit .asks em{display:block;font:500 10px/1.3 var(--sans);letter-spacing:.08em;
+  text-transform:uppercase;color:var(--b-unsure);font-style:normal;margin:0 0 4px}
+
 .card{background:var(--surface);border:1px solid var(--hair);border-radius:var(--r-card);
   padding:14px;margin:0 0 11px;cursor:pointer}
 .card .row1{display:flex;gap:11px;align-items:flex-start}
@@ -386,6 +402,66 @@ let FEED = null, market = "ca", screen = "home", saved = new Set(), current = nu
 let savedSearch = false;
 const draftState = {};
 
+/* THE SAME THREE STEPS apply.html USES. The async clipboard API is refused
+   in an insecure context, inside some in-app webviews, and any time the
+   document is not focused - and `navigator.clipboard?.writeText(x).then()`
+   throws on the `.then` when clipboard is undefined, so the phone's Copy
+   silently did nothing in exactly the places a phone runs. Try the API,
+   then execCommand, and failing both put the text under a real selection so
+   Ctrl+C works: telling someone to copy while selecting nothing for them is
+   an instruction with no subject. */
+async function copyInto(btn, plain, node, restore) {
+  const done = (label) => {
+    btn.textContent = label;
+    setTimeout(() => { btn.textContent = restore; }, 1600);
+  };
+  try { await navigator.clipboard.writeText(plain); return done("Copied"); }
+  catch { /* fall through */ }
+  if (node) {
+    const r = document.createRange(); r.selectNodeContents(node);
+    const sel = getSelection(); sel.removeAllRanges(); sel.addRange(r);
+    try { if (document.execCommand("copy")) return done("Copied"); } catch { /* no */ }
+    return done("Selected \u2014 press Ctrl+C");
+  }
+  done("Select and copy");
+}
+
+/* /api/letter returns the body and nothing else, so the name and the way to
+   reach you have to come from the resume the reader pasted or uploaded -
+   which is the only honest source for them. Nothing is invented: if the
+   resume opens with something that does not look like a name, there is no
+   letterhead and the letter simply starts at "Dear". */
+function letterhead(profile) {
+  const lines = String(profile || "").split(/\n/).map(l => l.trim()).filter(Boolean);
+  if (!lines.length) return null;
+
+  /* THE NAME IS THE PART BEFORE THE FIRST SEPARATOR, not the whole line. A
+     real resume opens "Kenneth Kariuki - Senior Platform Engineer, Vancouver
+     BC" - eight words, one line - and a plain "six words or fewer" test on
+     the line threw the entire letterhead away. Split first, then judge. */
+  const head = lines[0].split(/\s+[-\u2013\u2014|\u00b7]\s+/);
+  const nm = head[0].replace(/,\s*$/, "").trim();
+  /* A RESUME THAT OPENS ON A SECTION HEADING HAS NO NAME TO FIND.
+     "EXPERIENCE" is one word, all letters, and passed every test until the
+     case list caught it. People write their names in mixed case; headings
+     are shouted. No lowercase letter, no letterhead. */
+  if (!nm || nm.length > 46 || nm.includes("@") || !/[a-z]/.test(nm) ||
+      nm.split(/\s+/).length > 6 || !/[A-Za-z]/.test(nm)) return null;
+
+  /* Everything else on that line is the title and the city; the email comes
+     from wherever in the resume it sits. Nothing is invented - if the resume
+     carries no email, the letterhead is just the name. */
+  let bits = head.slice(1).join(" \u00b7 ").trim();
+  /* When the name sits alone on its line, the line under it is the title. */
+  if (!bits && lines[1] && lines[1].length <= 70 && !/@/.test(lines[1]) &&
+      /[a-z]/.test(lines[1])) bits = lines[1];
+  const email = (String(profile).match(/[\w.+-]+@[\w-]+\.[\w.]+/) || [])[0];
+  /* Not twice: the first line often carries the email already. */
+  const ct = [bits, bits.includes(email || "\u0000") ? "" : email]
+    .filter(Boolean).join(" \u00b7 ");
+  return { nm, ct };
+}
+
 const asProse = t => String(t).split(/\n{2,}/)
   .map(x => `<p>${esc(x.trim())}</p>`).join("");
 
@@ -399,13 +475,16 @@ const DRAFT = {
       if (!d.letter) return null;
       const blocks = String(d.letter).split(/\n{2,}/).map(b => b.trim()).filter(Boolean);
       const first = blocks[0] || "";
-      const isHead = first.includes("@") && first.split(/\n/).length <= 4
-                     && first.length < 200;
-      if (!isHead) return asProse(d.letter);
-      const [name, ...rest] = first.split(/\n/);
-      return `<p class="lhead"><span class="nm">${esc(name)}</span>
-        <span class="ct">${esc(rest.join(" \u00b7 "))}</span></p>`
-        + asProse(blocks.slice(1).join("\n\n"));
+      /* The model sometimes writes its own header. If it did, use that. */
+      const own = first.includes("@") && first.split(/\n/).length <= 4 && first.length < 200;
+      const head = own
+        ? (() => { const [nm, ...rest] = first.split(/\n/);
+                   return { nm, ct: rest.join(" \u00b7 ") }; })()
+        : letterhead(lastProfile);
+      const body = asProse((own ? blocks.slice(1) : blocks).join("\n\n"));
+      if (!head) return body;
+      return `<p class="lhead"><span class="nm">${esc(head.nm)}</span>
+        ${head.ct ? `<span class="ct">${esc(head.ct)}</span>` : ""}</p>` + body;
     } },
   resume: { verb: "rebuilding your resume", path: "/api/resume",
     /* The same document apply.html builds, from the same payload:
@@ -508,6 +587,13 @@ const fitOf = id => { let h = 5381; for (const c of id) h = ((h << 5) + h + c.ch
 const bandOf = f => f >= 80 ? ["auto", "--b-auto"] : f >= 70 ? ["ping", "--b-ping"]
   : f >= 55 ? ["unsure", "--b-unsure"] : ["near-miss", "--b-near"];
 const postings = () => (FEED?.[market]?.postings) || [];
+/* THE SAME FLOOR THE WEB HOLDS (index.html: FIT_FLOOR = 55, the foot of the
+   unsure band). Below it nothing is recommended and nothing is offered as a
+   match - the postings are still listed, because a reader is entitled to
+   back themselves, but they are listed as a stretch and labelled as one. */
+const FIT_FLOOR = 55;
+const clearsFloor = () => { const xs = scored(); return xs.length > 0 && xs[0].fit >= FIT_FLOOR; };
+
 const scored = () => scoredReal
   || postings().slice(0, 8).map(p => ({ ...p, fit: fitOf(p.id) })).sort((a, b) => b.fit - a.fit);
 
@@ -517,6 +603,30 @@ const head = (back) => `<div class="ahead">${back
   ? `<button class="bk" data-go="${esc(back)}">&#8592; Back</button>`
   : `<span class="mk">${MARK} JobScout</span>`}
   <span class="fl">${market === "ke" ? "🇰🇪" : "🇨🇦"}</span></div>`;
+
+/* Mirrors the web's panel, in the web's words. What the postings asked for
+   is QUOTED from the scoring - each scored posting carries the one thing it
+   found missing - so nothing here is invented, and the reason the number is
+   low is stated as distance from what was asked rather than as a verdict on
+   the reader. */
+function nofitHTML() {
+  const xs = scored();
+  if (!xs.length) return "";
+  const near = Math.max(...xs.map(x => x.fit));
+  const asks = [...xs].sort((a, b) => b.fit - a.fit).slice(0, 3)
+    .filter(x => (x.weakest || "").trim());
+  return `<div class="nofit">
+    <p class="lead"><b>Today&rsquo;s postings are a stretch for this resume as written.</b>
+      The nearest was ${near} out of 100 &mdash; the distance between what these postings
+      ask for and what the resume currently says, not what you are capable of.</p>
+    ${asks.length ? `<p class="k">What they are asking for</p><ul class="asks">` + asks.map(x =>
+      `<li><em>${esc(x.title || x.id)}</em>${esc(x.weakest)}</li>`).join("") + `</ul>` : ""}
+    <p class="lead">Put whatever is genuinely true of you against those points and run it
+      again. And if you would rather back yourself on one of these today, do &mdash; the
+      letter leads with your strongest real evidence.</p>
+    <button class="cta quiet" type="button" data-go="home">Rework your resume &rarr;</button>
+  </div>`;
+}
 
 const cardHTML = (p, full) => {
   const [word, tok] = bandOf(p.fit);
@@ -594,7 +704,7 @@ const SCREENS = {
 
   matches: () => `${head()}
     <h2 class="big">Your matches</h2>
-    <p class="sub">8 scored of ${postings().length} swept &middot; ${scoredReal
+    <p class="sub">${scored().length} scored of ${postings().length} swept &middot; ${scoredReal
       ? "scored by Claude just now" : "example scores &mdash; paste a resume to score for real"}
       ${runErr ? `<br><span style="color:var(--b-unsure)">${esc(runErr)}</span>` : ""}</p>
     <button class="savesearch" type="button" id="saveSearch" aria-pressed="${savedSearch}">
@@ -602,6 +712,7 @@ const SCREENS = {
       ${savedSearch ? "Search saved" : "Save this search"}
       <span class="n">${market === "ke" ? "Kenya" : "Canada"} &middot; today</span>
     </button>
+    ${clearsFloor() ? "" : nofitHTML()}
     ${scored().map(p => cardHTML(p)).join("")}`,
 
   apply: () => {
@@ -611,7 +722,11 @@ const SCREENS = {
       <h2 class="big">${esc(p.title)}</h2>
       <p class="sub">${esc(p.company)} &middot; ${esc(p.location || "—")}</p>
       ${cardHTML(p, true)}
-      <button class="cta" data-go="draft">Prepare application &#8594;</button>
+      <!-- EVERY match can be applied to. Below the floor the button says so
+           plainly rather than disappearing: the reader decides, not the
+           score. Same wording as the web's below-floor card. -->
+      <button class="cta" data-go="draft">${current && current.fit < FIT_FLOOR
+        ? "Apply anyway &#8594;" : "Prepare application &#8594;"}</button>
       <button class="cta quiet">Open the employer&rsquo;s posting &#8599;</button>
       <button class="cta quiet" data-save="${esc(p.id)}">
         ${saved.has(p.id) ? "Saved" : "Save this match"}</button>`;
@@ -773,18 +888,11 @@ document.addEventListener("click", e => {
     const qc = e.target.closest(".qcopy");
     if (qc) {
       const ans = qc.closest(".q").querySelector(".ans");
-      navigator.clipboard?.writeText(ans ? ans.innerText : "").then(() => {
-        const lab = qc.querySelector("span");
-        lab.textContent = "Copied";
-        setTimeout(() => (lab.textContent = "Copy"), 1400);
-      });
+      copyInto(qc.querySelector("span"), ans ? ans.innerText : "", ans, "Copy");
       return;
     }
     if (e.target.closest("#sheetCopy")) {
-      navigator.clipboard?.writeText($("#sheetBody").innerText).then(() => {
-        const b = $("#sheetCopy"); b.textContent = "Copied";
-        setTimeout(() => (b.textContent = "Copy all"), 1400);
-      });
+      copyInto($("#sheetCopy"), $("#sheetBody").innerText, $("#sheetBody"), "Copy all");
       return;
     }
     if (sh.contains(e.target)) return;

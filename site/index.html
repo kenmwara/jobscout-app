@@ -1658,6 +1658,15 @@ function scoreCard(x, i){
 /* Every early exit routes through here, so the spinner is stopped here too. */
 function finish(){
   prog.done();
+  /* Every exit from a run comes through here, including the four that exit
+     on an error - rate limit, breaker, unexpected payload, unreachable API.
+     Each one raised a banner and left the "scoring ... with Claude" line
+     above it running, mark still breathing. A status line that outlives its
+     work is a lie about what the page is doing; the banner is the status
+     now. A run that SUCCEEDS overwrites this line before it gets here, so
+     clearing it costs that path nothing. */
+  const st = document.getElementById("browseCount");
+  if (st && st.querySelector(".think")) st.textContent = "";
   running = false; $("#runBtn").disabled = false;
 }
 function esc(s){ return String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
