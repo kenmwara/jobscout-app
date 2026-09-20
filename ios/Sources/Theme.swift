@@ -48,18 +48,21 @@ let muted = dyn(0x5A5560, 0xB9B3C4)       // --text2. 6.55:1 / 9.72:1 - was
                                           // 0x4A4560, of the #878789 family
 let text3 = dyn(0x5A5560, 0xB9B3C4)       // no third tone; the kit has two
 let canvasBg = dyn(0xF8F3EB, 0x0A0524)
-let cardBg = dyn(0xFFFFFF, 0x16103A)
-let info = dyn(0xDCE4FB, 0x2C2A56)        // the ping fill
+let cardBg = dyn(0xFFFFFF, 0x1C1544)
+let info = dyn(0xEAF0FF, 0x272E42)        // the ping fill, hue 270
 let lavender = dyn(0xA2BAFF, 0xA2BAFF)
 // `lavender` is the SAME fill in both themes, so whatever sits on it must be
 // deep-ink in both themes too - a dynamic ink would turn cream on dark and
 // disappear. 10.38:1.
 let lavenderInk = Color(hex: 0x080331)
-// Forest and indigo both fail as labels on dark, so both lift.
-let meadow = dyn(0x114E0B, 0x5FD07A)      // the auto label
-let forest = dyn(0x328A3B, 0x5FD07A)      // the auto solid, for lit bearings
-let emberDeep = dyn(0xBF3200, 0xFF9B6F)   // the unsure label
-let stone = dyn(0x333333, 0xDDD7E4)       // the near-miss label
+/* ONE RAMP: fixed OKLCH lightness and chroma per rung, hue the only
+   variable, light and dark the same hue from opposite ends. Ember is hue 63
+   now, not 39 - 39 sits between Apple's red and orange, reads as an error,
+   and turns to mud when darkened. docs/THEME.md section 11 has the table. */
+let meadow = dyn(0x225B2C, 0x92D098)      // auto label,  147deg 7.11 / 7.38
+let forest = dyn(0x3E954D, 0x7AC683)      // auto solid, lit bearings only
+let emberDeep = dyn(0x713F00, 0xECAF78)   // unsure label, 63deg 7.58 / 7.04
+let stone = dyn(0x4B4B5C, 0xBBBCD0)       // near-miss label, 285deg 7.50 / 7.21
 let hairline = dynAlpha(0x080331, 0.13, 0xF8F3EB, 0.13)
 let hair2 = dynAlpha(0x080331, 0.22, 0xF8F3EB, 0.24)
 // A warm-brown shadow reads as dirt on a dark ground, so on dark it goes to
@@ -72,9 +75,9 @@ private func warmShadowColor(_ a: CGFloat) -> Color {
 
 /// One hue per candidate (border + rose) and its card ground, same as the web.
 let personaHues: [(Color, Color)] = [
-    (forest, dyn(0xF2F7F1, 0x1F2940)),
-    (emberDeep, dyn(0xFDF3EE, 0x36223E)),
-    (indigo, dyn(0xF1F3FD, 0x2C2A56)),
+    (forest, dyn(0xE7F4E8, 0x223424)),
+    (emberDeep, dyn(0xFBEDE1, 0x3D2B1A)),
+    (indigo, dyn(0xEAF0FF, 0x272E42)),
 ]
 
 // The same two variable TTFs the site embeds and Android bundles (google/fonts, OFL),

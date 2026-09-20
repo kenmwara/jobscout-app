@@ -91,7 +91,7 @@ val LIGHT_TOKENS = Tokens(
     hair2 = Color(0x38080331),
     accent = Color(0xFF4865FF),
     accentInk = Color(0xFFFFFFFF),  // 4.58:1 on accent
-    live = Color(0xFFFF6D39),       // a FILL. Never text: 2.48:1 on cream.
+    live = Color(0xFFB86B03),       // the unsure SOLID. Never text.
     // THE ACTION IS DEEP-INK: 17.44:1 with its cream label, against 4.58:1
     // for indigo-with-white. Indigo is brand, links and selection only.
     btn = Color(0xFF080331),
@@ -100,10 +100,13 @@ val LIGHT_TOKENS = Tokens(
     chipInk = Color(0xFF080331),
     scrim = Color(0x8C080331),
     heroFrom = Color(0xFF241A7A), heroMid = Color(0xFF150E52), heroTo = Color(0xFF080331),
-    bAuto = Color(0xFF114E0B), bAutoBg = Color(0xFFE8F2E6),    //  8.63:1
-    bPing = Color(0xFF1B1463), bPingBg = Color(0xFFDCE4FB),    // 12.46:1
-    bUnsure = Color(0xFFBF3200), bUnsureBg = Color(0xFFFDEADF), //  4.91:1
-    bNear = Color(0xFF333333), bNearBg = Color(0xFFECEAF2),    // 11.40:1
+    /* ONE RAMP: fixed OKLCH lightness and chroma per rung, hue the only
+       variable. See site/base.css for the table and docs/THEME.md section 11.
+       Ember is hue 63 now, not 39. Every pair lands 7.04-7.58:1. */
+    bAuto = Color(0xFF225B2C), bAutoBg = Color(0xFFE7F4E8),    // 147deg 7.11:1
+    bPing = Color(0xFF394981), bPingBg = Color(0xFFEAF0FF),    // 270deg 7.53:1
+    bUnsure = Color(0xFF713F00), bUnsureBg = Color(0xFFFBEDE1), //  63deg 7.58:1
+    bNear = Color(0xFF4B4B5C), bNearBg = Color(0xFFEFF0F4),    // 285deg 7.50:1
 )
 
 /** :root[data-theme="dark"] — derived from deep-ink #080331, not a neutral
@@ -111,7 +114,9 @@ val LIGHT_TOKENS = Tokens(
 val DARK_TOKENS = Tokens(
     canvas = Color(0xFF0A0524),
     canvas2 = Color(0xFF100B2F),
-    surface = Color(0xFF16103A),   // separates by hairline, not luminance
+    surface = Color(0xFF1C1544),   // lifted from 16103A: 1.17:1 on canvas,
+                                   // the same step light uses. Luminance
+                                   // alone never separates on dark.
     ink = Color(0xFFF8F3EB),       // 17.93:1 on canvas
     text = Color(0xFFF8F3EB),
     text2 = Color(0xFFB9B3C4),     //  9.72:1 on canvas
@@ -122,18 +127,22 @@ val DARK_TOKENS = Tokens(
        fill carrying deep-ink text, 10.38:1. */
     accent = Color(0xFFA2BAFF),
     accentInk = Color(0xFF0A0524),
-    live = Color(0xFFFF9B6F),
+    live = Color(0xFFE89F59),   // the unsure solid
     btn = Color(0xFFF8F3EB),   // the action inverts: cream fill, 17.93:1
     btnInk = Color(0xFF0A0524),
     chip = Color(0xFF16103A),
     chipInk = Color(0xFFF8F3EB),
     scrim = Color(0xA8040210),
     heroFrom = Color(0xFF241A7A), heroMid = Color(0xFF150E52), heroTo = Color(0xFF080331),
-    /* Forest and indigo both fail as labels on dark, so both lift. */
-    bAuto = Color(0xFF5FD07A), bAutoBg = Color(0xFF1F2940),    //  7.44:1
-    bPing = Color(0xFFA2BAFF), bPingBg = Color(0xFF2C2A56),    //  7.00:1
-    bUnsure = Color(0xFFFF9B6F), bUnsureBg = Color(0xFF36223E), //  6.99:1
-    bNear = Color(0xFFDDD7E4), bNearBg = Color(0xFF1E1A44),    // 10.10:1
+    /* The same ramp at the dark rungs - same four hues, same chroma, same
+       lightness, so light and dark are one system seen from two sides. The
+       old dark fills were composited from the light ones over the purple
+       surface, which dragged every hue back to 250: auto measured 222 (blue,
+       not green) and unsure 283 (purple, where ember should be). */
+    bAuto = Color(0xFF92D098), bAutoBg = Color(0xFF223424),    // 147deg 7.38:1
+    bPing = Color(0xFFA4BBFF), bPingBg = Color(0xFF272E42),    // 270deg 7.15:1
+    bUnsure = Color(0xFFECAF78), bUnsureBg = Color(0xFF3D2B1A), //  63deg 7.04:1
+    bNear = Color(0xFFBBBCD0), bNearBg = Color(0xFF2E2E34),    // 285deg 7.21:1
 )
 
 /* MARKET — two places, never a third. The hero is the first; the active flag
