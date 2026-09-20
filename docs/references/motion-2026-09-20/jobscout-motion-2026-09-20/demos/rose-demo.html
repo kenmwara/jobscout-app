@@ -1,0 +1,363 @@
+<!doctype html>
+<html lang="en" data-theme="dark" data-market="ca">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>JobScout — the rose, scoring</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500&family=Inter:opsz,wght@14..32,400;14..32,500&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  color-scheme: light dark;
+  --canvas:    light-dark(#f8f3eb,#0a0524);
+  --surface:   light-dark(#ffffff,#1c1544);
+  --sunken:    light-dark(#ece5d8,#1a1240);
+  --text:      light-dark(#080331,#f8f3eb);
+  --text-2:    light-dark(#5a5560,#b9b3c4);
+  --text-long: light-dark(#080331,#ded9e8);
+  --hairline:  light-dark(rgba(8,3,49,.13),rgba(248,243,235,.13));
+  --link:      light-dark(#1b1463,#a2baff);
+  --accent:    light-dark(#4865ff,#a2baff);
+  --action:    light-dark(#080331,#f8f3eb);
+  --action-on: light-dark(#f8f3eb,#0a0524);
+
+  --b-auto:   light-dark(#3e954d,#7ac683);
+  --b-ping:   light-dark(#617ad1,#93adff);
+  --b-unsure: light-dark(#b86b03,#e89f59);
+  --b-near:   light-dark(#7d7d97,#aeafc7);
+  --b-auto-l:   light-dark(#225b2c,#92d098);  --b-auto-bg:   light-dark(#e7f4e8,#223424);
+  --b-ping-l:   light-dark(#394981,#a4bbff);  --b-ping-bg:   light-dark(#eaf0ff,#272e42);
+  --b-unsure-l: light-dark(#713f00,#ecaf78);  --b-unsure-bg: light-dark(#fbede1,#3d2b1a);
+  --b-near-l:   light-dark(#4b4b5c,#bbbcd0);  --b-near-bg:   light-dark(#eff0f4,#2e2e34);
+  --evidence-bg: light-dark(#f1f1fa,#2b284f);
+
+  --halo-1: light-dark(rgba(255,252,242,.92),rgba(43,57,108,.50));
+  --halo-2: light-dark(rgba(255,250,240,.80),rgba(58,42,96,.42));
+  --halo-3: light-dark(rgba(255,253,246,.85),rgba(36,52,100,.38));
+
+  --spring-snap:   linear(0.0000, 0.0236, 0.0841, 0.1686, 0.2664, 0.3695, 0.4717, 0.5687, 0.6577, 0.7370, 0.8057, 0.8637, 0.9115, 0.9498, 0.9795, 1.0018, 1.0178, 1.0284, 1.0348, 1.0378, 1.0383, 1.0370, 1.0343, 1.0309, 1.0271, 1.0231, 1.0000);
+  --spring-settle: linear(0.0000, 0.0249, 0.0852, 0.1645, 0.2520, 0.3404, 0.4253, 0.5041, 0.5756, 0.6393, 0.6952, 0.7437, 0.7854, 0.8210, 0.8512, 0.8767, 0.8981, 0.9160, 0.9309, 0.9433, 0.9536, 0.9620, 0.9690, 0.9747, 0.9794, 0.9833, 1.0000);
+  --spring-arrive: linear(0.0000, 0.0264, 0.0948, 0.1910, 0.3029, 0.4208, 0.5373, 0.6468, 0.7458, 0.8318, 0.9041, 0.9624, 1.0075, 1.0406, 1.0631, 1.0766, 1.0827, 1.0831, 1.0792, 1.0724, 1.0637, 1.0540, 1.0441, 1.0346, 1.0258, 1.0180, 1.0000);
+  --spring-exit:   cubic-bezier(0.4, 0.0, 1, 1);
+  --t-snap: 180ms;  --t-settle: 340ms;  --t-arrive: 520ms;  --t-exit: 160ms;
+
+  /* Material ladder. On light, elevation is shadow. On dark there is no
+     shadow, so the hairline brightens and the surface lifts one step. */
+  --sh-rest:  light-dark(0 1px 2px rgba(75,68,57,.05), 0 6px 14px rgba(75,68,57,.06), none);
+  --sh-hover: light-dark(0 2px 4px rgba(75,68,57,.06), 0 14px 30px rgba(75,68,57,.10), none);
+  --sh-press: light-dark(0 1px 2px rgba(75,68,57,.08), none);
+  --edge-rest:  light-dark(rgba(8,3,49,.08), rgba(248,243,235,.13));
+  --edge-hover: light-dark(rgba(8,3,49,.12), rgba(248,243,235,.26));
+  --lift-rest: light-dark(#ffffff,#1c1544);
+  --lift-hover: light-dark(#ffffff,#221a52);
+
+  --radius: 16px; --radius-in: 12px;
+  --serif: Newsreader, Georgia, serif;
+  --sans: Inter, system-ui, sans-serif;
+  --mono: 'JetBrains Mono', ui-monospace, monospace;
+}
+[data-theme="light"]{color-scheme:light}
+[data-theme="dark"]{color-scheme:dark; --sh-rest:none; --sh-hover:none; --sh-press:none}
+*{box-sizing:border-box}
+html{background:var(--canvas)}
+body{margin:0;background:transparent;color:var(--text);font-family:var(--sans);
+     -webkit-font-smoothing:antialiased}
+body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
+  background:
+   radial-gradient(62% 48% at 88% 2%,var(--halo-1) 0%,transparent 64%),
+   radial-gradient(54% 42% at 2% 30%,var(--halo-2) 0%,transparent 62%),
+   radial-gradient(70% 52% at 74% 92%,var(--halo-3) 0%,transparent 66%);}
+
+.wrap{max-width:1180px;margin:0 auto;padding:26px 28px 60px}
+header.bar{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:22px}
+.brand{display:flex;align-items:center;gap:9px;font-family:var(--serif);font-size:19px}
+.brand svg{width:22px;height:22px}
+.controls{display:flex;gap:8px;flex-wrap:wrap}
+.seg{display:flex;background:var(--sunken);border-radius:1600px;padding:3px;position:relative}
+.seg button{position:relative;z-index:1;border:0;background:transparent;color:var(--text-2);
+  font:500 11.5px/1 var(--sans);letter-spacing:.02em;padding:8px 13px;border-radius:1600px;cursor:pointer;
+  transition:color var(--t-snap) var(--spring-snap)}
+.seg button[aria-pressed=true]{color:var(--text)}
+.seg .thumb{position:absolute;top:3px;bottom:3px;border-radius:1600px;background:var(--surface);
+  box-shadow:var(--sh-rest);z-index:0;
+  transition:transform var(--t-snap) var(--spring-snap), width var(--t-snap) var(--spring-snap)}
+
+h1{font-family:var(--serif);font-weight:400;font-size:clamp(28px,4vw,40px);line-height:1.08;margin:0 0 8px;letter-spacing:-.01em}
+.lede{margin:0 0 4px;font-size:14px;line-height:1.6;color:var(--text-2);max-width:66ch}
+.runbar{display:flex;align-items:center;gap:12px;margin:22px 0 18px;flex-wrap:wrap}
+.run{border:0;border-radius:1600px;background:var(--action);color:var(--action-on);
+  font:500 13px/1 var(--sans);padding:13px 22px;cursor:pointer;
+  box-shadow:var(--sh-rest);
+  transition:transform var(--t-snap) var(--spring-snap), box-shadow var(--t-snap) var(--spring-snap)}
+.run:hover{transform:translateY(-1px);box-shadow:var(--sh-hover)}
+.run:active{transform:scale(.97);box-shadow:var(--sh-press)}
+.hint{font-size:11.5px;color:var(--text-2)}
+
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(330px,1fr));gap:14px;margin-top:6px}
+
+/* ---------------- the card: a real material ---------------- */
+.card{background:var(--lift-rest);border:1px solid var(--edge-rest);border-radius:var(--radius);
+  padding:16px 17px 15px;box-shadow:var(--sh-rest);
+  opacity:0;transform:translateY(10px);
+  transition:transform var(--t-settle) var(--spring-settle),
+             box-shadow var(--t-settle) var(--spring-settle),
+             border-color var(--t-settle) var(--spring-settle),
+             background var(--t-settle) var(--spring-settle),
+             opacity var(--t-settle) linear}
+.card.in{opacity:1;transform:none;transition-delay:calc(var(--i) * 28ms)}
+.card:hover{transform:translateY(-2px);box-shadow:var(--sh-hover);
+  border-color:var(--edge-hover);background:var(--lift-hover)}
+.card:active{transform:scale(.988);box-shadow:var(--sh-press);
+  transition-duration:var(--t-exit);transition-timing-function:var(--spring-exit)}
+
+.card-top{display:flex;align-items:flex-start;justify-content:space-between}
+.av{width:32px;height:32px;border-radius:9px;background:var(--sunken);display:flex;align-items:center;
+  justify-content:center;font:500 10.5px/1 var(--sans);color:var(--text-2);letter-spacing:.04em}
+
+/* ---------------- the rose: the score device ---------------- */
+.score{position:relative;width:52px;height:52px;flex:none}
+.rose{display:block}
+.rose .d{fill:var(--b-near);opacity:.16;
+  transform-box:fill-box;transform-origin:center;transform:scale(.55);
+  transition:opacity var(--t-arrive) var(--spring-arrive),
+             transform var(--t-arrive) var(--spring-arrive),
+             fill var(--t-settle) linear}
+.card[data-band=auto]  .rose .d.lit{fill:var(--b-auto)}
+.card[data-band=ping]  .rose .d.lit{fill:var(--b-ping)}
+.card[data-band=unsure].rose .d.lit{fill:var(--b-unsure)}
+.card[data-band=near]  .rose .d.lit{fill:var(--b-near)}
+.rose .d.lit{opacity:1;transform:scale(1)}
+/* idle breathing — alive, not animated. Only the lit dots. */
+@keyframes breathe{0%,100%{opacity:1}50%{opacity:.9}}
+.card.settled .rose .d.lit{animation:breathe 4.2s ease-in-out infinite;
+  animation-delay:calc(var(--i) * 260ms + var(--di) * 120ms)}
+/* the tell: hovering a card advances the rose one dot, then returns */
+.card:hover .rose .d.next{opacity:.55;transform:scale(.86)}
+
+.num{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  font:500 17px/1 var(--mono);font-variant-numeric:tabular-nums;color:var(--text);
+  letter-spacing:-.02em}
+
+.co{margin-top:11px;font-size:11.5px;color:var(--text-2)}
+.ti{margin:2px 0 0;font-family:var(--serif);font-weight:400;font-size:19px;line-height:1.22;letter-spacing:-.005em}
+.meta{margin-top:10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.band{font:500 8.5px/1 var(--sans);letter-spacing:.14em;padding:5px 9px;border-radius:1600px}
+.card[data-band=auto]   .band{background:var(--b-auto-bg);color:var(--b-auto-l)}
+.card[data-band=ping]   .band{background:var(--b-ping-bg);color:var(--b-ping-l)}
+.card[data-band=unsure] .band{background:var(--b-unsure-bg);color:var(--b-unsure-l)}
+.card[data-band=near]   .band{background:var(--b-near-bg);color:var(--b-near-l)}
+/* reward asymmetry: only a real AUTO gets the pulse */
+@keyframes pop{0%{transform:scale(1)}38%{transform:scale(1.05)}100%{transform:scale(1)}}
+.card[data-band=auto].settled .band{animation:pop 420ms var(--spring-arrive) 1}
+.chip{font-size:10.5px;color:var(--text-2);background:var(--sunken);padding:5px 10px;border-radius:1600px}
+.ago{font-size:10.5px;color:var(--text-2)}
+
+/* evidence — §16 option C: neutral surface, colour in the rule */
+.ev{margin-top:13px;display:grid;gap:7px}
+.ev-row{background:var(--evidence-bg);border-radius:var(--radius-in);padding:10px 12px 11px;
+  border-left:2px solid transparent}
+.ev-strong{border-left-color:var(--b-auto)}
+.ev-ans{border-left-color:var(--b-unsure)}
+.ev-k{font:500 8px/1 var(--sans);letter-spacing:.16em}
+.ev-strong .ev-k{color:var(--b-auto-l)}
+.ev-ans .ev-k{color:var(--b-unsure-l)}
+.ev-row p{margin:6px 0 0;font-size:11.5px;line-height:1.5;color:var(--text-long)}
+
+.acts{margin-top:13px;display:flex;align-items:center;gap:8px}
+.btn{border:0;border-radius:1600px;font:500 11.5px/1 var(--sans);padding:10px 15px;cursor:pointer;
+  transition:transform var(--t-snap) var(--spring-snap), box-shadow var(--t-snap) var(--spring-snap),
+             background var(--t-snap) linear}
+.btn-1{background:var(--action);color:var(--action-on);box-shadow:var(--sh-rest)}
+.btn-1:hover{transform:translateY(-1px);box-shadow:var(--sh-hover)}
+.btn-1 .ar{display:inline-block;transition:transform var(--t-snap) var(--spring-snap)}
+.btn-1:hover .ar{transform:translateX(3px)}
+.btn-2{background:transparent;color:var(--text);border:1px solid var(--edge-rest)}
+.btn-2:hover{border-color:var(--edge-hover)}
+.btn:active{transform:scale(.96);transition-duration:var(--t-exit)}
+.heart{margin-left:auto;border:0;background:transparent;color:var(--text-2);cursor:pointer;padding:6px;
+  border-radius:1600px;display:flex;
+  transition:color var(--t-snap) linear, transform var(--t-snap) var(--spring-snap)}
+.heart:hover{color:var(--text)}
+.heart:active{transform:scale(.88);transition-duration:var(--t-exit)}
+.heart.on{color:var(--b-unsure)}
+.heart.on svg{fill:currentColor}
+
+.note{margin-top:34px;padding-top:18px;border-top:1px solid var(--hairline);
+  font-size:12px;line-height:1.65;color:var(--text-2);max-width:88ch}
+.note b{color:var(--text);font-weight:500}
+.note code{font:400 11px/1 var(--mono);background:var(--sunken);padding:2px 5px;border-radius:5px}
+
+@media (prefers-reduced-motion: reduce){
+  *{animation:none !important}
+  .card,.rose .d,.btn,.run,.heart{transition-duration:1ms !important;transition-delay:0ms !important}
+  .card{opacity:1;transform:none}
+  .rose .d.lit{opacity:1;transform:scale(1)}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="bar">
+  <div class="brand">
+    <svg viewBox="-4.2416 -3.0639 31.3054 31.3054"><circle cx="12" cy="1" r="2.275" fill="var(--accent)"/><circle cx="19.78" cy="4.22" r="2.569" fill="var(--accent)"/><circle cx="23" cy="12" r="2.864" fill="var(--accent)"/><circle cx="19.78" cy="19.78" r="3.158" fill="var(--accent)"/><circle cx="12" cy="23" r="3.452" fill="var(--accent)"/><circle cx="4.22" cy="19.78" r="3.747" fill="var(--accent)"/><circle cx="1" cy="12" r="4.041" fill="var(--accent)"/><circle cx="4.22" cy="4.22" r="4.336" fill="var(--accent)"/></svg>
+    JobScout
+  </div>
+  <div class="controls">
+    <div class="seg" id="mkt"><span class="thumb"></span>
+      <button aria-pressed="true" data-m="ca">🇨🇦 Canada</button>
+      <button aria-pressed="false" data-m="ke">🇰🇪 Kenya</button></div>
+    <div class="seg" id="thm"><span class="thumb"></span>
+      <button aria-pressed="false" data-t="light">Light</button>
+      <button aria-pressed="false" data-t="system">Device</button>
+      <button aria-pressed="true" data-t="dark">Dark</button></div>
+  </div>
+</header>
+
+<h1>The rose is the verdict forming.</h1>
+<p class="lede">Eight bearings, graduated. The number of lit dots <em>is</em> the band — so watching it fill is watching the score arrive, not a spinner pretending to work. Press Run to score the sweep.</p>
+
+<div class="runbar">
+  <button class="run" id="run">Run the pipeline</button>
+  <span class="hint" id="hint">3 postings · scored against one resume</span>
+</div>
+
+<div class="grid" id="grid">
+<article class="card" data-band="ping" data-score="79" data-lit="6" style="--i:0">
+  <div class="card-top">
+    <div class="av">MA</div>
+    <div class="score" role="img" aria-label="fit 79 of 100, PING">
+      <svg class="rose" viewBox="-4.2416 -3.0639 31.3054 31.3054" width="52" height="52" aria-hidden="true"><circle class="d" data-i="0" cx="12.000" cy="1.000" r="2.275"/><circle class="d" data-i="1" cx="19.778" cy="4.222" r="2.569"/><circle class="d" data-i="2" cx="23.000" cy="12.000" r="2.864"/><circle class="d" data-i="3" cx="19.778" cy="19.778" r="3.158"/><circle class="d" data-i="4" cx="12.000" cy="23.000" r="3.453"/><circle class="d" data-i="5" cx="4.222" cy="19.778" r="3.747"/><circle class="d" data-i="6" cx="1.000" cy="12.000" r="4.041"/><circle class="d" data-i="7" cx="4.222" cy="4.222" r="4.336"/></svg>
+      <span class="num" data-target="79">0</span>
+    </div>
+  </div>
+  <div class="co">Manulife</div>
+  <h3 class="ti">External Wholesaler, Canada Insurance</h3>
+  <div class="meta">
+    <span class="band">PING</span>
+    <span class="chip">Remote</span>
+    <span class="ago">posted 2 days ago</span>
+  </div>
+  <div class="ev">
+    <div class="ev-row ev-strong"><div class="ev-k">STRONGEST</div><p>Wholesaling and advisor-facing distribution, with the licensing already held.</p></div>
+    <div class="ev-row ev-ans"><div class="ev-k">WHAT TO ANSWER</div><p>Segregated-fund product knowledge and a book of advisor relationships in Ontario.</p></div>
+  </div>
+  <div class="acts">
+    <button class="btn btn-1">Prepare application <span class="ar">&rarr;</span></button>
+    <button class="btn btn-2">View posting</button>
+    <button class="heart" aria-label="Save"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l8.8 8.8 8.8-8.8a5.5 5.5 0 0 0 0-7.8z"/></svg></button>
+  </div>
+</article>
+<article class="card" data-band="near" data-score="32" data-lit="3" style="--i:1">
+  <div class="card-top">
+    <div class="av">SU</div>
+    <div class="score" role="img" aria-label="fit 32 of 100, NEAR-MISS">
+      <svg class="rose" viewBox="-4.2416 -3.0639 31.3054 31.3054" width="52" height="52" aria-hidden="true"><circle class="d" data-i="0" cx="12.000" cy="1.000" r="2.275"/><circle class="d" data-i="1" cx="19.778" cy="4.222" r="2.569"/><circle class="d" data-i="2" cx="23.000" cy="12.000" r="2.864"/><circle class="d" data-i="3" cx="19.778" cy="19.778" r="3.158"/><circle class="d" data-i="4" cx="12.000" cy="23.000" r="3.453"/><circle class="d" data-i="5" cx="4.222" cy="19.778" r="3.747"/><circle class="d" data-i="6" cx="1.000" cy="12.000" r="4.041"/><circle class="d" data-i="7" cx="4.222" cy="4.222" r="4.336"/></svg>
+      <span class="num" data-target="32">0</span>
+    </div>
+  </div>
+  <div class="co">Sun Life</div>
+  <h3 class="ti">Sr. Analytics and Automation Engineer</h3>
+  <div class="meta">
+    <span class="band">NEAR-MISS</span>
+    <span class="chip">Hybrid</span>
+    <span class="ago">posted 2 days ago</span>
+  </div>
+  <div class="ev">
+    <div class="ev-row ev-strong"><div class="ev-k">STRONGEST</div><p>Infrastructure and LLM orchestration, shipped end to end and measured.</p></div>
+    <div class="ev-row ev-ans"><div class="ev-k">WHAT TO ANSWER</div><p>Analytics at scale: SQL query optimization, BI/warehouse tooling, statistical modeling.</p></div>
+  </div>
+  <div class="acts">
+    <button class="btn btn-1">Prepare application <span class="ar">&rarr;</span></button>
+    <button class="btn btn-2">View posting</button>
+    <button class="heart" aria-label="Save"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l8.8 8.8 8.8-8.8a5.5 5.5 0 0 0 0-7.8z"/></svg></button>
+  </div>
+</article>
+<article class="card" data-band="auto" data-score="84" data-lit="8" style="--i:2">
+  <div class="card-top">
+    <div class="av">SH</div>
+    <div class="score" role="img" aria-label="fit 84 of 100, AUTO">
+      <svg class="rose" viewBox="-4.2416 -3.0639 31.3054 31.3054" width="52" height="52" aria-hidden="true"><circle class="d" data-i="0" cx="12.000" cy="1.000" r="2.275"/><circle class="d" data-i="1" cx="19.778" cy="4.222" r="2.569"/><circle class="d" data-i="2" cx="23.000" cy="12.000" r="2.864"/><circle class="d" data-i="3" cx="19.778" cy="19.778" r="3.158"/><circle class="d" data-i="4" cx="12.000" cy="23.000" r="3.453"/><circle class="d" data-i="5" cx="4.222" cy="19.778" r="3.747"/><circle class="d" data-i="6" cx="1.000" cy="12.000" r="4.041"/><circle class="d" data-i="7" cx="4.222" cy="4.222" r="4.336"/></svg>
+      <span class="num" data-target="84">0</span>
+    </div>
+  </div>
+  <div class="co">Shopify</div>
+  <h3 class="ti">Staff Engineer, Developer Platform</h3>
+  <div class="meta">
+    <span class="band">AUTO</span>
+    <span class="chip">Remote</span>
+    <span class="ago">posted 2 days ago</span>
+  </div>
+  <div class="ev">
+    <div class="ev-row ev-strong"><div class="ev-k">STRONGEST</div><p>Platform and API surface owned end to end, with public developer docs.</p></div>
+    <div class="ev-row ev-ans"><div class="ev-k">WHAT TO ANSWER</div><p>Ruby at scale; the profile is Python and TypeScript, which they accept but do not lead with.</p></div>
+  </div>
+  <div class="acts">
+    <button class="btn btn-1">Prepare application <span class="ar">&rarr;</span></button>
+    <button class="btn btn-2">View posting</button>
+    <button class="heart" aria-label="Save"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l8.8 8.8 8.8-8.8a5.5 5.5 0 0 0 0-7.8z"/></svg></button>
+  </div>
+</article></div>
+
+<p class="note"><b>What is happening.</b> Each rose fills in bearing order from 000, one dot every <code>46ms</code>, each on <code>--spring-arrive</code> (520ms, 8.3% overshoot). The numeral counts up on the same clock and seats as the last dot lands. A real <b>AUTO</b> gets a single 1.05 scale pulse on its band pill; <b>NEAR-MISS</b> gets none — the celebration has to be earned or it means nothing. Hovering a card lifts it 2px and lights the <em>next</em> dot at 55% — the tell that the rose is the score device. Settled roses breathe at 4.2s, offset per card so the grid never pulses in unison. Everything collapses to an instant state change under <code>prefers-reduced-motion</code>.</p>
+
+</div>
+<script>
+const root=document.documentElement;
+function thumb(seg){
+  const on=seg.querySelector('[aria-pressed=true]'), th=seg.querySelector('.thumb');
+  th.style.width=on.offsetWidth+'px';
+  th.style.transform='translateX('+(on.offsetLeft-3)+'px)';
+}
+document.querySelectorAll('.seg').forEach(seg=>{
+  seg.addEventListener('click',e=>{
+    const b=e.target.closest('button'); if(!b)return;
+    seg.querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x===b));
+    thumb(seg);
+    if(b.dataset.m) root.setAttribute('data-market',b.dataset.m);
+    if(b.dataset.t){ b.dataset.t==='system'?root.removeAttribute('data-theme')
+                                           :root.setAttribute('data-theme',b.dataset.t); }
+  });
+});
+addEventListener('load',()=>document.querySelectorAll('.seg').forEach(thumb));
+
+const cards=[...document.querySelectorAll('.card')];
+cards.forEach((c,i)=>c.querySelectorAll('.d').forEach((d,j)=>d.style.setProperty('--di',j)));
+
+const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+function score(){
+  document.getElementById('hint').textContent='scoring…';
+  cards.forEach(c=>{
+    c.classList.remove('settled');
+    c.querySelectorAll('.d').forEach(d=>d.classList.remove('lit','next'));
+    c.querySelector('.num').textContent='0';
+  });
+  cards.forEach((c,ci)=>{
+    const lit=+c.dataset.lit, target=+c.dataset.score, dots=[...c.querySelectorAll('.d')];
+    const base=ci*120;
+    dots.slice(0,lit).forEach((d,k)=>setTimeout(()=>d.classList.add('lit'), reduce?0:base+k*46));
+    if(dots[lit]) dots[lit].classList.add('next');
+    const num=c.querySelector('.num'), dur=reduce?0:lit*46+320;
+    const t0=performance.now()+ (reduce?0:base);
+    function tick(now){
+      const p=Math.max(0,Math.min(1,(now-t0)/(dur||1)));
+      const e=1-Math.pow(1-p,3);
+      num.textContent=Math.round(target*e);
+      if(p<1) requestAnimationFrame(tick);
+      else { num.textContent=target; c.classList.add('settled'); }
+    }
+    requestAnimationFrame(tick);
+  });
+  setTimeout(()=>document.getElementById('hint').textContent='3 postings · scored against one resume',
+             reduce?0:1400);
+}
+document.getElementById('run').addEventListener('click',score);
+document.querySelectorAll('.heart').forEach(h=>h.addEventListener('click',e=>{
+  e.stopPropagation(); h.classList.toggle('on');
+}));
+const io=new IntersectionObserver(es=>es.forEach(en=>{
+  if(en.isIntersecting){ en.target.classList.add('in'); io.unobserve(en.target); }
+}),{threshold:.12});
+cards.forEach(c=>io.observe(c));
+setTimeout(score, 700);
+</script>
+</body></html>

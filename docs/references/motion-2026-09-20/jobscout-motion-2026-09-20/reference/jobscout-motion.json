@@ -1,0 +1,74 @@
+{
+  "name": "JobScout motion & material",
+  "version": "1.0",
+  "generated": "2026-09-20",
+  "source": "css/motion.css \u2014 regenerate from that file, never hand-edit",
+  "note": "Adds a time axis to market/theme/band. Contains no colour decisions.",
+  "springs": {
+    "snap": {
+      "duration_ms": 180,
+      "overshoot_pct": 3.8,
+      "use": "controls, toggles, chips, the theme switch",
+      "easing": "linear(0.0000, 0.0236, 0.0841, 0.1686, 0.2664, 0.3695, 0.4717, 0.5687, 0.6577, 0.7370, 0.8057, 0.8637, 0.9115, 0.9498, 0.9795, 1.0018, 1.0178, 1.0284, 1.0348, 1.0378, 1.0383, 1.0370, 1.0343, 1.0309, 1.0271, 1.0231, 1.0000)"
+    },
+    "settle": {
+      "duration_ms": 340,
+      "overshoot_pct": 0.0,
+      "use": "cards, sheets, panels, anything with area",
+      "easing": "linear(0.0000, 0.0249, 0.0852, 0.1645, 0.2520, 0.3404, 0.4253, 0.5041, 0.5756, 0.6393, 0.6952, 0.7437, 0.7854, 0.8210, 0.8512, 0.8767, 0.8981, 0.9160, 0.9309, 0.9433, 0.9536, 0.9620, 0.9690, 0.9747, 0.9794, 0.9833, 1.0000)"
+    },
+    "arrive": {
+      "duration_ms": 520,
+      "overshoot_pct": 8.3,
+      "use": "the rose, score numerals - the one place overshoot is the point",
+      "easing": "linear(0.0000, 0.0264, 0.0948, 0.1910, 0.3029, 0.4208, 0.5373, 0.6468, 0.7458, 0.8318, 0.9041, 0.9624, 1.0075, 1.0406, 1.0631, 1.0766, 1.0827, 1.0831, 1.0792, 1.0724, 1.0637, 1.0540, 1.0441, 1.0346, 1.0258, 1.0180, 1.0000)"
+    },
+    "exit": {
+      "duration_ms": 160,
+      "overshoot_pct": 0.0,
+      "use": "anything leaving; exits never overshoot and are always faster than entries",
+      "easing": "cubic-bezier(0.4, 0.0, 1, 1)"
+    }
+  },
+  "law": "entries 340-520ms, exits 160ms; exits never overshoot",
+  "stagger_ms": {
+    "row": 28,
+    "tile": 22,
+    "dot": 46,
+    "cap_index": 12
+  },
+  "travel_px": {
+    "row": 10,
+    "tile": 8,
+    "head": 12,
+    "hover_lift": -2
+  },
+  "press_scale": {
+    "card": 0.988,
+    "control": 0.96,
+    "heart": 0.88
+  },
+  "material": {
+    "light": "shadow ladder rest/hover/press",
+    "dark": "no shadow; hairline .13->.26 and surface #1c1544->#221a52 (1.10:1)"
+  },
+  "idle": {
+    "breathe_ms": 4200,
+    "breathe_floor": 0.9,
+    "seek_ms": 5600
+  },
+  "rose": {
+    "viewBox_display_cut": "-4.2416 -3.0639 31.3054 31.3054",
+    "fill_order": "bearing 000 clockwise",
+    "dot_ms": 46,
+    "total_ms": 368,
+    "unlit": {
+      "opacity": 0.16,
+      "scale": 0.55
+    },
+    "next_dot_on_hover": {
+      "opacity": 0.55,
+      "scale": 0.86
+    }
+  }
+}

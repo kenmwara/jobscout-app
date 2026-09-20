@@ -370,6 +370,40 @@
   --spring:cubic-bezier(.22,1.5,.36,1);    /* overshoot — their signature */
   --t-micro:.18s; --t-ui:.3s; --t-rev:.62s;
 }
+
+/* ── TIME, the fourth axis (motion v1, 2026-09-20) ──────────────────────
+   Real damped-spring step responses sampled into linear(); the overshoot is
+   the character of each curve. No colour lives here - every value is a
+   duration, a curve, a distance or an edge. docs/references/motion-2026-09-20.
+   THE ASYMMETRY LAW: entries 340-520ms, exits 160ms and never overshooting. */
+:root{
+  --spring-snap:  linear(0,.0236,.0841,.1686,.2664,.3695,.4717,.5687,.6577,.7370,.8057,.8637,.9115,.9498,.9795,1.0018,1.0178,1.0284,1.0348,1.0378,1.0383,1.0370,1.0343,1.0309,1.0271,1.0231,1);
+  --t-snap:180ms;     /* controls, chips, the theme switch · overshoot 3.8% */
+  --spring-settle:linear(0,.0249,.0852,.1645,.2520,.3404,.4253,.5041,.5756,.6393,.6952,.7437,.7854,.8210,.8512,.8767,.8981,.9160,.9309,.9433,.9536,.9620,.9690,.9747,.9794,.9833,1);
+  --t-settle:340ms;   /* cards, panels, anything with area · critically damped */
+  --spring-arrive:linear(0,.0264,.0948,.1910,.3029,.4208,.5373,.6468,.7458,.8318,.9041,.9624,1.0075,1.0406,1.0631,1.0766,1.0827,1.0831,1.0792,1.0724,1.0637,1.0540,1.0441,1.0346,1.0258,1.0180,1);
+  --t-arrive:520ms;   /* the rose and its numeral · overshoot 8.3% */
+  --spring-exit:cubic-bezier(.4,0,1,1);
+  --t-exit:160ms;     /* anything leaving; also the press */
+  /* the damping ratios the linear() curves were sampled from; Android and iOS
+     solve their springs from these and check_palette holds the two in step */
+  --zeta-snap:.72; --zeta-settle:1; --zeta-arrive:.62;
+  --stagger-row:28ms; --stagger-tile:22ms; --stagger-dot:46ms;
+  --travel-row:10px; --travel-tile:8px; --travel-head:12px;
+  --lift-hover:-2px; --press-scale:.988;   /* cards; controls .96, the heart .88 */
+  /* the elevation ladder's two missing rungs (--sh-hover is above, three-state) */
+  --sh-rest:0 1px 2px rgba(75,68,57,.05), 0 6px 14px rgba(75,68,57,.06);
+  --sh-press:0 1px 2px rgba(75,68,57,.08);
+  --edge-rest: light-dark(rgba(8,3,49,.08), rgba(248,243,235,.13));
+  --edge-hover:light-dark(rgba(8,3,49,.12), rgba(248,243,235,.26));
+  --surface-hover:light-dark(#ffffff, #221a52);   /* --surface lifted one rung, 1.10:1 */
+  --tile-fill:light-dark(rgba(72,101,255,.085), rgba(162,186,255,.10)); /* a quantity, not a signal (s16) */
+  --t-breathe:4200ms; --breathe-floor:.90; --t-seek:5600ms;
+}
+@media (prefers-color-scheme: dark){
+  :root[data-theme="system"]{ --sh-rest:none; --sh-press:none; }
+}
+:root[data-theme="dark"]{ --sh-rest:none; --sh-press:none; }
 *{box-sizing:border-box}
 html,body{margin:0}
 /* The ground, the halo and the dot texture are all html's, as fixed layers. */
@@ -402,10 +436,14 @@ a{color:inherit}
 .heromark.pagemark .pop{display:none}
 /* .06 indigo on cream and .055 lavender on ink are the same whisper -
    1.051 and 1.110 against their own grounds; a single number is not. */
-.heromark.pagemark .ring circle{fill:var(--accent);opacity:.06}
+/* MOTION v1 6b: on light the dots ADD light in the halo's own warm family
+   (rgba(255,228,176) is --halo-3's colour) - --accent at 6% over cream
+   composited to a cool grey, hue 348 at an overlap: the retired blob, back
+   as geometry. Dark keeps the accent at a whisper. */
+.heromark.pagemark .ring circle{fill:light-dark(rgba(255,228,176,.42), var(--accent));opacity:light-dark(1, .06)}
 @media (prefers-color-scheme: dark){
-  :root[data-theme="system"] .heromark.pagemark .ring circle{opacity:.055}}
-:root[data-theme="dark"] .heromark.pagemark .ring circle{opacity:.055}
+  :root[data-theme="system"] .heromark.pagemark .ring circle{fill:var(--accent);opacity:.055}}
+:root[data-theme="dark"] .heromark.pagemark .ring circle{fill:var(--accent);opacity:.055}
 /* It wanders: a slow figure over 48s, a few percent each way, with the old
    breath (scale 1.045) and lean (4deg) kept. Slow enough that nothing on
    the page ever seems to be reacting to it. Off entirely for a reader who

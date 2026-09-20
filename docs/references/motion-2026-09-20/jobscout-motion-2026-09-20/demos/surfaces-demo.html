@@ -1,0 +1,365 @@
+<!doctype html>
+<html lang="en" data-theme="light" data-market="ca">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>JobScout — surfaces</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500&family=Inter:opsz,wght@14..32,400;14..32,500&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+:root{
+ color-scheme:light dark;
+ --canvas:light-dark(#f8f3eb,#0a0524); --surface:light-dark(#ffffff,#1c1544);
+ --sunken:light-dark(#ece5d8,#1a1240); --text:light-dark(#080331,#f8f3eb);
+ --text-2:light-dark(#5a5560,#b9b3c4); --text-long:light-dark(#080331,#ded9e8);
+ --hairline:light-dark(rgba(8,3,49,.13),rgba(248,243,235,.13));
+ --accent:light-dark(#4865ff,#a2baff); --action:light-dark(#080331,#f8f3eb);
+ --action-on:light-dark(#f8f3eb,#0a0524);
+ --b-auto:light-dark(#3e954d,#7ac683); --b-ping:light-dark(#617ad1,#93adff);
+ --b-unsure:light-dark(#b86b03,#e89f59); --b-near:light-dark(#7d7d97,#aeafc7);
+ --b-auto-l:light-dark(#225b2c,#92d098); --b-auto-bg:light-dark(#e7f4e8,#223424);
+ --b-ping-l:light-dark(#394981,#a4bbff); --b-ping-bg:light-dark(#eaf0ff,#272e42);
+ --b-unsure-l:light-dark(#713f00,#ecaf78); --b-unsure-bg:light-dark(#fbede1,#3d2b1a);
+ --b-near-l:light-dark(#4b4b5c,#bbbcd0); --b-near-bg:light-dark(#eff0f4,#2e2e34);
+ --halo-1:light-dark(rgba(255,252,242,.92),rgba(43,57,108,.50));
+ --halo-2:light-dark(rgba(255,250,240,.80),rgba(58,42,96,.42));
+ --halo-3:light-dark(rgba(255,253,246,.85),rgba(36,52,100,.38));
+ --tilefill:light-dark(rgba(72,101,255,.085),rgba(162,186,255,.10));
+  --spring-snap:   linear(0.0000, 0.0236, 0.0841, 0.1686, 0.2664, 0.3695, 0.4717, 0.5687, 0.6577, 0.7370, 0.8057, 0.8637, 0.9115, 0.9498, 0.9795, 1.0018, 1.0178, 1.0284, 1.0348, 1.0378, 1.0383, 1.0370, 1.0343, 1.0309, 1.0271, 1.0231, 1.0000);
+  --spring-settle: linear(0.0000, 0.0249, 0.0852, 0.1645, 0.2520, 0.3404, 0.4253, 0.5041, 0.5756, 0.6393, 0.6952, 0.7437, 0.7854, 0.8210, 0.8512, 0.8767, 0.8981, 0.9160, 0.9309, 0.9433, 0.9536, 0.9620, 0.9690, 0.9747, 0.9794, 0.9833, 1.0000);
+  --spring-arrive: linear(0.0000, 0.0264, 0.0948, 0.1910, 0.3029, 0.4208, 0.5373, 0.6468, 0.7458, 0.8318, 0.9041, 0.9624, 1.0075, 1.0406, 1.0631, 1.0766, 1.0827, 1.0831, 1.0792, 1.0724, 1.0637, 1.0540, 1.0441, 1.0346, 1.0258, 1.0180, 1.0000);
+  --spring-exit:   cubic-bezier(0.4, 0.0, 1, 1);
+  --t-snap: 180ms;  --t-settle: 340ms;  --t-arrive: 520ms;  --t-exit: 160ms;
+ --sh-rest:light-dark(0 1px 2px rgba(75,68,57,.05),0 6px 14px rgba(75,68,57,.06),none);
+ --sh-hover:light-dark(0 2px 4px rgba(75,68,57,.06),0 14px 30px rgba(75,68,57,.10),none);
+ --sh-press:light-dark(0 1px 2px rgba(75,68,57,.08),none);
+ --edge-rest:light-dark(rgba(8,3,49,.08),rgba(248,243,235,.13));
+ --edge-hover:light-dark(rgba(8,3,49,.12),rgba(248,243,235,.26));
+ --lift-hover:light-dark(#ffffff,#221a52);
+ --serif:Newsreader,Georgia,serif; --sans:Inter,system-ui,sans-serif; --mono:'JetBrains Mono',ui-monospace,monospace;
+}
+[data-theme=light]{color-scheme:light}
+[data-theme=dark]{color-scheme:dark;--sh-rest:none;--sh-hover:none;--sh-press:none}
+*{box-sizing:border-box}
+html{background:var(--canvas)}
+body{margin:0;background:transparent;color:var(--text);font-family:var(--sans);-webkit-font-smoothing:antialiased}
+body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background:
+ radial-gradient(62% 48% at 88% 2%,var(--halo-1) 0%,transparent 64%),
+ radial-gradient(54% 42% at 2% 30%,var(--halo-2) 0%,transparent 62%),
+ radial-gradient(70% 52% at 74% 92%,var(--halo-3) 0%,transparent 66%)}
+.wrap{max-width:1120px;margin:0 auto;padding:26px 28px 70px}
+.bar{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:26px}
+.brand{font-family:var(--serif);font-size:19px}
+.seg{display:flex;background:var(--sunken);border-radius:1600px;padding:3px;position:relative}
+.seg button{position:relative;z-index:1;border:0;background:transparent;color:var(--text-2);
+ font:500 11.5px/1 var(--sans);padding:8px 13px;border-radius:1600px;cursor:pointer;
+ transition:color var(--t-snap) var(--spring-snap)}
+.seg button[aria-pressed=true]{color:var(--text)}
+.seg .thumb{position:absolute;top:3px;bottom:3px;border-radius:1600px;background:var(--surface);
+ box-shadow:var(--sh-rest);z-index:0;transition:transform var(--t-snap) var(--spring-snap),width var(--t-snap) var(--spring-snap)}
+
+/* ---- section rhythm: NO section paints its own ground. The heading rises. ---- */
+section{padding:40px 0 4px;position:relative}
+section + section::before{content:"";position:absolute;left:0;right:0;top:0;height:1px;background:var(--hairline)}
+.sh{opacity:0;transform:translateY(12px);transition:opacity 420ms linear,transform 420ms var(--spring-settle)}
+.sh.in{opacity:1;transform:none}
+h2{font-family:var(--serif);font-weight:400;font-size:clamp(24px,3.2vw,32px);margin:0 0 6px;letter-spacing:-.01em}
+.sub{margin:0;font-size:13.5px;line-height:1.6;color:var(--text-2);max-width:62ch}
+
+/* ---------------- sector tiles that carry their own data ---------------- */
+.tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(212px,1fr));gap:9px;margin-top:20px}
+.tile{position:relative;overflow:hidden;text-align:left;cursor:pointer;
+ background:var(--surface);border:1px solid var(--edge-rest);border-radius:12px;
+ padding:13px 14px 12px;box-shadow:var(--sh-rest);color:inherit;font:inherit;
+ opacity:0;transform:translateY(8px);
+ transition:transform var(--t-settle) var(--spring-settle),box-shadow var(--t-settle) var(--spring-settle),
+            border-color var(--t-settle) var(--spring-settle),background var(--t-settle) var(--spring-settle),
+            opacity var(--t-settle) linear}
+.tile.in{opacity:1;transform:none;transition-delay:calc(var(--i) * 22ms)}
+.tile:hover{transform:translateY(-2px);box-shadow:var(--sh-hover);border-color:var(--edge-hover);background:var(--lift-hover)}
+.tile:active{transform:scale(.985);box-shadow:var(--sh-press);transition-duration:var(--t-exit)}
+.tile[aria-pressed=true]{border-color:var(--accent)}
+/* the bar IS the count. 17 identical rectangles become a chart you can tap. */
+.tbar{position:absolute;left:0;top:0;bottom:0;width:100%;transform-origin:left;
+ transform:scaleX(0);background:var(--tilefill);
+ transition:transform 620ms var(--spring-settle)}
+.tile.in .tbar{transform:scaleX(var(--fill));transition-delay:calc(var(--i) * 22ms + 90ms)}
+.tname{position:relative;display:block;font-size:13px;font-weight:500;line-height:1.3}
+.tcount{position:relative;display:block;margin-top:5px;font:400 11px/1 var(--mono);color:var(--text-2)}
+.tcount b{font-weight:500;color:var(--text);font-size:12.5px}
+.tof{opacity:.72}
+
+/* ---------------- the list ---------------- */
+.filters{display:flex;gap:7px;flex-wrap:wrap;margin:20px 0 4px}
+.f{border:1px solid var(--edge-rest);background:var(--surface);color:var(--text);border-radius:1600px;
+ font:500 11.5px/1 var(--sans);padding:9px 14px;cursor:pointer;
+ transition:transform var(--t-snap) var(--spring-snap),border-color var(--t-snap) linear,
+            background var(--t-snap) linear,color var(--t-snap) linear}
+.f:hover{border-color:var(--edge-hover)}
+.f:active{transform:scale(.96);transition-duration:var(--t-exit)}
+.f[aria-pressed=true]{background:var(--action);color:var(--action-on);border-color:transparent}
+.count{margin:14px 0 10px;font:400 11.5px/1 var(--mono);color:var(--text-2)}
+.rows{display:flex;flex-direction:column;gap:9px}
+.row{display:flex;align-items:center;gap:14px;background:var(--surface);border:1px solid var(--edge-rest);
+ border-radius:14px;padding:13px 15px;box-shadow:var(--sh-rest);cursor:pointer;
+ opacity:0;transform:translateY(10px);
+ transition:transform var(--t-settle) var(--spring-settle),box-shadow var(--t-settle) var(--spring-settle),
+            border-color var(--t-settle) var(--spring-settle),background var(--t-settle) var(--spring-settle),
+            opacity var(--t-settle) linear}
+.row.in{opacity:1;transform:none;transition-delay:calc(var(--i) * 28ms)}
+.row.out{opacity:0;transform:translateY(-6px);transition-duration:var(--t-exit);
+ transition-timing-function:var(--spring-exit);transition-delay:calc(var(--i) * 14ms)}
+.row:hover{transform:translateY(-2px);box-shadow:var(--sh-hover);border-color:var(--edge-hover);background:var(--lift-hover)}
+.row:active{transform:scale(.992);box-shadow:var(--sh-press);transition-duration:var(--t-exit)}
+.rscore{position:relative;width:44px;height:44px;flex:none}
+.rose .d{fill:var(--b-near);opacity:.16;transform-box:fill-box;transform-origin:center;transform:scale(.55);
+ transition:opacity var(--t-arrive) var(--spring-arrive),transform var(--t-arrive) var(--spring-arrive)}
+.row[data-band=auto] .rose .d.lit{fill:var(--b-auto)}
+.row[data-band=ping] .rose .d.lit{fill:var(--b-ping)}
+.row[data-band=unsure] .rose .d.lit{fill:var(--b-unsure)}
+.row[data-band=near] .rose .d.lit{fill:var(--b-near)}
+.rose .d.lit{opacity:1;transform:scale(1)}
+.row.in .rose .d.lit{transition-delay:calc(var(--i) * 28ms + var(--di) * 34ms)}
+.row:hover .rose .d.next{opacity:.55;transform:scale(.86)}
+.rnum{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+ font:500 14px/1 var(--mono);font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.rmain{flex:1;min-width:0}
+.rco{font-size:11px;color:var(--text-2)}
+.rti{margin:1px 0 0;font-family:var(--serif);font-weight:400;font-size:17px;line-height:1.25;letter-spacing:-.005em}
+.rmeta{margin-top:7px;display:flex;gap:7px;align-items:center;flex-wrap:wrap}
+.band{font:500 8px/1 var(--sans);letter-spacing:.14em;padding:5px 9px;border-radius:1600px}
+.row[data-band=auto] .band{background:var(--b-auto-bg);color:var(--b-auto-l)}
+.row[data-band=ping] .band{background:var(--b-ping-bg);color:var(--b-ping-l)}
+.row[data-band=unsure] .band{background:var(--b-unsure-bg);color:var(--b-unsure-l)}
+.row[data-band=near] .band{background:var(--b-near-bg);color:var(--b-near-l)}
+.chip{font-size:10.5px;color:var(--text-2);background:var(--sunken);padding:4px 9px;border-radius:1600px}
+.rgo{color:var(--text-2);font-size:16px;opacity:0;transform:translateX(-4px);
+ transition:opacity var(--t-snap) linear,transform var(--t-snap) var(--spring-snap)}
+.row:hover .rgo{opacity:1;transform:none}
+
+/* ---------------- the empty state: the mark doing its job ---------------- */
+.empty{margin-top:22px;background:var(--surface);border:1px solid var(--edge-rest);border-radius:18px;
+ box-shadow:var(--sh-rest);padding:44px 28px 40px;text-align:center}
+.eRose{width:96px;height:96px;margin:0 auto 18px;position:relative}
+.eRose .d{fill:var(--text-2);opacity:.14;transform-box:fill-box;transform-origin:center;transform:scale(.72)}
+@keyframes seek{0%,100%{opacity:.14;transform:scale(.72)}22%{opacity:.85;transform:scale(1)}44%{opacity:.14;transform:scale(.72)}}
+.eRose .d{animation:seek 5.6s ease-in-out infinite;animation-delay:calc(var(--di) * 220ms)}
+.empty h3{font-family:var(--serif);font-weight:400;font-size:24px;margin:0 0 7px}
+.empty p{margin:0 auto;font-size:13px;line-height:1.6;color:var(--text-2);max-width:46ch}
+.empty .run{margin-top:18px;border:0;border-radius:1600px;background:var(--action);color:var(--action-on);
+ font:500 12.5px/1 var(--sans);padding:12px 20px;cursor:pointer;box-shadow:var(--sh-rest);
+ transition:transform var(--t-snap) var(--spring-snap),box-shadow var(--t-snap) var(--spring-snap)}
+.empty .run:hover{transform:translateY(-1px);box-shadow:var(--sh-hover)}
+.empty .run:active{transform:scale(.96);transition-duration:var(--t-exit)}
+
+.note{margin-top:30px;padding-top:16px;border-top:1px solid var(--hairline);font-size:12px;
+ line-height:1.65;color:var(--text-2);max-width:88ch}
+.note b{color:var(--text);font-weight:500}
+.note code{font:400 11px/1 var(--mono);background:var(--sunken);padding:2px 5px;border-radius:5px}
+@media (prefers-reduced-motion:reduce){
+ *{animation:none!important}
+ .tile,.row,.rose .d,.f,.sh,.tbar{transition-duration:1ms!important;transition-delay:0ms!important}
+ .tile,.row,.sh{opacity:1;transform:none}
+ .tbar{transform:scaleX(var(--fill))}
+}
+</style></head><body><div class="wrap">
+
+<div class="bar">
+ <div class="brand">JobScout</div>
+ <div style="display:flex;gap:8px">
+  <div class="seg" id="mkt"><span class="thumb"></span>
+   <button aria-pressed="true" data-m="ca">🇨🇦 Canada</button><button aria-pressed="false" data-m="ke">🇰🇪 Kenya</button></div>
+  <div class="seg" id="thm"><span class="thumb"></span>
+   <button aria-pressed="true" data-t="light">Light</button><button aria-pressed="false" data-t="system">Device</button><button aria-pressed="false" data-t="dark">Dark</button></div>
+ </div>
+</div>
+
+<section>
+ <div class="sh"><h2>Browse by what the feed actually knows</h2>
+ <p class="sub">Every tile is a real slice of today&rsquo;s sweep. The bar behind each one is its share of the 318 postings swept this morning &mdash; so the grid is the distribution, not seventeen identical rectangles.</p></div>
+ <div class="tiles" id="tiles"><button class="tile" style="--i:0;--fill:1.000" data-capped="1">
+  <span class="tbar" aria-hidden="true"></span>
+  <span class="tname">Finance & banking</span>
+  <span class="tcount"><b>24</b>+ <span class="tof">of 318</span></span>
+</button><button class="tile" style="--i:1;--fill:1.000" data-capped="1">
+  <span class="tbar" aria-hidden="true"></span>
+  <span class="tname">Software & IT</span>
+  <span class="tcount"><b>24</b>+ <span class="tof">of 318</span></span>
+</button><button class="tile" style="--i:2;--fill:1.000" data-capped="1">
+  <span class="tbar" aria-hidden="true"></span>
+  <span class="tname">DevOps & cloud</span>
+  <span class="tcount"><b>24</b>+ <span class="tof">of 318</span></span>
+</button><button class="tile" style="--i:3;--fill:1.000" data-capped="1">
+  <span class="tbar" aria-hidden="true"></span>
+  <span class="tname">Operations & support</span>
+  <span class="tcount"><b>24</b>+ <span class="tof">of 318</span></span>
+</button><button class="tile" style="--i:4;--fill:1.000" data-capped="1">
+  <span class="tbar" aria-hidden="true"></span>
+  <span class="tname">Analytics & insights</span>
+  <span class="tcount"><b>24</b>+ <span class="tof">of 318</span></span>
+</button><button class="tile" style="--i:5;--fill:1.000" data-capped="1">
+  <span class="tbar" aria-hidden="true"></span>
+  <span class="tname">Sales & marketing</span>
+  <span class="tcount"><b>24</b>+ <span class="tof">of 318</span></span>
+</button><button class="tile" style="--i:6;--fill:1.000" data-capped="1">
+  <span class="tbar" aria-hidden="true"></span>
+  <span class="tname">Data & AI</span>
+  <span class="tcount"><b>24</b>+ <span class="tof">of 318</span></span>
+</button><button class="tile" style="--i:7;--fill:1.000" data-capped="1">
+  <span class="tbar" aria-hidden="true"></span>
+  <span class="tname">Other</span>
+  <span class="tcount"><b>24</b>+ <span class="tof">of 318</span></span>
+</button><button class="tile" style="--i:8;--fill:1.000" data-capped="1">
+  <span class="tbar" aria-hidden="true"></span>
+  <span class="tname">Product & design</span>
+  <span class="tcount"><b>24</b>+ <span class="tof">of 318</span></span>
+</button><button class="tile" style="--i:9;--fill:1.000" data-capped="1">
+  <span class="tbar" aria-hidden="true"></span>
+  <span class="tname">Cybersecurity</span>
+  <span class="tcount"><b>24</b>+ <span class="tof">of 318</span></span>
+</button><button class="tile" style="--i:10;--fill:0.833">
+  <span class="tbar" aria-hidden="true"></span>
+  <span class="tname">Content & communications</span>
+  <span class="tcount"><b>20</b> <span class="tof">of 318</span></span>
+</button><button class="tile" style="--i:11;--fill:0.667">
+  <span class="tbar" aria-hidden="true"></span>
+  <span class="tname">People & HR</span>
+  <span class="tcount"><b>16</b> <span class="tof">of 318</span></span>
+</button><button class="tile" style="--i:12;--fill:0.625">
+  <span class="tbar" aria-hidden="true"></span>
+  <span class="tname">Legal & compliance</span>
+  <span class="tcount"><b>15</b> <span class="tof">of 318</span></span>
+</button><button class="tile" style="--i:13;--fill:0.375">
+  <span class="tbar" aria-hidden="true"></span>
+  <span class="tname">Education</span>
+  <span class="tcount"><b>9</b> <span class="tof">of 318</span></span>
+</button><button class="tile" style="--i:14;--fill:0.250">
+  <span class="tbar" aria-hidden="true"></span>
+  <span class="tname">Healthcare</span>
+  <span class="tcount"><b>6</b> <span class="tof">of 318</span></span>
+</button><button class="tile" style="--i:15;--fill:0.208">
+  <span class="tbar" aria-hidden="true"></span>
+  <span class="tname">IT support & systems</span>
+  <span class="tcount"><b>5</b> <span class="tof">of 318</span></span>
+</button><button class="tile" style="--i:16;--fill:0.167">
+  <span class="tbar" aria-hidden="true"></span>
+  <span class="tname">Construction & trades</span>
+  <span class="tcount"><b>4</b> <span class="tof">of 318</span></span>
+</button></div>
+</section>
+
+<section>
+ <div class="sh"><h2>Explore today&rsquo;s sweep</h2>
+ <p class="sub">Changing a filter re-forms the list. Rows leave in 160ms and arrive in 340, staggered 28ms &mdash; you see the set change rather than blink.</p></div>
+ <div class="filters" id="filters">
+  <button class="f" aria-pressed="true" data-f="all">All</button>
+  <button class="f" aria-pressed="false" data-f="auto">Auto</button>
+  <button class="f" aria-pressed="false" data-f="ping">Ping</button>
+  <button class="f" aria-pressed="false" data-f="unsure">Unsure</button>
+  <button class="f" aria-pressed="false" data-f="near">Near-miss</button>
+ </div>
+ <div class="count" id="count">6 of 318 swept</div>
+ <div class="rows" id="rows"><article class="row" data-band="ping" data-lit="6" style="--i:0">
+  <div class="rscore"><svg class="rose" viewBox="-4.2416 -3.0639 31.3054 31.3054" width="44" height="44" aria-hidden="true"><circle class="d" data-i="0" cx="12.000" cy="1.000" r="2.275"/><circle class="d" data-i="1" cx="19.778" cy="4.222" r="2.569"/><circle class="d" data-i="2" cx="23.000" cy="12.000" r="2.864"/><circle class="d" data-i="3" cx="19.778" cy="19.778" r="3.158"/><circle class="d" data-i="4" cx="12.000" cy="23.000" r="3.453"/><circle class="d" data-i="5" cx="4.222" cy="19.778" r="3.747"/><circle class="d" data-i="6" cx="1.000" cy="12.000" r="4.041"/><circle class="d" data-i="7" cx="4.222" cy="4.222" r="4.336"/></svg><span class="rnum">79</span></div>
+  <div class="rmain">
+    <div class="rco">Manulife &middot; Toronto, Ontario</div>
+    <h4 class="rti">External Wholesaler, Canada Insurance</h4>
+    <div class="rmeta"><span class="band">PING</span><span class="chip">Remote</span></div>
+  </div>
+  <div class="rgo" aria-hidden="true">&rarr;</div>
+</article><article class="row" data-band="near" data-lit="3" style="--i:1">
+  <div class="rscore"><svg class="rose" viewBox="-4.2416 -3.0639 31.3054 31.3054" width="44" height="44" aria-hidden="true"><circle class="d" data-i="0" cx="12.000" cy="1.000" r="2.275"/><circle class="d" data-i="1" cx="19.778" cy="4.222" r="2.569"/><circle class="d" data-i="2" cx="23.000" cy="12.000" r="2.864"/><circle class="d" data-i="3" cx="19.778" cy="19.778" r="3.158"/><circle class="d" data-i="4" cx="12.000" cy="23.000" r="3.453"/><circle class="d" data-i="5" cx="4.222" cy="19.778" r="3.747"/><circle class="d" data-i="6" cx="1.000" cy="12.000" r="4.041"/><circle class="d" data-i="7" cx="4.222" cy="4.222" r="4.336"/></svg><span class="rnum">32</span></div>
+  <div class="rmain">
+    <div class="rco">Sun Life &middot; Toronto, Ontario</div>
+    <h4 class="rti">Sr. Analytics and Automation Engineer</h4>
+    <div class="rmeta"><span class="band">NEAR-MISS</span><span class="chip">Hybrid</span></div>
+  </div>
+  <div class="rgo" aria-hidden="true">&rarr;</div>
+</article><article class="row" data-band="auto" data-lit="8" style="--i:2">
+  <div class="rscore"><svg class="rose" viewBox="-4.2416 -3.0639 31.3054 31.3054" width="44" height="44" aria-hidden="true"><circle class="d" data-i="0" cx="12.000" cy="1.000" r="2.275"/><circle class="d" data-i="1" cx="19.778" cy="4.222" r="2.569"/><circle class="d" data-i="2" cx="23.000" cy="12.000" r="2.864"/><circle class="d" data-i="3" cx="19.778" cy="19.778" r="3.158"/><circle class="d" data-i="4" cx="12.000" cy="23.000" r="3.453"/><circle class="d" data-i="5" cx="4.222" cy="19.778" r="3.747"/><circle class="d" data-i="6" cx="1.000" cy="12.000" r="4.041"/><circle class="d" data-i="7" cx="4.222" cy="4.222" r="4.336"/></svg><span class="rnum">84</span></div>
+  <div class="rmain">
+    <div class="rco">Shopify &middot; Anywhere in Canada</div>
+    <h4 class="rti">Staff Engineer, Developer Platform</h4>
+    <div class="rmeta"><span class="band">AUTO</span><span class="chip">Remote</span></div>
+  </div>
+  <div class="rgo" aria-hidden="true">&rarr;</div>
+</article><article class="row" data-band="near" data-lit="3" style="--i:3">
+  <div class="rscore"><svg class="rose" viewBox="-4.2416 -3.0639 31.3054 31.3054" width="44" height="44" aria-hidden="true"><circle class="d" data-i="0" cx="12.000" cy="1.000" r="2.275"/><circle class="d" data-i="1" cx="19.778" cy="4.222" r="2.569"/><circle class="d" data-i="2" cx="23.000" cy="12.000" r="2.864"/><circle class="d" data-i="3" cx="19.778" cy="19.778" r="3.158"/><circle class="d" data-i="4" cx="12.000" cy="23.000" r="3.453"/><circle class="d" data-i="5" cx="4.222" cy="19.778" r="3.747"/><circle class="d" data-i="6" cx="1.000" cy="12.000" r="4.041"/><circle class="d" data-i="7" cx="4.222" cy="4.222" r="4.336"/></svg><span class="rnum">28</span></div>
+  <div class="rmain">
+    <div class="rco">TD Bank &middot; Toronto, Ontario</div>
+    <h4 class="rti">Business Systems Analyst III</h4>
+    <div class="rmeta"><span class="band">NEAR-MISS</span><span class="chip">On site</span></div>
+  </div>
+  <div class="rgo" aria-hidden="true">&rarr;</div>
+</article><article class="row" data-band="unsure" data-lit="5" style="--i:4">
+  <div class="rscore"><svg class="rose" viewBox="-4.2416 -3.0639 31.3054 31.3054" width="44" height="44" aria-hidden="true"><circle class="d" data-i="0" cx="12.000" cy="1.000" r="2.275"/><circle class="d" data-i="1" cx="19.778" cy="4.222" r="2.569"/><circle class="d" data-i="2" cx="23.000" cy="12.000" r="2.864"/><circle class="d" data-i="3" cx="19.778" cy="19.778" r="3.158"/><circle class="d" data-i="4" cx="12.000" cy="23.000" r="3.453"/><circle class="d" data-i="5" cx="4.222" cy="19.778" r="3.747"/><circle class="d" data-i="6" cx="1.000" cy="12.000" r="4.041"/><circle class="d" data-i="7" cx="4.222" cy="4.222" r="4.336"/></svg><span class="rnum">61</span></div>
+  <div class="rmain">
+    <div class="rco">Linear &middot; North America</div>
+    <h4 class="rti">Analytics Engineer</h4>
+    <div class="rmeta"><span class="band">UNSURE</span><span class="chip">Remote</span></div>
+  </div>
+  <div class="rgo" aria-hidden="true">&rarr;</div>
+</article><article class="row" data-band="ping" data-lit="6" style="--i:5">
+  <div class="rscore"><svg class="rose" viewBox="-4.2416 -3.0639 31.3054 31.3054" width="44" height="44" aria-hidden="true"><circle class="d" data-i="0" cx="12.000" cy="1.000" r="2.275"/><circle class="d" data-i="1" cx="19.778" cy="4.222" r="2.569"/><circle class="d" data-i="2" cx="23.000" cy="12.000" r="2.864"/><circle class="d" data-i="3" cx="19.778" cy="19.778" r="3.158"/><circle class="d" data-i="4" cx="12.000" cy="23.000" r="3.453"/><circle class="d" data-i="5" cx="4.222" cy="19.778" r="3.747"/><circle class="d" data-i="6" cx="1.000" cy="12.000" r="4.041"/><circle class="d" data-i="7" cx="4.222" cy="4.222" r="4.336"/></svg><span class="rnum">72</span></div>
+  <div class="rmain">
+    <div class="rco">CircleCI &middot; Anywhere in the World</div>
+    <h4 class="rti">Security Operations Engineer</h4>
+    <div class="rmeta"><span class="band">PING</span><span class="chip">Remote</span></div>
+  </div>
+  <div class="rgo" aria-hidden="true">&rarr;</div>
+</article></div>
+</section>
+
+<section>
+ <div class="sh"><h2>Nothing kept yet</h2>
+ <p class="sub">The empty state is the mark doing its job &mdash; one bearing lighting at a time, 5.6s, looking for something to hold.</p></div>
+ <div class="empty">
+  <div class="eRose"><svg class="rose" viewBox="-4.2416 -3.0639 31.3054 31.3054" width="96" height="96" aria-hidden="true"><circle class="d" data-i="0" cx="12.000" cy="1.000" r="2.275"/><circle class="d" data-i="1" cx="19.778" cy="4.222" r="2.569"/><circle class="d" data-i="2" cx="23.000" cy="12.000" r="2.864"/><circle class="d" data-i="3" cx="19.778" cy="19.778" r="3.158"/><circle class="d" data-i="4" cx="12.000" cy="23.000" r="3.453"/><circle class="d" data-i="5" cx="4.222" cy="19.778" r="3.747"/><circle class="d" data-i="6" cx="1.000" cy="12.000" r="4.041"/><circle class="d" data-i="7" cx="4.222" cy="4.222" r="4.336"/></svg></div>
+  <h3>Your shortlist starts with a score.</h3>
+  <p>Run the pipeline, then keep anything worth a second look. Saved jobs stay on this device and nowhere else.</p>
+  <button class="run">Run the pipeline</button>
+ </div>
+</section>
+
+<p class="note"><b>Three changes, measured.</b> The sector grid was seventeen tiles, eleven of them reading &ldquo;24 open&rdquo; because 24 is the page cap &mdash; 61% of the grid was the same number and none of the 6&times; real spread was visible. Now the bar behind each tile is <code>count / max</code>, drawn on <code>--spring-settle</code> after the tile seats. The list uses the exit/entry asymmetry: <code>160ms</code> out, <code>340ms</code> in, 28ms stagger. And no section paints its own ground &mdash; the live site has a hard <code>1.126:1</code> seam at the &ldquo;How JobScout works&rdquo; boundary, which is a bigger step than the light halo&rsquo;s own <code>1.105:1</code> ceiling. A hairline plus a heading that rises 12px does the same job without breaking the one-ground law.</p>
+
+</div>
+<script>
+const root=document.documentElement;
+function thumb(s){const on=s.querySelector('[aria-pressed=true]'),t=s.querySelector('.thumb');
+ t.style.width=on.offsetWidth+'px';t.style.transform='translateX('+(on.offsetLeft-3)+'px)';}
+document.querySelectorAll('.seg').forEach(s=>s.addEventListener('click',e=>{
+ const b=e.target.closest('button');if(!b)return;
+ s.querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x===b));thumb(s);
+ if(b.dataset.m)root.setAttribute('data-market',b.dataset.m);
+ if(b.dataset.t)b.dataset.t==='system'?root.removeAttribute('data-theme'):root.setAttribute('data-theme',b.dataset.t);
+}));
+addEventListener('load',()=>document.querySelectorAll('.seg').forEach(thumb));
+
+document.querySelectorAll('.rose').forEach(r=>r.querySelectorAll('.d').forEach((d,j)=>d.style.setProperty('--di',j)));
+function light(row){const n=+row.dataset.lit,ds=[...row.querySelectorAll('.d')];
+ ds.forEach(d=>d.classList.remove('lit','next'));
+ ds.slice(0,n).forEach(d=>d.classList.add('lit')); if(ds[n])ds[n].classList.add('next');}
+const rows=[...document.querySelectorAll('.row')];
+rows.forEach(light);
+
+const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target);}}),{threshold:.1});
+document.querySelectorAll('.tile,.row,.sh').forEach(el=>io.observe(el));
+
+document.getElementById('filters').addEventListener('click',e=>{
+ const b=e.target.closest('.f'); if(!b) return;
+ document.querySelectorAll('.f').forEach(x=>x.setAttribute('aria-pressed',x===b));
+ const f=b.dataset.f;
+ const keep=rows.filter(r=>f==='all'||r.dataset.band===f);
+ rows.forEach((r,i)=>{r.style.setProperty('--i',i);r.classList.add('out');r.classList.remove('in');});
+ setTimeout(()=>{
+   rows.forEach(r=>{r.style.display='none';r.classList.remove('out');});
+   keep.forEach((r,i)=>{r.style.display='';r.style.setProperty('--i',i);light(r);
+     requestAnimationFrame(()=>requestAnimationFrame(()=>r.classList.add('in')));});
+   document.getElementById('count').textContent=keep.length+' of 318 swept';
+ },200);
+});
+document.getElementById('tiles').addEventListener('click',e=>{
+ const t=e.target.closest('.tile'); if(!t)return;
+ const on=t.getAttribute('aria-pressed')==='true';
+ document.querySelectorAll('.tile').forEach(x=>x.setAttribute('aria-pressed','false'));
+ t.setAttribute('aria-pressed',String(!on));
+});
+</script></body></html>

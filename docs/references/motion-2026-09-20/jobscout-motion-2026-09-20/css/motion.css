@@ -1,0 +1,127 @@
+/* ===========================================================================
+   JobScout — the motion and material layer.  v1, 2026-09-20.
+   Companion to theme-resolution.css. Adds a FOURTH axis to the three in
+   ARCHITECTURE.md: market, theme, band ... and now TIME.
+
+   It changes no colour. Every value here is a duration, a curve, a distance
+   or an elevation. The thirteen laws are untouched.
+
+   WHY THIS FILE EXISTS
+   The product has a rigorous static system — one ramp, measured contrast,
+   a colour law per axis — and no temporal system at all. Apple's "feel" is
+   almost entirely spring physics plus a material that answers the pointer;
+   very little of it is colour. This is the missing half.
+   =========================================================================== */
+
+:root {
+  /* --- the spring vocabulary: four curves, not a bag of easings ---------
+     Real damped-spring step responses, sampled into linear(). The overshoot
+     is stated because it is the whole character of each curve. */
+
+  /* controls, toggles, chips, the theme switch */
+  --spring-snap:   linear(0.0000, 0.0236, 0.0841, 0.1686, 0.2664, 0.3695, 0.4717, 0.5687, 0.6577, 0.7370, 0.8057, 0.8637, 0.9115, 0.9498, 0.9795, 1.0018, 1.0178, 1.0284, 1.0348, 1.0378, 1.0383, 1.0370, 1.0343, 1.0309, 1.0271, 1.0231, 1.0000);
+  --t-snap: 180ms;      /* overshoot 3.8% */
+
+  /* cards, sheets, panels, anything with area */
+  --spring-settle: linear(0.0000, 0.0249, 0.0852, 0.1645, 0.2520, 0.3404, 0.4253, 0.5041, 0.5756, 0.6393, 0.6952, 0.7437, 0.7854, 0.8210, 0.8512, 0.8767, 0.8981, 0.9160, 0.9309, 0.9433, 0.9536, 0.9620, 0.9690, 0.9747, 0.9794, 0.9833, 1.0000);
+  --t-settle: 340ms;  /* overshoot 0.0% — critically damped */
+
+  /* the rose, score numerals - the one place overshoot is the point */
+  --spring-arrive: linear(0.0000, 0.0264, 0.0948, 0.1910, 0.3029, 0.4208, 0.5373, 0.6468, 0.7458, 0.8318, 0.9041, 0.9624, 1.0075, 1.0406, 1.0631, 1.0766, 1.0827, 1.0831, 1.0792, 1.0724, 1.0637, 1.0540, 1.0441, 1.0346, 1.0258, 1.0180, 1.0000);
+  --t-arrive: 520ms;  /* overshoot 8.3% */
+
+  /* anything leaving; exits never overshoot and are always faster than entries */
+  --spring-exit:   cubic-bezier(0.4, 0.0, 1, 1);
+  --t-exit: 160ms;
+
+  /* THE ASYMMETRY LAW: entries 340–520ms, exits 160ms. A thing that leaves
+     faster than it arrives feels responsive; the reverse feels broken. */
+
+  /* --- stagger: how a set arrives ---------------------------------------
+     Per-item delay = index x stagger. Cap the total at ~400ms; past that
+     the last item feels forgotten, so long lists cap the index at 12. */
+  --stagger-row:  28ms;   /* list rows, cards */
+  --stagger-tile: 22ms;   /* the sector grid — denser, so faster */
+  --stagger-dot:  46ms;   /* the rose's bearings. 8 x 46 = 368ms to fill. */
+
+  /* --- travel: how far things move --------------------------------------
+     Entry distance is small. Anything over 12px reads as a slide, not a
+     settle, and slides make a page feel slow. */
+  --travel-row: 10px;
+  --travel-tile: 8px;
+  --travel-head: 12px;   /* a section heading rising on first view */
+  --lift-hover: -2px;    /* the card's rest -> hover displacement */
+  --press-scale: .988;   /* cards. Controls use .96, hearts .88 */
+
+  /* --- material: the elevation ladder -----------------------------------
+     On LIGHT, elevation is shadow: a contact shadow plus a soft one.
+     On DARK there is no shadow (it reads as dirt on ink), so the ladder is
+     carried by the hairline brightening and the surface lifting one step.
+     This is the §10 rule again: neither theme separates by brightness
+     alone, and dark separates by hue and hairline. */
+  --sh-rest:  0 1px 2px rgba(75,68,57,.05), 0 6px 14px rgba(75,68,57,.06);
+  --sh-hover: 0 2px 4px rgba(75,68,57,.06), 0 14px 30px rgba(75,68,57,.10);
+  --sh-press: 0 1px 2px rgba(75,68,57,.08);
+
+  --edge-rest:  light-dark(rgba(8,3,49,.08),  rgba(248,243,235,.13));
+  --edge-hover: light-dark(rgba(8,3,49,.12),  rgba(248,243,235,.26));
+
+  /* The dark hover surface. #221a52 is --surface #1c1544 lifted one rung:
+     1.10:1 above it, the same step --surface takes above --canvas. */
+  --surface-hover: light-dark(#ffffff, #221a52);
+
+  /* --- the sector tile's own data ---------------------------------------
+     The bar behind each tile is count/max. Low chroma by §16: it is a large
+     surface, so it may not carry a band-strength tint. */
+  --tile-fill: light-dark(rgba(72,101,255,.085), rgba(162,186,255,.10));
+
+  /* --- idle life ---------------------------------------------------------
+     A settled rose breathes. Slow enough to be felt, not watched. Offset
+     per card so a grid never pulses in unison — that reads as a loading
+     state, which is the opposite of the intent. */
+  --t-breathe: 4200ms;
+  --breathe-floor: .90;      /* opacity trough of a lit dot */
+  --t-seek: 5600ms;          /* the empty state's searching rose */
+}
+
+/* Dark has no shadows; the edge and the surface lift carry elevation. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --sh-rest:none; --sh-hover:none; --sh-press:none; }
+}
+:root[data-theme="dark"] { --sh-rest:none; --sh-hover:none; --sh-press:none; }
+
+/* ===========================================================================
+   THE ONE RULE EVERY SURFACE SHARES
+   Any element a pointer can act on gets all three states. A hover with no
+   press state is the single most common reason an interface feels like a
+   picture of an interface.
+   =========================================================================== */
+.u-surface {
+  border: 1px solid var(--edge-rest);
+  box-shadow: var(--sh-rest);
+  transition: transform var(--t-settle) var(--spring-settle),
+              box-shadow var(--t-settle) var(--spring-settle),
+              border-color var(--t-settle) var(--spring-settle),
+              background var(--t-settle) var(--spring-settle);
+}
+.u-surface:hover  { transform: translateY(var(--lift-hover));
+                    box-shadow: var(--sh-hover);
+                    border-color: var(--edge-hover);
+                    background: var(--surface-hover); }
+.u-surface:active { transform: scale(var(--press-scale));
+                    box-shadow: var(--sh-press);
+                    transition-duration: var(--t-exit);
+                    transition-timing-function: var(--spring-exit); }
+
+/* ===========================================================================
+   REDUCED MOTION — not "less motion". No motion, same information.
+   Every state still resolves; it just resolves instantly. The rose still
+   shows its lit count, the tile bar still shows its share.
+   =========================================================================== */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; }
+  .u-surface, .rose .d, .tile, .row, .tbar, .sh {
+    transition-duration: 1ms !important;
+    transition-delay: 0ms !important;
+  }
+}

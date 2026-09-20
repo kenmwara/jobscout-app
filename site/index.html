@@ -160,7 +160,10 @@ input::placeholder,textarea::placeholder{color:var(--text2);opacity:1}
 .tabs a.all{background:transparent;border-color:rgba(255,255,255,.4)}
 
 /* ── bands ──────────────────────────────────────────────────────────── */
-section.band{padding:88px 0;background:var(--canvas-2);margin-top:0}
+/* MOTION v1 6a: no section paints its own ground (law 7). The canvas-2 band
+   met the halo in a 1.126:1 seam - louder than the 1.105:1 halo it sat on.
+   A hairline marks the boundary; the heading rises once on first view. */
+section.band{padding:88px 0;margin-top:0;border-top:1px solid var(--hair)}
 section.plain{padding:88px 0}
 h2.sec{font:400 clamp(26px,3vw,34px)/1.25 var(--serif);letter-spacing:-.02em;color:var(--ink);margin:0 0 8px}
 p.lede{font:400 16px/1.6 var(--sans);color:var(--text2);max-width:520px;margin:0}
@@ -271,11 +274,26 @@ p.lede{font:400 16px/1.6 var(--sans);color:var(--text2);max-width:520px;margin:0
    bearing 000 and the lit ones bloom in order. Nothing rotates, so the number
    reads the same at any size. */
 .rose{width:64px;height:64px;flex:0 0 auto;display:block}
-.rose .fitnum{font:500 30px/1 var(--serif);text-anchor:middle}
+.rose .fitnum{font:500 30px/1 var(--serif);text-anchor:middle;font-variant-numeric:tabular-nums}
+/* MOTION v1: each lit dot arrives on --spring-arrive (520ms, 8.3% overshoot),
+   one every --stagger-dot from bearing 000, so the fill IS the score forming.
+   The numeral counts up on the same clock (see the render loop) and seats on
+   the frame the last dot lands. */
 html.anim .rose .lit{transform:scale(.34);transform-origin:center;transform-box:fill-box;
-  opacity:0;transition:transform .42s var(--ease),opacity .42s var(--ease);
-  transition-delay:calc(var(--i) * 70ms)}
+  opacity:0;transition:transform var(--t-arrive) var(--spring-arrive),opacity var(--t-arrive) var(--ease);
+  transition-delay:calc(var(--i) * var(--stagger-dot))}
 html.anim .job.arrive .rose .lit,html.anim .job.shown .rose .lit{transform:none;opacity:1}
+/* A settled rose breathes - lit dots only, 1 -> .90 -> 1 over --t-breathe,
+   offset 260ms per card and 120ms per dot so a grid never pulses in unison
+   (in unison it reads as a loading state). */
+@keyframes rosebreathe{0%,100%{opacity:1}50%{opacity:var(--breathe-floor)}}
+html.anim .job.settled .rose .lit{animation:rosebreathe var(--t-breathe) ease-in-out infinite;
+  animation-delay:calc(var(--ci, 0) * 260ms + var(--i) * 120ms)}
+/* The reward asymmetry: a real AUTO gets one 1.05 pulse on its band pill,
+   420ms, once. NEAR-MISS gets nothing - celebrating a 32 is the interface
+   lying to someone having a bad morning. */
+@keyframes pillpulse{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
+html.anim .job.settled[data-band="auto"] .route{animation:pillpulse 420ms var(--spring-snap) 1}
 .route{
   font:500 10px/1 var(--sans);letter-spacing:.09em;text-transform:uppercase;
   border-radius:var(--r-pill);padding:5px 9px;display:inline-block;white-space:nowrap
@@ -301,8 +319,15 @@ html.anim .job.arrive .rose .lit,html.anim .job.shown .rose .lit{transform:none;
 .taxgrid{display:grid;grid-template-columns:repeat(5,1fr);gap:14px}
 .tax{
   background:var(--surface);border:1px solid var(--hair);border-radius:14px;padding:18px;
-  text-decoration:none;display:block;transition:border-color .22s var(--ease)
+  text-decoration:none;display:block;transition:border-color .22s var(--ease);position:relative;overflow:hidden
 }
+/* the tile's own data: a bar at count/max behind the text, drawn on
+   --spring-settle 90ms after the tile has seated (the reveal's .in) */
+.tax .tbar{position:absolute;inset:0;width:calc(var(--share, 0) * 100%);background:var(--tile-fill);
+  transform:scaleX(0);transform-origin:left center;pointer-events:none}
+html.anim .tax .tbar{transition:transform var(--t-settle) var(--spring-settle) 90ms}
+.tax.in .tbar,html:not(.anim) .tax .tbar{transform:none}
+.tax b,.tax span{position:relative}
 .tax:hover{border-color:var(--accent)}
 /* the tiles get the same counter-slide: name one way, count the other */
 .tax b,.tax span{display:block;transition:transform .42s var(--spring),color var(--t-ui) var(--ease)}
@@ -336,9 +361,15 @@ html.anim .tax:hover span{transform:translateX(4px)}
    Parking content at opacity 0 and waiting for a script is how a page renders
    blank anywhere a script does not run: a static snapshot, a CSP, a throwing
    bundle. The default state is the finished state; JS opts in to the motion. */
-html.anim .rv{opacity:0;transform:scale(.96) translateY(40px);
-    transition:opacity .5s var(--ease),transform var(--t-rev) var(--spring)}
-html.anim .rv.in{opacity:1;transform:none}
+/* MOTION v1: the reveal rides the individual `translate`/`scale` properties,
+   not `transform`. Its end state `transform:none` (0,3,1) used to pin every
+   revealed tile and card, so the hover lift and the press never rendered -
+   measured: computed transform `none` in all three states. */
+html.anim .rv{opacity:0;translate:0 40px;scale:.96;
+    transition:opacity .5s var(--ease),translate var(--t-rev) var(--spring)}
+html.anim .rv.in{opacity:1;translate:none;scale:none}
+html.anim .job.leaving{opacity:0;transform:translateY(6px);
+  transition:opacity var(--t-exit) var(--spring-exit),transform var(--t-exit) var(--spring-exit)}
 
 /* hero entrance — the headline rises a line at a time */
 .display .ln{display:block;overflow:hidden}
@@ -400,6 +431,15 @@ html.anim .cmark{animation:float 2.6s ease-in-out infinite}
 /* springier interactions than the first pass */
 .job,.card,.tax{transition:box-shadow var(--t-ui) var(--ease),transform .5s var(--spring),border-color var(--t-ui) var(--ease)}
 .job:hover,.tax:hover{transform:translateY(-3px)}
+/* THE PRESS, on exit timing: a give that eases in is not a give. Scale by
+   mass - cards .988, controls .96, the heart .85 (above). Dark has no
+   shadows, so --sh-press resolves to none there and the edge carries it. */
+html .job:active,html .tax:active,html .card:active{transform:scale(var(--press-scale));box-shadow:var(--sh-press);
+  transition-duration:var(--t-exit);transition-timing-function:var(--spring-exit)}
+html .tabs a:active,html .f:active,html .mkt button:active,html .taxtabs button:active,html .bloomer:active,html .applybtn:active,html .pill:active,html .dismiss:active{
+  transform:scale(.96);transition-duration:var(--t-exit);transition-timing-function:var(--spring-exit)}
+/* a chip with no hover had two states, not three */
+.taxtabs button:hover,.f:hover{border-color:var(--edge-hover);color:var(--ink)}
 /* a real lift: four stacked shadows tightening toward the card, so it reads as
    height rather than a grey halo */
 .job:hover{
@@ -915,21 +955,11 @@ nav.main{margin-left:18px}
      but nothing competed with `color:#fff`, so "How JobScout works" was white
      on cream. The light ground won, so the light ink comes with it, and the
      dot pattern is inked for a light ground too. */
-  .band{position:relative;margin:72px 0 0;padding:74px 0 96px;
-    color:var(--text2);width:132vw;margin-left:calc(50% - 66vw);border-radius:0 0 1600px 1600px;
-    background-image:radial-gradient(var(--hair) 1px,transparent 1px);
-    background-size:20px 20px}
+  .band{position:relative;margin:72px 0 0;padding:74px 0 96px;color:var(--text2)}
   /* The band is 132vw, so its .wrap centres inside THAT, not inside the
      viewport. Capped here rather than in a new rule - an added `.band .wrap`
      has the SAME specificity as this one and loses to it on order. */
-  .band>.wrap{max-width:min(1040px,100vw)}
   .band h2{color:var(--ink)}
-  @supports (animation-timeline: view()){
-    @media (prefers-reduced-motion:no-preference){
-      .band{animation:flatten linear both;animation-timeline:view();animation-range:exit 0% exit 90%}
-      @keyframes flatten{to{border-bottom-left-radius:0;border-bottom-right-radius:0}}
-    }
-  }
   @property --spin{syntax:'<angle>';inherits:false;initial-value:0deg}
   @media (prefers-reduced-motion:no-preference){
     .gatecards::before{animation:spinborder 14s linear infinite}
@@ -1261,6 +1291,24 @@ function roseSVG(fit){
     ${dots}<text class="fitnum" x="52" y="60.5" fill="${col}">${fit}</text></svg>`;
 }
 
+/* The numeral counts up on the dots' own clock: it reaches the score on the
+   frame the last lit dot's transition ends ((lit-1) x stagger + arrive), so the
+   two never drift. Cubic ease, tabular digits, and instant under reduced
+   motion. `settled` afterwards starts the breathing and the AUTO pulse. */
+function countRose(card, fit){
+  const num = card.querySelector(".fitnum");
+  if (!num) return;
+  const lit = Math.max(1, Math.round(Math.max(0, Math.min(100, fit)) / 100 * 8));
+  const dur = reduced ? 0 : (lit - 1) * 46 + 520;
+  if (!dur){ num.textContent = fit; card.classList.add("settled"); return; }
+  const t0 = performance.now();
+  (function tick(now){
+    const p = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - p, 3);
+    num.textContent = Math.round(fit * e);
+    if (p < 1) requestAnimationFrame(tick); else card.classList.add("settled");
+  })(t0);
+}
+
 /* ── counted events ──────────────────────────────────────────────────────────────────────
  * What happened, never who. The id below is random, per tab, and dies with the tab; it exists
  * so "opened, ran, applied" can be read as one visit. No resume text, no job title, no company,
@@ -1588,6 +1636,8 @@ function scoreCard(x, i){
      enough that it sweeps across the title for 1.15s. It stays on the chips. */
   el.className = "job" + (x.top ? " top" : "");
   el.dataset.id = x.id;
+  el.dataset.band = route;
+  el.style.setProperty("--ci", i);
   el.dataset.title = p.title || x.id;
   el.innerHTML = `      <button class="dismiss" type="button" aria-label="Dismiss this match">\u00d7</button>
       <span class="swipehint" aria-hidden="true">Not for me</span>
@@ -1627,7 +1677,7 @@ function scoreCard(x, i){
         <span class="pill${p.remote_policy === "remote" ? " on" : ""}">${
           p.remote_policy === "remote" ? "Remote" : p.remote_policy === "hybrid" ? "Hybrid" : "On site"}</span>
       </div>`;
-  setTimeout(() => el.classList.add("in", "arrive"), reduced ? 0 : 105 * i);
+  setTimeout(() => { el.classList.add("in", "arrive"); countRose(el, x.fit); }, reduced ? 0 : 105 * i);
   const sb = el.querySelector("[data-save]");
   sb.onclick = () => { toggleSave(x.id, p, x.fit); sb.setAttribute("aria-pressed", String(!!tracker[x.id])); };
   wireSwipe(el);
@@ -1995,7 +2045,16 @@ function narrowing(){
 /* ── the taxonomy, three real axes ─────────────────────────────────────── */
 function taxTiles(){
   let rows;
-  if (tax === "sector") rows = sectorList().map(([sx, n]) => [label(sx), `${n} open`, { sec: sx }]);
+  /* MOTION v1 stage 4: seventeen identical rectangles became a distribution.
+     Each tile carries a bar at count/max (--tile-fill, a quantity not a
+     signal), and the label says what the number is: the feed is a capped
+     slice, so a count sitting on the plateau ten sectors share is "24+", not
+     "24 open" - law 12. The list was already sorted by count. */
+  if (tax === "sector"){
+    const secs = sectorList(), total = feed?.postings?.length || 0, max = secs[0]?.[1] || 1;
+    const cap = secs.filter(([, n]) => n === max).length >= 3 ? max : null;
+    rows = secs.map(([sx, n]) => [label(sx), `${n === cap ? n + "+" : n} of ${total}`, { sec: sx, share: n / max }]);
+  }
   else if (tax === "policy"){
     const p = policyCounts();
     rows = [["Remote", `${p.remote} open`, { pol: "remote" }],
@@ -2006,7 +2065,7 @@ function taxTiles(){
     rows = (feed?.places?.options || []).map(o => [o.label, `${o.local} on-site here`, { place: o.code }]);
   }
   $("#taxGrid").innerHTML = rows.map(([a, b, d]) =>
-    `<a class="tax" href="#"${d.sec !== undefined ? ` data-sec="${esc(d.sec)}"` : ""}${d.pol ? ` data-pol="${d.pol}"` : ""}${d.place ? ` data-place="${d.place}"` : ""}><b>${esc(a)}</b><span>${esc(b)}</span></a>`).join("");
+    `<a class="tax" href="#"${d.sec !== undefined ? ` data-sec="${esc(d.sec)}"` : ""}${d.pol ? ` data-pol="${d.pol}"` : ""}${d.place ? ` data-place="${d.place}"` : ""}${d.share !== undefined ? ` style="--share:${d.share.toFixed(3)}"` : ""}>${d.share !== undefined ? `<i class="tbar" aria-hidden="true"></i>` : ""}<b>${esc(a)}</b><span>${esc(b)}</span></a>`).join("");
   /* The landing shows the first six as a preview. Same data, no tabs — the
      axes belong on the page that can act on them. */
   /* These were <span>s — the same class, the same styling and the same shape as
@@ -2015,7 +2074,7 @@ function taxTiles(){
   const peek = $("#taxPeek");
   if (peek){
     peek.innerHTML = rows.slice(0, 6).map(([a, b, d]) =>
-      `<a class="tax" href="#"${d.sec !== undefined ? ` data-sec="${esc(d.sec)}"` : ""}${d.pol ? ` data-pol="${d.pol}"` : ""}${d.place ? ` data-place="${d.place}"` : ""}><b>${esc(a)}</b><span>${esc(b)}</span></a>`).join("");
+      `<a class="tax" href="#"${d.sec !== undefined ? ` data-sec="${esc(d.sec)}"` : ""}${d.pol ? ` data-pol="${d.pol}"` : ""}${d.place ? ` data-place="${d.place}"` : ""}${d.share !== undefined ? ` style="--share:${d.share.toFixed(3)}"` : ""}>${d.share !== undefined ? `<i class="tbar" aria-hidden="true"></i>` : ""}<b>${esc(a)}</b><span>${esc(b)}</span></a>`).join("");
     peek.querySelectorAll(".tax").forEach(t => t.onclick = e => {
       e.preventDefault();
       sector = t.dataset.sec || null;
@@ -2316,6 +2375,18 @@ function browse(){
     // textContent, not innerHTML — and only when there is no button to preserve.
     backHost.textContent = `${rows.length} shown of ${all}`;
   }
+  /* MOTION v1 stage 5: the list re-forms rather than blinks. Rows that are
+     leaving go first on exit timing (160ms, 14ms apart, index capped at 12),
+     then this runs again and the new set arrives through reveal() with the
+     row stagger. Two passes of one function, not a second render path. */
+  if (document.documentElement.classList.contains("anim") && host.querySelector(".job") && !host.dataset.reform){
+    const old = [...host.querySelectorAll(".job")];
+    old.forEach((el, i) => { el.style.transitionDelay = Math.min(i, 12) * 14 + "ms"; el.classList.add("leaving"); });
+    host.dataset.reform = "1";
+    setTimeout(() => { delete host.dataset.reform; browse(); }, 160 + 14 * Math.min(old.length - 1, 12));
+    return;
+  }
+  delete host.dataset.reform;
   host.innerHTML = rows.length
     ? rows.map(browseCard).join("")
     : `<p class="lede">Nothing in today's sweep matches that combination.</p>`;
@@ -2536,12 +2607,16 @@ function swipeCoach(){
    and any element Set goes stale the moment innerHTML is replaced. No rAF
    latch either — rAF is paused in a hidden tab and the latch never clears. */
 function reveal(root){
+  let rowsSeen = 0;
   (root || document).querySelectorAll(".card,.tax,.co-card,.job:not(.arrive),h2.sec,p.lede,.manifesto,.fgrid > div")
     .forEach((el, i) => {
       if (el.dataset.rv) return;
       el.dataset.rv = "1";
       el.classList.add("rv");
-      el.style.transitionDelay = (i % 6) * 65 + "ms";
+      /* list rows: --stagger-row apart, the index capped at 12 - past ~400ms
+         the last row feels forgotten. Everything else keeps the page reveal. */
+      el.style.transitionDelay = el.classList.contains("job")
+        ? Math.min(rowsSeen++, 12) * 28 + "ms" : (i % 6) * 65 + "ms";
     });
   sweep();
 }

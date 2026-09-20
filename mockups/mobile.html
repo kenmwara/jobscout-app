@@ -213,6 +213,27 @@ p.sub{font:400 13.5px/1.5 var(--sans);color:var(--text2);margin:0 0 16px}
 .card .r{font:500 14.5px/1.3 var(--sans);color:var(--ink)}
 .card .c{font:400 12.5px/1.4 var(--sans);color:var(--text2);margin-top:2px!important}
 .card .fit{font:500 15px/1 var(--sans);flex:0 0 auto}
+/* THE ROSE IN THE LIST (motion v1). The score was a bare numeral here while
+   web and Android carried the mark; the device the brand is built from was
+   missing from the densest screen. Same 104-box geometry as index.html, 44px
+   in a row, the numeral inside on tabular digits. */
+.card .rose{width:44px;height:44px;flex:0 0 auto;display:block}
+.rose .fitnum{font:500 30px/1 var(--serif);text-anchor:middle;font-variant-numeric:tabular-nums}
+html.anim .rose .lit{transform:scale(.34);transform-origin:center;transform-box:fill-box;opacity:0;
+  transition:transform var(--t-arrive) var(--spring-arrive),opacity var(--t-arrive) var(--ease);
+  transition-delay:calc(var(--i) * var(--stagger-dot))}
+html.anim .card.arrive .rose .lit{transform:none;opacity:1}
+@keyframes rosebreathe{0%,100%{opacity:1}50%{opacity:var(--breathe-floor)}}
+html.anim .card.settled .rose .lit{animation:rosebreathe var(--t-breathe) ease-in-out infinite;
+  animation-delay:calc(var(--ci, 0) * 260ms + var(--i) * 120ms)}
+@keyframes pillpulse{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
+html.anim .card.settled[data-band="auto"] .band{animation:pillpulse 420ms var(--spring-snap) 1}
+/* three states: rest / hover / press, the press on exit timing */
+.card{transition:transform var(--t-settle) var(--spring-settle),box-shadow var(--t-settle) var(--spring-settle),border-color var(--t-settle) var(--spring-settle)}
+.card:hover{transform:translateY(var(--lift-hover));box-shadow:var(--sh-hover);border-color:var(--edge-hover)}
+.card:active{transform:scale(var(--press-scale));box-shadow:var(--sh-press);transition-duration:var(--t-exit);transition-timing-function:var(--spring-exit)}
+.cta:active,.heart:active,.chips i:active,.tabbar button:active,.seg button:active{transform:scale(.96);transition:transform var(--t-exit) var(--spring-exit)}
+.heart:active{transform:scale(.88)}
 .band{display:inline-block;font:500 10.5px/1 var(--sans);letter-spacing:.07em;text-transform:uppercase;
   padding:5px 8px;border-radius:6px;margin:10px 8px 0 0}
 .pill{display:inline-block;font:500 11px/1 var(--sans);padding:5px 9px;border-radius:var(--r-pill);
@@ -691,6 +712,47 @@ function nofitHTML() {
   </div>`;
 }
 
+/* The bearing rose, index.html's geometry verbatim: a 104 box, eight dots on
+   a ring of r=38 from bearing 000, radii 7.87 + i*1.019; lit = round(fit/100*8),
+   the needle-is-the-score law. Unlit dots stay at 42% so a 32 looks like a 32. */
+const ROSE = Array.from({ length: 8 }, (_, i) => {
+  const th = (-90 + 45 * i) * Math.PI / 180;
+  return [52 + 38 * Math.cos(th), 52 + 38 * Math.sin(th)];
+});
+function roseSVG(fit, tok){
+  const f = Math.max(0, Math.min(100, +fit || 0)), lit = Math.max(1, Math.round(f / 100 * 8));
+  const col = `var(${tok})`;
+  return `<svg class="rose" viewBox="0 0 104 104" role="img" aria-label="fit ${f} of 100">` +
+    ROSE.map(([x, y], i) => i < lit
+      ? `<circle class="lit" style="--i:${i}" cx="${x.toFixed(2)}" cy="${y.toFixed(2)}" r="${(7.87 + i * 1.019).toFixed(2)}" fill="${col}"/>`
+      : `<circle cx="${x.toFixed(2)}" cy="${y.toFixed(2)}" r="${((7.87 + i * 1.019) * 0.42).toFixed(2)}" fill="var(--hair2)"/>`).join("") +
+    `<text class="fitnum" x="52" y="60.5" fill="${col}">${f}</text></svg>`;
+}
+/* After a paint: cards arrive one --stagger-row apart, each numeral counting
+   on its dots' own clock and seating as the last lit dot lands; then the rose
+   breathes and a real AUTO's pill pulses once. Instant under reduced motion. */
+function roseArrive(root){
+  const anim = document.documentElement.classList.contains("anim");
+  root.querySelectorAll(".card").forEach((card, ci) => {
+    card.style.setProperty("--ci", ci);
+    const num = card.querySelector(".fitnum");
+    const fit = num ? +num.textContent : 0;
+    const lit = Math.max(1, Math.round(fit / 100 * 8));
+    card.dataset.band = bandOf(fit)[0];
+    const go = () => {
+      card.classList.add("arrive");
+      const dur = anim ? (lit - 1) * 46 + 520 : 0;
+      if (!dur || !num){ card.classList.add("settled"); return; }
+      const t0 = performance.now();
+      (function tick(now){
+        const p = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - p, 3);
+        num.textContent = Math.round(fit * e);
+        if (p < 1) requestAnimationFrame(tick); else card.classList.add("settled");
+      })(t0);
+    };
+    anim ? setTimeout(go, ci * 28) : go();
+  });
+}
 const cardHTML = (p, full) => {
   const [word, tok] = bandOf(p.fit);
   const pol = p.remote_policy === "remote" ? "Remote" : p.remote_policy === "hybrid" ? "Hybrid" : "On site";
@@ -698,7 +760,7 @@ const cardHTML = (p, full) => {
     <div class="row1">
       <span class="logo">${esc((p.company || "?").slice(0, 2).toUpperCase())}</span>
       <div class="t"><p class="r">${esc(p.title)}</p><p class="c">${esc(p.company)}</p></div>
-      <span class="fit" style="color:var(${tok})">${p.fit}</span>
+      ${roseSVG(p.fit, tok)}
       <button class="heart" type="button" data-heart="${esc(p.id)}"
               aria-pressed="${saved.has(p.id)}"
               aria-label="${saved.has(p.id) ? "Saved" : "Save"} ${esc(p.title)}">${HEART}</button>
@@ -862,6 +924,7 @@ const TABS = [
 const paint = () => {
   $("#view").innerHTML = (SCREENS[screen] || SCREENS.home)();
   $("#view").scrollTop = 0;
+  roseArrive($("#view"));
   $("#tabbar").innerHTML = TABS.map(([id, label, path]) =>
     `<button data-go="${id}" aria-pressed="${screen === id || (screen === "apply" && id === "matches")}">
       <svg viewBox="0 0 24 24">${path}</svg>${label}</button>`).join("");

@@ -455,5 +455,34 @@ for tag, T in (("LIGHT_TOKENS", LIGHT), ("DARK_TOKENS", DARK)):
         ok("%s matches the web on every shared token (%d compared)" % (tag, len(got)))
 
 print("")
+# 8. TIME drifts like colour. The web's springs live in base.css as durations
+#    and damping ratios; Android solves stiffness from the same period
+#    (k = (2pi/T)^2). Hold the two within 1ms and 0.01, so a "close enough"
+#    Compose constant cannot quietly put the phone on a different clock.
+import math
+CSS = io.open(os.path.join(ROOT, "site", "base.css"), encoding="utf-8").read()
+KT = io.open(os.path.join(ROOT, "android", "app", "src", "main", "java",
+                          "trade", "tbot", "jobscout", "Theme.kt"), encoding="utf-8").read()
+tdrift = []
+for name in ("snap", "settle", "arrive"):
+    mt = re.search(r"--t-%s:\s*([\d.]+)ms" % name, CSS)
+    mz = re.search(r"--zeta-%s:\s*([\d.]+)" % name, CSS)
+    mk = re.search(r"val %s[^=]*=\s*spring\(dampingRatio = ([\d.]+)f, stiffness = ([\d.]+)f\)" % name, KT)
+    if not (mt and mz and mk):
+        tdrift.append("%s: missing on one side" % name); continue
+    t_css, z_css = float(mt.group(1)), float(mz.group(1))
+    z_kt, k_kt = float(mk.group(1)), float(mk.group(2))
+    t_kt = 2 * math.pi / math.sqrt(k_kt) * 1000
+    if abs(t_kt - t_css) > 1.0 or abs(z_kt - z_css) > 0.01:
+        tdrift.append("%s: css %gms z=%g / kotlin %.1fms z=%g" % (name, t_css, z_css, t_kt, z_kt))
+mx = re.search(r"--t-exit:\s*([\d.]+)ms", CSS); mk = re.search(r"val exit[^=]*=\s*tween\((\d+)", KT)
+if not (mx and mk) or abs(float(mx.group(1)) - float(mk.group(1))) > 1.0:
+    tdrift.append("exit: css %s / kotlin %s" % (mx and mx.group(1), mk and mk.group(1)))
+if tdrift:
+    bad("Android's springs drift from base.css: " + "; ".join(tdrift))
+else:
+    ok("Android's four springs match base.css within 1ms / 0.01 damping")
+
+
 print("%d FAILED" % len(fails) if fails else "ALL GREEN")
 sys.exit(1 if fails else 0)
