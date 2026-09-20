@@ -175,7 +175,8 @@ fun MHero(
 @Composable
 private fun buildHeadline() = buildAnnotatedString {
     append("Find the work\nmade for you")
-    withStyle(SpanStyle(color = T.live)) { append(".") }
+    // brand, not T.live: live IS the unsure band solid
+    withStyle(SpanStyle(color = T.accent)) { append(".") }
 }
 
 val POLICIES = listOf("remote" to "Remote", "hybrid" to "Hybrid", "onsite" to "On site")
@@ -490,9 +491,10 @@ fun MJob(
                     if (onSave != null) Text(
                         if (saved) "\u2665 Saved" else "\u2661 Save",
                         fontSize = 10.5.sp, fontWeight = FontWeight.Medium, maxLines = 1,
-                        color = if (saved) T.live else T.text2,
+                        // selected state is the brand; T.live is the unsure solid
+                        color = if (saved) T.accent else T.text2,
                         modifier = Modifier.clip(Pill9999)
-                            .border(1.dp, if (saved) T.live else T.hair2, Pill9999)
+                            .border(1.dp, if (saved) T.accent else T.hair2, Pill9999)
                             .clickable(onClick = onSave)
                             .padding(horizontal = 9.dp, vertical = 5.dp),
                     )
