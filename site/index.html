@@ -633,16 +633,6 @@ html.anim .tabs a:hover{transform:skewX(-7deg) translateY(-3px)}
    is the logo glowing rather than a borrowed arc. */
 .heromark{position:absolute;left:50%;top:46%;width:min(1160px,128%);
   transform:translate(-50%,-50%);opacity:.55;pointer-events:none;z-index:-1}
-/* The mark is larger than the hero, so its outer dots ran into the card's
-   overflow:hidden and ended in a straight edge - faint at rest, and when the
-   box is hovered the glow lit those edges and drew the whole rectangle. The
-   mark sits in a box the size of the hero that fades to nothing at the
-   card's edges, centred where the mark is; in the hero's own coordinates the
-   fade lands on the edge at every viewport, which a mask on the mark (sized
-   to the mark) could not. Both states now end in air rather than on a line. */
-.heromark-fade{position:absolute;inset:0;z-index:-1;pointer-events:none;
-  -webkit-mask-image:radial-gradient(ellipse 50% 50% at 50% 46%,#000 55%,transparent 90%);
-  mask-image:radial-gradient(ellipse 50% 50% at 50% 46%,#000 55%,transparent 90%)}
 .heromark svg{display:block;width:100%;height:auto;overflow:visible}
 /* #v-browse makes its own stacking context so z-index:-1 means "behind this
    page's content", not "behind the document background" — which is where the
@@ -1054,7 +1044,7 @@ nav.main{margin-left:18px}
     <section class="hero" id="hero">
       <div class="bg"></div>
       <div class="wash"></div>
-      <div class="heromark-fade"><div class="heromark" id="heromark" aria-hidden="true">
+      <div class="heromark" id="heromark" aria-hidden="true">
         <svg viewBox="0 0 760 760">
           <defs>
             <radialGradient id="markpop" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse"
@@ -1067,7 +1057,7 @@ nav.main{margin-left:18px}
           <g class="ring"><circle cx="380.0" cy="80.0" r="28.4"/><circle cx="592.1" cy="167.9" r="54.1"/><circle cx="680.0" cy="380.0" r="79.8"/><circle cx="592.1" cy="592.1" r="105.5"/><circle cx="380.0" cy="680.0" r="131.2"/><circle cx="167.9" cy="592.1" r="156.9"/><circle cx="80.0" cy="380.0" r="182.6"/><circle cx="167.9" cy="167.9" r="208.3"/></g>
           <g class="pop" fill="url(#markpop)"><circle cx="380.0" cy="80.0" r="28.4"/><circle cx="592.1" cy="167.9" r="54.1"/><circle cx="680.0" cy="380.0" r="79.8"/><circle cx="592.1" cy="592.1" r="105.5"/><circle cx="380.0" cy="680.0" r="131.2"/><circle cx="167.9" cy="592.1" r="156.9"/><circle cx="80.0" cy="380.0" r="182.6"/><circle cx="167.9" cy="167.9" r="208.3"/></g>
         </svg>
-      </div></div>
+      </div>
       <div class="inner">
         <h1 class="display">
           <span class="ln"><span>Find the work</span></span>
