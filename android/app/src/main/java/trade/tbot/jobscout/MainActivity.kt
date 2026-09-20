@@ -526,25 +526,32 @@ fun DemoScreen(vm: DemoVm = viewModel()) {
 
     CompositionLocalProvider(LocalTokens provides tokens) {
         Box(Modifier.fillMaxSize().background(T.canvas)) {
+          Column(Modifier.fillMaxSize()) {
+            /* Outside the list, so it stays. It used to be the first item in it,
+               which put the market switch, Saved and the wordmark off screen as
+               soon as you read past the first card — and a matches list is now
+               eight cards deep with a verdict and two evidence panels on each.
+               The web's header has been sticky since the redesign. */
+            Box(Modifier.background(T.canvas)
+                .padding(start = 14.dp, end = 14.dp, top = ins.calculateTopPadding() + 6.dp)) {
+                MHead(
+                    ui.market,
+                    saved = ui.tracker.size,
+                    onSaved = { trackerOpen = true },
+                    // Home means the top of the landing frame, with the filters
+                    // it was left in cleared — the same as the web's logo.
+                    onHome = {
+                        screen = Screen.LANDING
+                        sector = null; policy = null; query = ""
+                    },
+                ) { vm.setMarket(it) }
+            }
             LazyColumn(
                 Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(14.dp, ins.calculateTopPadding() + 6.dp, 14.dp,
+                contentPadding = PaddingValues(14.dp, 0.dp, 14.dp,
                                                ins.calculateBottomPadding() + 32.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
-                item {
-                    MHead(
-                        ui.market,
-                        saved = ui.tracker.size,
-                        onSaved = { trackerOpen = true },
-                        // Home means the top of the landing frame, with the filters
-                        // it was left in cleared — the same as the web's logo.
-                        onHome = {
-                            screen = Screen.LANDING
-                            sector = null; policy = null; query = ""
-                        },
-                    ) { vm.setMarket(it) }
-                }
 
                 ui.error?.let { item { Banner(it, onRetry = { vm.loadFeed() }) } }
                 ui.update?.let { r -> item { UpdateBar(r) } }
@@ -585,6 +592,7 @@ fun DemoScreen(vm: DemoVm = viewModel()) {
                 }
             }
 
+          }
             if (trackerOpen) TrackerScreen(vm, ui.tracker, ui.watched) { trackerOpen = false }
             ui.apply?.let { a -> ApplyScreen(vm, a, vm::closeApply) }
         }
@@ -875,7 +883,7 @@ private fun matchesPolicy(p: Posting, id: String): Boolean = when (id) {
 //    the square) with OUR one difference — radii graduate 2.30 → 4.35 clockwise
 //    from bearing 000, so it reads as a sweep, not a wheel.
 @Composable
-fun Mark(dp: Dp = 28.dp, tint: Color = Indigo) {
+fun Mark(dp: Dp = 28.dp, tint: Color = T.accent) {
     Canvas(Modifier.size(dp).clip(RoundedCornerShape(6.dp))) {
         val u = size.width / 24f
         val c = center
@@ -891,18 +899,18 @@ fun Mark(dp: Dp = 28.dp, tint: Color = Indigo) {
 @Composable
 private fun Header(feed: Feed?, tracked: Int, onTracker: () -> Unit) {
     Row(
-        Modifier.fillMaxWidth().warmShadow(8.dp, Pill).background(CardBg, Pill)
+        Modifier.fillMaxWidth().warmShadow(8.dp, Pill).background(T.surface, Pill)
             .padding(start = 16.dp, end = 8.dp, top = 8.dp, bottom = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Mark()
         Spacer(Modifier.width(10.dp))
-        Text("JobScout", fontFamily = Serif, fontSize = 21.sp, color = Ink, letterSpacing = (-0.01).em)
+        Text("JobScout", fontFamily = Serif, fontSize = 21.sp, color = T.ink, letterSpacing = (-0.01).em)
         Spacer(Modifier.width(10.dp))
         if (feed != null) LiveChip()
         Spacer(Modifier.weight(1f))
         TextButton(onClick = onTracker) {
-            Text("Saved ($tracked)", color = MidnightViolet, fontWeight = FontWeight.Medium, fontSize = 14.sp)
+            Text("Saved ($tracked)", color = T.ink, fontWeight = FontWeight.Medium, fontSize = 14.sp)
         }
     }
 }
@@ -910,12 +918,12 @@ private fun Header(feed: Feed?, tracked: Int, onTracker: () -> Unit) {
 @Composable
 private fun LiveChip() {
     Row(
-        Modifier.background(Forest.copy(alpha = .14f), Pill).padding(horizontal = 11.dp, vertical = 5.dp),
+        Modifier.background(T.bAuto.copy(alpha = .14f), Pill).padding(horizontal = 11.dp, vertical = 5.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Box(Modifier.size(6.dp).background(Forest, Pill))
+        Box(Modifier.size(6.dp).background(T.bAuto, Pill))
         Spacer(Modifier.width(6.dp))
-        Text("live", color = Meadow, fontSize = 12.sp, fontWeight = FontWeight.Medium)
+        Text("live", color = T.bAuto, fontSize = 12.sp, fontWeight = FontWeight.Medium)
     }
 }
 
@@ -924,16 +932,16 @@ private fun Hero(feed: Feed?) {
     Column(Modifier.fillMaxWidth().padding(top = 14.dp, bottom = 4.dp)) {
         Text(buildAnnotatedString {
             append("Watch an ")
-            withStyle(SpanStyle(color = Indigo)) { append("LLM") }
+            withStyle(SpanStyle(color = T.accent)) { append("LLM") }
             append(" read the job market honestly.")
         }, style = H1)
         Spacer(Modifier.height(10.dp))
-        Text("Real postings, scored live by Claude. Every reason shown.", color = Muted, fontSize = 16.sp, lineHeight = 24.sp)
+        Text("Real postings, scored live by Claude. Every reason shown.", color = T.text2, fontSize = 16.sp, lineHeight = 24.sp)
         Spacer(Modifier.height(6.dp))
         Text(
             if (feed?.day != null) "today's sweep · ${feed.passers.size} passed the gates · ${feed.rejects.size} did not"
             else "loading today's sweep…",
-            color = Text3, fontSize = 13.sp,
+            color = T.text3, fontSize = 13.sp,
         )
     }
 }
@@ -943,17 +951,17 @@ private fun Hero(feed: Feed?) {
 private fun Stage(bearing: String, label: String, title: String, note: String? = null) {
     Column(Modifier.padding(top = 22.dp)) {
         Row(
-            Modifier.warmShadow(6.dp, Pill).background(CardBg, Pill).padding(horizontal = 16.dp, vertical = 8.dp),
+            Modifier.warmShadow(6.dp, Pill).background(T.surface, Pill).padding(horizontal = 16.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text(bearing, color = Indigo, fontSize = 12.sp, fontWeight = FontWeight.Medium, letterSpacing = 0.1.em)
-            Text(" — $label", color = Text3, fontSize = 12.sp, fontWeight = FontWeight.Medium, letterSpacing = 0.1.em)
+            Text(bearing, color = T.accent, fontSize = 12.sp, fontWeight = FontWeight.Medium, letterSpacing = 0.1.em)
+            Text(" — $label", color = T.text3, fontSize = 12.sp, fontWeight = FontWeight.Medium, letterSpacing = 0.1.em)
         }
         Spacer(Modifier.height(14.dp))
         Text(title, style = H2)
         if (note != null) {
             Spacer(Modifier.height(6.dp))
-            Text(note, color = Muted, fontSize = 14.sp, lineHeight = 21.sp)
+            Text(note, color = T.text2, fontSize = 14.sp, lineHeight = 21.sp)
         }
     }
 }
@@ -1039,7 +1047,7 @@ private fun UpdateBar(r: LatestRelease) {
         Modifier.fillMaxWidth().background(Color(0xFFDCE4FB), Card).padding(14.dp),
         verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween,
     ) {
-        Text("JobScout ${r.tag_name.removePrefix("v")} is available.", color = Ink, fontSize = 13.sp)
+        Text("JobScout ${r.tag_name.removePrefix("v")} is available.", color = T.ink, fontSize = 13.sp)
         PillButton("Download", filled = true) { uri.openUri(r.html_url) }
     }
 }
@@ -1104,25 +1112,25 @@ private fun WhereRow(ui: Ui, feed: Feed, vm: DemoVm) {
                 (if (opt != null && opt.local > 0) " \u00b7 ${opt.local} on site there" else "")
         }
         if (note.isNotEmpty()) Text(
-            note, color = Muted, fontSize = 12.5.sp, lineHeight = 18.sp,
+            note, color = T.text2, fontSize = 12.5.sp, lineHeight = 18.sp,
             modifier = Modifier.padding(top = 8.dp))
     }
 }
 
 @Composable
-fun PillButton(text: String, color: Color = MidnightViolet, filled: Boolean = false, enabled: Boolean = true,
+fun PillButton(text: String, color: Color = T.ink, filled: Boolean = false, enabled: Boolean = true,
                        onClick: () -> Unit) {
-    Text(text, color = if (enabled) color else Text3, fontSize = 13.5.sp, fontWeight = FontWeight.Medium, maxLines = 1,
+    Text(text, color = if (enabled) color else T.text3, fontSize = 13.5.sp, fontWeight = FontWeight.Medium, maxLines = 1,
         modifier = Modifier
             .clip(Pill)
-            .then(if (filled) Modifier.background(Info) else Modifier.border(1.5.dp, Hair2, Pill))
+            .then(if (filled) Modifier.background(T.chip) else Modifier.border(1.5.dp, T.hair2, Pill))
             .clickable(enabled = enabled, onClick = onClick)
             .padding(horizontal = 17.dp, vertical = 9.dp))
 }
 
 @Composable
 private fun LinkText(text: String, onClick: () -> Unit) {
-    Text(text, color = MidnightViolet, fontSize = 14.sp, fontWeight = FontWeight.Medium,
+    Text(text, color = T.ink, fontSize = 14.sp, fontWeight = FontWeight.Medium,
         modifier = Modifier.clip(Pill).clickable(onClick = onClick).padding(vertical = 6.dp, horizontal = 2.dp))
 }
 
@@ -1133,13 +1141,13 @@ private fun GateRow(r: Posting) {
             Text(buildAnnotatedString {
                 append(r.title)
                 withStyle(SpanStyle(fontWeight = FontWeight.Normal)) { append(" · ${r.company}") }
-            }, fontSize = 14.sp, fontWeight = FontWeight.Medium, color = Text3,
+            }, fontSize = 14.sp, fontWeight = FontWeight.Medium, color = T.text3,
                 textDecoration = TextDecoration.LineThrough)
             Spacer(Modifier.height(2.dp))
-            Text(r.gate.reason, fontSize = 12.5.sp, color = Text3, lineHeight = 18.sp)
+            Text(r.gate.reason, fontSize = 12.5.sp, color = T.text3, lineHeight = 18.sp)
         }
         Spacer(Modifier.width(12.dp))
-        Chip("REJECT", Stone, ground = Info)
+        Chip("REJECT", T.text2, ground = T.chip)
     }
 }
 
@@ -1148,14 +1156,15 @@ private fun ScoreCard(
     s: Score, posting: Posting?, tracked: Tracked, isSaved: Boolean, first: Boolean, canApply: Boolean,
     onStage: (String) -> Unit, onApply: () -> Unit,
 ) {
-    val (route, bandColor) = bandFor(s.fit)
+    val route = T.bandWord(s.fit)
+    val bandColor = T.band(s.fit).first
     Column(
         Modifier
             .fillMaxWidth()
             .warmShadow(10.dp, Card)
             // the top card carries the indigo ring the web gives its first score
-            .then(if (first) Modifier.border(3.dp, Indigo.copy(alpha = .16f), Card) else Modifier)
-            .background(CardBg, Card)
+            .then(if (first) Modifier.border(3.dp, T.accent.copy(alpha = .16f), Card) else Modifier)
+            .background(T.surface, Card)
             .padding(18.dp)
     ) {
         Row {
@@ -1163,15 +1172,15 @@ private fun ScoreCard(
             Column(Modifier.weight(1f)) {
                 Text(buildAnnotatedString {
                     append(posting?.title ?: s.id)
-                    withStyle(SpanStyle(color = Muted, fontWeight = FontWeight.Normal)) { append(" · ${posting?.company ?: ""}") }
-                }, fontWeight = FontWeight.Medium, fontSize = 16.sp, lineHeight = 22.sp, color = Ink)
+                    withStyle(SpanStyle(color = T.text2, fontWeight = FontWeight.Normal)) { append(" · ${posting?.company ?: ""}") }
+                }, fontWeight = FontWeight.Medium, fontSize = 16.sp, lineHeight = 22.sp, color = T.ink)
                 Spacer(Modifier.height(6.dp))
-                Chip(route.uppercase(), bandColor, ground = bandFill(s.fit).copy(alpha = .18f))
-                Text(s.verdict, fontSize = 14.sp, lineHeight = 21.sp, color = Muted, modifier = Modifier.padding(top = 6.dp))
+                Chip(route.uppercase(), bandColor, ground = T.band(s.fit).second)
+                Text(s.verdict, fontSize = 14.sp, lineHeight = 21.sp, color = T.text2, modifier = Modifier.padding(top = 6.dp))
                 if (s.strongest.isNotEmpty())
-                    Text("+ ${s.strongest}", fontSize = 13.sp, color = Meadow, fontWeight = FontWeight.Medium, modifier = Modifier.padding(top = 8.dp))
+                    Text("+ ${s.strongest}", fontSize = 13.sp, color = T.bAuto, fontWeight = FontWeight.Medium, modifier = Modifier.padding(top = 8.dp))
                 if (s.weakest.isNotEmpty())
-                    Text("− ${s.weakest}", fontSize = 13.sp, color = EmberDeep, fontWeight = FontWeight.Medium, modifier = Modifier.padding(top = 2.dp))
+                    Text("− ${s.weakest}", fontSize = 13.sp, color = T.bUnsure, fontWeight = FontWeight.Medium, modifier = Modifier.padding(top = 2.dp))
             }
         }
         // Opening the posting IS how a user applies — the app never submits anything.
@@ -1202,7 +1211,7 @@ private fun PostingActions(
         // stage to move through. The tracker used to fill itself with every
         // scored posting, which made a list nobody asked for.
         if (tracked) StageChip(stage, onStage)
-        else PillButton("Save", color = Muted) { onStage("survivor") }
+        else PillButton("Save", color = T.text2) { onStage("survivor") }
         if (url.isNotEmpty()) PillButton("View posting ↗") { runCatching { uriHandler.openUri(url) } }
         trailing()
     }
@@ -1213,9 +1222,9 @@ private fun StageChip(stage: String, onStage: (String) -> Unit) {
     var open by remember { mutableStateOf(false) }
     Box {
         PillButton(stageLabel(stage) + " ▾", filled = true) { open = true }
-        DropdownMenu(expanded = open, onDismissRequest = { open = false }, containerColor = CardBg) {
+        DropdownMenu(expanded = open, onDismissRequest = { open = false }, containerColor = T.surface) {
             STAGES.forEach { (id, label) ->
-                DropdownMenuItem(text = { Text(label, color = Ink) }, onClick = { open = false; onStage(id) })
+                DropdownMenuItem(text = { Text(label, color = T.ink) }, onClick = { open = false; onStage(id) })
             }
         }
     }
@@ -1237,7 +1246,7 @@ private fun TrackerScreen(
     BackHandler(onBack = onClose)
     val ins = WindowInsets.safeDrawing.asPaddingValues()
     run {
-        Box(Modifier.fillMaxSize().background(CanvasBg).dots()) {
+        Box(Modifier.fillMaxSize().background(T.canvas).dots()) {
             LazyColumn(
                 Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(16.dp, ins.calculateTopPadding() + 12.dp, 16.dp, ins.calculateBottomPadding() + 40.dp),
@@ -1246,11 +1255,11 @@ private fun TrackerScreen(
                 item {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Row(
-                            Modifier.warmShadow(6.dp, Pill).background(CardBg, Pill).padding(horizontal = 16.dp, vertical = 8.dp),
+                            Modifier.warmShadow(6.dp, Pill).background(T.surface, Pill).padding(horizontal = 16.dp, vertical = 8.dp),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
-                            Text("270", color = Indigo, fontSize = 12.sp, fontWeight = FontWeight.Medium, letterSpacing = 0.1.em)
-                            Text(" — SAVED", color = Text3, fontSize = 12.sp, fontWeight = FontWeight.Medium, letterSpacing = 0.1.em)
+                            Text("270", color = T.accent, fontSize = 12.sp, fontWeight = FontWeight.Medium, letterSpacing = 0.1.em)
+                            Text(" — SAVED", color = T.text3, fontSize = 12.sp, fontWeight = FontWeight.Medium, letterSpacing = 0.1.em)
                         }
                         Spacer(Modifier.weight(1f))
                         PillButton("Close", onClick = onClose)
@@ -1258,10 +1267,10 @@ private fun TrackerScreen(
                     Spacer(Modifier.height(14.dp))
                     Text("Saved jobs", style = H2)
                     Spacer(Modifier.height(6.dp))
-                    Text("Kept on this device only. You click Apply — JobScout never does.", color = Muted, fontSize = 14.sp, lineHeight = 21.sp)
+                    Text("Kept on this device only. You click Apply — JobScout never does.", color = T.text2, fontSize = 14.sp, lineHeight = 21.sp)
                 }
                 if (tracker.isEmpty())
-                    item { Text("Nothing saved yet — tap Save on a score to keep it.", color = Text3, fontSize = 14.sp) }
+                    item { Text("Nothing saved yet — tap Save on a score to keep it.", color = T.text3, fontSize = 14.sp) }
                 // A few, then the rest behind a tap - an unbounded saved list is
                 // the thing that made this unreadable in the first place.
                 val all = tracker.values.sortedByDescending { it.fit }
@@ -1281,19 +1290,19 @@ private fun TrackerScreen(
                         Text("Searches you are watching", style = H2, fontSize = 19.sp)
                         Spacer(Modifier.height(4.dp))
                         Text("Kept on this device. Nothing is emailed.",
-                             color = Text3, fontSize = 13.sp, lineHeight = 19.sp)
+                             color = T.text3, fontSize = 13.sp, lineHeight = 19.sp)
                     }
                     items(watched, key = { it.key }) { w ->
                         Row(
-                            Modifier.fillMaxWidth().background(CardBg, Pill)
+                            Modifier.fillMaxWidth().background(T.surface, Pill)
                                 .padding(horizontal = 16.dp, vertical = 12.dp),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
                             Column(Modifier.weight(1f)) {
-                                Text(w.human, color = Ink, fontSize = 14.sp, fontWeight = FontWeight.Medium, maxLines = 1)
+                                Text(w.human, color = T.ink, fontSize = 14.sp, fontWeight = FontWeight.Medium, maxLines = 1)
                                 Text(
                                     "watching since ${w.at}" + if (w.market == "ke") "  ·  Kenya" else "",
-                                    color = Text3, fontSize = 12.sp,
+                                    color = T.text3, fontSize = 12.sp,
                                 )
                             }
                             LinkText("stop") { vm.toggleWatch(w.key, w.human, w.sector) }
@@ -1304,13 +1313,13 @@ private fun TrackerScreen(
         }
         if (confirmClear) AlertDialog(
             onDismissRequest = { confirmClear = false },
-            containerColor = CardBg, shape = Card,
+            containerColor = T.surface, shape = Card,
             confirmButton = {
-                TextButton(onClick = { vm.clearTracker(); confirmClear = false }) { Text("Clear", color = EmberDeep) }
+                TextButton(onClick = { vm.clearTracker(); confirmClear = false }) { Text("Clear", color = T.bUnsure) }
             },
-            dismissButton = { TextButton(onClick = { confirmClear = false }) { Text("Cancel", color = MidnightViolet) } },
+            dismissButton = { TextButton(onClick = { confirmClear = false }) { Text("Cancel", color = T.ink) } },
             title = { Text("Clear saved jobs?", style = H2, fontSize = 24.sp) },
-            text = { Text("Removes all ${tracker.size} saved postings from this device.", color = Muted) },
+            text = { Text("Removes all ${tracker.size} saved postings from this device.", color = T.text2) },
         )
     }
 }
@@ -1318,15 +1327,15 @@ private fun TrackerScreen(
 @Composable
 private fun TrackedRow(t: Tracked, vm: DemoVm) {
     Column(
-        Modifier.fillMaxWidth().warmShadow(8.dp, Card).background(CardBg, Card).padding(16.dp)
+        Modifier.fillMaxWidth().warmShadow(8.dp, Card).background(T.surface, Card).padding(16.dp)
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(buildAnnotatedString {
                 append(t.title)
-                withStyle(SpanStyle(color = Muted, fontWeight = FontWeight.Normal)) { append(" · ${t.company}") }
-            }, fontWeight = FontWeight.Medium, fontSize = 15.sp, lineHeight = 21.sp, color = Ink, modifier = Modifier.weight(1f))
+                withStyle(SpanStyle(color = T.text2, fontWeight = FontWeight.Normal)) { append(" · ${t.company}") }
+            }, fontWeight = FontWeight.Medium, fontSize = 15.sp, lineHeight = 21.sp, color = T.ink, modifier = Modifier.weight(1f))
             Spacer(Modifier.width(12.dp))
-            Text("${t.fit}", color = bandFor(t.fit).second, fontFamily = Serif, fontSize = 24.sp)
+            Text("${t.fit}", color = T.band(t.fit).first, fontFamily = Serif, fontSize = 24.sp)
         }
         PostingActions(t.stage, t.url, onStage = { vm.setStage(t, it) }) {
             LinkText("remove ×") { vm.untrack(t.id) }

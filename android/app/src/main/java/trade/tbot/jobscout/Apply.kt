@@ -43,10 +43,11 @@ fun ApplyScreen(vm: DemoVm, a: Apply, onClose: () -> Unit) {
     BackHandler(onBack = onClose)
     val ins = WindowInsets.safeDrawing.asPaddingValues()
     val uri = LocalUriHandler.current
-    val (band, bandColor) = bandFor(a.fit)
+    val band = T.bandWord(a.fit)
+    val bandColor = T.band(a.fit).first
     val p = a.posting
 
-    Box(Modifier.fillMaxSize().background(CanvasBg).dots()) {
+    Box(Modifier.fillMaxSize().background(T.canvas).dots()) {
         LazyColumn(
             Modifier.fillMaxSize(),
             contentPadding = PaddingValues(16.dp, ins.calculateTopPadding() + 12.dp, 16.dp, ins.calculateBottomPadding() + 40.dp),
@@ -55,11 +56,11 @@ fun ApplyScreen(vm: DemoVm, a: Apply, onClose: () -> Unit) {
             item {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Row(
-                        Modifier.warmShadow(6.dp, Pill).background(CardBg, Pill).padding(horizontal = 16.dp, vertical = 8.dp),
+                        Modifier.warmShadow(6.dp, Pill).background(T.surface, Pill).padding(horizontal = 16.dp, vertical = 8.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Text("360", color = Indigo, fontSize = 12.sp, fontWeight = FontWeight.Medium, letterSpacing = 0.1.em)
-                        Text(" — THE APPLICATION", color = Text3, fontSize = 12.sp, fontWeight = FontWeight.Medium, letterSpacing = 0.1.em)
+                        Text("360", color = T.accent, fontSize = 12.sp, fontWeight = FontWeight.Medium, letterSpacing = 0.1.em)
+                        Text(" — THE APPLICATION", color = T.text3, fontSize = 12.sp, fontWeight = FontWeight.Medium, letterSpacing = 0.1.em)
                     }
                     Spacer(Modifier.weight(1f))
                     PillButton("Back", onClick = onClose)
@@ -69,18 +70,18 @@ fun ApplyScreen(vm: DemoVm, a: Apply, onClose: () -> Unit) {
             // The posting this is all for, with its score — so a page of drafts can
             // never drift away from the job it was written against.
             item {
-                Column(Modifier.warmShadow(10.dp, Card).background(CardBg, Card).padding(18.dp)) {
+                Column(Modifier.warmShadow(10.dp, Card).background(T.surface, Card).padding(18.dp)) {
                     Row {
                         BearingRose(a.fit, Modifier.padding(end = 14.dp, top = 2.dp), diameter = 84.dp)
                         Column(Modifier.weight(1f)) {
                             Text(p.title, style = H2, fontSize = 22.sp)
                             Text(
                                 listOf(p.company, p.location).filter { it.isNotEmpty() }.joinToString(" · "),
-                                color = Muted, fontSize = 14.sp, lineHeight = 21.sp,
+                                color = T.text2, fontSize = 14.sp, lineHeight = 21.sp,
                                 modifier = Modifier.padding(top = 4.dp),
                             )
                             Spacer(Modifier.height(8.dp))
-                            Chip("${a.fit} / 100 · ${band.uppercase()}", bandColor, ground = bandFill(a.fit).copy(alpha = .18f))
+                            Chip("${a.fit} / 100 · ${band.uppercase()}", bandColor, ground = T.band(a.fit).second)
                         }
                     }
                     if (p.url.isNotEmpty()) Row(Modifier.padding(top = 14.dp)) {
@@ -101,7 +102,7 @@ fun ApplyScreen(vm: DemoVm, a: Apply, onClose: () -> Unit) {
                             "from what you have actually done, and claims nothing you have not. Where a step names " +
                             "something the posting asks for and your resume does not cover, that is a line to add " +
                             "if it is true of you, and a good use of ten minutes before you send.",
-                        color = Muted, fontSize = 13.sp, lineHeight = 20.sp,
+                        color = T.text2, fontSize = 13.sp, lineHeight = 20.sp,
                     )
                 }
             }
@@ -110,7 +111,7 @@ fun ApplyScreen(vm: DemoVm, a: Apply, onClose: () -> Unit) {
                 Text(
                     "Three things, each drafted from your resume alone and each one call. " +
                         "JobScout never submits anything — you open the employer's form with the answers already written.",
-                    color = Muted, fontSize = 14.sp, lineHeight = 21.sp,
+                    color = T.text2, fontSize = 14.sp, lineHeight = 21.sp,
                 )
             }
 
@@ -155,7 +156,7 @@ private fun <T> StepPanel(
     title: String, idle: String, busy: String, step: Step<T>, action: String,
     onRun: () -> Unit, body: @Composable (T) -> Unit,
 ) {
-    Column(Modifier.warmShadow(10.dp, Card).background(CardBg, Card).padding(18.dp)) {
+    Column(Modifier.warmShadow(10.dp, Card).background(T.surface, Card).padding(18.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(title, style = H2, fontSize = 20.sp, modifier = Modifier.weight(1f))
             Text(
@@ -165,24 +166,24 @@ private fun <T> StepPanel(
                     step.data != null -> "ready"
                     else -> "not started"
                 },
-                color = Text3, fontSize = 12.sp, fontWeight = FontWeight.Medium, letterSpacing = 0.08.em,
+                color = T.text3, fontSize = 12.sp, fontWeight = FontWeight.Medium, letterSpacing = 0.08.em,
             )
         }
         Spacer(Modifier.height(8.dp))
         when {
             step.busy -> Row(verticalAlignment = Alignment.CenterVertically) {
-                CircularProgressIndicator(Modifier.size(16.dp), color = Indigo, strokeWidth = 2.dp)
+                CircularProgressIndicator(Modifier.size(16.dp), color = T.accent, strokeWidth = 2.dp)
                 Spacer(Modifier.width(10.dp))
-                Text(busy, color = Muted, fontSize = 14.sp, lineHeight = 21.sp)
+                Text(busy, color = T.text2, fontSize = 14.sp, lineHeight = 21.sp)
             }
             step.error != null -> Column {
-                Text(step.error, color = EmberDeep, fontSize = 14.sp, lineHeight = 21.sp)
+                Text(step.error, color = T.bUnsure, fontSize = 14.sp, lineHeight = 21.sp)
                 Spacer(Modifier.height(12.dp))
                 PillButton("Try again", filled = true, onClick = onRun)
             }
             step.data != null -> body(step.data)
             else -> Column {
-                Text(idle, color = Muted, fontSize = 14.sp, lineHeight = 21.sp)
+                Text(idle, color = T.text2, fontSize = 14.sp, lineHeight = 21.sp)
                 Spacer(Modifier.height(12.dp))
                 PillButton(action, filled = true, onClick = onRun)
             }
@@ -195,7 +196,7 @@ private fun <T> StepPanel(
 private fun LongText(text: String) {
     val clip = LocalClipboardManager.current
     Column {
-        SelectionContainer { Text(text, color = Ink, fontSize = 15.sp, lineHeight = 24.sp) }
+        SelectionContainer { Text(text, color = T.ink, fontSize = 15.sp, lineHeight = 24.sp) }
         Spacer(Modifier.height(12.dp))
         PillButton("Copy") { clip.setText(AnnotatedString(text)) }
     }
@@ -214,24 +215,24 @@ private fun RebuiltResume(r: ResumeResponse) {
         SelectionContainer {
             Column {
                 if (r.name.isNotEmpty()) Text(r.name, style = H2, fontSize = 20.sp)
-                if (r.contact.isNotEmpty()) Text(r.contact, color = Text3, fontSize = 13.sp)
+                if (r.contact.isNotEmpty()) Text(r.contact, color = T.text3, fontSize = 13.sp)
                 if (r.headline.isNotEmpty())
-                    Text(r.headline, color = Ink, fontSize = 15.sp, lineHeight = 23.sp, modifier = Modifier.padding(top = 8.dp))
+                    Text(r.headline, color = T.ink, fontSize = 15.sp, lineHeight = 23.sp, modifier = Modifier.padding(top = 8.dp))
                 // A model that has nothing for a heading still emits the heading;
                 // an EXPERIENCE label with no rows under it reads as a bug, so the
                 // empty ones are dropped rather than shown. (Seen on the emulator
                 // 2026-09-19 with a profile that named no employers.)
                 r.sections.filter { it.items.isNotEmpty() }.forEach { sec ->
                     Text(
-                        sec.heading.uppercase(), color = Indigo, fontSize = 12.sp,
+                        sec.heading.uppercase(), color = T.accent, fontSize = 12.sp,
                         fontWeight = FontWeight.Medium, letterSpacing = 0.08.em,
                         modifier = Modifier.padding(top = 16.dp, bottom = 6.dp),
                     )
                     sec.items.forEach { it ->
-                        Text(it.title, color = Ink, fontSize = 15.sp, fontWeight = FontWeight.Medium, lineHeight = 22.sp)
-                        if (it.meta.isNotEmpty()) Text(it.meta, color = Text3, fontSize = 13.sp, lineHeight = 20.sp)
+                        Text(it.title, color = T.ink, fontSize = 15.sp, fontWeight = FontWeight.Medium, lineHeight = 22.sp)
+                        if (it.meta.isNotEmpty()) Text(it.meta, color = T.text3, fontSize = 13.sp, lineHeight = 20.sp)
                         it.bullets.forEach { b ->
-                            Text("•  $b", color = Muted, fontSize = 14.sp, lineHeight = 21.sp,
+                            Text("•  $b", color = T.text2, fontSize = 14.sp, lineHeight = 21.sp,
                                 modifier = Modifier.padding(top = 3.dp))
                         }
                         Spacer(Modifier.height(10.dp))
@@ -240,18 +241,18 @@ private fun RebuiltResume(r: ResumeResponse) {
             }
         }
         if (r.gaps.isNotEmpty()) Column(
-            Modifier.padding(top = 8.dp).background(Info, Card).padding(14.dp)
+            Modifier.padding(top = 8.dp).background(T.chip, Card).padding(14.dp)
         ) {
             Text("WHAT THIS POSTING ASKS FOR THAT YOUR RESUME DOES NOT SAY",
-                color = MidnightViolet, fontSize = 11.sp, fontWeight = FontWeight.Medium, letterSpacing = 0.08.em)
+                color = T.ink, fontSize = 11.sp, fontWeight = FontWeight.Medium, letterSpacing = 0.08.em)
             Spacer(Modifier.height(8.dp))
             r.gaps.forEach {
-                Text(it.asks, color = Ink, fontSize = 14.sp, fontWeight = FontWeight.Medium, lineHeight = 21.sp)
-                if (it.note.isNotEmpty()) Text(it.note, color = Muted, fontSize = 13.sp, lineHeight = 20.sp)
+                Text(it.asks, color = T.ink, fontSize = 14.sp, fontWeight = FontWeight.Medium, lineHeight = 21.sp)
+                if (it.note.isNotEmpty()) Text(it.note, color = T.text2, fontSize = 13.sp, lineHeight = 20.sp)
                 Spacer(Modifier.height(8.dp))
             }
             Text("Yours to add, and only if true — they are deliberately left out of the document above.",
-                color = Text3, fontSize = 12.sp, lineHeight = 18.sp)
+                color = T.text3, fontSize = 12.sp, lineHeight = 18.sp)
         }
         Spacer(Modifier.height(12.dp))
         PillButton("Copy the resume") { clip.setText(AnnotatedString(plain)) }
@@ -290,7 +291,7 @@ private fun CopyChip(text: String) {
     Box(Modifier.padding(top = 8.dp)) {
         PillButton(
             if (copied) "⧉  Copied" else "⧉  Copy",
-            color = if (copied) Forest else Muted,
+            color = if (copied) T.bAuto else T.text2,
         ) {
             clip.setText(AnnotatedString(text))
             copied = true
@@ -311,7 +312,7 @@ private fun Answers(r: AnswersResponse) {
             r.detail.orEmpty().ifEmpty {
                 "This employer's board does not publish its form, so the questions cannot be read before you open it."
             },
-            color = Muted, fontSize = 14.sp, lineHeight = 21.sp,
+            color = T.text2, fontSize = 14.sp, lineHeight = 21.sp,
         )
         return
     }
@@ -319,19 +320,19 @@ private fun Answers(r: AnswersResponse) {
         Text(
             "${r.questions.size} question${if (r.questions.size == 1) "" else "s"} on ${r.source.ifEmpty { "the form" }}" +
                 " — ${r.drafted} answered from your resume.",
-            color = Text3, fontSize = 13.sp, lineHeight = 20.sp,
+            color = T.text3, fontSize = 13.sp, lineHeight = 20.sp,
         )
         Spacer(Modifier.height(12.dp))
         r.questions.forEach { q ->
             Column(Modifier.padding(bottom = 14.dp)) {
                 Text(
                     q.label + if (q.required) "  ·  required" else "",
-                    color = Ink, fontSize = 14.sp, fontWeight = FontWeight.Medium, lineHeight = 21.sp,
+                    color = T.ink, fontSize = 14.sp, fontWeight = FontWeight.Medium, lineHeight = 21.sp,
                 )
                 when {
                     q.answer.isNotEmpty() -> {
                         SelectionContainer {
-                            Text(q.answer, color = Muted, fontSize = 14.sp, lineHeight = 21.sp,
+                            Text(q.answer, color = T.text2, fontSize = 14.sp, lineHeight = 21.sp,
                                 modifier = Modifier.padding(top = 4.dp))
                         }
                         /* One button per answer. You are in the employer's form
@@ -342,7 +343,7 @@ private fun Answers(r: AnswersResponse) {
                         CopyChip(q.answer)
                         if (q.from.isNotEmpty()) Text(
                             "from your resume: “${q.from}”",
-                            color = Text3, fontSize = 12.sp, lineHeight = 18.sp,
+                            color = T.text3, fontSize = 12.sp, lineHeight = 18.sp,
                             modifier = Modifier.padding(top = 3.dp),
                         )
                     }
@@ -350,7 +351,7 @@ private fun Answers(r: AnswersResponse) {
                     // reason is the useful part.
                     else -> Text(
                         q.why.ifEmpty { "yours to answer" },
-                        color = EmberDeep, fontSize = 13.sp, lineHeight = 20.sp,
+                        color = T.bUnsure, fontSize = 13.sp, lineHeight = 20.sp,
                         modifier = Modifier.padding(top = 4.dp),
                     )
                 }

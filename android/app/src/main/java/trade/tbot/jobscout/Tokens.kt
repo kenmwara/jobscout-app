@@ -50,9 +50,11 @@ data class Tokens(
     /** 140deg in CSS runs top-left to bottom-right, which is what Brush.linearGradient does by default. */
     val hero: Brush get() = Brush.linearGradient(listOf(heroFrom, heroMid, heroTo))
 
-    /** Text and ground for a fit band, the same four the web paints. */
+    /* Text and ground for a fit band, the same four the web paints — and at the
+       same cut-offs. This said 85 while the web, iOS and Rose.kt all said 80,
+       so an 82 wore an auto-coloured rose beside a PING pill. */
     fun band(fit: Int): Pair<Color, Color> = when {
-        fit >= 85 -> bAuto to bAutoBg
+        fit >= 80 -> bAuto to bAutoBg
         fit >= 70 -> bPing to bPingBg
         fit >= FIT_FLOOR -> bUnsure to bUnsureBg
         else -> bNear to bNearBg
@@ -60,7 +62,7 @@ data class Tokens(
 
     /** The word the band carries. Matches BAND() in the mockup. */
     fun bandWord(fit: Int): String = when {
-        fit >= 85 -> "auto"
+        fit >= 80 -> "auto"
         fit >= 70 -> "ping"
         fit >= FIT_FLOOR -> "unsure"
         else -> "near-miss"

@@ -39,7 +39,6 @@ private const val BOX = 104f
 private const val RING = 38f
 private const val LIT_R = 13f
 private const val UNLIT_R = 5.5f
-private val PaleDot = Color(0xFFDDD4C3)
 
 /** Dot centre i (0 = bearing 000, clockwise) in 104-unit space, scaled by [u] about [c]. */
 private fun dotCentre(i: Int, c: Offset, u: Float): Offset {
@@ -50,7 +49,11 @@ private fun dotCentre(i: Int, c: Offset, u: Float): Offset {
 @Composable
 fun BearingRose(fit: Int, modifier: Modifier = Modifier, diameter: Dp = 84.dp) {
     val f = fit.coerceIn(0, 100)
-    val col = bandFor(f).second
+    /* Theme-aware, like everything else on the card. It used to read the
+       hard-coded light palette, which painted midnight violet on the Kenya
+       card's near-black ground: a rose you could not see with a number you
+       could not read inside it. */
+    val col = T.band(f).first
     val lit = maxOf(1, (f / 100f * 8f).roundToInt())
 
     // One animation, staggered per dot: dot i is fully open once progress passes
@@ -62,6 +65,8 @@ fun BearingRose(fit: Int, modifier: Modifier = Modifier, diameter: Dp = 84.dp) {
         animationSpec = tween(620), label = "bloom",
     )
 
+    // The unlit dots are the page's hairline, so they read as absent on either ground.
+    val unlit = T.hair2
     Box(modifier.size(diameter), contentAlignment = Alignment.Center) {
         Canvas(Modifier.size(diameter)) {
             val u = size.width / BOX
@@ -70,7 +75,7 @@ fun BearingRose(fit: Int, modifier: Modifier = Modifier, diameter: Dp = 84.dp) {
                 val on = i < lit
                 val p = if (on) ((progress * lit) - i).coerceIn(0f, 1f) else 1f
                 val r = if (on) LIT_R * u * (0.34f + 0.66f * p) else UNLIT_R * u
-                drawCircle(if (on) col else PaleDot, radius = r, center = dotCentre(i, c, u))
+                drawCircle(if (on) col else unlit, radius = r, center = dotCentre(i, c, u))
             }
         }
         // The web's .fitnum: serif at weight 400, 24 units of the 104 box.
@@ -81,29 +86,6 @@ fun BearingRose(fit: Int, modifier: Modifier = Modifier, diameter: Dp = 84.dp) {
     }
 }
 
-/**
- * The same eight bearings at one size, dormant until chosen — the candidate
- * cards carry the mark so picking one rhymes with getting a result.
- */
-@Composable
-fun MiniRose(selected: Boolean, tint: Color, modifier: Modifier = Modifier, diameter: Dp = 30.dp) {
-    val open by animateFloatAsState(
-        targetValue = if (selected) 1f else 0f,
-        animationSpec = tween(420), label = "mini",
-    )
-    Canvas(modifier.size(diameter)) {
-        val u = size.width / BOX
-        val c = center
-        for (i in 0 until 8) {
-            val p = ((open * 8f) - i).coerceIn(0f, 1f)
-            drawCircle(
-                color = if (selected) tint else PaleDot,
-                radius = 11f * u * (0.42f + 0.58f * p),
-                center = dotCentre(i, c, u),
-            )
-        }
-    }
-}
 
 /*
  * The four fit bands. Every caller uses bandFor() for TEXT, so it returns the

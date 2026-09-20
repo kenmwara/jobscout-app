@@ -698,12 +698,18 @@ html.anim .bell[aria-pressed="true"] svg{animation:ring .6s var(--ease)}
   border-radius:var(--r-card);padding:22px 26px;font:400 15px/1.6 var(--sans);color:var(--text2)}
 .nofit b{color:var(--ink);font-weight:500}
 .nofit .lead{margin:0;max-width:68ch}
-/* what the postings kept asking for — quoted from the run's own verdicts */
-.nofit .asks{margin:16px 0 0;padding:0;list-style:none;display:grid;gap:8px}
+/* What the postings kept asking for, quoted from the run's own verdicts.
+   Three across, on the same columns as the cards below: the panel spans the
+   whole grid and stacking three short blocks down its left edge left the
+   right third of it empty. */
+.nofit .asks{
+  margin:16px 0 0;padding:0;list-style:none;display:grid;gap:10px;
+  grid-template-columns:repeat(3,1fr);align-items:start}
+@media(max-width:980px){.nofit .asks{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:620px){.nofit .asks{grid-template-columns:1fr}}
 .nofit .asks li{
-  padding:10px 13px;border-radius:var(--r-input);background:var(--canvas-2);
-  border:1px solid var(--hair);font:400 13px/1.5 var(--sans);color:var(--text2);
-  max-width:80ch}
+  padding:12px 14px;border-radius:var(--r-input);background:var(--canvas-2);
+  border:1px solid var(--hair);font:400 13px/1.5 var(--sans);color:var(--text2)}
 .nofit .asks em{display:block;font:500 10.5px/1 var(--sans);letter-spacing:.09em;
   text-transform:uppercase;color:var(--text3);font-style:normal;margin:0 0 5px}
 .nofit .routes{display:flex;gap:10px;flex-wrap:wrap;margin:18px 0 0}
