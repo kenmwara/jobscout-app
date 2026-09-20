@@ -853,6 +853,9 @@ private fun LazyListScope.matches(ui: Ui, feed: Feed?, vm: DemoVm, onRework: () 
             title = p?.title ?: s.id,
             company = p?.company.orEmpty(),
             fit = s.fit,
+            verdict = s.verdict,
+            strongest = s.strongest,
+            weakest = s.weakest,
             onClick = if (open) ({ vm.openApply(p!!) }) else null,
             // Same wording as the web's card, and shown on exactly the cards that
             // can act on it — a stretch is named as one, never as the recommendation.

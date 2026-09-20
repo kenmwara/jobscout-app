@@ -1422,7 +1422,7 @@ function scoreCard(x, i){
         <p class="verdict" style="margin:9px 0 0">${esc(x.verdict || "")}</p>
         <div class="ev">
           <button class="up" type="button" aria-expanded="false" data-ev="${esc(x.strongest || "\u2014")}">\u2191 strongest</button>
-          <button class="down" type="button" aria-expanded="false" data-ev="${esc(x.weakest || "\u2014")}">\u2193 weakest</button>
+          <button class="down" type="button" aria-expanded="false" data-ev="${esc(x.weakest || "\u2014")}">\u2193 what to answer</button>
         </div>
         <div class="act">${x.fit >= FIT_FLOOR
           ? `<button class="applybtn" type="button">Prepare application \u2192</button>`
@@ -1513,7 +1513,7 @@ function closePop(){
 
 function openPop(chip){
   const label = chip.classList.contains("up") ? "Strongest point"
-              : chip.classList.contains("down") ? "Weakest point" : "How fresh";
+              : chip.classList.contains("down") ? "What to answer" : "How fresh";
   pop.innerHTML = `<b>${esc(label)}</b>${esc(chip.dataset.ev || "\u2014")}`;
   // the chip's own colour carries into the label, so the panel is visibly its
   pop.style.setProperty("--tone", getComputedStyle(chip).color);

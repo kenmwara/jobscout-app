@@ -265,6 +265,28 @@ fun MCount(text: String, modifier: Modifier = Modifier) {
  * has had these since the redesign; the phone showed a bare count instead, so
  * the landing said "318 swept this morning" and stopped.
  */
+/**
+ * One piece of evidence behind a score, in the same shape the below-floor panel
+ * uses for its asks: a micro-label in the band's own colour over the sentence
+ * itself. Nothing is truncated — a receipt you cannot read is not a receipt.
+ */
+@Composable
+private fun MEvidence(label: String, text: String?, fg: Color, bg: Color) {
+    val body = text?.takeIf { it.isNotBlank() } ?: return
+    Spacer(Modifier.height(7.dp))
+    Column(
+        Modifier.fillMaxWidth().clip(EvShape).background(bg)
+            .padding(horizontal = 11.dp, vertical = 9.dp),
+    ) {
+        Text(label.uppercase(), fontSize = 9.5.sp, letterSpacing = 0.09.em,
+            fontWeight = FontWeight.Medium, color = fg)
+        Spacer(Modifier.height(4.dp))
+        Text(body, fontSize = 12.sp, lineHeight = 18.sp, color = T.text2)
+    }
+}
+
+private val EvShape = RoundedCornerShape(10.dp)
+
 /** One line of label over one line of count, so one height fits them all. */
 private val TAX_H = 66.dp
 
@@ -346,6 +368,14 @@ fun MJob(
        and nothing on it suggested that. The web has carried the label since
        the redesign. */
     action: String? = null,
+    /* What the score MEANS. A scored card used to carry a number and a band
+       word and nothing else: the verdict and the two evidence lines existed in
+       the response and were rendered nowhere, so the phone showed "28 ·
+       NEAR-MISS" and left the reader to guess. The web has shown all three
+       since the redesign. */
+    verdict: String? = null,
+    strongest: String? = null,
+    weakest: String? = null,
     /** Put this posting away, with one undo. The web has had dismiss since the
      *  redesign; the phone had no way to say "not this one". */
     onDismiss: (() -> Unit)? = null,
@@ -372,10 +402,14 @@ fun MJob(
             }
         }
         Column(Modifier.weight(1f)) {
-            // One line, clipped — the mockup's rows never wrap, which is what keeps
-            // four of them legible in a 620px frame.
+            /* One line for a browse row: the mockup's rows never wrap, and that is
+               what keeps four of them legible in a 620px frame. Two for a scored
+               one — a match's title is the identity of the thing being judged,
+               and "Senior Associate, SLC Accounting and Controls - SLC …" is not
+               that. */
             Text(title, style = H2, fontSize = 14.5.sp, lineHeight = 18.sp,
-                letterSpacing = (-0.015).em, color = T.ink, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                letterSpacing = (-0.015).em, color = T.ink,
+                maxLines = if (fit != null) 2 else 1, overflow = TextOverflow.Ellipsis)
             Spacer(Modifier.height(3.dp))
             Text(company, fontSize = 11.5.sp, color = T.text2)
             Spacer(Modifier.height(7.dp))
@@ -397,6 +431,13 @@ fun MJob(
                             .padding(horizontal = 9.dp, vertical = 5.dp),
                     )
                 }
+                // The reasoning, not clipped: this is what the score is FOR.
+                verdict?.takeIf { it.isNotBlank() }?.let {
+                    Spacer(Modifier.height(8.dp))
+                    Text(it, fontSize = 12.5.sp, lineHeight = 19.sp, color = T.text2)
+                }
+                MEvidence("Strongest", strongest, T.bAuto, T.bAutoBg)
+                MEvidence("What to answer", weakest, T.bUnsure, T.bUnsureBg)
             } else {
                 Text(
                     policyLabel(policy),

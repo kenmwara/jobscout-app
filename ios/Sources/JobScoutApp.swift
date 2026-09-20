@@ -61,8 +61,14 @@ final class DemoVM: ObservableObject {
     @Published var uploading = false
     @Published var uploadStatus: String?
     @Published var tracker: [String: Tracked] = [:]
+    /* The candidate has said they want to apply below the floor. Per run and
+       never persisted: a fresh resume deserves the honest answer first. */
+    @Published var stretch = false
+    /// Set when the restored run was scored against an earlier day's sweep.
+    @Published var runStale: String?
 
     private let trackerKey = "jobscout.tracker"
+    private let runKey = "jobscout.run"
 
     /* Same rule as the web page: the pasted resume, once it is long enough to be one,
        or nothing. Three fictional candidates used to sit under the button as a
@@ -79,8 +85,11 @@ final class DemoVM: ObservableObject {
 
     func load() async {
         loadTracker()
+        // The stored run first, so `market` is the one it belongs to before the
+        // feed is asked for; then vetted, once the feed's day is known.
+        loadRun()
         error = nil
-        do { feed = try await Api.feed(market: market) }
+        do { feed = try await Api.feed(market: market); vetRestoredRun() }
         catch { self.error = Self.friendly(error) }
     }
 
@@ -134,6 +143,7 @@ final class DemoVM: ObservableObject {
         // home is cleared with the market: "Manitoba" means nothing in the Kenya feed.
         Api.ev("open", market: m)
         market = m; home = ""; remoteOnly = false; feed = nil; phase = .idle; scores = []; banner = nil
+        stretch = false; runStale = nil; keepRun()
         await load()
     }
 
@@ -143,7 +153,9 @@ final class DemoVM: ObservableObject {
         let sel = select(profile: profile, feed: feed, home: home, remoteOnly: remoteOnly)
         Api.ev("run", sel.sector, market: market)
         selection = sel
+        // A new run is a new answer; the opt-in belonged to the resume that earned it.
         phase = .gates; gatesShown = 0; scores = []; meta = nil; banner = nil; fromCache = false
+        stretch = false; runStale = nil
         for _ in 0...feed.rejects.count {
             try? await Task.sleep(nanoseconds: 160_000_000)
             gatesShown += 1
@@ -161,6 +173,7 @@ final class DemoVM: ObservableObject {
             } else {
                 scores = r.scores
                 meta = r.meta
+                keepRun()
             }
         } catch {
             banner = "Scoring failed: \(error.localizedDescription)"
@@ -212,6 +225,62 @@ final class DemoVM: ObservableObject {
     private func saveTracker() {
         guard let d = try? JSONEncoder().encode(TrackerStore(items: tracker)) else { return }
         UserDefaults.standard.set(d, forKey: trackerKey)
+    }
+
+    // MARK: - The last run
+
+    /* Eight scored postings cost eight Claude calls, and iOS suspends and kills
+       apps far more readily than a browser closes a tab. Same store as the
+       tracker, same two stamps as the web: the sweep's day, because a run about
+       yesterday's postings is describing a market that has moved, and a hash of
+       the resume, because a run shown against a resume it was not scored from
+       is worse than no run. */
+    private struct SavedRun: Codable {
+        var day = ""
+        var market = "ca"
+        var fp = ""
+        var profile = ""
+        var scores: [Score] = []
+    }
+
+    /// The same djb2 the web uses, so the two agree on what "a different resume" means.
+    private func fingerprint(_ text: String) -> String {
+        var h: Int32 = 5381
+        for u in text.unicodeScalars { h = (h &<< 5) &+ h &+ Int32(truncatingIfNeeded: u.value) }
+        return "\(UInt32(bitPattern: h)).\(text.count)"
+    }
+
+    func keepRun() {
+        if scores.isEmpty { UserDefaults.standard.removeObject(forKey: runKey); return }
+        let r = SavedRun(day: feed?.day ?? "", market: market, fp: fingerprint(resume),
+                         profile: resume, scores: scores)
+        guard let d = try? JSONEncoder().encode(r) else { return }
+        UserDefaults.standard.set(d, forKey: runKey)
+    }
+
+    func loadRun() {
+        guard let d = UserDefaults.standard.data(forKey: runKey),
+              let r = try? JSONDecoder().decode(SavedRun.self, from: d),
+              !r.scores.isEmpty else { return }
+        market = r.market
+        resume = r.profile
+        scores = r.scores
+    }
+
+    /// Judged once the feed is in, because only then is today's date known.
+    func vetRestoredRun() {
+        guard !scores.isEmpty,
+              let d = UserDefaults.standard.data(forKey: runKey),
+              let r = try? JSONDecoder().decode(SavedRun.self, from: d) else { return }
+        guard r.fp == fingerprint(resume) else {
+            UserDefaults.standard.removeObject(forKey: runKey)
+            scores = []; runStale = nil
+            return
+        }
+        let day = feed?.day ?? ""
+        runStale = (!r.day.isEmpty && !day.isEmpty && r.day != day)
+            ? "These matches were scored against \(r.day)\u{2019}s sweep, not today\u{2019}s. Run it again for today\u{2019}s."
+            : nil
     }
 
     // MARK: - The application page
@@ -345,11 +414,18 @@ struct ContentView: View {
     @State private var sector: String? = nil
     /// The sweep is long; show a screenful until asked for the rest.
     @State private var sweepOpen = false
+    /* One scrolling page, so "home" and "back to the resume box" are anchors
+       rather than screens. Held as a closure because the panel and the header
+       are both nested inside the reader. */
+    @State private var scrollTo: ((String) -> Void)?
 
     var body: some View {
+        ScrollViewReader { proxy in
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 12) {
                 header
+                    .id("top")
+                    .onAppear { scrollTo = { withAnimation { proxy.scrollTo($0, anchor: .top) } } }
                 // Retry path for a failed first load - without this the only fix
                 // is force-quitting the app.
                 if let e = vm.error {
@@ -366,7 +442,7 @@ struct ContentView: View {
                     }
                     Spacer(minLength: 0)
                 }
-                ownResumeBox
+                ownResumeBox.id("resumebox")
                 whereRow
                 runButton
 
@@ -378,17 +454,27 @@ struct ContentView: View {
                     if let b = vm.banner { bannerView(b) }
                     let byId = Dictionary(uniqueKeysWithValues: (vm.feed?.passers ?? []).map { ($0.id, $0) })
                     let sorted = vm.scores.sorted { $0.fit > $1.fit }
-                    // Below the floor nothing is recommended: say so, name the nearest, and draft nothing.
+                    /* Below the floor the page used to stop at one sentence. The
+                       recommendation is unchanged \u{2014} rewrite the resume first
+                       \u{2014} but it is a brief now, with the other two things a
+                       candidate might reasonably do beside it. */
                     if let top = sorted.first, top.fit < fitFloor {
-                        bannerView(nofitNote(fit: top.fit, posting: byId[top.id], id: top.id))
+                        nofitPanel(near: top.fit,
+                                   asks: sorted.prefix(3).compactMap { s in
+                                       s.weakest.isEmpty ? nil
+                                           : (byId[s.id]?.title ?? s.id, s.weakest)
+                                   })
+                    }
+                    if let stale = vm.runStale {
+                        Text(stale).font(sans(12)).foregroundColor(text3)
                     }
                     ForEach(Array(sorted.enumerated()), id: \.element.id) { i, s in
                         // Every card that clears the bar offers the page, not only the
                         // top one: the second-best match is a real application too.
-                        // Below the floor it offers the posting alone, because every
-                        // step behind that page would be refused.
+                        // Below the floor it offers the page once the candidate has
+                        // asked it to, and the letter then argues their case.
                         scoreCard(s, posting: byId[s.id], first: i == 0,
-                                  canApply: !vm.fromCache && s.fit >= fitFloor)
+                                  canApply: !vm.fromCache && (s.fit >= fitFloor || vm.stretch))
                     }
                 }
 
@@ -428,13 +514,22 @@ struct ContentView: View {
                                   set: { if !$0 { vm.closeApply() } })) {
             ApplyView(vm: vm)
         }
+        }   // ScrollViewReader
     }
 
     /// The floating pill navigation: mark, wordmark, live chip, saved.
     private var header: some View {
         HStack(spacing: 10) {
-            Mark()
-            Text("JobScout").font(serif(21)).foregroundColor(ink).tracking(-0.2)
+            // The wordmark goes home, as the web's does. One target for the mark
+            // and the word — two adjacent decorations is not what anyone means
+            // by "the logo". Home on one page is the top of it.
+            Button { scrollTo?("top") } label: {
+                HStack(spacing: 10) {
+                    Mark()
+                    Text("JobScout").font(serif(21)).foregroundColor(ink).tracking(-0.2)
+                }
+            }
+            .buttonStyle(.plain)
             if vm.feed != nil { liveChip }
             Spacer()
             Button("Saved (\(vm.tracker.count))") { showTracker = true }
@@ -670,6 +765,77 @@ struct ContentView: View {
         .padding(.horizontal, 18).padding(.vertical, 13)
     }
 
+    /* The below-floor panel: the brief, the quoted asks, and the two routes.
+
+       Every posting in the run already carries the one thing it most wants to
+       see, so the list is quoted from the run rather than invented for this
+       screen \u{2014} and it is the rewrite list, which is why the first button
+       goes back to the resume box rather than forward to an application. */
+    @ViewBuilder
+    private func nofitPanel(near: Int, asks: [(String, String)]) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Text(nofitNote(fit: near, posting: nil, id: ""))
+                .font(sans(14)).foregroundColor(muted).lineSpacing(4)
+                .fixedSize(horizontal: false, vertical: true)
+
+            ForEach(Array(asks.enumerated()), id: \.offset) { _, a in
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("\(a.0.uppercased()) \u{2014} WHAT TO ANSWER")
+                        .font(sans(10, .medium)).tracking(0.9).foregroundColor(text3)
+                        .lineLimit(2)
+                    Text(a.1).font(sans(12.5)).foregroundColor(muted).lineSpacing(3)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 12).padding(.vertical, 10)
+                .background(canvasBg)
+                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .padding(.top, 10)
+            }
+
+            Text(nofitRoutes)
+                .font(sans(13)).foregroundColor(muted).lineSpacing(3)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.top, 12)
+
+            HStack(spacing: 9) {
+                PillButton(text: "Rework your resume", filled: true) {
+                    withAnimation { scrollTo?("resumebox") }
+                }
+                PillButton(text: vm.stretch ? "Hide those" : "Apply anyway") {
+                    vm.stretch.toggle()
+                }
+                Spacer(minLength: 0)
+            }
+            .padding(.top, 14)
+        }
+        .padding(18)
+        .background(cardBg)
+        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .warmShadow()
+    }
+
+    /* One piece of evidence behind a score. It was a bare green or red sentence
+       prefixed "+" or "−" \u{2014} the same information in a voice nothing else in
+       the product uses. Same tinted row with a micro-label as the web's popover
+       and the phone's card, so a receipt reads the same everywhere. */
+    @ViewBuilder
+    private func evidenceRow(_ label: String, _ text: String, _ fg: Color, _ bg: Color) -> some View {
+        if !text.isEmpty {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(label.uppercased())
+                    .font(sans(10, .medium)).tracking(0.9).foregroundColor(fg)
+                Text(text).font(sans(12.5)).foregroundColor(muted).lineSpacing(3)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 11).padding(.vertical, 9)
+            .background(bg)
+            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+            .padding(.top, 5)
+        }
+    }
+
     private func scoreCard(_ s: Score, posting: Posting?, first: Bool, canApply: Bool) -> some View {
         let (route, bandColor) = band(s.fit)
         return VStack(alignment: .leading, spacing: 0) {
@@ -681,12 +847,8 @@ struct ContentView: View {
                         .font(sans(16)).foregroundColor(ink).lineSpacing(3)
                     Chip(text: route.uppercased(), color: bandColor, ground: bandFill(s.fit).opacity(0.18))
                     Text(s.verdict).font(sans(14)).foregroundColor(muted).lineSpacing(4)
-                    if !s.strongest.isEmpty {
-                        Text("+ \(s.strongest)").font(sans(13, .medium)).foregroundColor(meadow).padding(.top, 2)
-                    }
-                    if !s.weakest.isEmpty {
-                        Text("− \(s.weakest)").font(sans(13, .medium)).foregroundColor(emberDeep)
-                    }
+                    evidenceRow("Strongest", s.strongest, meadow, meadow.opacity(0.10))
+                    evidenceRow("What to answer", s.weakest, emberDeep, emberDeep.opacity(0.08))
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
             }

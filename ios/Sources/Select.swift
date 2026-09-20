@@ -180,10 +180,18 @@ func select(profile: String, feed: Feed, home: String = "", remoteOnly: Bool = f
     return Selection(sector: sector, label: feed.labels?[sector] ?? sector, inSector: inSector.count, eligible: eligible.count, postings: picked)
 }
 
+/* A low score is the distance between what these postings ask for and what the
+   resume currently says \u{2014} a rewrite brief, not a judgement of the person.
+   Written forward for the same reason the letter is: the product exists to get
+   someone hired, not to tell them they are not good enough. */
 func nofitNote(fit: Int, posting p: Posting?, id: String) -> String {
-    var name = id
-    if let p, !p.title.isEmpty { name = p.title }
-    if let p, !p.company.isEmpty { name += " · \(p.company)" }
-    return "Nothing in today's pool clears the bar for this profile. The nearest was \(fit) out of 100 — \(name). " +
-           "A cover letter or a tailored resume is only offered from \(fitFloor) up, so none is offered here. The verdicts below say why."
+    return "Today\u{2019}s postings are a stretch for this resume as written. The nearest was \(fit) out of 100 "
+        + "\u{2014} which measures the distance between what these postings ask for and what the resume "
+        + "currently says, not what you are capable of. The quickest way to move it is to make the resume "
+        + "answer them, and they have been unusually clear about what they are asking:"
 }
+
+/// What to do about it, shown under the quoted asks.
+let nofitRoutes = "Put whatever is genuinely true of you against those points and run it again \u{2014} the same "
+    + "experience in their words often scores very differently. Or back yourself on one of these today: the "
+    + "letter leads with your strongest real evidence and the recruiter decides the rest."

@@ -202,26 +202,34 @@ enum Api {
         return try await post("api/score", Body(profile: profile, postings: postings, market: market))
     }
 
-    // The worker refuses fit < fitFloor, so the fit travels with the request.
+    /* The worker refuses fit < fitFloor unless `stretch` says the candidate
+       asked anyway — and with it the letter argues their case from what they
+       have actually done rather than refusing. Derived from the fit here, not
+       threaded through four signatures: below the floor the only route to the
+       application page is that opt-in, so a below-floor fit at this point
+       already IS the anyway. */
+    private struct DraftBody: Encodable {
+        let profile: String; let posting: Posting; let fit: Int; let stretch: Bool
+        init(_ profile: String, _ posting: Posting, _ fit: Int) {
+            self.profile = profile; self.posting = posting; self.fit = fit
+            self.stretch = fit < fitFloor
+        }
+    }
+
     static func letter(profile: String, posting: Posting, fit: Int) async throws -> LetterResponse {
-        struct Body: Encodable { let profile: String; let posting: Posting; let fit: Int }
-        return try await post("api/letter", Body(profile: profile, posting: posting, fit: fit))
+        return try await post("api/letter", DraftBody(profile, posting, fit))
     }
 
     static func tailor(profile: String, posting: Posting, fit: Int) async throws -> TailorResponse {
-        struct Body: Encodable { let profile: String; let posting: Posting; let fit: Int }
-        return try await post("api/tailor", Body(profile: profile, posting: posting, fit: fit))
+        return try await post("api/tailor", DraftBody(profile, posting, fit))
     }
 
-    /// Same body as letter/tailor — the worker's one guard reads {profile, posting, fit}.
     static func resume(profile: String, posting: Posting, fit: Int) async throws -> ResumeResponse {
-        struct Body: Encodable { let profile: String; let posting: Posting; let fit: Int }
-        return try await post("api/resume", Body(profile: profile, posting: posting, fit: fit))
+        return try await post("api/resume", DraftBody(profile, posting, fit))
     }
 
     static func answers(profile: String, posting: Posting, fit: Int) async throws -> AnswersResponse {
-        struct Body: Encodable { let profile: String; let posting: Posting; let fit: Int }
-        return try await post("api/answers", Body(profile: profile, posting: posting, fit: fit))
+        return try await post("api/answers", DraftBody(profile, posting, fit))
     }
 
     /// Raw file bytes as the request body — the worker extracts text in memory and stores nothing.

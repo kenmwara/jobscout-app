@@ -121,6 +121,16 @@ async function scoreOne(env, profile, posting, m = "ca") {
     "baselines ~70; niche alignment is a +5..15 bonus, never a requirement;",
     "unspecified salary is neutral. Be honest — most postings are a poor fit and",
     "should score low, with the reason stated plainly.",
+    /* The score is read by the person it is about. A low one is a statement
+       about the DISTANCE between a posting and a profile, and it stays that:
+       no judgements of the candidate's character, temperament, ambition or
+       preferences, and no advice about what sort of person they are. "Ken
+       thrives alone" was a real verdict this produced, and it is not something
+       a scoring rubric is in any position to say. */
+    "Write about the fit, never about the candidate as a person: no claims about",
+    "their temperament, motivation, ambition or preferences, and no advice about",
+    "what kind of work suits them. Distance between a posting and a profile is",
+    "the only subject.",
     m === "ke" ? RUBRIC_KE : "",
     'Reply ONLY with JSON: {"fit": <int>, "verdict": "<one sentence>",',
     '"strongest": "<the single best alignment>",',
