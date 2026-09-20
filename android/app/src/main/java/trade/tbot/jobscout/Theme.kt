@@ -69,10 +69,14 @@ val Sans = FontFamily(
     Font(R.font.inter, FontWeight.SemiBold, variationSettings = FontVariation.Settings(FontVariation.weight(600))),
 )
 
+/* No colour in here. These carried `color = Ink` — the fixed #080331 of the
+   pre-redesign palette — so on the Kenya ground (#0c0f0d) every serif heading
+   was navy on near-black. A TextStyle in a themed app states the type and
+   lets the call site state the ink. */
 val H1 = TextStyle(fontFamily = Serif, fontWeight = FontWeight.Normal, fontSize = 34.sp,
-    lineHeight = 37.sp, letterSpacing = (-0.02).em, color = Ink)
+    lineHeight = 37.sp, letterSpacing = (-0.02).em)
 val H2 = TextStyle(fontFamily = Serif, fontWeight = FontWeight.Normal, fontSize = 27.sp,
-    lineHeight = 30.sp, letterSpacing = (-0.015).em, color = Ink)
+    lineHeight = 30.sp, letterSpacing = (-0.015).em)
 
 private fun sans(size: Int, weight: FontWeight = FontWeight.Normal, line: Int = (size * 1.5).toInt()) =
     TextStyle(fontFamily = Sans, fontWeight = weight, fontSize = size.sp, lineHeight = line.sp)
@@ -104,11 +108,33 @@ fun JobScoutTheme(content: @Composable () -> Unit) = MaterialTheme(
 fun Modifier.warmShadow(elevation: Dp, shape: Shape): Modifier =
     shadow(elevation, shape, clip = false, ambientColor = WarmBrown.copy(alpha = .4f), spotColor = WarmBrown.copy(alpha = .4f))
 
-/** The tiny-dot texture the site paints on the canvas: a grid of 1px ink dots at low alpha. */
-fun Modifier.dots(step: Dp = 24.dp, alpha: Float = .07f): Modifier = drawBehind {
+/**
+ * The ground: the site's soft halo circles, then its dot texture, both in one
+ * pass behind the content.
+ *
+ * The circles sit off the edges deliberately — a halo is the part of a circle
+ * you can see, and a whole one floating mid-screen is a bubble. They are
+ * drawn at a few percent alpha, which is enough to stop a flat fill reading
+ * as a blank page and not enough to compete with a card.
+ *
+ * `tint` because this cannot read the theme: it is a plain Modifier, and the
+ * old `dots()` hard-coded Ink — which on the Kenya ground is near-black on
+ * near-black, so that texture has never once been visible there.
+ */
+fun Modifier.backdrop(tint: Color, step: Dp = 24.dp, alpha: Float = .07f): Modifier = drawBehind {
+    val w = size.width
+    val h = size.height
+    // fractions of the width, so it scales with the phone rather than the dp grid
+    for ((cx, cy, cr, a) in listOf(
+        listOf(-0.18f, 0.10f, 0.62f, 0.040f),
+        listOf(1.16f, 0.30f, 0.70f, 0.034f),
+        listOf(0.30f, 0.86f, 0.80f, 0.026f),
+        listOf(1.02f, 0.98f, 0.46f, 0.030f),
+    )) drawCircle(tint.copy(alpha = a), cr * w, Offset(cx * w, cy * h))
+
     val s = step.toPx()
     val r = 0.75.dp.toPx()
-    val c = Ink.copy(alpha = alpha)
+    val c = tint.copy(alpha = alpha)
     var y = s / 2
     while (y < size.height) {
         var x = s / 2

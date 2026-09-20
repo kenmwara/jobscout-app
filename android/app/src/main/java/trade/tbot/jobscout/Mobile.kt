@@ -1,5 +1,12 @@
 package trade.tbot.jobscout
 
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -8,9 +15,12 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.SpanStyle
@@ -313,13 +323,57 @@ fun MTax(label: String, count: Int, modifier: Modifier = Modifier, onClick: () -
 }
 
 /**
+ * A run in progress. The phone showed nothing at all between the tap and the
+ * finished matches — the gate stream and eight Claude calls are forty seconds
+ * of silence, which reads as a dead button. Claude's own mark, breathing,
+ * and a line saying which half is running.
+ */
+@Composable
+fun MRunning(scoring: Boolean, swept: Int, going: Int) {
+    val pulse = rememberInfiniteTransition(label = "run")
+    val k by pulse.animateFloat(
+        initialValue = 1f, targetValue = 0.72f,
+        animationSpec = infiniteRepeatable(tween(760, easing = LinearEasing), RepeatMode.Reverse),
+        label = "breathe",
+    )
+    Row(
+        Modifier.fillMaxWidth().clip(CardShape).background(T.surface)
+            .border(1.dp, T.hair, CardShape).padding(14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Image(
+            painter = painterResource(R.drawable.claude_mark),
+            contentDescription = null,
+            modifier = Modifier.size(22.dp).clip(RoundedCornerShape(5.dp))
+                .graphicsLayer { scaleX = k; scaleY = k; alpha = k },
+        )
+        Column {
+            Text(
+                if (scoring) "Claude is scoring them" else "Dropping what cannot fit",
+                fontSize = 14.sp, fontWeight = FontWeight.Medium, color = T.ink,
+            )
+            Spacer(Modifier.height(2.dp))
+            Text(
+            /* This counted the reject STREAM, and the API marks only a handful
+               of postings as hard rejects — so on a 318-posting sweep it read
+               "3 of 3" while the gate was narrowing 318 to 8. */
+                if (scoring) "$going postings, one Claude call each — about half a minute"
+                else "$swept from this morning’s sweep, narrowing to $going — this part is free",
+                fontSize = 12.5.sp, lineHeight = 18.sp, color = T.text2,
+            )
+        }
+    }
+}
+
+/**
  * The web's footer, in the phone's language: where the product explains itself
  * and what it does with your resume. The app had none of these — Play expects a
  * reachable privacy statement, and "how it works" and the live numbers were
  * web-only despite describing the same product.
  */
 @Composable
-fun MFoot(onOpen: (String) -> Unit) {
+fun MFoot(onPage: (String) -> Unit) {
     Column(Modifier.fillMaxWidth().padding(top = 26.dp, bottom = 8.dp)) {
         Text(
             "Reads your resume, drops what cannot fit, and tells you why about the rest.",
@@ -327,14 +381,13 @@ fun MFoot(onOpen: (String) -> Unit) {
         )
         Spacer(Modifier.height(12.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            listOf(
-                "How it works" to "https://jobscout.page/#how",
-                "Privacy" to "https://jobscout.page/privacy",
-            ).forEach { (label, url) ->
+            // In the app, not in a browser. A privacy policy is the last thing
+            // that should throw the reader out of the app to read.
+            listOf("How it works" to "how", "Privacy" to "privacy").forEach { (label, page) ->
                 Text(
                     label,
                     fontSize = 11.sp, fontWeight = FontWeight.Medium, color = T.accent,
-                    modifier = Modifier.clip(Pill9999).clickable { onOpen(url) }
+                    modifier = Modifier.clip(Pill9999).clickable { onPage(page) }
                         .padding(horizontal = 9.dp, vertical = 6.dp),
                 )
             }
@@ -375,6 +428,11 @@ fun MJob(
     verdict: String? = null,
     strongest: String? = null,
     weakest: String? = null,
+    /* Keeping a posting. The web's score card has had this since the redesign
+       and MJob never got it, so the Saved screen's own empty state — "tap Save
+       on a score to keep it" — pointed at a control that did not exist. */
+    saved: Boolean = false,
+    onSave: (() -> Unit)? = null,
     /** Put this posting away, with one undo. The web has had dismiss since the
      *  redesign; the phone had no way to say "not this one". */
     onDismiss: (() -> Unit)? = null,
@@ -427,6 +485,15 @@ fun MJob(
                         action,
                         fontSize = 10.5.sp, fontWeight = FontWeight.SemiBold, color = T.accent, maxLines = 1,
                         modifier = Modifier.clip(Pill9999).border(1.dp, T.accent, Pill9999)
+                            .padding(horizontal = 9.dp, vertical = 5.dp),
+                    )
+                    if (onSave != null) Text(
+                        if (saved) "\u2665 Saved" else "\u2661 Save",
+                        fontSize = 10.5.sp, fontWeight = FontWeight.Medium, maxLines = 1,
+                        color = if (saved) T.live else T.text2,
+                        modifier = Modifier.clip(Pill9999)
+                            .border(1.dp, if (saved) T.live else T.hair2, Pill9999)
+                            .clickable(onClick = onSave)
                             .padding(horizontal = 9.dp, vertical = 5.dp),
                     )
                 }

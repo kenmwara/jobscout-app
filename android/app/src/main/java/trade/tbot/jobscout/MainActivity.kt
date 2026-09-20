@@ -483,6 +483,8 @@ fun DemoScreen(vm: DemoVm = viewModel()) {
     val ui by vm.ui.collectAsState()
     val feed = ui.feed
     var trackerOpen by remember { mutableStateOf(false) }
+    /** "how" or "privacy" when one of the footer's pages is open. */
+    var infoPage by remember { mutableStateOf<String?>(null) }
     var screen by remember { mutableStateOf(Screen.LANDING) }
     var policy by remember { mutableStateOf<String?>(null) }
     // Storage Access Framework: no storage permission, the user picks one document.
@@ -525,7 +527,8 @@ fun DemoScreen(vm: DemoVm = viewModel()) {
     }
 
     CompositionLocalProvider(LocalTokens provides tokens) {
-        Box(Modifier.fillMaxSize().background(T.canvas)) {
+        // The main frame had a flat fill and no texture at all.
+        Box(Modifier.fillMaxSize().background(T.canvas).backdrop(T.ink)) {
           Column(Modifier.fillMaxSize()) {
             /* Outside the list, so it stays. It used to be the first item in it,
                which put the market switch, Saved and the wordmark off screen as
@@ -569,7 +572,7 @@ fun DemoScreen(vm: DemoVm = viewModel()) {
                             if (p != null) screen = Screen.BROWSE
                         },
                         onMatches = { screen = Screen.MATCHES },
-                        onOpen = { u -> runCatching { uriHandler.openUri(u) } },
+                        onOpen = { page -> infoPage = page },
                         // A tile is a way INTO the sweep, narrowed to it —
                         // exactly what clicking one does on the web.
                         onSector = { sec -> sector = sec; screen = Screen.BROWSE },
@@ -577,7 +580,7 @@ fun DemoScreen(vm: DemoVm = viewModel()) {
                     Screen.BROWSE -> browse(
                         ui, feed, policy, query, sector, scope, dismissed,
                         onClear = { query = null; sector = null },
-                        onOpen = { u -> runCatching { uriHandler.openUri(u) } },
+                        onOpen = { page -> infoPage = page },
                         onSector = { sec -> sector = if (sector == sec) null else sec },
                         onScope = { scope = it },
                         onWatch = { k, h, sec -> vm.toggleWatch(k, h, sec) },
@@ -588,18 +591,27 @@ fun DemoScreen(vm: DemoVm = viewModel()) {
                             lastDismissed = null
                         },
                     ) { policy = it }
-                    Screen.MATCHES -> matches(ui, feed, vm, onRework = { screen = Screen.LANDING })
+                    Screen.MATCHES -> matches(
+                        ui, feed, vm,
+                        onRework = { screen = Screen.LANDING },
+                        // The frame people spend the most time on had no footer
+                        // at all, so how-it-works and privacy were unreachable
+                        // from it.
+                        onOpen = { page -> infoPage = page },
+                    )
                 }
             }
 
           }
             if (trackerOpen) TrackerScreen(vm, ui.tracker, ui.watched) { trackerOpen = false }
+            infoPage?.let { page -> InfoSheet(page) { infoPage = null } }
             ui.apply?.let { a -> ApplyScreen(vm, a, vm::closeApply) }
         }
     }
 
     // Back walks the three frames in the order they were entered, then leaves.
-    BackHandler(enabled = screen != Screen.LANDING && ui.apply == null && !trackerOpen) {
+    BackHandler(enabled = infoPage != null) { infoPage = null }
+    BackHandler(enabled = screen != Screen.LANDING && ui.apply == null && !trackerOpen && infoPage == null) {
         screen = if (screen == Screen.MATCHES) Screen.BROWSE else Screen.LANDING
     }
 }
@@ -623,6 +635,14 @@ private fun LazyListScope.landing(
             onRun = { if (looksLikeResume(ui.resume)) vm.run() else onSearch(ui.resume.trim()) },
             policy = policy, onPolicy = onPolicy,
             onUpload = onUpload, uploading = ui.uploading, hint = ui.uploadStatus,
+        )
+    }
+    /* Forty seconds of silence reads as a dead button. */
+    if (ui.phase == Phase.GATES || ui.phase == Phase.SCORING) item {
+        MRunning(
+            scoring = ui.phase == Phase.SCORING,
+            swept = feed?.postings?.size ?: 0,
+            going = ui.selection?.postings?.size ?: 0,
         )
     }
     /* A way back to a run you already paid for. Without this the matches were
@@ -828,7 +848,9 @@ private fun LazyListScope.browse(
 
 /* ── frame 3: After a run ─────────────────────────────────────────────────
    The scored eight, each carrying its rose and its band. */
-private fun LazyListScope.matches(ui: Ui, feed: Feed?, vm: DemoVm, onRework: () -> Unit) {
+private fun LazyListScope.matches(
+    ui: Ui, feed: Feed?, vm: DemoVm, onRework: () -> Unit, onOpen: (String) -> Unit,
+) {
     val byId = feed?.passers?.associateBy { it.id } ?: emptyMap()
     val sorted = ui.scores.sortedByDescending { it.fit }
 
@@ -865,12 +887,18 @@ private fun LazyListScope.matches(ui: Ui, feed: Feed?, vm: DemoVm, onRework: () 
             verdict = s.verdict,
             strongest = s.strongest,
             weakest = s.weakest,
+            saved = ui.tracker.containsKey(s.id),
+            onSave = {
+                if (ui.tracker.containsKey(s.id)) vm.untrack(s.id)
+                else vm.setStage(trackedFor(s, p), "survivor")
+            },
             onClick = if (open) ({ vm.openApply(p!!) }) else null,
             // Same wording as the web's card, and shown on exactly the cards that
             // can act on it — a stretch is named as one, never as the recommendation.
             action = if (!open) null else if (s.fit >= FIT_FLOOR) "Prepare application →" else "Apply anyway →",
         )
     }
+    item { MFoot(onOpen) }
 }
 
 /** onsite covers everything that is neither remote nor hybrid, including unstated. */
@@ -880,13 +908,23 @@ private fun matchesPolicy(p: Posting, id: String): Boolean = when (id) {
     else -> p.remote_policy != "remote" && p.remote_policy != "hybrid"
 }
 
-// ── the brand mark: August's geometry (8 dots, ring r=11 in a 24 box, cropped by
-//    the square) with OUR one difference — radii graduate 2.30 → 4.35 clockwise
-//    from bearing 000, so it reads as a sweep, not a wheel.
+/* The brand mark: August's geometry (8 dots on a ring at r=11) with OUR one
+   difference — radii graduate 2.30 -> 4.35 clockwise from bearing 000, so it
+   reads as a sweep rather than a wheel.
+ 
+   NOT cropped. This clipped to a rounded 24 square, and five of the eight dots
+   cross that edge: the four compass points sit at 1 and 23 with radii up to
+   3.45, so each lost about a third of itself, and the NW dot spilled too. The
+   site header has always drawn them free (viewBox "-3.5 -3.5 31 31") — this is
+   Android catching up, not a change to the mark.
+ 
+   The launcher and maskable icons in mipmap/ keep their tile: a filled square
+   is what a launcher needs, and it is the only place the crop is load-bearing. */
 @Composable
 fun Mark(dp: Dp = 28.dp, tint: Color = T.accent) {
-    Canvas(Modifier.size(dp).clip(RoundedCornerShape(6.dp))) {
-        val u = size.width / 24f
+    Canvas(Modifier.size(dp)) {
+        // 31 units of room for a 24-unit figure, centred — the site's own box.
+        val u = size.width / 31f
         val c = center
         for (i in 0 until 8) {
             val th = Math.toRadians((-90 + 45 * i).toDouble())
@@ -935,7 +973,7 @@ private fun Hero(feed: Feed?) {
             append("Watch an ")
             withStyle(SpanStyle(color = T.accent)) { append("LLM") }
             append(" read the job market honestly.")
-        }, style = H1)
+        }, style = H1, color = T.ink)
         Spacer(Modifier.height(10.dp))
         Text("Real postings, scored live by Claude. Every reason shown.", color = T.text2, fontSize = 16.sp, lineHeight = 24.sp)
         Spacer(Modifier.height(6.dp))
@@ -944,6 +982,96 @@ private fun Hero(feed: Feed?) {
             else "loading today's sweep…",
             color = T.text3, fontSize = 13.sp,
         )
+    }
+}
+
+/**
+ * How it works, and Privacy, without leaving the app. Both were links into a
+ * browser; the privacy one especially has no business being one. The text is
+ * the web pages', kept short, with the canonical policy one tap away rather
+ * than duplicated in full.
+ */
+@Composable
+private fun InfoSheet(page: String, onClose: () -> Unit) {
+    val uri = LocalUriHandler.current
+    val ins = WindowInsets.safeDrawing.asPaddingValues()
+    val how = page == "how"
+    Box(Modifier.fillMaxSize().background(T.canvas).backdrop(T.ink)) {
+        LazyColumn(
+            Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(16.dp, ins.calculateTopPadding() + 14.dp, 16.dp,
+                                           ins.calculateBottomPadding() + 40.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp),
+        ) {
+            item {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(if (how) "How JobScout works" else "Privacy",
+                        style = H2, fontSize = 24.sp, color = T.ink, modifier = Modifier.weight(1f))
+                    PillButton("Close", onClick = onClose)
+                }
+            }
+            if (how) {
+                items(
+                    listOf(
+                        "Your resume, not a form" to
+                            "Upload or paste it. It is read for one run, scored, and never stored " +
+                            "\u2014 no account, no profile to keep current.",
+                        "A gate before the model" to
+                            "A deterministic filter drops most of the day before a single paid call. " +
+                            "What survives is what could plausibly fit, and every posting set aside " +
+                            "carries the reason it was.",
+                        "A number and a reason" to
+                            "Every survivor gets a fit from 0 to 100, a verdict in plain words, the " +
+                            "strongest point and the thing to answer next. From 55 up you can have a " +
+                            "cover letter, your resume rebuilt for the posting, and the screening " +
+                            "questions answered from what you wrote.",
+                        "You apply, never us" to
+                            "JobScout does not submit anything and cannot. It opens the employer's " +
+                            "own form with the answers already written, and you press send.",
+                    )
+                ) { (h, b) ->
+                    Column(
+                        Modifier.fillMaxWidth().clip(Card).background(T.surface)
+                            .border(1.dp, T.hair, Card).padding(16.dp),
+                    ) {
+                        Text(h, style = H2, fontSize = 17.sp, color = T.ink)
+                        Spacer(Modifier.height(6.dp))
+                        Text(b, fontSize = 13.5.sp, lineHeight = 21.sp, color = T.text2)
+                    }
+                }
+            } else {
+                items(
+                    listOf(
+                        "Your resume never leaves the device it is read on" to
+                            "It is sent to the scoring API for the length of one run and is not " +
+                            "written to any database, any log or any file. Close the app and it is gone.",
+                        "No account, and nothing that identifies you" to
+                            "There is no sign-in. What is counted is which step happened and when " +
+                            "\u2014 never your IP, never your resume or any part of it, never a job " +
+                            "title, a company, a score, a name or an email.",
+                        "Saved jobs stay on this phone" to
+                            "The list, the stages and your saved searches are in this app's own " +
+                            "storage. Nothing is uploaded and nothing is emailed. Uninstalling " +
+                            "removes them.",
+                    )
+                ) { (h, b) ->
+                    Column(
+                        Modifier.fillMaxWidth().clip(Card).background(T.surface)
+                            .border(1.dp, T.hair, Card).padding(16.dp),
+                    ) {
+                        Text(h, style = H2, fontSize = 17.sp, color = T.ink)
+                        Spacer(Modifier.height(6.dp))
+                        Text(b, fontSize = 13.5.sp, lineHeight = 21.sp, color = T.text2)
+                    }
+                }
+                item {
+                    // One document, not two kept in step by hand.
+                    PillButton("Read the full policy \u2197") {
+                        runCatching { uri.openUri("https://jobscout.page/privacy") }
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -959,7 +1087,7 @@ private fun Stage(bearing: String, label: String, title: String, note: String? =
             Text(" — $label", color = T.text3, fontSize = 12.sp, fontWeight = FontWeight.Medium, letterSpacing = 0.1.em)
         }
         Spacer(Modifier.height(14.dp))
-        Text(title, style = H2)
+        Text(title, style = H2, color = T.ink)
         if (note != null) {
             Spacer(Modifier.height(6.dp))
             Text(note, color = T.text2, fontSize = 14.sp, lineHeight = 21.sp)
@@ -1248,7 +1376,7 @@ private fun TrackerScreen(
     BackHandler(onBack = onClose)
     val ins = WindowInsets.safeDrawing.asPaddingValues()
     run {
-        Box(Modifier.fillMaxSize().background(T.canvas).dots()) {
+        Box(Modifier.fillMaxSize().background(T.canvas).backdrop(T.ink)) {
             LazyColumn(
                 Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(16.dp, ins.calculateTopPadding() + 12.dp, 16.dp, ins.calculateBottomPadding() + 40.dp),
@@ -1267,7 +1395,7 @@ private fun TrackerScreen(
                         PillButton("Close", onClick = onClose)
                     }
                     Spacer(Modifier.height(14.dp))
-                    Text("Saved jobs", style = H2)
+                    Text("Saved jobs", style = H2, color = T.ink)
                     Spacer(Modifier.height(6.dp))
                     Text("Kept on this device only. You click Apply — JobScout never does.", color = T.text2, fontSize = 14.sp, lineHeight = 21.sp)
                 }
@@ -1289,7 +1417,7 @@ private fun TrackerScreen(
                 if (watched.isNotEmpty()) {
                     item {
                         Spacer(Modifier.height(10.dp))
-                        Text("Searches you saved", style = H2, fontSize = 19.sp)
+                        Text("Searches you saved", style = H2, fontSize = 19.sp, color = T.ink)
                         Spacer(Modifier.height(4.dp))
                         Text("Kept on this device. Nothing is emailed.",
                              color = T.text3, fontSize = 13.sp, lineHeight = 19.sp)
@@ -1320,7 +1448,7 @@ private fun TrackerScreen(
                 TextButton(onClick = { vm.clearTracker(); confirmClear = false }) { Text("Clear", color = T.bUnsure) }
             },
             dismissButton = { TextButton(onClick = { confirmClear = false }) { Text("Cancel", color = T.ink) } },
-            title = { Text("Clear saved jobs?", style = H2, fontSize = 24.sp) },
+            title = { Text("Clear saved jobs?", style = H2, fontSize = 24.sp, color = T.ink) },
             text = { Text("Removes all ${tracker.size} saved postings from this device.", color = T.text2) },
         )
     }

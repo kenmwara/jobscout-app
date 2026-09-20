@@ -47,7 +47,7 @@ fun ApplyScreen(vm: DemoVm, a: Apply, onClose: () -> Unit) {
     val bandColor = T.band(a.fit).first
     val p = a.posting
 
-    Box(Modifier.fillMaxSize().background(T.canvas).dots()) {
+    Box(Modifier.fillMaxSize().background(T.canvas).backdrop(T.ink)) {
         LazyColumn(
             Modifier.fillMaxSize(),
             contentPadding = PaddingValues(16.dp, ins.calculateTopPadding() + 12.dp, 16.dp, ins.calculateBottomPadding() + 40.dp),
@@ -74,7 +74,7 @@ fun ApplyScreen(vm: DemoVm, a: Apply, onClose: () -> Unit) {
                     Row {
                         BearingRose(a.fit, Modifier.padding(end = 14.dp, top = 2.dp), diameter = 84.dp)
                         Column(Modifier.weight(1f)) {
-                            Text(p.title, style = H2, fontSize = 22.sp)
+                            Text(p.title, style = H2, fontSize = 22.sp, color = T.ink)
                             Text(
                                 listOf(p.company, p.location).filter { it.isNotEmpty() }.joinToString(" · "),
                                 color = T.text2, fontSize = 14.sp, lineHeight = 21.sp,
@@ -158,7 +158,7 @@ private fun <T> StepPanel(
 ) {
     Column(Modifier.warmShadow(10.dp, Card).background(T.surface, Card).padding(18.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(title, style = H2, fontSize = 20.sp, modifier = Modifier.weight(1f))
+            Text(title, style = H2, fontSize = 20.sp, color = T.ink, modifier = Modifier.weight(1f))
             Text(
                 when {
                     step.busy -> "working"
@@ -214,7 +214,7 @@ private fun RebuiltResume(r: ResumeResponse) {
     Column {
         SelectionContainer {
             Column {
-                if (r.name.isNotEmpty()) Text(r.name, style = H2, fontSize = 20.sp)
+                if (r.name.isNotEmpty()) Text(r.name, style = H2, fontSize = 20.sp, color = T.ink)
                 if (r.contact.isNotEmpty()) Text(r.contact, color = T.text3, fontSize = 13.sp)
                 if (r.headline.isNotEmpty())
                     Text(r.headline, color = T.ink, fontSize = 15.sp, lineHeight = 23.sp, modifier = Modifier.padding(top = 8.dp))

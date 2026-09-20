@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mark Crop Comparison</title>
+<style>
+  :root{
+    --cream:#f4f1ea; --ink:#080331; --indigo:#4865ff;
+    --dark:#0c0f0d;  --bone:#f2f5f1; --green:#2fbd6a;
+    --hair:rgba(8,3,49,.12);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--cream);color:var(--ink);
+    font:400 15px/1.6 Inter,-apple-system,system-ui,"Segoe UI",sans-serif;padding:32px 16px}
+  .wrap{max-width:1000px;margin:0 auto}
+  h1{font:400 30px/1.2 Georgia,serif;margin:0 0 6px;letter-spacing:-.02em}
+  p.lede{margin:0 0 30px;color:#565173;max-width:62ch}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:22px}
+  @media(max-width:700px){.grid{grid-template-columns:1fr}}
+  .panel{background:#fff;border:1px solid var(--hair);border-radius:18px;padding:22px}
+  .panel.dark{background:var(--dark);border-color:rgba(242,245,241,.14);color:var(--bone)}
+  h2{font:500 12px/1 Inter,sans-serif;letter-spacing:.09em;text-transform:uppercase;
+     color:#83809a;margin:0 0 18px}
+  .panel.dark h2{color:#7d8a7c}
+  .row{display:flex;align-items:center;gap:26px;flex-wrap:wrap;margin-bottom:22px}
+  .row:last-child{margin-bottom:0}
+  .lab{font:500 12px/1 Inter,sans-serif;color:#83809a;min-width:84px}
+  .panel.dark .lab{color:#7d8a7c}
+  /* the tile, exactly as a launcher icon clips it */
+  .tile{border-radius:22%;overflow:hidden;display:block;background:rgba(72,101,255,.10)}
+  .panel.dark .tile{background:rgba(47,189,106,.12)}
+  .free{display:block}
+  .lockup{display:flex;align-items:center;gap:10px}
+  .word{font:400 22px/1 Georgia,serif;letter-spacing:-.02em}
+  .note{margin-top:26px;padding-top:18px;border-top:1px solid var(--hair);
+        font-size:13.5px;color:#565173}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>The mark, cropped and free</h1>
+  <p class="lede">Same eight dots, same graduating radii (2.30 → 4.35 clockwise from bearing 000),
+     same ring at r=11. The only difference is the box: <b>24×24</b> clips the four largest dots at
+     the edge, <b>−3.5 −3.5 31 31</b> gives them room. The site header already uses the free box;
+     the Android <code>Mark()</code> clips to a rounded 24 square.</p>
+
+  <div class="grid">
+    <div class="panel" id="light"></div>
+    <div class="panel dark" id="dark"></div>
+  </div>
+
+  <p class="note">A launcher icon and an avatar still need a filled tile — that is the only place the
+     crop is load-bearing, and a maskable icon wants the safe zone anyway. Everywhere else
+     (header, footer, score rose, the press motif) the free box is what the geometry was drawn for.</p>
+</div>
+
+<script>
+/* One generator, two boxes. The dots are identical; only the viewBox differs. */
+const DOTS = Array.from({length: 8}, (_, i) => {
+  const th = (-90 + 45 * i) * Math.PI / 180;
+  return { cx: (12 + 11 * Math.cos(th)).toFixed(4),
+           cy: (12 + 11 * Math.sin(th)).toFixed(4),
+           r:  (2.30 + (4.35 - 2.30) * i / 7).toFixed(4) };
+});
+const svg = (box, size, fill) =>
+  `<svg viewBox="${box}" width="${size}" height="${size}" aria-hidden="true" fill="${fill}">` +
+  DOTS.map(d => `<circle cx="${d.cx}" cy="${d.cy}" r="${d.r}"/>`).join("") + `</svg>`;
+
+const CROP = "0 0 24 24";        // what Android draws, clipped by the tile
+const FREE = "-3.5 -3.5 31 31";  // what the site header draws
+
+for (const [id, fill] of [["light", "var(--indigo)"], ["dark", "var(--green)"]]) {
+  const host = document.getElementById(id);
+  const rows = [
+    ["Cropped", (s) => `<span class="tile">${svg(CROP, s, fill)}</span>`],
+    ["Free",    (s) => `<span class="free">${svg(FREE, s, fill)}</span>`],
+  ].map(([label, make]) => `
+    <div class="row"><span class="lab">${label}</span>
+      ${[64, 40, 28, 18].map(make).join("")}
+    </div>`).join("");
+
+  host.innerHTML = `<h2>${id === "light" ? "Canada · cream" : "Kenya · near-black"}</h2>` + rows + `
+    <div class="row"><span class="lab">In the header</span>
+      <span class="lockup"><span class="tile">${svg(CROP, 26, fill)}</span><span class="word">JobScout</span></span>
+      <span class="lockup">${svg(FREE, 26, fill)}<span class="word">JobScout</span></span>
+    </div>`;
+}
+</script>
+</body>
+</html>
