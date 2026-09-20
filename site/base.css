@@ -308,9 +308,17 @@
      about 1.06, which reads as warmth rather than as a bright patch. A
      contrast meter scores that near 1.000, which is why check_halo now
      measures dE as well - it was using the dark theme's metric on both. */
-  --halo-1: light-dark(rgba(255,214,150,.26), rgba(43, 57,108,.71));
+  /* DARK BLOOMS SIT ON THE CANVAS'S OWN HUE. The canvas #0a0524 is hue
+     250deg; the spec's halo-1 rgba(43,57,108) is 227deg - 23deg toward blue -
+     and at the alpha the 1.258 peak needs, that difference stopped being a
+     glow and became navy, most visibly beside Kenya's green hero, where a
+     reader called it "KE dark has changed to navy". Same layer on both
+     markets; the hue was wrong on both. Section 14's own rule is that a
+     bloom lives in the canvas's hue family. These are solved at 250deg:
+     composite hue 250deg, corner 1.258, unchanged amplitude. */
+  --halo-1: light-dark(rgba(255,214,150,.26), rgba(59, 45,128,.72));
   --halo-2: light-dark(rgba(255,206,178,.22), rgba(58, 42, 96,.60));
-  --halo-3: light-dark(rgba(255,228,176,.24), rgba(36, 52,100,.54));
+  --halo-3: light-dark(rgba(255,228,176,.24), rgba(56, 43,122,.55));
 
   /* THE EVIDENCE CARD IS A NEUTRAL (section 16, option C).
      One fill was serving a 70x22 pill and an evidence card measured at

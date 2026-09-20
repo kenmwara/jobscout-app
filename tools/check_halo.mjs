@@ -57,6 +57,21 @@ const lab = ([r, g, b]) => {
   const f = (t) => (t > 0.008856 ? Math.cbrt(t) : 7.787 * t + 16 / 116);
   return [116 * f(Y) - 16, 500 * (f(X) - f(Y)), 200 * (f(Y) - f(Z))];
 };
+/* THE HUE, because amplitude alone let the dark halo turn navy. The canvas
+   is 250deg and the spec's peak bloom was 227deg; at the alpha 1.258 needs,
+   23deg toward blue stopped reading as a glow. Section 14's rule is that a
+   bloom lives in the canvas's own hue family, so the corner's composite is
+   held within 12deg of the canvas. Light is exempt: it carries a WARM hue
+   on purpose, and that is the whole reason it is visible. */
+const hueOf = ([r, g, b]) => {
+  r /= 255; g /= 255; b /= 255;
+  const M = Math.max(r, g, b), m = Math.min(r, g, b), d = M - m;
+  if (!d) return 0;
+  let h = M === r ? ((g - b) / d) % 6 : M === g ? (b - r) / d + 2 : (r - g) / d + 4;
+  return (h * 60 + 360) % 360;
+};
+const hueGap = (a, b) => { const d = Math.abs(hueOf(a) - hueOf(b)); return Math.min(d, 360 - d); };
+
 const dE = (a, b) => {
   const x = lab(a), y = lab(b);
   return Math.hypot(x[0] - y[0], x[1] - y[1], x[2] - y[2]);
@@ -133,7 +148,8 @@ const run = async () => {
         des.push(dE(px, canvas));
       }
       const peak = Math.max(...row), peakDE = Math.max(...des);
-      peaks[`${route} ${theme}`] = { peak, peakDE };
+      const topR = sample(png, W - BOX, 0);
+      peaks[`${route} ${theme}`] = { peak, peakDE, hueGap: hueGap(topR, canvas) };
       console.log(`  ${route.padEnd(20)} ${theme.padEnd(6)} ` +
         row.map((r) => r.toFixed(3)).join("  ") +
         `   ${peak.toFixed(3)}   ${peakDE.toFixed(1)}`);
@@ -142,7 +158,7 @@ const run = async () => {
   }
 
   console.log("");
-  for (const [k, { peak, peakDE }] of Object.entries(peaks)) {
+  for (const [k, { peak, peakDE, hueGap: gap }] of Object.entries(peaks)) {
     const theme = k.endsWith("dark") ? "dark" : "light";
     if (peak < 1.004 && peakDE < 1) {
       bad(`${k}: flat on both axes - the halo is not reaching this route at all`);
@@ -155,7 +171,9 @@ const run = async () => {
          pass the thing you are trying to fix is not a tolerance. */
       if (peak < want * 0.97)
         bad(`${k}: peak ${peak.toFixed(3)} against a ${want} spec (${Math.round(peak / want * 100)}%)`);
-      else ok(`${k}: peak ${peak.toFixed(3)} against a ${want} spec`);
+      else if (gap > 12)
+        bad(`${k}: the peak bloom sits ${gap.toFixed(0)}deg off the canvas hue - that is navy, not a glow`);
+      else ok(`${k}: peak ${peak.toFixed(3)} against a ${want} spec, ${gap.toFixed(0)}deg off the canvas hue`);
     } else {
       /* Light is judged on dE. 5 is where a difference stops needing to be
          looked for. The white-on-cream version scored 2.9 at its PEAK and
