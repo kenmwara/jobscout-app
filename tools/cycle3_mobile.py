@@ -90,6 +90,14 @@ for market in ("Canada", "Kenya"):
     say(f"\n-- {market} --")
     swipe_top()
     step(market, market, f"the {market} pill switches market", wait=9)
+    # HOME FIRST. The app RESTORES the screen you were last on when a
+    # previous run is stored, which is deliberate - come back to where you
+    # were - so a launch does not necessarily land on the landing frame.
+    # This harness asserted the resume box straight after launch and failed
+    # against correct behaviour, but only once there was state to restore:
+    # with the app's data cleared it passed, which is exactly the kind of
+    # green that means nothing. Press the wordmark, the way a reader would.
+    tap("JobScout", wait=2.0)
     swipe_top()
 
     t = text()
@@ -119,6 +127,71 @@ for market in ("Canada", "Kenya"):
         sh("shell", "input", "keyevent", "KEYCODE_BACK")
         time.sleep(2)
     check("Find the work" in text() or "Your matches" in text(), "and closes back to where it was")
+
+# ── the theme control, proved in PIXELS ─────────────────────────────────
+# THEME.md section 6 calls the toggle a required feature. ThemeChoice
+# carried all three states from the day it was written and nothing ever
+# called set(), so the app was permanently light with no route to dark.
+#
+# The label is not the proof. The defect was a stored value nothing
+# re-read - Compose does not observe SharedPreferences - so a control that
+# changed its own word and nothing else would have looked exactly like a
+# working one. What has to change is the ground.
+say("\n-- the theme control --")
+
+
+def ground():
+    """The app's own background, median across a band down the left edge."""
+    from PIL import Image
+    sh("shell", "screencap", "-p", "/sdcard/t.png")
+    shot = __import__("os").path.join(
+        __import__("tempfile").gettempdir(), "jobscout_theme.png")
+    sh("pull", "/sdcard/t.png", shot, t=120)
+    im = Image.open(shot).convert("RGB")
+    w, h = im.size
+    px = sorted(im.getpixel((x, int(h * 0.60)))
+                for x in range(int(w * 0.02), int(w * 0.10), 2))
+    return px[len(px) // 2]
+
+
+def lum(c):
+    def f(v):
+        v /= 255.0
+        return v / 12.92 if v <= 0.04045 else ((v + 0.055) / 1.055) ** 2.4
+    return 0.2126 * f(c[0]) + 0.7152 * f(c[1]) + 0.0722 * f(c[2])
+
+
+tap("JobScout", wait=2.0)
+swipe_top()
+seen = [l for l in ("Light", "Device", "Dark") if l in text()]
+check(bool(seen), "the control is on screen (%s)" % (seen or "NOT FOUND"))
+
+if seen:
+    order, grounds = [seen[0]], [ground()]
+    for _ in range(3):
+        if not tap(order[-1], wait=1.4):
+            check(False, "could not press %s" % order[-1])
+            break
+        now = [l for l in ("Light", "Device", "Dark") if l in text()]
+        if not now:
+            check(False, "the control vanished after a tap")
+            break
+        order.append(now[0])
+        grounds.append(ground())
+        say("        %-7s ground %s  luminance %.4f" % (now[0], grounds[-1], lum(grounds[-1])))
+
+    check(len(order) == 4 and order[0] == order[3] and len(set(order[:3])) == 3,
+          "it cycles all three and returns: " + " -> ".join(order))
+
+    if "Dark" in order and "Light" in order:
+        d, l = grounds[order.index("Dark")], grounds[order.index("Light")]
+        # A THIRD, not a hair: the dark canvas is #0a0524 against a cream
+        # #f8f3eb, so anything close to parity means nothing repainted.
+        check(lum(d) < lum(l) / 3,
+              "Dark actually darkens the app (%.4f vs %.4f)" % (lum(d), lum(l)))
+    # leave it as the reader found it
+    while [l for l in ("Device", "Dark") if l in text()]:
+        tap([l for l in ("Device", "Dark") if l in text()][0], wait=1.2)
 
 say("\n" + (f"{len(fails)} FAILED" if fails else "ALL GREEN"))
 sys.exit(1 if fails else 0)

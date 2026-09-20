@@ -108,6 +108,118 @@ for (const [market, base] of BASES) {
     is(await page.locator(".fbrand a").count() === 1, `${p}: the footer wordmark is a link`);
   }
 
+  // ── the browse controls, none of which need a scored run ────────────────
+  /* Found by listing every button, link and field on the page and diffing
+     that against what this file pressed. Seven were never touched. They all
+     work off the feed rather than the scorer, so they are also the part of
+     the sweep that still means something when the hourly guard is up. */
+  await page.goto(base, { waitUntil: "networkidle" });
+  await page.waitForTimeout(900);
+
+  // the nav: Saved, and How it works
+  await page.click("#navSaved");
+  await page.waitForLoadState("networkidle");
+  is(/saved/.test(page.url()), `Saved in the nav opens the saved page (${page.url().split("/").pop()})`);
+  await page.goBack({ waitUntil: "networkidle" });
+  await page.waitForTimeout(700);
+
+  const how = page.locator('header a[href="#how"]');
+  if (await how.count()) {
+    await how.click();
+    await page.waitForTimeout(900);
+    /* A fragment link has to LAND somewhere. Asserting the hash changed
+       proves nothing about whether the reader can see the section. */
+    const landed = await page.evaluate(() => {
+      const t = document.querySelector("#how");
+      if (!t) return { missing: true };
+      const r = t.getBoundingClientRect();
+      return { top: Math.round(r.top), inView: r.top < innerHeight && r.bottom > 0 };
+    });
+    is(!landed.missing && landed.inView,
+       `How it works scrolls its section into view (top ${landed.top})`);
+  }
+
+  /* The policy chips are ANCHORS in the hero tab row, not toggles: they
+     open the browse view with that policy applied and carry no pressed
+     state. What proves one worked is the board arriving, narrowed. */
+  const chipBad = [];
+  for (const label of ["Remote", "Hybrid", "On site", "Any of those"]) {
+    await page.goto(base, { waitUntil: "networkidle" });
+    await page.waitForTimeout(800);
+    const chip = page.locator(`#v-landing .tabs a:text-is("${label}")`).first();
+    if (!(await chip.count())) { chipBad.push(`${label} missing`); continue; }
+    await chip.click();
+    await page.waitForTimeout(1100);
+    const r = await page.evaluate(() => ({
+      browseVisible: (document.querySelector("#v-browse")?.getBoundingClientRect().height || 0) > 0,
+      jobs: document.querySelectorAll("#browseJobs .job, #browseFeed .job").length,
+    }));
+    if (!r.browseVisible) chipBad.push(`${label} does not open the board`);
+    else if (!r.jobs) chipBad.push(`${label} opens an empty board`);
+  }
+  is(!chipBad.length, chipBad.length ? `policy chips: ${chipBad.join(", ")}`
+     : "all four policy chips open a board with postings on it");
+
+  // a sector tile opens the browse view, named
+  await page.goto(base, { waitUntil: "networkidle" });
+  await page.waitForTimeout(800);
+  const tile = page.locator("#v-landing .tax").first();
+  const tileName = (await tile.innerText()).split("\n")[0].trim();
+  await tile.click();
+  await page.waitForTimeout(1200);
+  /* VISIBLE, not merely counted. `.job` elements count the same inside a
+     display:none view, so the first version of this passed while the page
+     had not moved at all - and the only reason I noticed is that the title
+     came back empty, which is what Playwright returns for hidden text. */
+  const board = await page.evaluate(() => {
+    const v = document.querySelector("#v-browse");
+    const t = document.querySelector("#browseTitle");
+    return {
+      visible: (v?.getBoundingClientRect().height || 0) > 0,
+      jobs: document.querySelectorAll("#browseJobs .job, #browseFeed .job").length,
+      title: (t?.innerText || "").trim(),
+      titleVisible: (t?.getBoundingClientRect().height || 0) > 0,
+    };
+  });
+  is(board.visible && board.jobs > 0,
+     `the "${tileName}" tile opens a visible board (${board.jobs} postings)`);
+  is(board.titleVisible && board.title.length > 2,
+     `and the board says what it is showing ("${board.title.slice(0, 34)}")`);
+
+  // the search box narrows what is on the board
+  const beforeQ = await page.locator("#browseFeed .job, #browseJobs .job").count();
+  await page.fill("#browseQ", "engineer");
+  await page.waitForTimeout(900);
+  const afterQ = await page.locator("#browseFeed .job, #browseJobs .job").count();
+  is(afterQ !== beforeQ || afterQ > 0,
+     `the search box narrows the board (${beforeQ} -> ${afterQ} on "engineer")`);
+  await page.fill("#browseQ", "");
+  await page.waitForTimeout(700);
+
+  // Jobs / Companies
+  const tabs = page.locator(".sctab");
+  if (await tabs.count() > 1) {
+    const second = tabs.nth(1);
+    const what = (await second.innerText()).trim();
+    await second.click();
+    await page.waitForTimeout(900);
+    is(await second.getAttribute("aria-pressed") === "true",
+       `the ${what} tab takes`);
+    await tabs.nth(0).click();
+    await page.waitForTimeout(700);
+  }
+
+  // the whole feed
+  await page.goto(base, { waitUntil: "networkidle" });
+  await page.waitForTimeout(900);
+  const all = page.locator("#taxAll");
+  if (await all.count()) {
+    await all.click();
+    await page.waitForTimeout(1200);
+    is(await page.locator("#browseFeed .job, #browseJobs .job").count() > 0,
+       "Browse the whole feed opens the whole feed");
+  }
+
   // ── a real run, then every control on the matches ───────────────────────
   await page.goto(base, { waitUntil: "networkidle" });
   await page.fill("#ownText", PROFILE);
