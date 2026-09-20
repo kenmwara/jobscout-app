@@ -140,7 +140,12 @@ p.sub{font:400 13.5px/1.5 var(--sans);color:var(--text2);margin:0 0 16px}
    fixes it should say WHO is working. Extraction is not Claude (unpdf and
    fflate do that), so the clip keeps a plain pulse. */
 @keyframes mpulse{0%,100%{opacity:1}50%{opacity:.45}}
-.mbox b.busy{pointer-events:none}
+/* The button's dark fill is an AFFORDANCE - it says "press this". While
+   Claude is working there is nothing to press, and the fill was sitting
+   behind the mark as a dark disc it had to compete with. The box keeps its
+   36px so nothing reflows; only the paint goes. */
+.mbox b.busy{pointer-events:none;background:transparent;box-shadow:none}
+.mbox b.busy .cmark{width:28px;height:28px}
 .cmark{width:22px;height:22px;border-radius:50%;flex:none;display:block}
 @media (prefers-reduced-motion:no-preference){
   .cmark{animation:breathe 1.4s ease-in-out infinite}
@@ -235,6 +240,19 @@ p.sub{font:400 13.5px/1.5 var(--sans);color:var(--text2);margin:0 0 16px}
 .sheet .lhead .ct{display:block;font:400 11px/1.5 var(--sans);color:var(--text2);
   margin-top:3px}
 .sheet .wbody p{margin:0 0 11px}
+/* The rebuilt resume is a DOCUMENT, so it gets document structure rather
+   than a wall of paragraphs: an italic headline, small-caps section rules,
+   a bolded role over its dates, and real bullets. */
+.sheet .dhead{font:400 italic 14.5px/1.5 var(--serif);color:var(--text);margin:0 0 14px}
+.sheet .dsec{margin:0 0 15px}
+.sheet .dsec h5{margin:0 0 8px;padding:0 0 5px;border-bottom:1px solid var(--hair);
+  font:500 10.5px/1 var(--sans);letter-spacing:.1em;text-transform:uppercase;color:var(--text2)}
+.sheet .ditem{margin:0 0 11px}
+.sheet .ditem:last-child{margin-bottom:0}
+.sheet .dtitle{margin:0;font:500 13px/1.4 var(--sans);color:var(--ink)}
+.sheet .dmeta{margin:1px 0 0;font:400 11.5px/1.4 var(--sans);color:var(--text2)}
+.sheet .ditem ul{margin:5px 0 0;padding:0 0 0 17px}
+.sheet .ditem li{font:400 12.5px/1.55 var(--sans);color:var(--text);margin:0 0 3px}
 .sheet .wbody .q{margin:0 0 16px;padding:0 0 14px;border-bottom:1px solid var(--hair)}
 .sheet .wbody .q:last-child{border-bottom:0;padding-bottom:0}
 .sheet .qtop{display:flex;align-items:flex-start;gap:10px;margin:0 0 5px}
@@ -390,10 +408,22 @@ const DRAFT = {
         + asProse(blocks.slice(1).join("\n\n"));
     } },
   resume: { verb: "rebuilding your resume", path: "/api/resume",
-    render: d => d.sections ? asProse(
-      [d.headline, ...(d.sections || []).map(x =>
-        typeof x === "string" ? x : [x.title, ...(x.lines || x.bullets || [])].join("\n")
-      )].filter(Boolean).join("\n\n")) : null },
+    /* The same document apply.html builds, from the same payload:
+       sections[].heading and items[].{title,meta,bullets}. Empty sections are
+       dropped - the model returns the full skeleton whether or not it had
+       anything to put in a section. */
+    render: d => !Array.isArray(d.sections) ? null : `
+      ${d.name ? `<p class="lhead"><span class="nm">${esc(d.name)}</span>
+        ${d.contact ? `<span class="ct">${esc(d.contact)}</span>` : ""}</p>` : ""}
+      ${d.headline ? `<p class="dhead">${esc(d.headline)}</p>` : ""}
+      ${d.sections.filter(sec => (sec.items || []).length).map(sec =>
+        `<div class="dsec"><h5>${esc(sec.heading)}</h5>` +
+        sec.items.map(it => `<div class="ditem">
+          ${it.title ? `<p class="dtitle">${esc(it.title)}</p>` : ""}
+          ${it.meta ? `<p class="dmeta">${esc(it.meta)}</p>` : ""}
+          ${(it.bullets || []).length
+            ? `<ul>${it.bullets.map(b => `<li>${esc(b)}</li>`).join("")}</ul>` : ""}
+        </div>`).join("") + `</div>`).join("")}` },
   answers: { verb: "reading their form", path: "/api/answers",
     render: d => {
       /* A form behind a login is a FACT ABOUT THE EMPLOYER, not a failure of

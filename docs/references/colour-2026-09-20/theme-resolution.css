@@ -240,3 +240,35 @@ body::before {
    Android follows isSystemInDarkTheme() unless a stored override exists;
    iOS follows UITraitCollection unless preferredColorScheme is set.
    =========================================================================== */
+
+/* ===========================================================================
+   OPEN DECISION — see THEME.md §16. Currently shipping option A.
+
+   §11 sets one fill per band and says nothing about SIZE, so the same
+   --answer-fill serves a 70x22px pill and a 440x230px evidence card: the
+   same tint over 66x the area on dark, 23x on light. At pill scale it is a
+   hint; at card scale it is a field of brown.
+
+   The rule §11 is missing, whichever option wins:
+
+     A tinted fill is for elements at PILL SCALE. Above roughly 4,000px a
+     surface is neutral -- the canvas's or the surface's own hue -- and the
+     band colour moves to a rule, a label or a small mark. Colour intensity
+     is not a constant; it is a budget spent over area.
+
+   TO SWITCH TO OPTION C, uncomment this block. The band fills above are
+   unchanged and go on serving pills. Every label and body still clears AA:
+     answer  dark  label 7.22  body 9.19      light  label 7.75  body 7.22
+     strong  dark  label 7.70  body 9.26      light  label 7.19  body 7.15
+
+:root {
+  --evidence-bg:             light-dark(#f1f1fa, #2b284f);
+  --evidence-rule-answer:    light-dark(#b86b03, #e89f59);
+  --evidence-rule-strongest: light-dark(#3e954d, #7ac683);
+  --strongest-bg: var(--evidence-bg);
+  --answer-bg:    var(--evidence-bg);
+}
+.evidence-card { border-left: 2px solid var(--evidence-rule-answer); }
+.evidence-card--strongest { border-left-color: var(--evidence-rule-strongest); }
+
+   =========================================================================== */

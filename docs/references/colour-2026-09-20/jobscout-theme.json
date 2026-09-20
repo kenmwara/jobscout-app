@@ -1,9 +1,27 @@
 {
   "name": "JobScout theme",
-  "version": "3.0",
+  "version": "3.1",
   "generated": "2026-09-20",
   "source": "css/theme-resolution.css \u2014 regenerate from that file, never hand-edit",
   "note": "market sets --hero only; theme sets everything else.",
+  "openDecision": {
+    "see": "docs/THEME.md \u00a716",
+    "shipping": "A",
+    "optionC": {
+      "--evidence-bg": {
+        "light": "#f1f1fa",
+        "dark": "#2b284f"
+      },
+      "--evidence-rule-answer": {
+        "light": "#b86b03",
+        "dark": "#e89f59"
+      },
+      "--evidence-rule-strongest": {
+        "light": "#3e954d",
+        "dark": "#7ac683"
+      }
+    }
+  },
   "bandRamp": {
     "ramp": {
       "light-fill": [

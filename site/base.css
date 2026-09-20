@@ -206,6 +206,15 @@
 
   /* ── indigo: brand, links and selection — never a primary fill ── */
   --accent:       light-dark(#4865ff, #a2baff);
+
+  /* A LINK IS READ AT LENGTH, so it takes more contrast than the brand mark
+     does. --accent measured 4.15:1 on cream at 13.5px - under AA - while the
+     same token resolved to #a2baff in dark and measured 10.38:1. One colour
+     was passing in one theme only, which is the shape of every defect this
+     palette has had. #1b1463 is 14.33:1 on cream and still reads as the same
+     indigo family. NOT --b-ping: that rung is tuned to sit on its own fill,
+     not to carry a sentence. */
+  --link:         light-dark(#1b1463, #a2baff);
   --accent-ink:   light-dark(#ffffff, #0a0524);
   --accent-quiet: light-dark(#1b1463, #a2baff);   /* 14.33 / 9.59 — links */
   --chip:         light-dark(#ffffff, #16103a);
@@ -274,13 +283,18 @@
      than cream, so each bloom composited to #efecec: 1.06:1 DARKER, with the
      hue dragged from 37deg to 0. A glow that darkens is a shadow, and that
      is what made the light page look blotchy. */
-  /* Dark alphas raised ~18% (.50/.42/.38): the top-right corner measured
-     1.174 against the flat canvas where the spec peak is 1.258, so the layer
-     was reaching about 70% of its amplitude. Light measured 1.051 against a
-     1.053 spec and is left alone. */
-  --halo-1: light-dark(rgba(255,252,242,.92), rgba(43, 57,108,.59));
-  --halo-2: light-dark(rgba(255,250,240,.80), rgba(58, 42, 96,.50));
-  --halo-3: light-dark(rgba(255,253,246,.85), rgba(36, 52,100,.45));
+  /* THE DARK ALPHAS ARE SOLVED, NOT PICKED. Measured in pixels by
+     tools/check_halo.mjs: .50 put the top-right corner at 1.174 against the
+     flat canvas, .59 at 1.202, and the spec peak is 1.258. Two points give
+     the curve between declared alpha and the composite the corner actually
+     reaches - the corner sees about 70% of the declared value, because it
+     samples the gradient's falloff rather than its centre - and .71 is what
+     that curve wants. The other two blooms keep their ratio to the first.
+
+     Light measured 1.049 against a 1.053 spec and is not touched. */
+  --halo-1: light-dark(rgba(255,252,242,.92), rgba(43, 57,108,.71));
+  --halo-2: light-dark(rgba(255,250,240,.80), rgba(58, 42, 96,.60));
+  --halo-3: light-dark(rgba(255,253,246,.85), rgba(36, 52,100,.54));
 
   /* The evidence cards ARE the auto and unsure rungs, not a second palette
      that has to be kept in step with the first. */
@@ -446,7 +460,7 @@ footer.site{padding:70px 0 40px;border-top:1px solid var(--hair);margin-top:70px
 .btn{background:var(--ink);color:var(--canvas)}
 .btn:hover{background:var(--accent);color:var(--accent-ink)}
 .btn2{border-color:var(--hair2);color:var(--text);background:transparent}
-.btn2:hover{border-color:var(--accent);color:var(--accent)}
+.btn2:hover{border-color:var(--accent);color:var(--link)}
 .btn[disabled],.btn2[disabled]{opacity:.5;cursor:default;pointer-events:none}
 /* a class that sets display beats the hidden attribute, and Copy/Download
    were showing on a step that had not run yet */

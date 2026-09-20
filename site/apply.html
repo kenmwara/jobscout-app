@@ -171,7 +171,7 @@
   html.anim .docwin[open]{animation:winin .18s var(--ease)}
   @keyframes winin{from{transform:scale(.985)}}
   .readmore{appearance:none;background:transparent;border:0;padding:6px 0 0;cursor:pointer;
-    font:500 13.5px/1 var(--sans);color:var(--accent);text-decoration:underline;text-underline-offset:3px}
+    font:500 13.5px/1 var(--sans);color:var(--link);text-decoration:underline;text-underline-offset:3px}
   .readmore:hover{color:var(--ink)}
   .out.clipped{max-height:270px;overflow:hidden;
     -webkit-mask-image:linear-gradient(#000 72%,transparent);mask-image:linear-gradient(#000 72%,transparent)}
@@ -183,6 +183,18 @@
     border-radius:12px;padding:14px;font:400 15px/1.6 var(--sans);color:var(--ink);
     background:var(--surface);outline:none}
   #profileBox:focus{border-color:var(--accent)}
+  /* The same control the landing page and the phone use, so a file behaves
+     the same way wherever a resume is asked for. A label wrapping a hidden
+     input is the only way to style a file picker; the input stays in the
+     accessibility tree and keyboard-focusable, so it is not a fake button. */
+  .up{display:inline-flex;align-items:center;gap:8px;cursor:pointer;
+    padding:11px 18px;border-radius:var(--r-pill);border:1px solid var(--hair2);
+    font:500 14px/1 var(--sans);color:var(--text)}
+  .up:hover{border-color:var(--ink)}
+  .up:focus-within{outline:2px solid var(--link);outline-offset:2px}
+  .up .clip{width:17px;height:17px;flex:0 0 auto}
+  .up input{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+  .up.busy{opacity:.6;pointer-events:none}
   .empty{text-align:center;padding:80px 0}
   .empty p{font:400 21px/1.4 var(--serif);color:var(--ink);margin:0 0 8px}
   /* The handle exists only on a phone, where this is a sheet. */
@@ -303,7 +315,15 @@
           kept between visits. Paste it once and the three steps below can be drafted. It is read in the browser and
           sent only to score this one posting.</p>
         <textarea id="profileBox" placeholder="Paste your resume&hellip;"></textarea>
-        <div class="acts" style="margin-top:14px"><button class="btn" type="button" id="useProfile">Use this resume</button></div>
+        <div class="acts" style="margin-top:14px">
+          <button class="btn" type="button" id="useProfile">Use this resume</button>
+          <label class="up" id="upLabel">
+            <svg class="clip" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true"><path d="M21.4 11.05 12.25 20.2a5.5 5.5 0 0 1-7.78-7.78l9.19-9.19a3.67 3.67 0 1 1 5.18 5.19l-9.2 9.19a1.83 1.83 0 1 1-2.59-2.6l8.49-8.48"/></svg>
+            <span>Upload a file</span>
+            <input type="file" id="applyFile" accept=".pdf,.docx,.txt,.md,application/pdf">
+          </label>
+        </div>
+        <p id="uplStatus" class="fnote" style="margin:9px 0 0" role="status" aria-live="polite"></p>
       </div>
     </div>
 
@@ -496,6 +516,37 @@ function render(){
   if (S.profile) $("#steps").hidden = false;
   else $("#needProfile").hidden = false;
 }
+/* Identical to the handler on index.html, against the same endpoint. The
+   file is streamed as the body with its type and name in headers - not
+   multipart - because that is what /api/extract reads. */
+$("#applyFile").onchange = async () => {
+  const inp = $("#applyFile"), file = inp.files[0];
+  if (!file) return;
+  const lab = $("#upLabel"), st = $("#uplStatus");
+  lab.classList.add("busy"); st.textContent = "extracting\u2026";
+  try {
+    const r = await fetch(API + "/api/extract", {
+      method: "POST",
+      headers: { "content-type": file.type || "application/octet-stream",
+                 "x-filename": file.name },
+      body: file,
+    });
+    const d = await r.json();
+    if (d.text) {
+      $("#profileBox").value = d.text;
+      st.textContent = "\u2713 " + d.chars.toLocaleString() + " characters read from " +
+        file.name + " \u2014 review it, then use it"
+        + (d.chars > 6000 ? " (trimmed to 6,000)" : "");
+    } else {
+      st.textContent = d.detail || d.error || "That file could not be read.";
+    }
+  } catch (e) {
+    st.textContent = "The extract service is unreachable right now.";
+  }
+  lab.classList.remove("busy");
+  inp.value = "";
+};
+
 $("#useProfile").onclick = () => {
   const v = $("#profileBox").value.trim();
   if (v.length < 40) return;

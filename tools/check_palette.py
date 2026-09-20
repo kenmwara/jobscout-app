@@ -316,6 +316,38 @@ if painted:
 else:
     ok("--live is only ever a fill, never a text colour")
 
+# -- 6b. --accent is the brand mark, not a text colour ------------------
+# Same rule as --live one section up, for the same reason: a token tuned for
+# one job was being read at another. --accent measured 4.15:1 on cream at
+# 13.5px - under AA - while the same token resolved to #a2baff in dark and
+# measured 10.38:1, so it passed in one theme only. The exemptions are the
+# places where the brand is a MARK rather than a sentence: the display
+# period, the coach glyph, the saved heart, and a chip that sits on
+# --accent-ink rather than on the canvas. Anything else wanting indigo text
+# wants --link.
+BRAND_AS_MARK = ("h1.display .dot", ".coach .hand", ".savebtn", ".secrow button:hover .n")
+painted = []
+for f in ("site/base.css", "site/index.html", "site/apply.html", "site/saved.html",
+          "site/privacy.html"):
+    path = os.path.join(ROOT, f)
+    if not os.path.exists(path):
+        continue
+    src = io.open(path, encoding="utf-8").read()
+    # The lookbehind matters: `border-color:var(--accent)` contains
+    # `color:var(--accent)`, and a border IS allowed to be the brand.
+    for m in re.finditer(r"(?<![-\w])color\s*:\s*var\(--accent\)", src):
+        line = src[:m.start()].count(chr(10)) + 1
+        head = src.rfind("}", 0, m.start())
+        rule = src[head + 1:m.start()]
+        if any(sel in rule for sel in BRAND_AS_MARK):
+            continue
+        painted.append("%s:%d" % (os.path.basename(f), line))
+if painted:
+    bad("--accent is the brand, used as text at %s - a link takes --link"
+        % ", ".join(painted))
+else:
+    ok("--accent is only ever the mark; text links take --link")
+
 # 7. index.html carries its own copy of the band tokens, in the same
 #    light-dark() form. Both sides are RESOLVED before comparing, so the two
 #    files are held to the same values rather than to the same spelling.
