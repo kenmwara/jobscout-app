@@ -64,21 +64,28 @@ const run = async () => {
 
   // ── 1-8: the truth table ─────────────────────────────────────────────
   console.log("\n-- the truth table --");
+  /* LIGHT IS THE DEFAULT (operator decision 2026-09-20), so an absent
+     attribute is light rather than "follow the OS" - cream and Newsreader are
+     the brand, and a first visit lands on them whatever the device says.
+     "system" is still reachable; it is just asked for now. The state that
+     used to be implicit is the one worth testing hardest, so all four are
+     here against both OS settings. */
   for (const market of ["ca", "ke"]) {
     for (const os of ["light", "dark"]) {
-      for (const forced of [null, "light", "dark"]) {
+      for (const forced of [null, "light", "system", "dark"]) {
         const ctx = await browser.newContext({ colorScheme: os });
         const page = await ctx.newPage();
         const url = (market === "ke" ? KE : CA) +
-          (forced ? (LIVE ? `?theme=${forced}` : `&theme=${forced}`)
-                  : (LIVE ? "" : "&theme=system"));
+          (forced ? (LIVE ? `?theme=${forced}` : `&theme=${forced}`) : (LIVE ? "" : ""));
         await page.goto(url, { waitUntil: "domcontentloaded" });
         const r = await probe(page);
-        const want = CANVAS[forced || os];
-        const label = `${market} / ${forced || "system"} / OS ${os}`;
+        const want = CANVAS[forced === "system" ? os : (forced || "light")];
+        const label = `${market} / ${forced || "default"} / OS ${os}`;
         if (r.canvas !== want) bad(`${label}: canvas ${r.canvas}, expected ${want}`);
         else if (!squash(r.hero).includes(HERO[market])) bad(`${label}: hero is not ${market}'s (${squash(r.hero).slice(0, 48)})`);
         else if (r.market !== market) bad(`${label}: data-market is ${r.market}`);
+        else if (forced === null && r.theme !== null)
+          bad(`${label}: the default wrote data-theme="${r.theme}"`);
         else ok(`${label} -> ${r.canvas}, ${market} hero`);
         await ctx.close();
       }
@@ -106,18 +113,20 @@ const run = async () => {
     const ctx = await browser.newContext({ colorScheme: "dark" });
     const page = await ctx.newPage();
     await page.goto(CA, { waitUntil: "domcontentloaded" });
-    await page.evaluate(() => document.documentElement.setTheme("light"));
+    await page.evaluate(() => document.documentElement.setTheme("dark"));
     await page.reload({ waitUntil: "domcontentloaded" });
     const r = await probe(page);
-    if (r.canvas !== CANVAS.light) bad(`a stored light choice did not survive a reload (${r.canvas})`);
+    if (r.canvas !== CANVAS.dark) bad(`a stored dark choice did not survive a reload (${r.canvas})`);
     else ok("a stored choice survives a reload, set before first paint");
-    // and the head script must NOT write the attribute when nothing is stored
-    await page.evaluate(() => document.documentElement.setTheme("system"));
+    // and the default must write nothing
+    await page.evaluate(() => document.documentElement.setTheme("light"));
     await page.reload({ waitUntil: "domcontentloaded" });
     const r2 = await probe(page);
     if (r2.theme !== null)
-      bad(`with no stored choice the head script wrote data-theme="${r2.theme}" - "follow the system" is then unreachable`);
-    else ok("with no stored choice no attribute is written; absence stays meaningful");
+      bad(`after choosing Light the head script wrote data-theme="${r2.theme}"`);
+    else if (r2.canvas !== CANVAS.light)
+      bad(`the default is ${r2.canvas}, and it must be light on a dark OS too`);
+    else ok("the default writes no attribute and lands light, on a dark OS");
     await ctx.close();
   }
 
@@ -125,7 +134,7 @@ const run = async () => {
   {
     const ctx = await browser.newContext({ colorScheme: "dark" });
     const page = await ctx.newPage();
-    await page.goto(CA + (LIVE ? "" : "&theme=system"), { waitUntil: "domcontentloaded" });
+    await page.goto(CA + (LIVE ? "?theme=system" : "&theme=system"), { waitUntil: "domcontentloaded" });
     const before = await probe(page);
     await page.emulateMedia({ colorScheme: "light" });
     const after = await probe(page);
@@ -148,10 +157,12 @@ const run = async () => {
     else ok("the theme control offers all three states");
 
     // and clicking each one actually lands
-    for (const choice of ["dark", "light", "system"]) {
+    for (const choice of ["dark", "system", "light"]) {
       await page.click(`#thmTop button[data-thm="${choice}"]`);
       const r = await probe(page);
-      const want = choice === "system" ? null : choice;
+      // Light is the default, so choosing it clears the attribute rather
+      // than writing one; "system" and "dark" are stored.
+      const want = choice === "light" ? null : choice;
       if (r.theme !== want) bad(`clicking ${choice} left data-theme=${JSON.stringify(r.theme)}`);
       else ok(`clicking ${choice} sets data-theme=${JSON.stringify(r.theme)}`);
     }

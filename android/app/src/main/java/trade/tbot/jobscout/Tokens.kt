@@ -145,9 +145,13 @@ private val KE_HERO = Triple(Color(0xFF11401A), Color(0xFF0C2A12), Color(0xFF080
 /**
  * Three states, the same three the web has:
  *
- *   null / absent -> follow the OS   <- the default
- *   "light"       -> force light
+ *   null / absent -> LIGHT   <- the default, on every market and every device
+ *   "system"      -> follow the OS
  *   "dark"        -> force dark
+ *
+ * Light is the default deliberately (operator, 2026-09-20): cream and
+ * Newsreader are the brand, and a first launch should land on them whatever
+ * the phone is set to. Following the phone is reachable, it is just asked for.
  *
  * Stored under the app's own "jobscout" preferences, beside the tracker. A
  * toggle would need all three: clearing the key is the only way to hand
@@ -161,14 +165,16 @@ object ThemeChoice {
     fun stored(ctx: Context): String? = prefs(ctx).getString(KEY, null)
 
     fun set(ctx: Context, choice: String?) = prefs(ctx).edit().apply {
-        if (choice == "light" || choice == "dark") putString(KEY, choice) else remove(KEY)
+        // "light" is the default, so it is stored as an ABSENCE, exactly as
+        // the web stores it by removing the attribute.
+        if (choice == "dark" || choice == "system") putString(KEY, choice) else remove(KEY)
     }.apply()
 
-    /** The OS answer unless the reader has overridden it. */
+    /** Light unless the reader asked for dark, or asked to follow the phone. */
     fun isDark(ctx: Context, systemIsDark: Boolean): Boolean = when (stored(ctx)) {
-        "light" -> false
         "dark" -> true
-        else -> systemIsDark
+        "system" -> systemIsDark
+        else -> false          // absent or "light": the default
     }
 }
 

@@ -398,8 +398,12 @@ func mimeFor(_ ext: String) -> String {
 @main
 struct JobScoutApp: App {
     /* Three states, the same three the web resolves with light-dark():
-         nil / no stored value -> follow the trait collection   <- the default
-         "light" / "dark"      -> force it, via preferredColorScheme
+         no stored value -> LIGHT   <- the default, whatever the phone says
+         "system"        -> follow the trait collection
+         "dark"          -> force dark
+
+       Light is the default deliberately (operator, 2026-09-20): cream and
+       Newsreader are the brand, and a first launch lands on them.
 
        A toggle needs all three, because clearing the stored value is the only
        way to hand control back to the OS. Nothing in the UI sets this yet;
@@ -408,9 +412,9 @@ struct JobScoutApp: App {
 
     private var forced: ColorScheme? {
         switch themeChoice {
-        case "light": return .light
         case "dark": return .dark
-        default: return nil          // follow the device
+        case "system": return nil    // hand it back to the trait collection
+        default: return .light       // absent or "light": the default
         }
     }
 

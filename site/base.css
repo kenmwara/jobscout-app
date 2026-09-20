@@ -129,7 +129,10 @@
    Every ratio in a comment was measured, not estimated.
    ════════════════════════════════════════════════════════════════════════ */
 :root{
-  color-scheme: light dark;   /* required — light-dark() switches on this */
+  /* LIGHT IS THE DEFAULT. light-dark() switches on color-scheme, so a plain
+     `light` here means a first visit lands on cream whatever the device says.
+     "Follow the OS" is the `system` state below - reachable, but asked for. */
+  color-scheme: light;
 
   /* ── surfaces ── */
   --canvas:   light-dark(#f8f3eb, #0a0524);
@@ -183,12 +186,14 @@
   --sh-hover:0 6px 27px rgba(75,68,57,.09), 0 1.8px 8px rgba(75,68,57,.05), 0 .75px 3.4px rgba(75,68,57,.04);
 }
 @media (prefers-color-scheme: dark){
-  :root:not([data-theme="light"]){ --sh-hover:0 0 0 1px var(--hair); }
+  :root[data-theme="system"]{ --sh-hover:0 0 0 1px var(--hair); }
 }
 :root[data-theme="dark"]{ --sh-hover:0 0 0 1px var(--hair); }
 
-/* Forcing a theme. color-scheme is what light-dark() reads. */
+/* The three states. Absence is light, which is also what `light` forces;
+   `system` is the only one that hands the decision to the device. */
 :root[data-theme="light"]{ color-scheme: light; }
+:root[data-theme="system"]{ color-scheme: light dark; }
 :root[data-theme="dark"]{ color-scheme: dark; }
 
 :root{
@@ -251,7 +256,7 @@ html[data-market="ke"]{
   --indigo:var(--accent); --midnight:var(--ink); --info:var(--chip);
   --lavender:var(--hair2); --meadow:var(--b-auto); --ember:var(--b-unsure);
   --sh:var(--sh-subtle)}
-@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){--sh:none} }
+@media (prefers-color-scheme: dark){ :root[data-theme="system"]{--sh:none} }
 :root[data-theme="dark"]{--sh:none}
 
 /* ── site header ────────────────────────────────────────────────────── */
@@ -355,7 +360,7 @@ body::before{
           mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 760 760'%3E%3Ccircle cx='380' cy='80' r='28.4'/%3E%3Ccircle cx='592.1' cy='167.9' r='54.1'/%3E%3Ccircle cx='680' cy='380' r='79.8'/%3E%3Ccircle cx='592.1' cy='592.1' r='105.5'/%3E%3Ccircle cx='380' cy='680' r='131.2'/%3E%3Ccircle cx='167.9' cy='592.1' r='156.9'/%3E%3Ccircle cx='80' cy='380' r='182.6'/%3E%3Ccircle cx='167.9' cy='167.9' r='208.3'/%3E%3C/svg%3E") no-repeat center/contain;
 }
 @media (prefers-color-scheme: dark){
-  :root:not([data-theme="light"]) body::before{opacity:.1}}
+  :root[data-theme="system"] body::before{opacity:.1}}
 :root[data-theme="dark"] body::before{opacity:.1}
 /* content sits on top of it */
 body>*{position:relative;z-index:1}

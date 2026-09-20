@@ -45,9 +45,10 @@ it — that line is the entire bug.
 
 ### Axis 2 — `theme`
 
-* Values: `system` (default), `light`, `dark`.
-* Set by: the operating system, unless the reader has chosen an override.
-* Persisted: `localStorage['jobscout.theme']`, absent when following the system.
+* Values: `light` (**default**), `system`, `dark`.
+* Set by: the reader. **Light is what a first visit gets, on every market and
+  every device** — see the amendment in §2.
+* Persisted: `localStorage['jobscout.theme']`, absent when light.
 * **Controls every other colour token.** Grounds, surfaces, text, actions,
   bands, borders, shadows.
 
@@ -55,18 +56,28 @@ it — that line is the entire bug.
 
 ## 2. Truth table
 
-`<html>` carries both attributes. `data-theme` is **absent** when following the
-system — absence is meaningful, it is not the same as `data-theme="light"`.
+> **AMENDED 2026-09-20 (operator).** Light is now the default on all four
+> surfaces. An **absent** `data-theme` means *light*, not "follow the system";
+> following the system is the explicit `data-theme="system"`. Cream and
+> Newsreader are the brand, and a first visit lands on them whatever the
+> device is set to. The cost, stated plainly: a reader whose OS is in dark
+> mode gets a cream page until they choose otherwise. Everything else in this
+> file is unchanged — the two axes still never touch.
+
+`<html>` carries both attributes. `data-theme` is **absent** when light, which
+is the default.
 
 | `data-market` | `data-theme` | OS is | Result |
 |---|---|---|---|
-| `ca` | *(absent)* | light | Canada, light |
-| `ca` | *(absent)* | dark  | Canada, dark |
+| `ca` | *(absent)* | either | Canada, light ← the default |
 | `ca` | `light` | either | Canada, light |
+| `ca` | `system` | light | Canada, light |
+| `ca` | `system` | dark  | Canada, dark |
 | `ca` | `dark`  | either | Canada, dark |
-| `ke` | *(absent)* | light | **Kenya, light** ← this state must work |
-| `ke` | *(absent)* | dark  | Kenya, dark |
+| `ke` | *(absent)* | either | **Kenya, light** ← this state must work |
 | `ke` | `light` | either | **Kenya, light** ← and this one |
+| `ke` | `system` | light | Kenya, light |
+| `ke` | `system` | dark  | Kenya, dark |
 | `ke` | `dark`  | either | Kenya, dark |
 
 The two rows marked are the ones every previous attempt has got wrong. Kenya in
@@ -172,9 +183,10 @@ dark` on `:root` — without that, `light-dark()` silently returns the light val
 and dark mode dies.
 
 ```css
-:root { color-scheme: light dark; }
-:root[data-theme="light"] { color-scheme: light; }
-:root[data-theme="dark"]  { color-scheme: dark;  }
+:root                      { color-scheme: light; }       /* the default */
+:root[data-theme="light"]  { color-scheme: light; }
+:root[data-theme="system"] { color-scheme: light dark; }  /* opt in to the OS */
+:root[data-theme="dark"]   { color-scheme: dark;  }
 ```
 
 Market is separate and additive:
@@ -206,9 +218,10 @@ light gets a dark flash on every page load.
 ```
 
 Note what it does **not** do: it does not read the OS, and it does not set
-`data-theme` when there is no stored choice. CSS handles the system case. If
-this script ever writes `'dark'` because the OS is dark, the reader can never
-get back to "follow the system".
+`data-theme` when there is no stored choice — no attribute is the light
+default. `'system'` is stored and written like any other choice. If this
+script ever writes `'dark'` because the OS is dark, the reader can never get
+back to choosing for themselves.
 
 ### 5.4 Setting each axis
 
@@ -240,7 +253,8 @@ Three states, not a switch. A two-state switch cannot express "follow the
 system", and that is the default, so a switch makes the default unreachable.
 
 ```
-  ( ) System     ( ) Light     ( ) Dark
+  ( ) Light      ( ) Match your device setting      ( ) Dark
+       ^ the default
 ```
 
 Put it in the header next to the market switcher, or in a settings menu. Until

@@ -48,19 +48,22 @@
      START colour. With the transition suppressed, all three states resolve
      synchronously, and so does an OS change with no attribute set. */
   d.setTheme=function(choice){
+    var real = (choice==="light"||choice==="dark"||choice==="system") ? choice : "light";
     try{
-      if(choice==="light"||choice==="dark") localStorage.setItem("jobscout.theme",choice);
-      else localStorage.removeItem("jobscout.theme");
+      if(real==="light") localStorage.removeItem("jobscout.theme");   // the default
+      else localStorage.setItem("jobscout.theme",real);
     }catch(e){}
-    if(choice==="light"||choice==="dark") d.setAttribute("data-theme",choice);
-    else d.removeAttribute("data-theme");
-    d.dispatchEvent(new CustomEvent("themechange",{detail:choice}));
+    if(real==="light") d.removeAttribute("data-theme");
+    else d.setAttribute("data-theme",real);
+    d.dispatchEvent(new CustomEvent("themechange",{detail:real}));
   };
 
   var q_t=q.get("theme");
   if(q_t==="light"||q_t==="dark"||q_t==="system"){ d.setTheme(q_t); return; }
   var t=null; try{t=localStorage.getItem("jobscout.theme")}catch(e){}
-  if(t==="light"||t==="dark") d.setAttribute("data-theme",t);
+  /* No stored choice writes no attribute, and no attribute is LIGHT - the
+     brand's own ground. "system" is stored like any other choice. */
+  if(t==="light"||t==="dark"||t==="system") d.setAttribute("data-theme",t);
 })(document.documentElement,new URLSearchParams(location.search))</script>
 
 <style>

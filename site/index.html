@@ -62,19 +62,22 @@
      START colour. With the transition suppressed, all three states resolve
      synchronously, and so does an OS change with no attribute set. */
   d.setTheme=function(choice){
+    var real = (choice==="light"||choice==="dark"||choice==="system") ? choice : "light";
     try{
-      if(choice==="light"||choice==="dark") localStorage.setItem("jobscout.theme",choice);
-      else localStorage.removeItem("jobscout.theme");
+      if(real==="light") localStorage.removeItem("jobscout.theme");   // the default
+      else localStorage.setItem("jobscout.theme",real);
     }catch(e){}
-    if(choice==="light"||choice==="dark") d.setAttribute("data-theme",choice);
-    else d.removeAttribute("data-theme");
-    d.dispatchEvent(new CustomEvent("themechange",{detail:choice}));
+    if(real==="light") d.removeAttribute("data-theme");
+    else d.setAttribute("data-theme",real);
+    d.dispatchEvent(new CustomEvent("themechange",{detail:real}));
   };
 
   var q_t=q.get("theme");
   if(q_t==="light"||q_t==="dark"||q_t==="system"){ d.setTheme(q_t); return; }
   var t=null; try{t=localStorage.getItem("jobscout.theme")}catch(e){}
-  if(t==="light"||t==="dark") d.setAttribute("data-theme",t);
+  /* No stored choice writes no attribute, and no attribute is LIGHT - the
+     brand's own ground. "system" is stored like any other choice. */
+  if(t==="light"||t==="dark"||t==="system") d.setAttribute("data-theme",t);
 })(document.documentElement,new URLSearchParams(location.search))</script>
 <link rel="stylesheet" href="base.css">
 <style>
@@ -387,7 +390,7 @@ html.anim .cmark{animation:float 2.6s ease-in-out infinite}
   box-shadow:0 28px 50px -12px rgba(8,3,49,.20), 0 12px 24px -8px rgba(8,3,49,.12),
              0 4px 9px rgba(8,3,49,.07), 0 1px 3px rgba(8,3,49,.05)
 }
-@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .job:hover{
+@media (prefers-color-scheme: dark){:root[data-theme="system"] .job:hover{
   box-shadow:0 28px 50px -10px rgba(0,0,0,.6), 0 12px 24px -8px rgba(0,0,0,.45),
              0 4px 9px rgba(0,0,0,.3), 0 0 0 1px rgba(162,186,255,.20)
 }}
@@ -624,7 +627,7 @@ html.anim .tabs a:hover{transform:skewX(-7deg) translateY(-3px)}
    cream page is exactly nothing. */
 .heromark.pagemark .ring circle{fill:var(--accent);opacity:.06}
 @media (prefers-color-scheme: dark){
-  :root:not([data-theme="light"]) .heromark.pagemark .ring circle{opacity:.1}}
+  :root[data-theme="system"] .heromark.pagemark .ring circle{opacity:.1}}
 :root[data-theme="dark"] .heromark.pagemark .ring circle{opacity:.1}
 .heromark.pagemark .pop{display:none}
 .heromark .ring circle{fill:#fff;opacity:.16}
@@ -959,11 +962,12 @@ nav.main{margin-left:18px}
         </button>
       </div>
       <div class="thm" id="thmTop" aria-label="Colour theme">
-        <button type="button" data-thm="system" aria-pressed="true"
-                title="Follow your device" aria-label="Theme: follow your device">
+        <button type="button" data-thm="system" aria-pressed="false"
+                title="Match your device setting"
+                aria-label="Theme: match your device setting">
           <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2.5" y="4" width="19" height="13" rx="2"/><path d="M8.5 20.5h7M12 17.5v3"/></svg>
         </button>
-        <button type="button" data-thm="light" aria-pressed="false"
+        <button type="button" data-thm="light" aria-pressed="true"
                 title="Light" aria-label="Theme: light">
           <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M4.2 4.2l1.6 1.6M18.2 18.2l1.6 1.6M2.5 12h2.2M19.3 12h2.2M4.2 19.8l1.6-1.6M18.2 5.8l1.6-1.6"/></svg>
         </button>
@@ -2606,7 +2610,8 @@ reveal(); relight(); rotate();
   const box = document.getElementById("thmTop");
   if (!box) return;
   const d = document.documentElement;
-  const current = () => d.getAttribute("data-theme") || "system";
+  // No attribute is LIGHT now, not "system" - see the head script.
+  const current = () => d.getAttribute("data-theme") || "light";
   const paint = () => box.querySelectorAll("button").forEach(b =>
     b.setAttribute("aria-pressed", String(b.dataset.thm === current())));
   box.addEventListener("click", e => {
