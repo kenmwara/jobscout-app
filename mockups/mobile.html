@@ -134,11 +134,18 @@ p.sub{font:400 13.5px/1.5 var(--sans);color:var(--text2);margin:0 0 16px}
    unreadable on it. THEME.md section 3: the hero's text is always cream. */
 .mfile{font:400 11.5px/1.35 var(--sans);color:rgba(248,243,235,.76);margin:9px 0 0}
 .mfile b{color:#f8f3eb;font-weight:500}
-/* The mark pulses while Claude is scoring: the arrow is the only thing on
-   screen that can say "working", and dead silence after the tap was the worst
-   moment in the real mobile flow too. */
+/* While CLAUDE scores, Claude's own mark breathes in the arrow's place - the
+   same device site/index.html uses, not a pulsing glyph. Dead silence after
+   the tap was the worst moment in the real mobile flow, and the thing that
+   fixes it should say WHO is working. Extraction is not Claude (unpdf and
+   fflate do that), so the clip keeps a plain pulse. */
 @keyframes mpulse{0%,100%{opacity:1}50%{opacity:.45}}
-.mbox b.busy{animation:mpulse 1s ease-in-out infinite}
+.mbox b.busy{pointer-events:none}
+.cmark{width:22px;height:22px;border-radius:50%;flex:none;display:block}
+@media (prefers-reduced-motion:no-preference){
+  .cmark{animation:breathe 1.4s ease-in-out infinite}
+  @keyframes breathe{50%{transform:scale(.82);opacity:.6}}
+}
 .mbox b{width:36px;height:36px;border-radius:50%;background:var(--btn);color:var(--btn-ink);
   display:grid;place-items:center;font-size:15px}
 .chips{display:flex;gap:6px;flex-wrap:wrap;margin:13px 0 0}
@@ -387,10 +394,19 @@ async function runScore() {
   const profile = (ta?.value || "").trim();
   if (profile.length < 40) { ta?.focus(); runErr = "Paste a bit more - at least a few lines.";
     return paint(); }
-  runErr = ""; btn?.classList.add("busy");
+  runErr = "";
+  if (btn) {
+    btn.classList.add("busy");
+    btn.setAttribute("aria-label", "Claude is scoring these postings");
+    btn.innerHTML = '<img class="cmark" src="claude-mark.png" alt="">';
+  }
   try { scoredReal = await scoreReal(profile); }
   catch (err) { runErr = "Could not score: " + err.message + ". Showing example scores."; }
-  btn?.classList.remove("busy");
+  if (btn) {
+    btn.classList.remove("busy");
+    btn.setAttribute("aria-label", "Score these postings against your resume");
+    btn.innerHTML = "→";
+  }
   ran = true; screen = "matches"; paint();
 }
 
