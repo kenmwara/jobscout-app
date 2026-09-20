@@ -247,7 +247,17 @@ async function draft(env, max_tokens, system, content) {
     headers: { "x-api-key": env.ANTHROPIC_API_KEY, "anthropic-version": "2023-06-01", "content-type": "application/json" },
     body: JSON.stringify({ model: MODEL, max_tokens, temperature: 0.3, system, messages: [{ role: "user", content }] }),
   });
-  if (!r.ok) return json(502, { error: "upstream", detail: `anthropic ${r.status}` });
+  if (!r.ok) {
+    /* SAY WHY. Anthropic answers 400 for a malformed request AND for an
+       exhausted credit balance, and "anthropic 400" told nobody which -
+       every draft on every client failed with a number for an afternoon.
+       Its error body carries a type and a message and no secret; the
+       message reaches the reader through d.detail on every surface. */
+    let why = "";
+    try { const e = (await r.json()).error || {}; why = [e.type, e.message].filter(Boolean).join(": ").slice(0, 160); }
+    catch (e) { /* not JSON; the status will have to do */ }
+    return json(502, { error: "upstream", detail: `anthropic ${r.status}${why ? " - " + why : ""}` });
+  }
   const data = await r.json();
   const usage = data.usage || { input_tokens: 0, output_tokens: 0 };
   return { text: data.content?.[0]?.text ?? "", usage,
