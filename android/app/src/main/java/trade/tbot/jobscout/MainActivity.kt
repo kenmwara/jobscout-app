@@ -920,11 +920,12 @@ private fun matchesPolicy(p: Posting, id: String): Boolean = when (id) {
    draws at 18dp in the lockup, which is that case exactly. The uncropped cut
    is the documented DISPLAY variant: large, with room, and in the fit states.
 
-   The ramp tops out at 4.089, not 4.336. At 4.336 the two largest dots sit
-   0.041 units apart — 0.88px at 512, i.e. merged — and the crop was the only
-   thing hiding it, so the moment the uncropped cut is drawn at size that
-   collision is on screen. One ramp serves both, which is what makes carrying
-   the variant free. */
+   The ramp is the canonical 2.275 -> 4.336 from tokens/brand.json, and the
+   two largest dots touching at 270 and 315 is DELIBERATE — "the sweep closing
+   on itself". I briefly cut the max to 4.089 on the strength of the decision
+   doc's comparison table, which was me overruling a decision the token source
+   had already made and given a reason for. The display cut owns the touch;
+   that is why it carries a 48px floor and is never used in a lockup. */
 @Composable
 fun Mark(dp: Dp = 28.dp, tint: Color = T.accent) {
     Canvas(Modifier.size(dp).clip(RoundedCornerShape(6.dp))) {
@@ -932,7 +933,7 @@ fun Mark(dp: Dp = 28.dp, tint: Color = T.accent) {
         val c = center
         for (i in 0 until 8) {
             val th = Math.toRadians((-90 + 45 * i).toDouble())
-            val r = (2.275f + (4.089f - 2.275f) * i / 7f) * u
+            val r = (2.275f + (4.336f - 2.275f) * i / 7f) * u
             drawCircle(tint, r, Offset(c.x + 11f * u * cos(th).toFloat(), c.y + 11f * u * sin(th).toFloat()))
         }
     }
