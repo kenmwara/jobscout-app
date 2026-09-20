@@ -351,8 +351,20 @@ Promise.all([fetch("feed-sample.json").then(r => r.json()), window.__tokens])
     if (!styled) $(".note").insertAdjacentHTML("afterbegin",
       "<b>Tokens did not load.</b> Serve the repo root, or check the network. ");
   })
-  .catch(() => { $("#view").innerHTML = `<p class="empty">Could not load feed-sample.json.<br>
-    Serve this folder over http rather than opening the file directly.</p>`; });
+  .catch(() => {
+    /* A file:// page cannot fetch a sibling JSON, and this file gets
+       double-clicked. Fall back to the live feed, which also means the
+       mockup shows today's real postings rather than a frozen sample. */
+    fetch("https://jobscout-app-api.kenmwara.workers.dev/api/feed?market=" + market)
+      .then(r => r.json())
+      .then(j => { FEED = { ca: j, ke: j }; paint();
+        $(".note").insertAdjacentHTML("afterbegin",
+          "<b>Live feed.</b> The local sample was unreachable (opened as a file), " +
+          "so these are today's real postings from the worker. "); })
+      .catch(() => { $("#view").innerHTML = `<p class="empty">No feed.<br>
+        Serve the folder over http: <code>mockups/mobile.html</code> at
+        <code>localhost:4173</code>.</p>`; });
+  });
 </script>
 </body>
 </html>

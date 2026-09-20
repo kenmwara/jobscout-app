@@ -244,9 +244,16 @@ p.lede{font:400 16px/1.6 var(--sans);color:var(--text2);max-width:520px;margin:0
 .job .role{font:400 19px/1.3 var(--serif);letter-spacing:-.02em;color:var(--ink);margin:0}
 .job .foot{display:flex;align-items:center;justify-content:space-between;gap:12px}
 .job .loc{font:400 13.5px/1.35 var(--sans);color:var(--text2)}
-.pill{font:500 12.5px/1 var(--sans);border:1px solid var(--hair2);border-radius:var(--r-pill);
+.pill{font:500 12.5px/1 var(--sans);background:var(--sunken);color:var(--text2);
+  border:1px solid transparent;border-radius:var(--r-pill);
       padding:7px 12px;color:var(--text);white-space:nowrap}
-.pill.on{background:var(--accent);color:var(--accent-ink);border-color:transparent}
+/* NO `.on` STATE. The filled indigo measured chroma 0.230 against 0.011-0.032
+   for every band on the same card - seven times the fit band directly above it
+   - and failed AA at 4.58:1, while "On site" was a plain outline, so one field
+   was drawn two different ways. Location is METADATA: both states are the same
+   neutral chip. Only the fit band is allowed hue. Same error as a market-tinted
+   control, at a smaller size. */
+.pill.on{background:var(--sunken);color:var(--text2);border-color:transparent}
 
 /* run-results variant: same card, plus a score */
 /* The bearing rose — the original grade mark, not a generic progress ring.
@@ -269,10 +276,10 @@ html.anim .job.arrive .rose .lit,html.anim .job.shown .rose .lit{transform:none;
    are identical in both markets. Kept byte-for-byte in step with base.css;
    tools/check_palette.py fails if the two copies disagree. */
 :root{
-  --b-auto:   light-dark(#114e0b, #5fd07a);  --b-auto-bg:   light-dark(#e8f2e6, #1f2940);
-  --b-ping:   light-dark(#1b1463, #a2baff);  --b-ping-bg:   light-dark(#dce4fb, #2c2a56);
-  --b-unsure: light-dark(#bf3200, #ff9b6f);  --b-unsure-bg: light-dark(#fdeadf, #36223e);
-  --b-near:   light-dark(#333333, #ddd7e4);  --b-near-bg:   light-dark(#eceaf2, #1e1a44)}
+  --b-auto:   light-dark(#225b2c, #92d098);  --b-auto-bg:   light-dark(#e7f4e8, #223424);
+  --b-ping:   light-dark(#394981, #a4bbff);  --b-ping-bg:   light-dark(#eaf0ff, #272e42);
+  --b-unsure: light-dark(#713f00, #ecaf78);  --b-unsure-bg: light-dark(#fbede1, #3d2b1a);
+  --b-near:   light-dark(#4b4b5c, #bbbcd0);  --b-near-bg:   light-dark(#eff0f4, #2e2e34)}
 
 /* ── taxonomy footer ────────────────────────────────────────────────── */
 .taxtabs{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 26px}
@@ -661,10 +668,21 @@ html.anim .heromark{animation:markdrift 26s ease-in-out infinite alternate}
 .age{position:relative}
 .age.new{color:var(--b-unsure);font-weight:500}  /* not --live: that is a FILL colour and reads 2.48:1 as text on cream */
 .age.stale{color:var(--text3);text-decoration:underline dotted}
+/* NOT font:inherit. That sat later in the file than `.job .age` at the same
+   specificity, so it won - and the button took its container's Newsreader and
+   --ink, putting the DATE at 19.67:1 in the display serif, identical to the
+   job title above it, while "what to answer" - the actual product - sat at
+   4.91:1 and was the faintest thing on the card. Newsreader is for titles,
+   the fit number and display headings. Nothing else.
+
+   The dotted underline is gone at rest and returns on hover and focus: the
+   date opens a caveat popover, so the affordance has to be discoverable
+   without the date shouting. */
 .age[data-ev]{cursor:pointer;border:0;background:none;padding:0;
-  font:inherit;color:inherit;text-decoration:underline dotted;
-  text-underline-offset:3px;text-decoration-color:var(--hair2)}
-.age[data-ev]:hover{text-decoration-color:currentColor}
+  font:400 11px/1 var(--sans);color:var(--text2);letter-spacing:.005em;
+  text-decoration:none;text-underline-offset:3px}
+.age[data-ev]:hover,.age[data-ev]:focus-visible{
+  text-decoration:underline dotted;text-decoration-color:currentColor}
 
 /* Teaching the gesture. Shown once per session, above the results. */
 .coach{

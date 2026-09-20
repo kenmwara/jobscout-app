@@ -137,8 +137,9 @@
   /* ── surfaces ── */
   --canvas:   light-dark(#f8f3eb, #0a0524);
   --canvas-2: light-dark(#fffdf9, #100b2f);   /* alternating band */
-  --surface:  light-dark(#ffffff, #16103a);   /* dark separates by hairline,
-                                                 not by luminance */
+  --surface:  light-dark(#ffffff, #1c1544);   /* lifted from #16103a: 1.17:1
+     on canvas, the same canvas->surface step light uses. Luminance alone
+     never separates on dark; the hairline does the rest. */
   --sunken:   light-dark(#ece5d8, #1a1240);   /* segmented tracks, rails */
   --hair:     light-dark(rgba(8,3,49,.13), rgba(248,243,235,.13));
   --hair2:    light-dark(rgba(8,3,49,.22), rgba(248,243,235,.24));
@@ -150,6 +151,10 @@
   --text2: light-dark(#5a5560, #b9b3c4);   /*  6.55 /  9.72 — replaces the
                                               #878789 family, which failed AA */
   --text3: var(--text2);                   /* an alias. There is no third. */
+  /* Runs of PROSE - paragraphs, not labels or single lines. On dark,
+     --text at 17.9:1 halates once a paragraph gets long; this is 14.33:1,
+     still far above AA. On light there is no halation, so it is --ink. */
+  --text-long: light-dark(#080331, #ded9e8);
 
   /* ── the action: maximum contrast, inverted per theme ──
      Deep-ink on cream, then cream on deep-ink. 17.44 and 17.93. Indigo
@@ -165,17 +170,59 @@
   --chip-ink:     var(--ink);
   --trough:       var(--sunken);
 
-  /* ── the fit bands: the only axis that owns hue ──
-     Four meanings, one set, every market. Each label is measured against its
-     OWN fill, which is the ground it actually lands on. */
-  --b-auto:   light-dark(#114e0b, #5fd07a);  --b-auto-bg:   light-dark(#e8f2e6, #1f2940);  /*  8.63 / 7.44  */
-  --b-ping:   light-dark(#1b1463, #a2baff);  --b-ping-bg:   light-dark(#dce4fb, #2c2a56);  /* 12.46 / 7.00  */
-  --b-unsure: light-dark(#bf3200, #ff9b6f);  --b-unsure-bg: light-dark(#fdeadf, #36223e);  /*  4.91 / 6.99  */
-  --b-near:   light-dark(#333333, #ddd7e4);  --b-near-bg:   light-dark(#eceaf2, #1e1a44);  /* 11.40 / 11.59 */
+  /* ── the fit bands: the only axis that owns hue ─────────────────────
+     ONE RAMP, NOT FOUR COLOURS PICKED SEPARATELY. Each rung fixes an OKLCH
+     lightness and chroma; the four bands differ only in HUE, and light and
+     dark are the same hue seen from opposite ends.
 
-  /* A FILL — the progress bar. Never a text colour: 2.48:1 on cream, and it
-     is the unsure band's own solid, so words wearing it claim a band. */
-  --live: light-dark(#ff6d39, #ff9b6f);
+       rung          L      C          rung          L      C
+       light-fill  0.955  0.022        dark-fill   0.305  0.038
+       light-label 0.420  0.096        dark-label  0.800  0.101
+       light-body  0.430  0.020        dark-body   0.865  0.016
+       solid-l     0.600  0.136        solid-d     0.760  0.122
+
+       hue:  auto 147  ping 270  unsure 63  near-miss 285 @ 28% chroma
+
+     The old set was NOT a set: the UNSURE label sat at L 0.53 while PING sat
+     at 0.27 - twice as bright and more saturated with it - so ember read as
+     the loud one and near-miss as an afterthought. Every pair below now lands
+     between 7.04 and 7.58:1, and that evenness is the point: no band is
+     permitted to be louder than another.
+
+     EMBER MOVED FROM HUE 39 TO 63. Hue 39 is the gap between Apple's red (29)
+     and orange (63) - near enough to red to read as an ERROR, which unsure is
+     not, and the hue that turns to mud when darkened. 63 darkens to a clean
+     amber and lightens to a bronze.
+
+     Dark chroma is 0.038, chosen against 0.028 / 0.048 / 0.058 / 0.070
+     rendered side by side: below it the hues stop being tellable apart, above
+     it the cards become heavy blocks of colour.
+
+     TO CHANGE A BAND: pick a HUE and read L and C off the table. Never pick a
+     hex, never tint an existing colour, never composite a dark fill from a
+     light one - that is what dragged every dark hue back to the surface's
+     purple. If a band needs to be more visible that is a size, a weight or a
+     border, because brightening one band is what breaks the set. */
+  --b-auto:   light-dark(#225b2c, #92d098);  --b-auto-bg:   light-dark(#e7f4e8, #223424);  /* 147deg · 7.11 / 7.38 */
+  --b-ping:   light-dark(#394981, #a4bbff);  --b-ping-bg:   light-dark(#eaf0ff, #272e42);  /* 270deg · 7.53 / 7.15 */
+  --b-unsure: light-dark(#713f00, #ecaf78);  --b-unsure-bg: light-dark(#fbede1, #3d2b1a);  /*  63deg · 7.58 / 7.04 */
+  --b-near:   light-dark(#4b4b5c, #bbbcd0);  --b-near-bg:   light-dark(#eff0f4, #2e2e34);  /* 285deg · 7.50 / 7.21 */
+
+  /* The band SOLIDS - the mark's lit bearings and 1-2px marks only, never
+     text: 3.4-3.7:1 on cream and 8.9-9.7:1 on ink, by design. */
+  --b-auto-solid:   light-dark(#3e954d, #7ac683);
+  --b-ping-solid:   light-dark(#617ad1, #93adff);
+  --b-unsure-solid: light-dark(#b86b03, #e89f59);
+  --b-near-solid:   light-dark(#7d7d97, #aeafc7);
+
+  /* The progress bar and the lit unsure bearings. It IS the unsure solid, so
+     it can never be text - words wearing it would claim a band. */
+  --live: var(--b-unsure-solid);
+
+  /* The evidence cards ARE the auto and unsure rungs, not a second palette
+     that has to be kept in step with the first. */
+  --strongest-body: light-dark(#495349, #ccd6cd);   /* 7.07 / 8.88 */
+  --answer-body:    light-dark(#584e45, #dbd1c8);   /* 7.06 / 8.96 */
 }
 
 /* Shadows are not colours, so light-dark() cannot carry them: the warm-brown
@@ -347,25 +394,13 @@ h1.display,h2.sec{text-wrap:balance}
   .panel{padding:20px 18px}
 }
 
-/* ── the mark, as the ground every page stands on ───────────────────────
-   The hero's glow, kept behind the content on every page rather than only the
-   landing. It is a mask, not markup: the accent shows through the ring, so it
-   re-tints with the market and no page has to carry the SVG. Fixed, so it
-   cannot add height or a sideways scrollbar. */
-body::before{
-  content:"";position:fixed;left:50%;top:18vh;transform:translateX(-50%);
-  width:min(1400px,104vw);aspect-ratio:1;pointer-events:none;z-index:0;
-  background:var(--accent);opacity:.06;
-  -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 760 760'%3E%3Ccircle cx='380' cy='80' r='28.4'/%3E%3Ccircle cx='592.1' cy='167.9' r='54.1'/%3E%3Ccircle cx='680' cy='380' r='79.8'/%3E%3Ccircle cx='592.1' cy='592.1' r='105.5'/%3E%3Ccircle cx='380' cy='680' r='131.2'/%3E%3Ccircle cx='167.9' cy='592.1' r='156.9'/%3E%3Ccircle cx='80' cy='380' r='182.6'/%3E%3Ccircle cx='167.9' cy='167.9' r='208.3'/%3E%3C/svg%3E") no-repeat center/contain;
-          mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 760 760'%3E%3Ccircle cx='380' cy='80' r='28.4'/%3E%3Ccircle cx='592.1' cy='167.9' r='54.1'/%3E%3Ccircle cx='680' cy='380' r='79.8'/%3E%3Ccircle cx='592.1' cy='592.1' r='105.5'/%3E%3Ccircle cx='380' cy='680' r='131.2'/%3E%3Ccircle cx='167.9' cy='592.1' r='156.9'/%3E%3Ccircle cx='80' cy='380' r='182.6'/%3E%3Ccircle cx='167.9' cy='167.9' r='208.3'/%3E%3C/svg%3E") no-repeat center/contain;
-}
-/* .055, not .1 - MEASURED. The halo is --accent over --canvas, and on dark
-   that is a pale lavender on a near-black ground where 10% reads as a panel
-   sitting over the content. Against its own canvas: light at .06 is 1.051:1,
-   dark at .10 was 1.110:1 - more than twice as present - and .055 is 1.052:1,
-   which is the same whisper in both themes. */
-@media (prefers-color-scheme: dark){
-  :root[data-theme="system"] body::before{opacity:.055}}
-:root[data-theme="dark"] body::before{opacity:.055}
-/* content sits on top of it */
-body>*{position:relative;z-index:1}
+/* THE BACKDROP HALO IS GONE (2026-09-20). It was --accent at 6%, masked to
+   a 1400px rose and fixed at 18vh - which put it over exactly the region the
+   content occupies. Measured on the live page it composited to #edeaec, hue
+   280: a cool grey lying on top of #f8f3eb at hue 37, so the warm cream only
+   survived at the edges. Warm cream under warm-brown shadows is the whole
+   reason the light theme looks like JobScout.
+
+   THE RULE: one ground. The card region is --canvas and there is no second
+   surface floating over it. If the page ever needs texture again it has to
+   come from the canvas token itself, not from a layer on top of it. */

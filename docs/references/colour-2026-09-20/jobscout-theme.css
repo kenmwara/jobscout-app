@@ -36,24 +36,51 @@
 
   /* --- indigo: brand, links, selected state — never a button fill ------ */
   --brand:         #4865ff;   /* the mark, and fills only: 4.15:1 on canvas */
-  --link:          #1b1463;   /* 14.33:1 — indigo is too weak for body links */
-  --selected-bg:   #dce4fb;
+  --link:          #1b1463;   /* 14.33:1 — deliberately NOT --ping-label.
+                                 A band pill is sized to sit quietly at 7.5:1;
+                                 a body link is read at length and takes the
+                                 extra contrast. Different jobs, different
+                                 colours — Apple splits these the same way. */
+  --selected-bg:   #eaf0ff;   /* the ping rung: selection is the ping hue */
   --selected-edge: #4865ff;
-  --selected-fg:   #1b1463;   /* 12.46:1 on --selected-bg */
+  --selected-fg:   #394981;   /* 7.53:1 on --selected-bg */
 
-  /* --- fit bands: the only hue-bearing axis --------------------------- */
-  --auto-label:      #114e0b;  --auto-fill:      #e8f2e6;  /*  8.63:1 */
-  --ping-label:      #1b1463;  --ping-fill:      #dce4fb;  /* 12.46:1 */
-  --unsure-label:    #bf3200;  --unsure-fill:    #fdeadf;  /*  4.91:1
-                                  the live build uses #cc3600 on #ffe6da = 4.29:1 */
-  --nearmiss-label:  #333333;  --nearmiss-fill:  #eceaf2;  /* 11.4:1 */
+  /* --- fit bands: the only hue-bearing axis ---------------------------
+     BUILT AS A RAMP, NOT PICKED ONE AT A TIME. Every rung below fixes an
+     OKLCH lightness and chroma; the four bands differ ONLY in hue:
 
-  /* Solid band colours — the mark's lit bearings and 1–2px marks only. */
-  --auto: #328a3b;  --ping: #4865ff;  --unsure: #ff6d39;  --nearmiss: #dce4fb;
+       rung          L      C      used for
+       light-fill  0.955  0.022    the pill / card behind the label
+       light-label 0.420  0.096    the label on it
+       light-body  0.430  0.020    body copy inside the card
+       dark-fill   0.305  0.038    "  "   on dark
+       dark-label  0.800  0.101
+       dark-body   0.865  0.016
+       solid-l     0.600  0.136    lit bearings, 1-2px marks, on cream
+       solid-d     0.760  0.122    the same, on ink
+
+       hue:  auto 147   ping 270   unsure 63   near-miss 285 (at 28% chroma)
+
+     The old set was not a set: the UNSURE label sat at L 0.53 while PING sat
+     at 0.27, so ember was twice as bright as its peers and read as the loud
+     one. Now every label/fill pair lands 7.04-7.58:1 and no band can shout.
+
+     EMBER MOVED FROM HUE 39 TO 63. Hue 39 is the gap between Apple's red (29)
+     and orange (63) — close enough to red to read as an error, which UNSURE
+     is not, and the hue that turns to mud when darkened (that is where the
+     old #3d2b1f came from). 63 darkens to a clean amber. */
+  --auto-label:      #225b2c;  --auto-fill:      #e7f4e8;  /* 7.11:1 */
+  --ping-label:      #394981;  --ping-fill:      #eaf0ff;  /* 7.53:1 */
+  --unsure-label:    #713f00;  --unsure-fill:    #fbede1;  /* 7.58:1 */
+  --nearmiss-label:  #4b4b5c;  --nearmiss-fill:  #eff0f4;  /* 7.50:1 */
+
+  /* Solid band colours — the mark's lit bearings and 1–2px marks only.
+     Never text: these sit at 3.4–3.7:1 on cream by design. */
+  --auto: #3e954d;  --ping: #617ad1;  --unsure: #b86b03;  --nearmiss: #7d7d97;
 
   /* --- evidence cards -------------------------------------------------- */
-  --strongest-bg: #e8f2e6;  --strongest-label: #114e0b;  --strongest-body: #3d4a3f;
-  --answer-bg:    #fdeadf;  --answer-label:    #bf3200;  --answer-body:    #5c4a42;
+  --strongest-bg: #e7f4e8;  --strongest-label: #225b2c;  --strongest-body: #495349;
+  --answer-bg:    #fbede1;  --answer-label:    #713f00;  --answer-body:    #584e45;
 
   /* --- shape & depth --------------------------------------------------- */
   --radius-pill: 1600px;  --radius-card: 16px;  --radius-inner: 12px;
@@ -73,13 +100,17 @@
    =========================================================================== */
 :root[data-theme="dark"] {
   --canvas:   #0a0524;
-  --surface:  #16103a;   /* separates by hairline, not by luminance */
+  --surface:  #1c1544;   /* lifted from #16103a — 1.17:1 on canvas, matching
+                            the light theme's canvas->surface step, plus the
+                            hairline. Luminance alone never separates on dark. */
   --sunken:   #1a1240;
   --hairline: rgba(248, 243, 235, 0.13);
   --blob:     rgba(162, 186, 255, 0.05);
 
-  --text:     #f8f3eb;   /* 17.93:1 on canvas */
+  --text:     #f8f3eb;   /* 17.93:1 on canvas — headings and emphasis */
   --text-2:   #b9b3c4;   /*  9.72:1 on canvas */
+  --text-long: #ded9e8;  /* 14.33:1 — body copy in RUNS of prose. #f8f3eb at
+                            17.9:1 halates over a long paragraph on dark. */
 
   /* The action inverts, keeping maximum contrast on both themes. */
   --action:      #f8f3eb;
@@ -88,20 +119,28 @@
 
   --brand:         #a2baff;
   --link:          #a2baff;  /* 9.59:1 on --surface */
-  --selected-bg:   #2c2a56;
+  --selected-bg:   #272e42;
   --selected-edge: #a2baff;
-  --selected-fg:   #a2baff;  /* 7.00:1 on --selected-bg */
+  --selected-fg:   #a4bbff;  /* 7.15:1 on --selected-bg */
 
-  /* Forest and indigo both fail as labels on dark, so both lift. */
-  --auto-label:     #5fd07a;  --auto-fill:     #1f2940;  /* 7.44:1 */
-  --ping-label:     #a2baff;  --ping-fill:     #2c2a56;  /* 7.00:1 */
-  --unsure-label:   #ff9b6f;  --unsure-fill:   #36223e;  /* 6.99:1 */
-  --nearmiss-label: #ddd7e4;  --nearmiss-fill: #1e1a44;  /* 10.1:1 */
+  /* The same ramp, at the dark rungs. Same four hues, same chroma, same
+     lightness — so light and dark are one system seen from two sides.
 
-  --auto: #5fd07a;  --ping: #a2baff;  --unsure: #ff9b6f;  --nearmiss: #ddd7e4;
+     Chroma here is 0.038, chosen by eye against 0.028 / 0.048 / 0.058 / 0.070.
+     Below it the four hues stop being tellable apart and a long dark page
+     goes flat; above it the cards turn into heavy blocks of colour, which is
+     the opposite of the restraint being aimed for. */
+  --auto-label:     #92d098;  --auto-fill:     #223424;  /* 147deg · 7.38:1 */
+  --ping-label:     #a4bbff;  --ping-fill:     #272e42;  /* 270deg · 7.15:1 */
+  --unsure-label:   #ecaf78;  --unsure-fill:   #3d2b1a;  /*  63deg · 7.04:1 */
+  --nearmiss-label: #bbbcd0;  --nearmiss-fill: #2e2e34;  /* 285deg at 28%
+                                  chroma — near-miss is the achromatic band,
+                                  and it should stay that way. */
 
-  --strongest-bg: #1f2940;  --strongest-label: #5fd07a;  --strongest-body: #cfd9d2;
-  --answer-bg:    #36223e;  --answer-label:    #ff9b6f;  --answer-body:    #ded0c9;
+  --auto: #7ac683;  --ping: #93adff;  --unsure: #e89f59;  --nearmiss: #aeafc7;
+
+  --strongest-bg: #223424;  --strongest-label: #92d098;  --strongest-body: #ccd6cd;
+  --answer-bg:    #3d2b1a;  --answer-label:    #ecaf78;  --answer-body:    #dbd1c8;
 
   /* Warm-brown shadow reads as dirt on a dark ground; the border carries it. */
   --shadow-card: none;  --shadow-cta: none;

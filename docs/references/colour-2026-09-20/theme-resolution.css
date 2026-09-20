@@ -1,0 +1,180 @@
+/* ===========================================================================
+   JobScout — theme resolution. Replaces the :root and :root[data-theme="dark"]
+   scaffolding in jobscout-theme.css. Everything else in that file stays.
+
+   WHY THIS EXISTS
+   The earlier file defined light on :root and dark on :root[data-theme="dark"],
+   with no path for "follow the operating system". That left no way to express
+   the default, and the easy wrong turn is to hardcode dark.
+
+   Here every colour is defined ONCE, as light-dark(light, dark). There is no
+   second block to fall out of sync with, so the two themes cannot drift.
+
+   THREE STATES, ONE ATTRIBUTE ON <html>:
+     (absent)            follow the OS          <- the default
+     data-theme="light"  force light
+     data-theme="dark"   force dark
+
+   data-market is a SEPARATE attribute and must never set data-theme.
+   =========================================================================== */
+
+:root {
+  color-scheme: light dark;          /* required — light-dark() reads this */
+
+  /* --- surfaces ------------------------------------------------------- */
+  --canvas:   light-dark(#f8f3eb, #0a0524);
+  --surface:  light-dark(#ffffff, #1c1544);   /* dark lifted from #16103a:
+                                 1.17:1 on canvas, the same step light uses */
+  --sunken:   light-dark(#ece5d8, #1a1240);
+  --hairline: light-dark(rgba(8,3,49,.13), rgba(248,243,235,.13));
+  --blob:     light-dark(rgba(72,101,255,.05), rgba(162,186,255,.05));
+
+  /* --- text ----------------------------------------------------------- */
+  --text:   light-dark(#080331, #f8f3eb);   /* 17.81 / 17.93 on canvas */
+  --text-2: light-dark(#5a5560, #b9b3c4);   /*  6.55 /  9.72 on canvas */
+
+  /* Body copy in RUNS of prose — paragraphs, not labels or single lines.
+     On dark, --text at 17.9:1 halates once a paragraph gets long; this sits
+     at 14.33:1, still far above AA. On light there is no halation, so it is
+     the same colour as --text. */
+  --text-long: light-dark(#080331, #ded9e8);
+
+  /* --- action: maximum contrast, inverted per theme -------------------- */
+  --action:      light-dark(#080331, #f8f3eb);
+  --action-on:   light-dark(#f8f3eb, #0a0524);   /* 17.81 / 17.93 */
+  --action-edge: light-dark(rgba(8,3,49,.18), rgba(248,243,235,.22));
+
+  /* --- indigo: brand, links, selection — never a primary fill ---------- */
+  --brand:         light-dark(#4865ff, #a2baff);
+  --link:          light-dark(#1b1463, #a2baff);   /* NOT --ping-label: a body
+                      link is read at length and takes the extra contrast */
+  --selected-bg:   light-dark(#eaf0ff, #272e42);
+  --selected-edge: light-dark(#4865ff, #a2baff);
+  --selected-fg:   light-dark(#394981, #a4bbff);   /* 7.53 / 7.15 */
+
+  /* --- fit bands: the only hue-bearing axis ----------------------------
+     ONE RAMP, SEEN FROM TWO SIDES. Each rung fixes an OKLCH lightness and
+     chroma; the four bands differ only in HUE, and light and dark are the
+     same hue at opposite ends.
+
+       rung          L      C
+       light-fill  0.955  0.022     dark-fill   0.305  0.038
+       light-label 0.420  0.096     dark-label  0.800  0.101
+       light-body  0.430  0.020     dark-body   0.865  0.016
+       solid-l     0.600  0.136     solid-d     0.760  0.122
+
+       hue:  auto 147   ping 270   unsure 63   near-miss 285 @ 28% chroma
+
+     EMBER IS NOW HUE 63, not 39. Hue 39 falls in the gap between Apple's red
+     (29) and orange (63): close enough to red to read as an error, which
+     UNSURE is not, and it is the hue that goes muddy when darkened.
+
+     Every label/fill pair below lands between 7.04 and 7.58:1. That evenness
+     is deliberate — no band is permitted to be louder than another. */
+  --auto-label:     light-dark(#225b2c, #92d098);
+  --auto-fill:      light-dark(#e7f4e8, #223424);   /* hue 147 · 7.11 / 7.38 */
+  --ping-label:     light-dark(#394981, #a4bbff);
+  --ping-fill:      light-dark(#eaf0ff, #272e42);   /* hue 270 · 7.53 / 7.15 */
+  --unsure-label:   light-dark(#713f00, #ecaf78);
+  --unsure-fill:    light-dark(#fbede1, #3d2b1a);   /* hue  63 · 7.58 / 7.04 */
+  --nearmiss-label: light-dark(#4b4b5c, #bbbcd0);
+  --nearmiss-fill:  light-dark(#eff0f4, #2e2e34);   /* hue 285 · 7.50 / 7.21 */
+
+  /* Solid band colours — lit bearings on the mark, and 1–2px marks only.
+     Never text: 3.4–3.7:1 on cream, 8.9–9.7:1 on ink, by design. */
+  --auto:     light-dark(#3e954d, #7ac683);
+  --ping:     light-dark(#617ad1, #93adff);
+  --unsure:   light-dark(#b86b03, #e89f59);
+  --nearmiss: light-dark(#7d7d97, #aeafc7);
+
+  /* --- evidence cards --------------------------------------------------- */
+  /* The evidence cards ARE the auto and unsure rungs — not a second palette
+     that has to be kept in step with the first. */
+  --strongest-bg:    light-dark(#e7f4e8, #223424);
+  --strongest-label: light-dark(#225b2c, #92d098);
+  --strongest-body:  light-dark(#495349, #ccd6cd);   /* 7.07 / 8.88 */
+  --answer-bg:       light-dark(#fbede1, #3d2b1a);
+  --answer-label:    light-dark(#713f00, #ecaf78);
+  --answer-body:     light-dark(#584e45, #dbd1c8);   /* 7.06 / 8.96 */
+
+  /* --- shape ------------------------------------------------------------ */
+  --radius-pill: 1600px;  --radius-card: 16px;  --radius-inner: 12px;
+  --font-serif: Newsreader, Georgia, serif;
+  --font-sans:  Inter, system-ui, sans-serif;
+
+  /* Warm-brown shadow is a light-theme device; on dark the hairline carries
+     the separation. Shadows are not colours, so they need real overrides. */
+  --shadow-card: rgba(75,68,57,.07) 0 6px 14px 0, rgba(75,68,57,.05) 0 20px 32px 0;
+  --shadow-cta:  rgba(75,68,57,.10) 0 12px 24px 0, rgba(75,68,57,.10) 0 48px 48px 0;
+  --card-border: 1px solid transparent;
+}
+
+/* The only two non-colour differences. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --shadow-card: none;
+    --shadow-cta:  none;
+    --card-border: 1px solid var(--hairline);
+  }
+}
+:root[data-theme="dark"] {
+  --shadow-card: none;
+  --shadow-cta:  none;
+  --card-border: 1px solid var(--hairline);
+}
+
+/* Forcing a theme. color-scheme is what light-dark() switches on. */
+:root[data-theme="light"] { color-scheme: light; }
+:root[data-theme="dark"]  { color-scheme: dark;  }
+
+body { background: var(--canvas); color: var(--text); }
+
+/* ===========================================================================
+   The head script. Put it INLINE in <head>, before any stylesheet, so the
+   first paint is already the right theme — otherwise a forced-dark reader
+   gets a cream flash on every navigation.
+
+   <script>
+     (function () {
+       try {
+         var t = localStorage.getItem('jobscout.theme');   // 'light' | 'dark' | null
+         if (t === 'light' || t === 'dark') {
+           document.documentElement.setAttribute('data-theme', t);
+         }
+       } catch (e) {}                                       // private mode
+     })();
+   </script>
+
+   The toggle is THREE states, not two. Removing the attribute is what hands
+   control back to the OS, and there is no way to express that with a switch.
+
+     function setTheme(choice) {            // 'system' | 'light' | 'dark'
+       var el = document.documentElement;
+       if (choice === 'system') {
+         el.removeAttribute('data-theme');
+         try { localStorage.removeItem('jobscout.theme'); } catch (e) {}
+       } else {
+         el.setAttribute('data-theme', choice);
+         try { localStorage.setItem('jobscout.theme', choice); } catch (e) {}
+       }
+     }
+
+   Market is set the same way and is wholly independent:
+     el.setAttribute('data-market', 'ca' | 'ke' | 'us' | 'uk');
+
+   <html data-market="ke">                  OS decides light or dark
+   <html data-market="ke" data-theme="light">  Kenya, forced light
+   All four combinations are valid. None of them is a bug.
+   =========================================================================== */
+
+/* ===========================================================================
+   BROWSER SUPPORT
+   light-dark() is Chrome 123+, Safari 17.5+, Firefox 120+ — fine for the web
+   build. If you need to support older browsers, keep the previous two-block
+   version of jobscout-theme.css instead; it works everywhere, it just has two
+   places per colour to keep in sync.
+
+   The native apps do not read this file. Mirror the same three states there:
+   Android follows isSystemInDarkTheme() unless a stored override exists;
+   iOS follows UITraitCollection unless preferredColorScheme is set.
+   =========================================================================== */

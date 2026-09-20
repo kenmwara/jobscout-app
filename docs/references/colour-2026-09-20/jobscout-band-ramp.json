@@ -1,0 +1,84 @@
+{
+  "ramp": {
+    "light-fill": [
+      0.955,
+      0.022
+    ],
+    "light-label": [
+      0.42,
+      0.096
+    ],
+    "light-body": [
+      0.43,
+      0.02
+    ],
+    "dark-fill": [
+      0.305,
+      0.038
+    ],
+    "dark-label": [
+      0.8,
+      0.101
+    ],
+    "dark-body": [
+      0.865,
+      0.016
+    ],
+    "solid-l": [
+      0.6,
+      0.136
+    ],
+    "solid-d": [
+      0.76,
+      0.122
+    ]
+  },
+  "hues": {
+    "auto": 147,
+    "ping": 270,
+    "unsure": 63,
+    "nearmiss": 285
+  },
+  "bands": {
+    "auto": {
+      "solid_l": "#3e954d",
+      "solid_d": "#7ac683",
+      "light_label": "#225b2c",
+      "light_fill": "#e7f4e8",
+      "dark_label": "#92d098",
+      "dark_fill": "#223424",
+      "dark_body": "#ccd6cd",
+      "light_body": "#495349"
+    },
+    "ping": {
+      "solid_l": "#617ad1",
+      "solid_d": "#93adff",
+      "light_label": "#394981",
+      "light_fill": "#eaf0ff",
+      "dark_label": "#a4bbff",
+      "dark_fill": "#272e42",
+      "dark_body": "#ced2dd",
+      "light_body": "#4b4f5b"
+    },
+    "unsure": {
+      "solid_l": "#b86b03",
+      "solid_d": "#e89f59",
+      "light_label": "#713f00",
+      "light_fill": "#fbede1",
+      "dark_label": "#ecaf78",
+      "dark_fill": "#3d2b1a",
+      "dark_body": "#dbd1c8",
+      "light_body": "#584e45"
+    },
+    "nearmiss": {
+      "solid_l": "#7d7d97",
+      "solid_d": "#aeafc7",
+      "light_label": "#4b4b5c",
+      "light_fill": "#eff0f4",
+      "dark_label": "#bbbcd0",
+      "dark_fill": "#2e2e34",
+      "dark_body": "#d2d2d5",
+      "light_body": "#4f4f53"
+    }
+  }
+}
