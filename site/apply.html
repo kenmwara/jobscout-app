@@ -131,8 +131,8 @@ document.documentElement.setAttribute("data-market",
 <main class="wrap" id="main">
   <div class="empty" id="empty" hidden>
     <p>No application open.</p>
-    <p class="note">Run the pipeline, then choose <b>Prepare application</b> on a match &mdash; or pick one from your saved jobs.</p>
-    <a class="btn" href="./">Run the pipeline</a>
+    <p class="note">Score your resume against today&rsquo;s sweep, then choose <b>Prepare application</b> on a match &mdash; or pick one from your saved jobs.</p>
+    <a class="btn" href="./">Find my matches</a>
   </div>
 
   <div id="app" hidden>
@@ -142,7 +142,7 @@ document.documentElement.setAttribute("data-market",
         <h1 id="role"></h1>
         <p class="meta" id="meta"></p>
         <div class="go">
-          <a class="btn" id="openLink" target="_blank" rel="noopener">Open the application &#8599;</a>
+          <a class="btn" id="openLink" target="_blank" rel="noopener">Open the employer&rsquo;s posting &#8599;</a>
           <button class="btn2" type="button" id="markApplied">I applied</button>
         </div>
       </div>
@@ -157,7 +157,7 @@ document.documentElement.setAttribute("data-market",
           kept between visits. Paste it once and the three steps below can be drafted. It is read in the browser and
           sent only to score this one posting.</p>
         <textarea id="profileBox" placeholder="Paste your resume&hellip;"></textarea>
-        <div class="acts" style="margin-top:14px"><button class="btn" type="button" id="useProfile">Use this</button></div>
+        <div class="acts" style="margin-top:14px"><button class="btn" type="button" id="useProfile">Use this resume</button></div>
       </div>
     </div>
 
@@ -167,7 +167,7 @@ document.documentElement.setAttribute("data-market",
         <p class="lede">A short letter for this posting, built from your resume alone &mdash; no invented experience, no credentials you did not list.</p>
         <div class="out" id="out-letter"></div>
         <div class="acts">
-          <button class="btn" type="button" id="do-letter">Draft it</button>
+          <button class="btn" type="button" id="do-letter">Write the letter</button>
           <button class="btn2" type="button" id="cp-letter" hidden>Copy</button>
           <button class="btn2" type="button" id="dl-letter" hidden>Download</button>
           <p class="grounded" id="gr-letter"></p>
@@ -181,9 +181,9 @@ document.documentElement.setAttribute("data-market",
           listed underneath for you to add yourself, and only if it is true.</p>
         <div class="out" id="out-tailor"></div>
         <div class="acts">
-          <button class="btn" type="button" id="do-tailor">Build it</button>
+          <button class="btn" type="button" id="do-tailor">Rebuild my resume</button>
           <button class="btn2" type="button" id="dl-tailor" hidden>Download .docx</button>
-          <button class="btn2" type="button" id="dt-tailor" hidden>.txt</button>
+          <button class="btn2" type="button" id="dt-tailor" hidden>Download .txt</button>
           <button class="btn2" type="button" id="cp-tailor" hidden>Copy</button>
           <p class="grounded" id="gr-tailor"></p>
         </div>
@@ -194,7 +194,7 @@ document.documentElement.setAttribute("data-market",
         <p class="lede">The questions on the employer's own form, read before you open it, with the ones your resume settles already answered.</p>
         <div class="out" id="out-answers"></div>
         <div class="acts">
-          <button class="btn" type="button" id="do-answers">Read the form</button>
+          <button class="btn" type="button" id="do-answers">Get their questions</button>
           <button class="btn2" type="button" id="cp-answers" hidden>Copy all</button>
           <p class="grounded" id="gr-answers"></p>
         </div>
@@ -522,13 +522,13 @@ $("#do-letter").onclick = async () => {
   waiting("letter", "drafting the letter");
   try{
     const { r, d } = await post("/api/letter");
-    if (!d.letter) return failed("letter", d.detail || d.error || "Letter drafting is unavailable right now.", "Draft it");
+    if (!d.letter) return failed("letter", d.detail || d.error || "Letter drafting is unavailable right now.", "Write the letter");
     $("#out-letter").innerHTML = asProse(d.letter);
     $("#st-letter").textContent = "drafted"; $("#st-letter").className = "state done";
     $("#do-letter").hidden = true;
     $("#gr-letter").textContent = "Grounded only in the resume you gave.";
     offer("letter", d.letter, `cover-letter-${slug}.txt`);
-  }catch(e){ failed("letter", "Letter API unreachable: " + e, "Draft it"); }
+  }catch(e){ failed("letter", "Letter API unreachable: " + e, "Write the letter"); }
 };
 
 $("#do-tailor").onclick = async () => {
@@ -536,7 +536,7 @@ $("#do-tailor").onclick = async () => {
   try{
     const { r, d } = await post("/api/resume");
     if (!Array.isArray(d.sections))
-      return failed("tailor", d.detail || d.error || "The resume could not be built right now.", "Build it");
+      return failed("tailor", d.detail || d.error || "The resume could not be built right now.", "Rebuild my resume");
 
     // the document, then — separately, never inside it — what it does not say
     $("#out-tailor").innerHTML =
@@ -571,7 +571,7 @@ $("#do-tailor").onclick = async () => {
     const cp = $("#cp-tailor");
     cp.hidden = false;
     cp.onclick = () => copyInto(cp, plain, "tailor");
-  }catch(e){ failed("tailor", "Resume API unreachable: " + e, "Build it"); }
+  }catch(e){ failed("tailor", "Resume API unreachable: " + e, "Rebuild my resume"); }
 };
 
 /* Last, so everything render() reaches for is already defined. */
@@ -591,7 +591,7 @@ $("#do-answers").onclick = async () => {
       return;
     }
     if (!Array.isArray(d.questions))
-      return failed("answers", d.detail || d.error || "The form could not be read right now.", "Read the form");
+      return failed("answers", d.detail || d.error || "The form could not be read right now.", "Get their questions");
     const qs = d.questions;
     $("#out-answers").innerHTML = qs.map((q, i) => `
       <div class="q">
@@ -629,7 +629,7 @@ $("#do-answers").onclick = async () => {
     $("#do-answers").hidden = true;
     $("#gr-answers").textContent = "Read from the employer's own form. Anything your resume does not settle is left for you.";
     offer("answers", qs.map(q => `${q.label}${q.required ? " [required]" : ""}\n${q.answer || "— " + (q.why || "yours to answer")}`).join("\n\n"), null);
-  }catch(e){ failed("answers", "Answers API unreachable: " + e, "Read the form"); }
+  }catch(e){ failed("answers", "Answers API unreachable: " + e, "Get their questions"); }
 };
 </script>
 </body>

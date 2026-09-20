@@ -37,7 +37,7 @@ struct ApplyView: View {
                         title: "Cover letter",
                         idle: "Written from your resume and this posting, in your register. Nothing it cannot point at in your own words.",
                         busy: "Drafting from the profile only \u{2014} it cannot invent experience\u{2026}",
-                        action: "Draft the letter",
+                        action: "Write the letter",
                         step: a.letter,
                         onRun: { Task { await vm.draftLetter() } }
                     ) { LongText(text: $0) }
@@ -46,7 +46,7 @@ struct ApplyView: View {
                         title: "Your resume, rebuilt for this job",
                         idle: "Every role, school and certificate you already have \u{2014} reordered and reworded for this posting. A different document for every application.",
                         busy: "Rewriting the whole resume, then checking every name and number against your own\u{2026}",
-                        action: "Rebuild the resume",
+                        action: "Rebuild my resume",
                         step: a.resume,
                         onRun: { Task { await vm.buildResume() } }
                     ) { RebuiltResume(r: $0) }
@@ -55,7 +55,7 @@ struct ApplyView: View {
                         title: "Their screening questions",
                         idle: "Greenhouse and Ashby publish a job's form, so the questions can be read and answered before you open it.",
                         busy: "Reading the employer's own form\u{2026}",
-                        action: "Read the questions",
+                        action: "Get their questions",
                         step: a.answers,
                         onRun: { Task { await vm.readAnswers() } }
                     ) { Answers(r: $0) }

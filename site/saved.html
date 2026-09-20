@@ -126,15 +126,15 @@ function renderWatched(){
   const host = document.getElementById("watched");
   if (!host) return;
   if (!watched.length){ host.innerHTML = ""; return; }
-  host.innerHTML = `<h2 class="gtitle">Searches you are watching<span class="tag">on this device</span></h2>`
-    + `<p class="gnote">Nothing is emailed. Each one is a way straight back to that slice of the day.</p>`
+  host.innerHTML = `<h2 class="gtitle">Searches you saved<span class="tag">on this device</span></h2>`
+    + `<p class="gnote">Nothing is emailed and nothing is sent anywhere. Each one is a way straight back to that slice of the day.</p>`
     + watched.map((w, i) => `<div class="row wrow">
         <div style="flex:1 1 auto">
           <p class="rt">${esc(w.human || w.key)}</p>
-          <p class="rs">watched since ${esc(w.at || "")}${w.market === "ke" ? " · Kenya" : ""}</p>
+          <p class="rs">saved ${esc(w.at || "")}${w.market === "ke" ? " · Kenya" : ""}</p>
         </div>
         <a class="btn2" href="${w.market === "ke" ? "https://nairobi.jobscout.page/" : "./"}#browse">Open it \u2192</a>
-        <button class="rm" type="button" data-w="${i}">stop \u00d7</button>
+        <button class="rm" type="button" data-w="${i}">remove \u00d7</button>
       </div>`).join("");
   host.querySelectorAll("[data-w]").forEach(b => b.onclick = () => {
     watched.splice(+b.dataset.w, 1); saveWatched(); renderWatched();

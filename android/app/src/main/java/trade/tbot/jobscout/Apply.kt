@@ -120,7 +120,7 @@ fun ApplyScreen(vm: DemoVm, a: Apply, onClose: () -> Unit) {
                     title = "Cover letter",
                     idle = "Written from your resume and this posting, in your register. Nothing it cannot point at in your own words.",
                     busy = "Drafting from the profile only — it cannot invent experience…",
-                    step = a.letter, action = "Draft the letter", onRun = vm::draftLetter,
+                    step = a.letter, action = "Write the letter", onRun = vm::draftLetter,
                 ) { LongText(it) }
             }
 
@@ -130,7 +130,7 @@ fun ApplyScreen(vm: DemoVm, a: Apply, onClose: () -> Unit) {
                     idle = "Every role, school and certificate you already have — reordered and reworded for this posting. " +
                         "A different document for every application.",
                     busy = "Rewriting the whole resume, then checking every name and number against your own…",
-                    step = a.resume, action = "Rebuild the resume", onRun = vm::buildResume,
+                    step = a.resume, action = "Rebuild my resume", onRun = vm::buildResume,
                 ) { RebuiltResume(it) }
             }
 
@@ -139,7 +139,7 @@ fun ApplyScreen(vm: DemoVm, a: Apply, onClose: () -> Unit) {
                     title = "Their screening questions",
                     idle = "Greenhouse and Ashby publish a job's form, so the questions can be read and answered before you open it.",
                     busy = "Reading the employer's own form…",
-                    step = a.answers, action = "Read the questions", onRun = vm::readAnswers,
+                    step = a.answers, action = "Get their questions", onRun = vm::readAnswers,
                 ) { Answers(it) }
             }
         }

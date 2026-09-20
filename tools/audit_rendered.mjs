@@ -353,6 +353,27 @@ const ok = (m) => console.log(`  ok    ${m}`);
   else ok(`${new Set(calls).size} setView targets, all of them real views`);
 }
 
+/* ── 17. A retry puts the button's own words back ──────────────────────────
+   apply.html's `failed(id, msg, label)` restores a button's text. The label
+   is passed at the call site, 350 lines from the markup that first set it, so
+   renaming the button renamed it only until the first failure — after which
+   "Write the letter" came back as "Draft it". Both halves read fine alone. */
+{
+  const apply = readFileSync(join(root, "site", "apply.html"), "utf8");
+  const markup = new Map();
+  for (const m of apply.matchAll(/<button[^>]*\bid="do-(\w+)"[^>]*>([^<]+)<\/button>/g))
+    markup.set(m[1], m[2].trim());
+
+  const wrong = [];
+  for (const m of apply.matchAll(/failed\(\s*"(\w+)"[\s\S]{0,200}?,\s*"([^"]+)"\s*\)/g)) {
+    const want = markup.get(m[1]);
+    if (want && m[2] !== want) wrong.push(`failed("${m[1]}", …, "${m[2]}") but the button says "${want}"`);
+  }
+  if (!markup.size) bad("no do-* buttons found in apply.html — this check cannot fire");
+  else if (wrong.length) wrong.forEach((w) => bad(`retry label drift: ${w}`));
+  else ok(`${markup.size} step buttons, every retry restores its own words`);
+}
+
 console.log("");
 console.log(fail ? `${fail} FAILED` : "ALL GREEN");
 process.exit(fail ? 1 : 0);

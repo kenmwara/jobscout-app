@@ -1752,7 +1752,7 @@ function heroTabs(){
      they describe, which is where these tabs take you. */
   $("#heroTabs").innerHTML =
     items.map(([t, , k]) => `<a href="#" data-pol="${k}">${t}</a>`).join("") +
-    `<a href="#" data-pol="">All</a>`;
+    `<a href="#" data-pol="">Any of those</a>`;
   /* The sector row's home is Browse — the hero carries the three policy tabs
      and nothing else. Leaving both rows here made the hero a wall of chips. */
   $("#heroTabs").querySelectorAll("a").forEach(a => a.onclick = e => {
@@ -1795,7 +1795,7 @@ function taxTiles(){
             ["On site", `${p.onsite} open`, { pol: "onsite" }]];
     if (feed?.places?.unplaced) rows.push(["Unsaid", `${feed.places.unplaced} postings`, {}]);
   } else {
-    rows = (feed?.places?.options || []).map(o => [o.label, `${o.local} on site`, { place: o.code }]);
+    rows = (feed?.places?.options || []).map(o => [o.label, `${o.local} on-site here`, { place: o.code }]);
   }
   $("#taxGrid").innerHTML = rows.map(([a, b, d]) =>
     `<a class="tax" href="#"${d.sec !== undefined ? ` data-sec="${esc(d.sec)}"` : ""}${d.pol ? ` data-pol="${d.pol}"` : ""}${d.place ? ` data-place="${d.place}"` : ""}><b>${esc(a)}</b><span>${esc(b)}</span></a>`).join("");
@@ -1873,7 +1873,10 @@ function browseRows(){
   return rows;
 }
 
-const BELL = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>`;
+/* A bookmark, not a bell: nothing is sent anywhere, the search is kept on this
+   device and listed on the Saved page. A bell says "we will mail you", which is
+   the one promise this product deliberately does not make. */
+const BELL = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>`;
 
 function browseCard(p){
   const a = ageOf(p);
@@ -1913,7 +1916,7 @@ function companyCards(){
       return `<article class="co-card">
         <div class="top"><span class="logo">${esc(name.slice(0, 2).toUpperCase())}</span>
           <button class="bell" type="button" data-bell="co:${esc(name)}" data-human="${esc(name)}"
-            aria-pressed="${ALERTS.has("co:" + name)}" aria-label="Watch ${esc(name)}">${BELL}</button></div>
+            aria-pressed="${ALERTS.has("co:" + name)}" aria-label="Save ${esc(name)}">${BELL}</button></div>
         <div><p class="nm">${esc(name)}</p><p class="mix">${secs}</p></div>
         <div class="stats"><span class="stat"><b>${ps.length}</b> open today</span>
           <span class="stat"><b>${ps.filter(p => p.remote_policy === "remote").length}</b> remote</span></div>
@@ -1954,13 +1957,18 @@ function browse(){
     `<button class="f sw" id="fRemote" aria-pressed="${remoteOnly}"><span class="track"></span>Remote only</button>` +
     `<button class="f" data-fresh="1" aria-pressed="${freshOnly}">Posted this week</button>` +
     (places.length > 1
-      ? `<select class="f" id="homeSel" aria-label="Where you can work"><option value="">${MARKET === "ke" ? "All of Kenya" : "All provinces"}</option>` +
-        places.map(o => `<option value="${o.code}"${home === o.code ? " selected" : ""}>${esc(o.label)}${o.local ? ` — ${o.local} on site` : ""}</option>`).join("") + "</select>"
+      /* It asks where YOU are, so the options answer that. They used to read
+         "British Columbia — 2 on site", which is a count of the feed hung on a
+         control about the reader, and had to be decoded before it meant
+         anything. What it does with the answer: keep every remote posting, and
+         of the on-site ones keep those you could actually reach. */
+      ? `<select class="f" id="homeSel" aria-label="Where you are"><option value="">I can work anywhere</option>` +
+        places.map(o => `<option value="${o.code}"${home === o.code ? " selected" : ""}>I’m in ${esc(o.label)}</option>`).join("") + "</select>"
       : "") +
     `<button class="bell right" type="button" data-bell="q:${esc(sector || query || "all")}"
        data-human="${esc(sector ? label(sector) : (query || (MARKET === "ke" ? "today’s Kenya sweep" : "today’s sweep")))}"
        aria-pressed="${ALERTS.has("q:" + (sector || query || "all"))}">${BELL} <span class="bw">${
-         ALERTS.has("q:" + (sector || query || "all")) ? "Watching" : "Watch this search"}</span></button>`;
+         ALERTS.has("q:" + (sector || query || "all")) ? "Saved" : "Save this search"}</span></button>`;
 
   /* The sector row belongs to the sweep: seventeen chips carrying the sweep's
      own counts (309, 24, 24 ...). Under "Your matches" above eight scored cards
@@ -2042,7 +2050,7 @@ function browse(){
         + `<div class="routes">`
         + `<button class="rework" type="button">Rework your resume and run again</button>`
         + `<button class="anyway" type="button" aria-pressed="${stretchOn}">${
-            stretchOn ? "Hide those" : "Apply to these anyway"}</button>`
+            stretchOn ? "Hide the apply buttons" : "Apply to these anyway"}</button>`
         + `</div>`;
       /* Back to the box with the text still in it. It is the same textarea the
          run read, so an edit and a second press of Run is the whole loop — and
@@ -2217,7 +2225,7 @@ function toggleAlert(key, human){
   }
   saveWatched();
   toast(on ? `Stopped watching ${human}`
-           : `Watching ${human} — kept on this device, on your Saved page.`);
+           : `Saved ${human} — kept on this device, on your Saved page.`);
   return !on;
 }
 function wireBells(root){
@@ -2229,7 +2237,7 @@ function wireBells(root){
        sighted reader could see, so the button said "Watch this search" while
        already watching it. */
     const word = b.querySelector(".bw");
-    if (word) word.textContent = on ? "Watching" : "Watch this search";
+    if (word) word.textContent = on ? "Saved" : "Save this search";
   });
 }
 

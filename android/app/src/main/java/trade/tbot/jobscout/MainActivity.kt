@@ -745,7 +745,8 @@ private fun LazyListScope.browse(
                the Saved screen; it does not email, and does not say it will. */
             val wkey = "q:" + (sector ?: query ?: "all")
             val watching = ui.watched.any { it.key == wkey }
-            MFilter(if (watching) "Watching" else "Watch", on = watching) {
+            // Nothing is sent: the search is kept on this device and listed on Saved.
+            MFilter(if (watching) "Saved" else "Save this search", on = watching) {
                 onWatch(wkey, sector?.let { feed?.labels?.get(it) ?: it } ?: query ?: "today's sweep", sector ?: "")
             }
         }
@@ -1021,7 +1022,7 @@ private fun NoFit(
         Spacer(Modifier.height(14.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(9.dp)) {
             PillButton("Rework your resume", filled = true, onClick = onRework)
-            PillButton(if (stretch) "Hide those" else "Apply anyway", onClick = onStretch)
+            PillButton(if (stretch) "Hide apply buttons" else "Apply to these anyway", onClick = onStretch)
         }
     }
 }
@@ -1287,7 +1288,7 @@ private fun TrackerScreen(
                 if (watched.isNotEmpty()) {
                     item {
                         Spacer(Modifier.height(10.dp))
-                        Text("Searches you are watching", style = H2, fontSize = 19.sp)
+                        Text("Searches you saved", style = H2, fontSize = 19.sp)
                         Spacer(Modifier.height(4.dp))
                         Text("Kept on this device. Nothing is emailed.",
                              color = T.text3, fontSize = 13.sp, lineHeight = 19.sp)
@@ -1305,7 +1306,7 @@ private fun TrackerScreen(
                                     color = T.text3, fontSize = 12.sp,
                                 )
                             }
-                            LinkText("stop") { vm.toggleWatch(w.key, w.human, w.sector) }
+                            LinkText("remove") { vm.toggleWatch(w.key, w.human, w.sector) }
                         }
                     }
                 }

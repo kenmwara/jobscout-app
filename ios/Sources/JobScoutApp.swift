@@ -802,7 +802,7 @@ struct ContentView: View {
                 PillButton(text: "Rework your resume", filled: true) {
                     withAnimation { scrollTo?("resumebox") }
                 }
-                PillButton(text: vm.stretch ? "Hide those" : "Apply anyway") {
+                PillButton(text: vm.stretch ? "Hide apply buttons" : "Apply to these anyway") {
                     vm.stretch.toggle()
                 }
                 Spacer(minLength: 0)
