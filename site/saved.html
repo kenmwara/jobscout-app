@@ -95,7 +95,7 @@ document.documentElement.setAttribute("data-market",
 <main>
   <p class="eyebrow">Saved</p>
   <h1 id="h1">The ones you kept.</h1>
-  <p class="sub">Sorted by fit, best first. Applying is always your click.</p>
+  <p class="sub" id="sub">Sorted by fit, best first. Applying is always your click.</p>
   <div id="list"></div>
   <!-- Searches being watched. Kept on this device; nothing is emailed. -->
   <div id="watched"></div>
@@ -203,6 +203,10 @@ function render(){
   const unscored = t => t.fit === null || t.fit === undefined || t.fit === "";
   $("#clear").hidden = !items.length;
   $("#h1").innerHTML = items.length ? `The <span class="n">${items.length}</span> you kept.` : "Nothing kept yet.";
+  /* A sort order is not a thing to say about an empty list. */
+  $("#sub").textContent = items.length
+    ? "Sorted by fit, best first. Applying is always your click."
+    : "Anything you keep lands here — on this device, and nowhere else.";
   if (!items.length){
     $("#list").innerHTML = `<div class="empty"><p class="big">Your shortlist starts on the demo page.</p>
       <p>Run the pipeline, then tap <b>Save</b> on any score to keep it here.</p><a class="btn" href="./">Run the pipeline</a></div>`;
