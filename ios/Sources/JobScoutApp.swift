@@ -425,7 +425,9 @@ struct ContentView: View {
             LazyVStack(alignment: .leading, spacing: 12) {
                 header
                     .id("top")
-                    .onAppear { scrollTo = { withAnimation { proxy.scrollTo($0, anchor: .top) } } }
+                    // `$0` binds to the INNERMOST closure, which is withAnimation's and takes
+                    // no arguments — so the id has to be named to reach past it.
+                    .onAppear { scrollTo = { id in withAnimation { proxy.scrollTo(id, anchor: .top) } } }
                 // Retry path for a failed first load - without this the only fix
                 // is force-quitting the app.
                 if let e = vm.error {
