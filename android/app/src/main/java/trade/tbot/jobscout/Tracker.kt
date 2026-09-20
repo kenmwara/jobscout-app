@@ -70,6 +70,48 @@ object WatchStore {
         prefs(ctx).edit().putString(KEY, json.encodeToString(WatchFile(items = items))).apply()
 }
 
+/**
+ * The last run, kept so that closing the app does not cost eight Claude calls.
+ *
+ * `day` is the sweep the scores were about and `fp` a cheap hash of the resume
+ * they were scored from. Neither is a lock: a run from another day is still
+ * shown, with a line saying so, because the reader decides whether yesterday
+ * still helps. A run from a DIFFERENT RESUME is not shown at all — that one is
+ * not a judgement call, it is simply the wrong answer.
+ */
+@Serializable
+data class SavedRun(
+    val day: String = "",
+    val market: String = "ca",
+    val fp: String = "",
+    val profile: String = "",
+    val scores: List<Score> = emptyList(),
+)
+
+/** Cheap and stable, and the same djb2 the web uses so the two agree. */
+fun fingerprint(text: String): String {
+    var h = 5381
+    for (c in text) h = (h shl 5) + h + c.code
+    return (h.toLong() and 0xFFFFFFFFL).toString() + "." + text.length
+}
+
+object RunStore {
+    private const val KEY = "jobscout.run"
+    private val json = Json { ignoreUnknownKeys = true; encodeDefaults = true }
+    private fun prefs(ctx: Context) = ctx.getSharedPreferences("jobscout", Context.MODE_PRIVATE)
+
+    fun load(ctx: Context): SavedRun? {
+        val raw = prefs(ctx).getString(KEY, null) ?: return null
+        return runCatching { json.decodeFromString<SavedRun>(raw) }.getOrNull()
+            ?.takeIf { it.scores.isNotEmpty() }
+    }
+
+    fun save(ctx: Context, run: SavedRun?) = prefs(ctx).edit().let { e ->
+        if (run == null) e.remove(KEY) else e.putString(KEY, json.encodeToString(run))
+        e.apply()
+    }
+}
+
 object TrackerStore {
     private const val KEY = "jobscout.tracker"
     private val json = Json { ignoreUnknownKeys = true; encodeDefaults = true }

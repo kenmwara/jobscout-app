@@ -58,15 +58,26 @@ fun MHead(
        in its nav the whole time. */
     saved: Int = 0,
     onSaved: (() -> Unit)? = null,
+    /** The wordmark goes home, as the web's has since the redesign. */
+    onHome: (() -> Unit)? = null,
     onMarket: (String) -> Unit,
 ) {
     Row(
         Modifier.fillMaxWidth().padding(top = 6.dp, bottom = 14.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Mark(dp = 18.dp, tint = T.accent)
-        Spacer(Modifier.width(7.dp))
-        Text("JobScout", style = H2, fontSize = 15.sp, color = T.ink)
+        // One target for the mark and the word — two adjacent decorations is
+        // not what anyone means by "the logo".
+        Row(
+            Modifier.clip(Pill9999)
+                .then(if (onHome != null) Modifier.clickable(onClick = onHome) else Modifier)
+                .padding(horizontal = 4.dp, vertical = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Mark(dp = 18.dp, tint = T.accent)
+            Spacer(Modifier.width(7.dp))
+            Text("JobScout", style = H2, fontSize = 15.sp, color = T.ink)
+        }
         Spacer(Modifier.weight(1f))
         if (onSaved != null) {
             Text(
@@ -254,10 +265,19 @@ fun MCount(text: String, modifier: Modifier = Modifier) {
  * has had these since the redesign; the phone showed a bare count instead, so
  * the landing said "318 swept this morning" and stopped.
  */
+/** One line of label over one line of count, so one height fits them all. */
+private val TAX_H = 66.dp
+
 @Composable
-fun MTax(label: String, count: Int, onClick: () -> Unit) {
+fun MTax(label: String, count: Int, modifier: Modifier = Modifier, onClick: () -> Unit) {
     Column(
-        Modifier
+        modifier
+            /* Half a row is only half a row if the card takes it, and every tile
+               is the same rectangle whatever its label says. Both were true of
+               the web's grid from the start; the phone's tiles were sized by
+               their own words until 2026-09-19. */
+            .fillMaxWidth()
+            .height(TAX_H)
             .clip(CardShape)
             .background(T.surface)
             .border(1.dp, T.hair, CardShape)

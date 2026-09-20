@@ -2022,16 +2022,21 @@ function browse(){
         .filter(x => (x.weakest || "").trim());
       const nf = document.createElement("div");
       nf.className = "nofit";
-      nf.innerHTML = `<p class="lead"><b>Nothing in today's sweep clears the bar for this resume.</b> `
-        + `The nearest was ${near} out of 100. A letter, a resume and the screening answers are `
-        + `written from ${FIT_FLOOR} up, because below that the honest read is that the resume does `
-        + `not answer the posting \u2014 and rewriting it so it does is worth more than a good letter.</p>`
+      nf.innerHTML = `<p class="lead"><b>Today\u2019s postings are a stretch for this resume as written.</b> `
+        + `The nearest was ${near} out of 100 \u2014 which measures the distance between what these `
+        + `postings ask for and what the resume currently says, not what you are capable of. `
+        + `The quickest way to move it is to make the resume answer them, and they have been `
+        + `unusually clear about what they are asking:</p>`
         + (asks.length ? `<ul class="asks">` + asks.map(x =>
-            `<li><em>${esc(x.p?.title || x.id)} \u2014 ${x.fit}/100</em>${esc(x.weakest)}</li>`).join("") + `</ul>` : "")
+            `<li><em>${esc(x.p?.title || x.id)} \u2014 what to answer</em>${esc(x.weakest)}</li>`).join("") + `</ul>` : "")
+        + `<p class="lead" style="margin-top:14px">Put whatever is genuinely true of you against those `
+        + `points and run it again \u2014 the same experience described in their words often scores `
+        + `very differently. And if you would rather back yourself on one of these today, do: the `
+        + `letter leads with your strongest real evidence and the recruiter decides the rest.</p>`
         + `<div class="routes">`
         + `<button class="rework" type="button">Rework your resume and run again</button>`
         + `<button class="anyway" type="button" aria-pressed="${stretchOn}">${
-            stretchOn ? "Hide the apply-anyway buttons" : "I want to apply anyway"}</button>`
+            stretchOn ? "Hide those" : "Apply to these anyway"}</button>`
         + `</div>`;
       /* Back to the box with the text still in it. It is the same textarea the
          run read, so an edit and a second press of Run is the whole loop — and

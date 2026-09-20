@@ -195,7 +195,16 @@ data class ExtractResponse(
 )
 
 @Serializable private data class ScoreBody(val profile: String, val postings: List<Posting>, val market: String)
-@Serializable private data class LetterBody(val profile: String, val posting: Posting, val fit: Int)   // the worker refuses fit < FIT_FLOOR
+/* `stretch` is the candidate's explicit "apply anyway". The worker refuses
+   below FIT_FLOOR without it, and with it writes a letter that names the gap
+   rather than one that hides it. Derived from the fit here rather than threaded
+   through four signatures: below the floor the only route to the application
+   page is the opt-in, so a below-floor fit at this point already IS the
+   anyway. */
+@Serializable private data class LetterBody(
+    val profile: String, val posting: Posting, val fit: Int,
+    val stretch: Boolean = fit < FIT_FLOOR,
+)
 
 object Api {
     private val json = Json { ignoreUnknownKeys = true; encodeDefaults = true }

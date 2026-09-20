@@ -319,14 +319,15 @@ function render(){
   if (isScored && +S.fit < 55 && !S.stretch){
     $("#steps").hidden = true; $("#needProfile").hidden = true;
     $("#main").insertAdjacentHTML("beforeend",
-      `<div class="panel" id="floor"><p class="eyebrow">Not recommended</p>
+      `<div class="panel" id="floor"><p class="eyebrow">A stretch on paper</p>
        <h2 style="font:450 23px/1.2 var(--serif);margin:0 0 10px;color:var(--ink)">This one scored ${+S.fit} out of 100</h2>
-       <p class="note">A cover letter, a rebuilt resume and the screening answers are written from 55 up, because
-       below that the honest read is that your resume does not answer this posting — and rewriting the resume so it
-       does is worth more than a good letter. That is the recommendation.</p>
-       <p class="note">If you want to apply regardless, that is your call to make, not ours. The letter you get will
-       not pretend: it names the gap in one plain sentence and spends the rest on what genuinely transfers.</p>
-       <button class="btn2" id="anyway" type="button">Draft it anyway →</button></div>`);
+       <p class="note">That is the distance between what the posting asks for and what your resume currently says —
+       not a measure of what you can do. Nine times in ten the faster move is to rewrite the resume so it answers
+       this posting directly and run it again, which is why that is what JobScout suggests first.</p>
+       <p class="note">Plenty of people get hired on a stretch, though, and this is your call. The letter will lead
+       with your strongest real evidence and make the case for it; it will not claim anything you have not done, and
+       it will not argue against you either. The recruiter decides the rest.</p>
+       <button class="btn2" id="anyway" type="button">Write it for me →</button></div>`);
     $("#anyway").onclick = () => {
       S.stretch = true;
       try { sessionStorage.setItem("jobscout.apply", JSON.stringify(S)); } catch (e) {}
@@ -339,10 +340,10 @@ function render(){
      the product's recommendation — including on a reload, which restores the
      flag from sessionStorage along with everything else. */
   if (S.stretch && !$("#stretchnote")) $("#steps").insertAdjacentHTML("afterbegin",
-    `<div class="warn" id="stretchnote">You scored ${isScored ? +S.fit : "below the bar"} out of 100 here and asked to
-     apply anyway. Nothing below claims experience you do not have: the letter names the gap and leads with what
-     transfers, and the resume only reorders what your own resume already says. What each step lists as missing is
-     the honest shopping list — add a line only where it is true of you.</div>`);
+    `<div class="warn" id="stretchnote">A stretch on paper, at ${isScored ? +S.fit : "under 55"} out of 100 — so
+     everything below argues your case from what you have actually done, and claims nothing you have not. Where a
+     step lists something the posting asks for and your resume does not cover, that is a line to add if it is true
+     of you, and a good use of ten minutes before you send.</div>`);
   if (S.profile) $("#steps").hidden = false;
   else $("#needProfile").hidden = false;
 }

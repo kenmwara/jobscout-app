@@ -89,6 +89,23 @@ fun ApplyScreen(vm: DemoVm, a: Apply, onClose: () -> Unit) {
                 }
             }
 
+            /* A stretch is never mistaken for the recommendation. The web says
+               the same thing above its steps: what follows does not pretend, and
+               what each step lists as missing is the honest rewrite list. */
+            if (a.fit < FIT_FLOOR) item {
+                Column(
+                    Modifier.fillMaxWidth().background(bandFill(a.fit).copy(alpha = .14f), Card).padding(14.dp),
+                ) {
+                    Text(
+                        "A stretch on paper, at ${a.fit} out of 100 \u2014 so everything below argues your case " +
+                            "from what you have actually done, and claims nothing you have not. Where a step names " +
+                            "something the posting asks for and your resume does not cover, that is a line to add " +
+                            "if it is true of you, and a good use of ten minutes before you send.",
+                        color = Muted, fontSize = 13.sp, lineHeight = 20.sp,
+                    )
+                }
+            }
+
             item {
                 Text(
                     "Three things, each drafted from your resume alone and each one call. " +

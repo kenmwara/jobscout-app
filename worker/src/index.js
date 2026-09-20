@@ -123,7 +123,14 @@ async function scoreOne(env, profile, posting, m = "ca") {
     "should score low, with the reason stated plainly.",
     m === "ke" ? RUBRIC_KE : "",
     'Reply ONLY with JSON: {"fit": <int>, "verdict": "<one sentence>",',
-    '"strongest": "<the single best alignment>", "weakest": "<the single biggest gap>"}',
+    '"strongest": "<the single best alignment>",',
+    /* `weakest` is read by a candidate who is deciding what to rewrite, so it is
+       asked for as the thing to ADDRESS rather than as a list of what they are
+       missing. Same information, and the difference between a to-do and a
+       dressing-down is entirely in how it is phrased. */
+    '"weakest": "<the one thing this posting most wants to see that the profile',
+    'does not yet evidence, written as what the candidate should put in front of',
+    'it — never as a list of what they lack, and never a judgement of them>"}',
   ].join(" ");
   const user = `PROFILE:\n${profile}\n\nPOSTING:\n${posting.title} — ${posting.company}\n${posting.location} · ${posting.remote_policy}\n${posting.summary || ""}`;
 
@@ -423,17 +430,25 @@ export default {
         // It kept opening with a markdown heading, which every client renders as
         // literal asterisks because a letter is plain text everywhere it is shown.
         "Write PLAIN TEXT only: no markdown, no ** bold, no headings, and do not title it.";
-      /* A stretch letter is not the normal letter written anyway. The candidate
-         already knows they do not fit on paper — pretending otherwise wastes the
-         only advantage they have, which is being straight about it. */
+      /* A stretch letter is the SAME letter, written harder.
+         2026-09-19: it was not. It opened by naming the gap — "I lack the B2B
+         SaaS analytics infrastructure experience this posting calls for" — and
+         no recruiter reads past that. Honesty is a floor on what may be
+         CLAIMED; it was never a licence to argue the candidate out of the job
+         before the first paragraph ends. The letter's job is to get them read.
+         So: never invent, never volunteer the deficit, and lead with what they
+         have actually done. Below the floor the parallel is simply harder to
+         find, which is an instruction to look harder, not to give up. */
       const d = await draft(env, 550,
         stretch
-          ? common + " This candidate does NOT meet the posting's stated bar and knows it. " +
-            "Do not paper over that. Name the principal gap plainly, in one sentence, without " +
-            "apology or self-deprecation, and spend the rest on the nearest genuine evidence " +
-            "they DO have — adjacent work, transferable results, things they have actually " +
-            "shipped. Never claim the missing experience, never imply it, and never pad with " +
-            "enthusiasm in its place."
+          ? common + " The overlap with this posting is not obvious on paper, so find the " +
+            "strongest REAL parallel in the profile and lead with it — comparable scope, " +
+            "comparable results, the nearest thing they have genuinely built or run — and " +
+            "make the affirmative case for it in concrete terms. Where the posting names " +
+            "something the profile does not contain, do not claim it, do not hint at it, and " +
+            "do not announce its absence either: write about what they HAVE done instead. " +
+            "No apology, no 'although', no 'I lack', no 'while I have not'. The recruiter " +
+            "decides whether it is enough; this letter's job is to be read that far."
           : common + " Open with the single strongest genuine alignment.",
         `PROFILE:\n${profile}\n\nPOSTING:\n${postingText(p)}`);
       if (d instanceof Response) return d;

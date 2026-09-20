@@ -121,10 +121,26 @@ data class Ui(
     val error: String? = null,
     val tracker: Map<String, Tracked> = emptyMap(),   // per-device pipeline — the only thing persisted
     val watched: List<Watch> = emptyList(),           // searches kept on the device; nothing is sent
+    /* The candidate has said they want to apply below the floor. Per run and
+       never persisted: a new resume deserves the honest answer first. */
+    val stretch: Boolean = false,
+    /** Set when the restored run was scored against an earlier day's sweep. */
+    val runStale: String? = null,
 )
 
 class DemoVm(app: Application) : AndroidViewModel(app) {
-    private val _ui = MutableStateFlow(Ui(tracker = TrackerStore.load(app), watched = WatchStore.load(app)))
+    private val _ui = MutableStateFlow(
+        RunStore.load(app).let { r ->
+            Ui(
+                tracker = TrackerStore.load(app), watched = WatchStore.load(app),
+                // The market is checked against the run when the feed lands, not here:
+                // the saved market IS the market to open in, which setMarket does below.
+                market = r?.market ?: "ca",
+                scores = r?.scores ?: emptyList(),
+                resume = r?.profile.orEmpty(),
+            )
+        }
+    )
     val ui = _ui.asStateFlow()
 
     init { loadFeed(); checkForUpdate(); Api.ev("open", market = _ui.value.market) }
@@ -154,7 +170,9 @@ class DemoVm(app: Application) : AndroidViewModel(app) {
         _ui.update { it.copy(error = null) }
         viewModelScope.launch {
             runCatching { Api.feed(_ui.value.market) }
-                .onSuccess { f -> _ui.update { it.copy(feed = f, error = null) } }
+                // vetRestoredRun needs the feed's day, so the restored run is
+                // judged here rather than in the constructor.
+                .onSuccess { f -> _ui.update { vetRestoredRun(it.copy(feed = f, error = null)) } }
                 .onFailure { e -> _ui.update { it.copy(error = friendlyError(e)) } }
         }
     }
@@ -180,7 +198,8 @@ class DemoVm(app: Application) : AndroidViewModel(app) {
         if (m == _ui.value.market) return
         // home is cleared with the market: "Manitoba" means nothing in the Kenya feed.
         _ui.update { it.copy(market = m, home = "", remoteOnly = false,
-                             feed = null, phase = Phase.IDLE, scores = emptyList(), banner = null) }
+                             feed = null, phase = Phase.IDLE, scores = emptyList(), banner = null,
+                             runStale = null).also { RunStore.save(getApplication(), null) } }
         loadFeed()
     }
     fun setHome(code: String) {
@@ -243,9 +262,40 @@ class DemoVm(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    fun toggleStretch() = _ui.update { it.copy(stretch = !it.stretch) }
+
+    /** Write the run to disk and return the state unchanged, so it can sit inside an update {}. */
+    private fun keepRun(u: Ui): Ui {
+        RunStore.save(getApplication(), if (u.scores.isEmpty()) null else SavedRun(
+            day = u.feed?.day.orEmpty(), market = u.market,
+            fp = fingerprint(u.resume), profile = u.resume, scores = u.scores,
+        ))
+        return u
+    }
+
+    /**
+     * Once the feed is in, the restored run can finally be checked against it.
+     * A run from another day is kept and labelled; one from another resume is
+     * dropped, because there is no honest way to show it.
+     */
+    private fun vetRestoredRun(u: Ui): Ui {
+        val saved = RunStore.load(getApplication()) ?: return u
+        if (u.scores.isEmpty()) return u
+        if (saved.fp != fingerprint(u.resume)) {
+            RunStore.save(getApplication(), null)
+            return u.copy(scores = emptyList(), runStale = null)
+        }
+        val day = u.feed?.day.orEmpty()
+        return u.copy(runStale = if (saved.day.isNotEmpty() && day.isNotEmpty() && saved.day != day)
+            "These matches were scored against ${saved.day}'s sweep, not today's. Run it again for today's."
+        else null)
+    }
+
     fun run() {
         val feed = _ui.value.feed ?: return
         if (_ui.value.phase == Phase.GATES || _ui.value.phase == Phase.SCORING) return
+        // A new run is a new answer; the opt-in belonged to the resume that earned it.
+        _ui.update { it.copy(stretch = false) }
         val profile = profileText() ?: run {
             _ui.update { it.copy(banner = NO_RESUME) }; return
         }
@@ -269,7 +319,10 @@ class DemoVm(app: Application) : AndroidViewModel(app) {
                         }
                         r.error != null -> _ui.update { it.copy(phase = Phase.DONE, banner = r.detail ?: r.error) }
                         else -> {
-                            _ui.update { it.copy(phase = Phase.DONE, scores = r.scores, meta = r.meta) }
+                            _ui.update { u ->
+                                keepRun(u.copy(phase = Phase.DONE, scores = r.scores, meta = r.meta,
+                                               runStale = null))
+                            }
                         }
                     }
                 }
@@ -454,12 +507,21 @@ fun DemoScreen(vm: DemoVm = viewModel()) {
     // navigates on its own.
     LaunchedEffect(ui.scores.isNotEmpty()) { if (ui.scores.isNotEmpty()) screen = Screen.MATCHES }
 
-    // Switching market throws the scores away — they were about the other country's
-    // feed. Staying on the matches frame then strands you on "0 survived the gate of
-    // 323" with nothing under it, which is what the first Kenya run actually did.
+    /* Switching market throws the scores away — they were about the other
+       country's feed. Staying on the matches frame then strands you on "0
+       survived the gate of 323" with nothing under it, which is what the first
+       Kenya run actually did.
+
+       Not on the FIRST composition though: a run restored from disk arrives
+       before this runs, and sending it to the landing frame undid the whole
+       point of keeping it. */
+    var marketSeen by remember { mutableStateOf<String?>(null) }
     LaunchedEffect(ui.market) {
-        screen = Screen.LANDING
-        policy = null
+        if (marketSeen != null && marketSeen != ui.market) {
+            screen = Screen.LANDING
+            policy = null
+        }
+        marketSeen = ui.market
     }
 
     CompositionLocalProvider(LocalTokens provides tokens) {
@@ -475,6 +537,12 @@ fun DemoScreen(vm: DemoVm = viewModel()) {
                         ui.market,
                         saved = ui.tracker.size,
                         onSaved = { trackerOpen = true },
+                        // Home means the top of the landing frame, with the filters
+                        // it was left in cleared — the same as the web's logo.
+                        onHome = {
+                            screen = Screen.LANDING
+                            sector = null; policy = null; query = ""
+                        },
                     ) { vm.setMarket(it) }
                 }
 
@@ -513,7 +581,7 @@ fun DemoScreen(vm: DemoVm = viewModel()) {
                             lastDismissed = null
                         },
                     ) { policy = it }
-                    Screen.MATCHES -> matches(ui, feed, vm)
+                    Screen.MATCHES -> matches(ui, feed, vm, onRework = { screen = Screen.LANDING })
                 }
             }
 
@@ -567,11 +635,9 @@ private fun LazyListScope.landing(
         item {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 by.take(8).chunked(2).forEach { pair ->
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(Modifier.fillMaxWidth(), Arrangement.spacedBy(8.dp)) {
                         pair.forEach { (sec, n) ->
-                            Box(Modifier.weight(1f)) {
-                                MTax(f.labels[sec] ?: sec, n) { onSector(sec) }
-                            }
+                            MTax(f.labels[sec] ?: sec, n, Modifier.weight(1f)) { onSector(sec) }
                         }
                         if (pair.size == 1) Spacer(Modifier.weight(1f))
                     }
@@ -646,14 +712,12 @@ private fun LazyListScope.browse(
         item {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 by.take(10).chunked(2).forEach { pair ->
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(Modifier.fillMaxWidth(), Arrangement.spacedBy(8.dp)) {
                         pair.forEach { (sec, n) ->
-                            Box(Modifier.weight(1f)) {
-                                MTax(
-                                    (f.labels[sec] ?: sec) + if (sector == sec) "  ×" else "",
-                                    n,
-                                ) { onSector(sec) }
-                            }
+                            MTax(
+                                (f.labels[sec] ?: sec) + if (sector == sec) "  ×" else "",
+                                n, Modifier.weight(1f),
+                            ) { onSector(sec) }
                         }
                         if (pair.size == 1) Spacer(Modifier.weight(1f))
                     }
@@ -755,27 +819,44 @@ private fun LazyListScope.browse(
 
 /* ── frame 3: After a run ─────────────────────────────────────────────────
    The scored eight, each carrying its rose and its band. */
-private fun LazyListScope.matches(ui: Ui, feed: Feed?, vm: DemoVm) {
+private fun LazyListScope.matches(ui: Ui, feed: Feed?, vm: DemoVm, onRework: () -> Unit) {
     val byId = feed?.passers?.associateBy { it.id } ?: emptyMap()
     val sorted = ui.scores.sortedByDescending { it.fit }
 
     item { MTitle("Your matches") }
     item { MCount("${sorted.size} survived the gate of ${feed?.postings?.size ?: 0}") }
+    /* A run kept from another day is still useful — the reader decides. It is
+       never passed off as today's. */
+    ui.runStale?.let { item { MCount(it, Modifier.padding(top = 2.dp)) } }
 
-    // Below the floor nothing is recommended: say so, name the nearest, draft nothing.
-    sorted.firstOrNull()?.takeIf { it.fit < FIT_FLOOR }?.let { top ->
-        item { Banner(nofitNote(top.fit, byId[top.id], top.id)) }
+    /* Below the floor nothing is recommended — and that used to be the end of
+       it: one sentence and eight cards with no action on any of them. The
+       recommendation is unchanged; what follows it is three routes instead of
+       a full stop, the same three the web carries. */
+    val clears = sorted.any { it.fit >= FIT_FLOOR }
+    if (!clears && sorted.isNotEmpty()) item {
+        NoFit(
+            near = sorted.first().fit,
+            asks = sorted.take(3).mapNotNull { s ->
+                s.weakest.takeIf { it.isNotBlank() }?.let { (byId[s.id]?.title ?: s.id) to it }
+            },
+            stretch = ui.stretch,
+            onRework = onRework,
+            onStretch = { vm.toggleStretch() },
+        )
     }
     items(sorted, key = { it.id }) { s ->
         val p = byId[s.id]
+        // Below the floor the card acts only once the candidate has asked it to.
+        val open = p != null && !ui.fromCache && (s.fit >= FIT_FLOOR || ui.stretch)
         MJob(
             title = p?.title ?: s.id,
             company = p?.company.orEmpty(),
             fit = s.fit,
-            onClick = if (s.fit >= FIT_FLOOR && !ui.fromCache && p != null) ({ vm.openApply(p) }) else null,
+            onClick = if (open) ({ vm.openApply(p!!) }) else null,
             // Same wording as the web's card, and shown on exactly the cards that
-            // can act on it — below the floor nothing is drafted, so nothing is offered.
-            action = if (s.fit >= FIT_FLOOR && !ui.fromCache && p != null) "Prepare application →" else null,
+            // can act on it — a stretch is named as one, never as the recommendation.
+            action = if (!open) null else if (s.fit >= FIT_FLOOR) "Prepare application →" else "Apply anyway →",
         )
     }
 }
@@ -870,6 +951,66 @@ private fun Stage(bearing: String, label: String, title: String, note: String? =
         if (note != null) {
             Spacer(Modifier.height(6.dp))
             Text(note, color = Muted, fontSize = 14.sp, lineHeight = 21.sp)
+        }
+    }
+}
+
+/**
+ * The below-floor panel. Not a refusal with a full stop — the recommendation
+ * is still "rewrite the resume", and it is still first, but the two other
+ * things a candidate might reasonably want to do are now here instead of
+ * nowhere.
+ *
+ * `asks` is quoted from the run: each of the three nearest misses already
+ * carries the one thing it found missing, which is a better rewrite list than
+ * anything this screen could invent.
+ */
+private val Ask = RoundedCornerShape(12.dp)
+
+@Composable
+private fun NoFit(
+    near: Int,
+    asks: List<Pair<String, String>>,
+    stretch: Boolean,
+    onRework: () -> Unit,
+    onStretch: () -> Unit,
+) {
+    Column(
+        Modifier.fillMaxWidth().clip(Card).background(T.surface)
+            .border(1.dp, T.hair, Card).padding(16.dp),
+    ) {
+        Text("Today's postings are a stretch for this resume as written.",
+            fontSize = 14.sp, lineHeight = 21.sp, fontWeight = FontWeight.Medium, color = T.ink)
+        Spacer(Modifier.height(6.dp))
+        Text("The nearest was $near out of 100 \u2014 which measures the distance between what these " +
+             "postings ask for and what the resume currently says, not what you are capable of. The " +
+             "quickest way to move it is to make the resume answer them, and they have been unusually " +
+             "clear about what they are asking:",
+            fontSize = 13.sp, lineHeight = 20.sp, color = T.text2)
+
+        asks.forEach { (title, why) ->
+            Spacer(Modifier.height(10.dp))
+            Column(
+                Modifier.fillMaxWidth().clip(Ask).background(T.canvas2)
+                    .border(1.dp, T.hair, Ask).padding(horizontal = 12.dp, vertical = 10.dp),
+            ) {
+                Text("${title.uppercase()} \u2014 WHAT TO ANSWER", fontSize = 10.sp, letterSpacing = 0.09.em,
+                    fontWeight = FontWeight.Medium, color = T.text3, maxLines = 2)
+                Spacer(Modifier.height(5.dp))
+                Text(why, fontSize = 12.5.sp, lineHeight = 19.sp, color = T.text2)
+            }
+        }
+
+        Spacer(Modifier.height(12.dp))
+        Text("Put whatever is genuinely true of you against those points and run it again \u2014 the same " +
+             "experience in their words often scores very differently. Or back yourself on one of these " +
+             "today: the letter leads with your strongest real evidence and the recruiter decides the rest.",
+            fontSize = 13.sp, lineHeight = 20.sp, color = T.text2)
+
+        Spacer(Modifier.height(14.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(9.dp)) {
+            PillButton("Rework your resume", filled = true, onClick = onRework)
+            PillButton(if (stretch) "Hide those" else "Apply anyway", onClick = onStretch)
         }
     }
 }
