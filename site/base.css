@@ -117,26 +117,29 @@ html[data-market="ca"]{
   --hero-img:linear-gradient(140deg,#2b2350,#4865ff 48%,#f098d7);
 }
 html[data-market="ke"]{
-  --canvas:#0c0f0d;
-  --canvas-2:#131815;
-  --surface:#181e1a;
-  --ink:#f2f5f1;
-  --text:#e6ebe4;
-  --text2:#a8b3a6;
-  --text3:#7d8a7c;
-  --hair:rgba(242,245,241,.12);
-  --hair2:rgba(242,245,241,.22);
-  --accent:#2fbd6a;        /* Kenya green, lifted for dark ground */
+  /* Cool and near-neutral, 65-71deg off the accent. The old ramp was green at
+     140deg while the accent is green at 142deg, so the chrome and the accent
+     were the same colour and the screen was one olive wash. */
+  --canvas:#0e1014;
+  --canvas-2:#15181d;
+  --surface:#1b1f25;
+  --ink:#f3f5f8;
+  --text:#e5e8ed;
+  --text2:#a3aab6;
+  --text3:#8a919d;
+  --hair:rgba(243,245,248,.12);
+  --hair2:rgba(243,245,248,.22);
+  --accent:#35d07f;        /* Kenya green — the only green on the screen now */
   --accent-ink:#06120a;
-  --live:#ef4b3c;          /* Kenya red as the live dot */
-  --btn:#2fbd6a;
+  --live:#ff6f5e;          /* Kenya red, off the fluorescent */
+  --btn:#35d07f;
   --btn-ink:#06120a;
-  --chip:#1e2621;
-  --chip-ink:#e6ebe4;
-  --scrim:rgba(4,8,5,.62);
+  --chip:#242a32;
+  --chip-ink:#e5e8ed;
+  --scrim:rgba(6,8,12,.64);
   --sh-hover:0 6px 27px rgba(0,0,0,.45), 0 1.8px 8px rgba(0,0,0,.3);
-  --trough:rgba(242,245,241,.07);
-  --hero-img:linear-gradient(140deg,#06120a,#0b3d22 44%,#2fbd6a);
+  --trough:rgba(243,245,248,.07);
+  --hero-img:linear-gradient(140deg,#0b1a14,#10553a 46%,#35d07f);
 }
 :root{
   --serif:"Newsreader",Georgia,"Times New Roman",serif;
@@ -163,11 +166,14 @@ a{color:inherit}
    Contrast-checked on cream, and muddy on Kenya's near-black, so the dark
    market gets its own set rather than a tint of these. */
 html,
-html[data-market="ca"]{--b-auto:#114e0b;--b-ping:#1b1463;--b-unsure:#cc3600;--b-near:#333333;
+html[data-market="ca"]{--b-auto:#114e0b;--b-ping:#1b1463;--b-unsure:#b23200;--b-near:#333333;
   --b-auto-bg:#e3f0e4;--b-ping-bg:#dce4fb;--b-unsure-bg:#ffe6da;--b-near-bg:#e9e8ee}
-html[data-market="ke"]{--b-auto:#5fd98c;--b-ping:#8fb3ff;--b-unsure:#ff9466;--b-near:#a8b3a6;
-  --b-auto-bg:rgba(95,217,140,.14);--b-ping-bg:rgba(143,179,255,.14);
-  --b-unsure-bg:rgba(255,148,102,.14);--b-near-bg:rgba(168,179,166,.14)}
+/* The four hues are the product's semantic language and Canada paints the same
+   four — these are calmed, not moved. b-near goes WARM: the old one was the
+   exact colour of body copy. */
+html[data-market="ke"]{--b-auto:#52d98b;--b-ping:#8fb0f0;--b-unsure:#f2a16a;--b-near:#a89f97;
+  --b-auto-bg:rgba(82,217,139,.14);--b-ping-bg:rgba(143,176,240,.14);
+  --b-unsure-bg:rgba(242,161,106,.14);--b-near-bg:rgba(168,159,151,.14)}
 
 /* ── v2.2 names, kept alive as aliases ──────────────────────────────────
    saved, privacy and stats still write var(--midnight) and var(--info) in
@@ -244,7 +250,7 @@ footer.site{padding:70px 0 40px;border-top:1px solid var(--hair);margin-top:70px
   border-radius:var(--r-pill);padding:5px 9px;display:inline-block;white-space:nowrap}
 .verdict{font:500 13px/1.35 var(--sans);color:var(--text2)}
 .age{color:var(--text3);font:400 13px/1 var(--sans)}
-.age.new{color:var(--live);font-weight:500}
+.age.new{color:var(--b-unsure);font-weight:500}  /* not --live: that is a FILL colour and reads 2.48:1 as text on cream */
 .btn,.btn2{display:inline-flex;align-items:center;gap:8px;text-decoration:none;white-space:nowrap;
   font:500 14.5px/1 var(--sans);padding:13px 22px;border-radius:var(--r-btn);cursor:pointer;
   border:1px solid transparent;transition:all var(--t-micro) var(--ease)}

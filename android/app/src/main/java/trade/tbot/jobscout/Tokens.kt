@@ -91,34 +91,42 @@ val CA_TOKENS = Tokens(
     heroFrom = Color(0xFF2B2350), heroMid = Color(0xFF4865FF), heroTo = Color(0xFFF098D7),
     bAuto = Color(0xFF114E0B), bAutoBg = Color(0xFFE3F0E4),
     bPing = Color(0xFF1B1463), bPingBg = Color(0xFFDCE4FB),
-    bUnsure = Color(0xFFCC3600), bUnsureBg = Color(0xFFFFE6DA),
+    bUnsure = Color(0xFFB23200), bUnsureBg = Color(0xFFFFE6DA),
     bNear = Color(0xFF333333), bNearBg = Color(0xFFE9E8EE),
 )
 
 /** html[data-market="ke"] — authored dark, not an inversion. */
 val KE_TOKENS = Tokens(
-    canvas = Color(0xFF0C0F0D),
-    canvas2 = Color(0xFF131815),
-    surface = Color(0xFF181E1A),
-    ink = Color(0xFFF2F5F1),
-    text = Color(0xFFE6EBE4),
-    text2 = Color(0xFFA8B3A6),
-    text3 = Color(0xFF7D8A7C),
-    hair = Color(0x1FF2F5F1),
-    hair2 = Color(0x38F2F5F1),
-    accent = Color(0xFF2FBD6A),
+    /* Cool and near-neutral, 65-71deg off the accent. Every grey used to wear
+       the accent's own hue - canvas 140deg, surface 140deg, chip 143deg, text2
+       111deg, against a green accent at 142deg - so the chrome and the accent
+       were the same colour and the screen was one olive wash. Mirrors
+       site/base.css; both verified by tools/check_palette.py. */
+    canvas = Color(0xFF0E1014),
+    canvas2 = Color(0xFF15181D),
+    surface = Color(0xFF1B1F25),
+    ink = Color(0xFFF3F5F8),
+    text = Color(0xFFE5E8ED),
+    text2 = Color(0xFFA3AAB6),
+    text3 = Color(0xFF8A919D),
+    hair = Color(0x1FF3F5F8),
+    hair2 = Color(0x38F3F5F8),
+    accent = Color(0xFF35D07F),
     accentInk = Color(0xFF06120A),
-    live = Color(0xFFEF4B3C),
-    btn = Color(0xFF2FBD6A),
+    live = Color(0xFFFF6F5E),
+    btn = Color(0xFF35D07F),
     btnInk = Color(0xFF06120A),
-    chip = Color(0xFF1E2621),
-    chipInk = Color(0xFFE6EBE4),
-    scrim = Color(0x9E040805),
-    heroFrom = Color(0xFF06120A), heroMid = Color(0xFF0B3D22), heroTo = Color(0xFF2FBD6A),
-    bAuto = Color(0xFF5FD98C), bAutoBg = Color(0x245FD98C),
-    bPing = Color(0xFF8FB3FF), bPingBg = Color(0x248FB3FF),
-    bUnsure = Color(0xFFFF9466), bUnsureBg = Color(0x24FF9466),
-    bNear = Color(0xFFA8B3A6), bNearBg = Color(0x24A8B3A6),
+    chip = Color(0xFF242A32),
+    chipInk = Color(0xFFE5E8ED),
+    scrim = Color(0xA306080C),
+    heroFrom = Color(0xFF0B1A14), heroMid = Color(0xFF10553A), heroTo = Color(0xFF35D07F),
+    /* The four hues are the product's semantic language and Canada paints the
+       same four - calmed, not moved. bNear goes WARM: the old one was the exact
+       colour of body copy, so a near-miss band was indistinguishable from it. */
+    bAuto = Color(0xFF52D98B), bAutoBg = Color(0x2452D98B),
+    bPing = Color(0xFF8FB0F0), bPingBg = Color(0x248FB0F0),
+    bUnsure = Color(0xFFF2A16A), bUnsureBg = Color(0x24F2A16A),
+    bNear = Color(0xFFA89F97), bNearBg = Color(0x24A89F97),
 )
 
 fun tokensFor(market: String): Tokens = if (market == "ke") KE_TOKENS else CA_TOKENS

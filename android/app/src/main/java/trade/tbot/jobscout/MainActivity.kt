@@ -909,26 +909,30 @@ private fun matchesPolicy(p: Posting, id: String): Boolean = when (id) {
 }
 
 /* The brand mark: August's geometry (8 dots on a ring at r=11) with OUR one
-   difference — radii graduate 2.30 -> 4.35 clockwise from bearing 000, so it
-   reads as a sweep rather than a wheel.
- 
-   NOT cropped. This clipped to a rounded 24 square, and five of the eight dots
-   cross that edge: the four compass points sit at 1 and 23 with radii up to
-   3.45, so each lost about a third of itself, and the NW dot spilled too. The
-   site header has always drawn them free (viewBox "-3.5 -3.5 31 31") — this is
-   Android catching up, not a change to the mark.
- 
-   The launcher and maskable icons in mipmap/ keep their tile: a filled square
-   is what a launcher needs, and it is the only place the crop is load-bearing. */
+   difference — radii graduate clockwise from bearing 000, so it reads as a
+   sweep rather than a wheel.
+
+   CROPPED, deliberately (BrandKit v2.2, Mark Decision B). I briefly uncropped
+   this on the grounds that the site header does not clip; the decision doc is
+   explicit that the crop IS the mark — it is the silhouette, it is what
+   survives to 16px in a favicon, a launcher and an avatar, and uncropped
+   "below about 30px is a ring of dots, a loading spinner, not a mark". This
+   draws at 18dp in the lockup, which is that case exactly. The uncropped cut
+   is the documented DISPLAY variant: large, with room, and in the fit states.
+
+   The ramp tops out at 4.089, not 4.336. At 4.336 the two largest dots sit
+   0.041 units apart — 0.88px at 512, i.e. merged — and the crop was the only
+   thing hiding it, so the moment the uncropped cut is drawn at size that
+   collision is on screen. One ramp serves both, which is what makes carrying
+   the variant free. */
 @Composable
 fun Mark(dp: Dp = 28.dp, tint: Color = T.accent) {
-    Canvas(Modifier.size(dp)) {
-        // 31 units of room for a 24-unit figure, centred — the site's own box.
-        val u = size.width / 31f
+    Canvas(Modifier.size(dp).clip(RoundedCornerShape(6.dp))) {
+        val u = size.width / 24f
         val c = center
         for (i in 0 until 8) {
             val th = Math.toRadians((-90 + 45 * i).toDouble())
-            val r = (2.30f + (4.35f - 2.30f) * i / 7f) * u
+            val r = (2.275f + (4.089f - 2.275f) * i / 7f) * u
             drawCircle(tint, r, Offset(c.x + 11f * u * cos(th).toFloat(), c.y + 11f * u * sin(th).toFloat()))
         }
     }
