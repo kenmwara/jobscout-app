@@ -185,9 +185,65 @@
   #profileBox:focus{border-color:var(--accent)}
   .empty{text-align:center;padding:80px 0}
   .empty p{font:400 21px/1.4 var(--serif);color:var(--ink);margin:0 0 8px}
+  /* The handle exists only on a phone, where this is a sheet. */
+  .docwin .grab{display:none}
   @media(max-width:620px){
     .head{gap:18px;padding:18px 0 24px}
     .head .fit{order:-1}
+
+    /* SECTION 15. A DESKTOP DIALOG DROPPED ONTO A PHONE.
+       Centred with 16px of air on four sides, this opened a reading window
+       with its own scrollbar inside a phone that already scrolls, and its top
+       edge cut the heading behind it in half. A long document on a phone
+       rises from the bottom: full width, 90% tall, rounded at the top only,
+       flat to the bottom edge. The strip of page still showing is what says
+       "this is on top of something", and it is the tap target.
+
+       `margin:auto auto 0` is what moves it. A dialog is positioned by its
+       own margins against `inset:0`, so the centring three rules up is
+       overridden here and not with `top` or `align-items`. */
+    .docwin{margin:auto auto 0;max-width:none;width:100%}
+    /* NO ENTRANCE TRANSFORM AT THIS WIDTH.
+       The dialog's entrance is `scale(.985)`, and the note on that keyframe
+       says a 1.5% scale frozen "does not move the box's centre" - true, and
+       beside the point once the box is anchored to an EDGE instead of
+       centred. Scaling about the centre lifted the bottom edge 5px off the
+       screen; `transform-origin:bottom` fixed that and still pulled the
+       width in to 369px of a 375px viewport, leaving 3px of scrim down each
+       side. Both were measured, and in a hidden document the frozen frame
+       holds either one forever.
+
+       The rule this file already states is that an entrance may never hold
+       the element away from where it belongs. A sheet that is flush on three
+       edges has nowhere to scale from, so it does not scale. The scrim
+       arriving is the transition. */
+    html.anim .docwin[open]{animation:none}
+    .docwin .sheet{
+      max-height:90dvh;
+      border-radius:var(--radius-sheet) var(--radius-sheet) 0 0;
+      border:1px solid var(--sheet-edge);border-bottom:0;
+      box-shadow:var(--shadow-sheet)}
+    .docwin .grab{display:block;width:34px;height:4px;border-radius:2px;
+      background:var(--hair2);margin:9px auto 0;flex:0 0 auto}
+    .docwin .whead{padding:11px 16px 12px}
+    /* Close is an icon at this width, not a pill competing with the title.
+       The label stays in the DOM for assistive tech; only its box collapses. */
+    .docwin .whead #docClose{
+      flex:0 0 auto;width:30px;height:30px;padding:0;border:0;border-radius:50%;
+      background:var(--sunken);color:var(--text2);font-size:0;
+      display:grid;place-items:center}
+    .docwin .whead #docClose::after{content:"\00d7";font:400 15px/1 var(--sans)}
+    /* The raw OS scrollbar is a grey track with arrow buttons, and it clips
+       the sheet's rounded corner. */
+    .docwin .dbody{padding:15px 16px 18px;
+      scrollbar-width:thin;scrollbar-color:var(--hair2) transparent}
+    .docwin .dbody::-webkit-scrollbar{width:4px}
+    .docwin .dbody::-webkit-scrollbar-track{background:transparent}
+    .docwin .dbody::-webkit-scrollbar-thumb{background:var(--hair2);border-radius:2px}
+    /* The action is full width; the footer clears the home bar. */
+    .docwin .dfoot{flex-direction:column;align-items:stretch;
+      padding:11px 16px calc(13px + env(safe-area-inset-bottom,0px))}
+    .docwin .dfoot button,.docwin .dfoot a{width:100%;text-align:center}
   }
 </style>
 </head>
@@ -210,6 +266,7 @@
 
 <dialog class="docwin" id="docModal">
   <div class="sheet">
+    <div class="grab" aria-hidden="true"></div>
     <div class="whead"><h3 id="docTitle"></h3>
       <button class="btn2" type="button" id="docClose">Close</button></div>
     <div class="dbody" id="docBody"></div>

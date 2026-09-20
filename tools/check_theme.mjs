@@ -28,6 +28,7 @@ const CA = LIVE ? BASE : `${BASE}/index.html?market=ca`;
 const ROUTES = LIVE
   ? ["/", "/saved", "/apply", "/privacy"]
   : ["/index.html", "/saved.html", "/apply.html", "/privacy.html"];
+const APPLY = LIVE ? "/apply" : "/apply.html";
 
 const CANVAS = { light: "#f8f3eb", dark: "#0a0524" };
 // A custom property is NOT normalised by getComputedStyle - it comes back as
@@ -313,6 +314,72 @@ const run = async () => {
       bad(route + ": Browse -> " + hrefs.join(", ") +
           " - that is the landing, not the browse view");
     else ok(route + ": Browse -> " + hrefs[0] + " (all " + hrefs.length + ")");
+    await ctx.close();
+  }
+
+  /* SECTION 15 - A SHEET ON A PHONE, A DIALOG ON A DESKTOP.
+     Asserted as geometry, because every part of this failed as geometry: a
+     centred dialog inset on four sides, a bottom edge floating 5px off the
+     screen because the entrance scales about the centre, a footer button
+     that is not the full width. The 5px is the one worth keeping a check
+     for - it is invisible in a screenshot, it only appears once the box is
+     bottom-anchored, and in a hidden document the frozen frame holds it
+     there forever. */
+  console.log("");
+  console.log("-- the cover-letter sheet --");
+  for (const [w, h, kind] of [[375, 812, "phone"], [1280, 860, "desktop"]]) {
+    const ctx = await browser.newContext({ viewport: { width: w, height: h } });
+    const page = await ctx.newPage();
+    await page.goto(BASE + APPLY, { waitUntil: "domcontentloaded" });
+    const m = await page.evaluate(() => {
+      const d = document.querySelector("#docModal");
+      if (!d) return { missing: true };
+      d.querySelector("#docBody").innerHTML =
+        "<p>A paragraph long enough to make the sheet reach its cap.</p>".repeat(40);
+      d.querySelector("#docFoot").innerHTML =
+        '<button class="btn" type="button">Copy all</button>';
+      d.showModal();
+      const sheet = d.querySelector(".sheet");
+      const foot = d.querySelector(".dfoot");
+      const btn = foot.querySelector("button");
+      const C = getComputedStyle, R = (e) => e.getBoundingClientRect();
+      const r = R(d), sr = R(sheet), br = R(btn);
+      const pad = parseFloat(C(foot).paddingLeft) + parseFloat(C(foot).paddingRight);
+      return {
+        vw: innerWidth,
+        width: Math.round(r.width),
+        bottomGap: Math.round(innerHeight - r.bottom),
+        topGap: Math.round(r.top),
+        pctH: +((r.height / innerHeight) * 100).toFixed(1),
+        radius: C(sheet).borderRadius,
+        flatBottom: C(sheet).borderBottomLeftRadius === "0px",
+        grab: C(d.querySelector(".grab")).display,
+        closeW: Math.round(R(d.querySelector("#docClose")).width),
+        btnFull: Math.abs(br.width - (R(foot).width - pad)) < 2,
+        thinBar: C(d.querySelector(".dbody")).scrollbarWidth,
+      };
+    });
+    if (m.missing) { bad(kind + ": no #docModal on the application page"); await ctx.close(); continue; }
+
+    if (kind === "phone") {
+      if (m.width !== m.vw) bad(`phone: the sheet is ${m.width}px in a ${m.vw}px viewport - a sheet is full width`);
+      else if (m.bottomGap !== 0)
+        bad(`phone: ${m.bottomGap}px of scrim under the sheet - it is not on the bottom edge ` +
+            `(a centred transform-origin on the entrance does this, and a frozen frame holds it)`);
+      else if (!m.flatBottom) bad(`phone: the sheet is rounded at the bottom (${m.radius}) - it has no bottom edge to round`);
+      else if (m.pctH < 80 || m.pctH > 92) bad(`phone: the sheet is ${m.pctH}% of the viewport, want about 90`);
+      else if (m.grab === "none") bad("phone: no grab handle");
+      else if (m.closeW > 32) bad(`phone: Close is ${m.closeW}px wide - it should be a 30px icon, not a pill`);
+      else if (!m.btnFull) bad("phone: the action is not full width in the footer");
+      else if (m.thinBar !== "thin") bad(`phone: the body takes the raw OS scrollbar (${m.thinBar})`);
+      else ok(`phone: full-width sheet, flush at ${m.bottomGap}px, ${m.pctH}% tall, top corners only, ${m.closeW}px close, full-width action`);
+    } else {
+      if (m.grab !== "none") bad("desktop: the grab handle is showing on a dialog that is not a sheet");
+      else if (m.bottomGap === 0) bad("desktop: the dialog is stuck to the bottom edge - the phone rules escaped their media query");
+      else if (Math.abs(m.topGap - m.bottomGap) > 3)
+        bad(`desktop: the dialog is off-centre (${m.topGap}px above, ${m.bottomGap}px below)`);
+      else ok(`desktop: still a centred dialog (${m.topGap}/${m.bottomGap}), no handle`);
+    }
     await ctx.close();
   }
 
