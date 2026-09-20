@@ -216,6 +216,28 @@ const run = async () => {
     await ctx.close();
   }
 
+  // ── the stylesheet must not outlive the document (live only) ────────
+  /* Pages defaults to max-age=0 for HTML and 14400 for everything else, and
+     `must-revalidate` does NOT make the browser ask inside that window. So a
+     reader gets new HTML with a four-hour-old stylesheet, and the inline
+     scripts set attributes the cached CSS has no rules for. That shipped, and
+     it looked exactly like a broken toggle: "I have to do a hard reset before
+     I can change light/dark modes". site/_headers pins base.css to the HTML. */
+  if (LIVE) {
+    console.log("\n-- what the browser is told to cache --");
+    const maxAge = async (u) => {
+      const r = await fetch(u, { method: "HEAD" });
+      const m = /max-age=(\d+)/.exec(r.headers.get("cache-control") || "");
+      return m ? +m[1] : null;
+    };
+    const doc = await maxAge(BASE + "/");
+    const css = await maxAge(BASE + "/base.css");
+    if (doc === null || css === null) bad(`no max-age on the document (${doc}) or the stylesheet (${css})`);
+    else if (css > doc)
+      bad(`base.css is cached ${css}s against the document's ${doc}s - a reader can hold new HTML with an old palette, which is a toggle that does nothing until a hard reset`);
+    else ok(`base.css ${css}s <= document ${doc}s, so the palette cannot outlive the markup`);
+  }
+
   await browser.close();
   console.log("");
   console.log(fails ? `${fails} FAILED` : "ALL GREEN");

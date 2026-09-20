@@ -1,0 +1,35 @@
+# Cloudflare Pages headers.
+#
+# THE BUG THIS FIXES. Pages' default is max-age=0 for HTML and max-age=14400
+# for everything else. `must-revalidate` does not help inside the 14400: the
+# browser serves the stylesheet from cache for four hours WITHOUT asking. So a
+# reader picks up new HTML immediately and keeps the old CSS, and the two
+# disagree. Reported as "I have to do a hard reset before I can change
+# light/dark modes": the new toggle set data-theme="system", the cached
+# stylesheet had no rule for it, the attribute flipped and nothing repainted.
+#
+# base.css carries the tokens the inline scripts in the HTML depend on, so it
+# has to travel with the HTML. max-age=0 + the ETag Pages already sends means
+# a conditional request per load and a 304 almost every time - a few hundred
+# bytes, against a palette that silently does not match the page.
+#
+# Anything genuinely immutable stays cached: the fonts are a megabyte and
+# never change, and the icons change only when the mark does.
+
+/base.css
+  Cache-Control: public, max-age=0, must-revalidate
+
+/apply.html
+  Cache-Control: public, max-age=0, must-revalidate
+
+/saved.html
+  Cache-Control: public, max-age=0, must-revalidate
+
+/privacy.html
+  Cache-Control: public, max-age=0, must-revalidate
+
+/fonts-embedded.css
+  Cache-Control: public, max-age=604800, immutable
+
+/icons/*
+  Cache-Control: public, max-age=604800
