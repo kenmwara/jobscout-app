@@ -191,6 +191,26 @@ p.sub{font:400 13.5px/1.5 var(--sans);color:var(--text2);margin:0 0 16px}
 .heart[aria-pressed="true"]{color:var(--accent)}
 .heart[aria-pressed="true"] svg{fill:currentColor}
 
+/* The reading window. Inside the phone frame, so it behaves like a sheet on
+   the device rather than a browser dialog. */
+.sheet{position:absolute;inset:0;z-index:30;display:grid;place-items:center;
+  padding:20px;background:var(--scrim)}
+.sheet[hidden]{display:none}
+.sheet .win{
+  width:100%;max-height:82%;display:flex;flex-direction:column;
+  background:var(--surface);border-radius:var(--r-card);
+  border:1px solid var(--hair);box-shadow:var(--sh-hover);overflow:hidden}
+.sheet .wtop{display:flex;align-items:center;gap:10px;padding:13px 14px 11px;
+  border-bottom:1px solid var(--hair)}
+.sheet .wtop h4{margin:0;font:500 14px/1.2 var(--sans);color:var(--ink);flex:1}
+.sheet .wbody{padding:14px;overflow:auto;font:400 13.5px/1.65 var(--sans);
+  color:var(--text-long,var(--text))}
+.sheet .wbody p{margin:0 0 11px}
+.sheet .wbody .q{margin:0 0 14px}
+.sheet .wbody .q .ask{font:500 13px/1.45 var(--sans);color:var(--ink);margin:0 0 4px}
+.sheet .wbody .q .ans{font:400 13px/1.6 var(--sans);color:var(--text2);margin:0}
+.sheet .wfoot{display:flex;gap:8px;padding:11px 14px;border-top:1px solid var(--hair)}
+
 /* The drafting screen: three sections, each one endpoint. */
 .draft{background:var(--surface);border:1px solid var(--hair);
   border-radius:var(--r-card);padding:14px;margin:0 0 11px}
@@ -264,6 +284,15 @@ p.sub{font:400 13.5px/1.5 var(--sans);color:var(--text2);margin:0 0 16px}
       <div class="stat"><span id="clock">9:41</span>
         <span class="ic">▮▮▮ <i></i></span></div>
       <div class="view" id="view"></div>
+      <div class="sheet" id="sheet" hidden role="dialog" aria-modal="true"
+           aria-labelledby="sheetTitle">
+        <div class="win">
+          <div class="wtop"><h4 id="sheetTitle"></h4>
+            <button class="mini-cta" data-sheet-close>Close</button></div>
+          <div class="wbody" id="sheetBody"></div>
+          <div class="wfoot"><button class="mini-cta solid" id="sheetCopy">Copy</button></div>
+        </div>
+      </div>
       <div class="tabbar" id="tabbar"></div>
     </div>
   </div>
@@ -310,6 +339,30 @@ const DRAFT = {
       : null },
 };
 
+const SHEET_TITLE = { letter: "Cover letter", resume: "Your resume, aimed at it",
+                      answers: "Their screening questions" };
+
+function openSheet(id) {
+  const st = draftState[id];
+  if (!st || !st.html) return;
+  $("#sheetTitle").textContent = SHEET_TITLE[id] || "";
+  $("#sheetBody").innerHTML = st.html;
+  $("#sheetBody").scrollTop = 0;
+  $("#sheet").hidden = false;
+  $("#sheet").dataset.which = id;
+  $("[data-sheet-close]").focus();
+}
+
+/* ONE close, reached from the Close button, the scrim and Escape. The web
+   version learned this the hard way. */
+function closeSheet() {
+  const sh = $("#sheet");
+  if (!sh || sh.hidden) return;
+  sh.hidden = true;
+  const back = document.querySelector(`[data-open="${sh.dataset.which}"]`);
+  back?.focus();
+}
+
 async function runDraft(id) {
   const spec = DRAFT[id], p = current;
   if (!spec || !p) return;
@@ -332,6 +385,9 @@ async function runDraft(id) {
     draftState[id] = { err: "Could not reach the drafter: " + err.message };
   }
   paint();
+  /* Straight to the popup when it lands - the same call the web helpers make.
+     Nobody taps "draft this" and then wants to hunt for the result. */
+  if (draftState[id].html) openSheet(id);
 }
 
 /* A stable pseudo-score so the mockup shows the four bands without pretending
@@ -463,8 +519,9 @@ const SCREENS = {
           ? `<div class="bar"><img class="cmark" src="claude-mark.png" alt="">
                <span class="lbl">Claude is ${esc(st.busy)}&hellip;</span></div>`
           : st.html
-            ? `<div class="out">${st.html}</div>
-               <div class="bar"><button class="mini-cta" data-copy="${id}">Copy</button></div>`
+            ? `<div class="bar">
+                 <button class="mini-cta solid" data-open="${id}">Read it</button>
+                 <button class="mini-cta" data-draft="${id}">Redo</button></div>`
             : `<div class="bar"><button class="mini-cta solid" data-draft="${id}">${verb}</button></div>`}
         ${st.err ? `<p class="err">${esc(st.err)}</p>` : ""}
       </div>`;
@@ -585,6 +642,7 @@ document.addEventListener("input", e => {
     $("#mbox").classList.toggle("tall", e.target.value.length > 60);
 });
 document.addEventListener("keydown", e => {
+  if (e.key === "Escape") return closeSheet();
   if (e.target.id === "runBtn" && (e.key === "Enter" || e.key === " ")) {
     e.preventDefault(); runScore();
   }
@@ -593,16 +651,25 @@ document.addEventListener("keydown", e => {
 document.addEventListener("click", e => {
   if (e.target.id === "runBtn") return runScore();
   if (e.target.closest("#saveSearch")) { savedSearch = !savedSearch; return paint(); }
+  const sh = $("#sheet");
+  if (sh && !sh.hidden) {
+    /* Identity, not a rectangle hit-test: a keyboard-issued click reports
+       coordinates 0,0, which is outside every rectangle. */
+    if (e.target === sh || e.target.closest("[data-sheet-close]")) return closeSheet();
+    if (e.target.closest("#sheetCopy")) {
+      navigator.clipboard?.writeText($("#sheetBody").innerText).then(() => {
+        const b = $("#sheetCopy"); b.textContent = "Copied";
+        setTimeout(() => (b.textContent = "Copy"), 1400);
+      });
+      return;
+    }
+    if (sh.contains(e.target)) return;
+  }
+  const op = e.target.closest("[data-open]");
+  if (op) return openSheet(op.dataset.open);
   const dr = e.target.closest("[data-draft]");
   if (dr) return runDraft(dr.dataset.draft);
-  const cp = e.target.closest("[data-copy]");
-  if (cp) {
-    const box = cp.closest(".draft").querySelector(".out");
-    navigator.clipboard?.writeText(box.innerText).then(() => {
-      cp.textContent = "Copied"; setTimeout(() => (cp.textContent = "Copy"), 1400);
-    });
-    return;
-  }
+
   const h = e.target.closest("[data-heart]");
   if (h) {
     const id = h.dataset.heart;
