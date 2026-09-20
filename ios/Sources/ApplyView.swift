@@ -273,7 +273,7 @@ struct Answers: View {
     var body: some View {
         if r.unsupported {
             // A fact about the employer, and it ends with what to do instead.
-            Text("This employer keeps its application form behind a login, so the questions cannot be read ahead of time by anyone \u2014 not us, and not you. Open the posting when you are ready and answer them there: the letter and the rebuilt resume above are what most of those boxes ask for anyway.")
+            Text("This employer keeps its application form behind a login, so the questions cannot be read ahead of time by anyone \u{2014} not us, and not you. Open the posting when you are ready and answer them there: the letter and the rebuilt resume above are what most of those boxes ask for anyway.")
                 .font(sans(14)).foregroundColor(muted).lineSpacing(4)
         } else {
             VStack(alignment: .leading, spacing: 14) {
