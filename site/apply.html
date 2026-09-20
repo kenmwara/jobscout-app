@@ -91,10 +91,29 @@ document.documentElement.setAttribute("data-market",
   .q .yours{font:400 14px/1.5 var(--sans);color:var(--b-unsure);margin:6px 0 0}
   .q .cite{font:400 12.5px/1.5 var(--sans);color:var(--text3);margin:7px 0 0}
 
-  .waiting{display:flex;align-items:center;gap:12px;font:400 15px/1 var(--sans);color:var(--text2);padding:6px 0 4px}
+  .waiting{display:flex;align-items:center;gap:12px;font:400 15px/1.5 var(--sans);color:var(--text2);padding:6px 0 4px}
+  .waiting small{display:block;color:var(--text3);font-size:13px;margin-top:3px}
   .cmark{display:block;flex:0 0 auto;border-radius:4px}
-  @media (prefers-reduced-motion:no-preference){ .cmark{animation:breathe 2.6s ease-in-out infinite} }
-  @keyframes breathe{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+  /* A 3px drift every 2.6s does not read as "working" — the resume step takes
+     long enough that the page looked frozen. Scale and fade as well, faster. */
+  @media (prefers-reduced-motion:no-preference){ .cmark{animation:breathe 1.3s ease-in-out infinite} }
+  @keyframes breathe{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(.78);opacity:.55}}
+
+  /* The finished document, read properly. Inline it ran the page to five
+     screens and the three steps stopped reading as a set. */
+  .doc{border:0;padding:0;background:transparent;max-width:min(760px,calc(100vw - 32px));width:100%}
+  .doc::backdrop{background:var(--scrim)}
+  .doc .sheet{background:var(--surface);border:1px solid var(--hair);border-radius:var(--r-card);
+    box-shadow:var(--sh-hover);max-height:min(84vh,900px);display:flex;flex-direction:column}
+  .doc .dhead{display:flex;align-items:center;gap:12px;padding:16px 20px;border-bottom:1px solid var(--hair)}
+  .doc .dhead h3{margin:0;font:450 19px/1.2 var(--serif);color:var(--ink);flex:1 1 auto}
+  .doc .dbody{overflow:auto;padding:20px;flex:1 1 auto}
+  .doc .dfoot{display:flex;gap:10px;flex-wrap:wrap;padding:14px 20px;border-top:1px solid var(--hair)}
+  .readmore{appearance:none;background:transparent;border:0;padding:6px 0 0;cursor:pointer;
+    font:500 13.5px/1 var(--sans);color:var(--accent);text-decoration:underline;text-underline-offset:3px}
+  .readmore:hover{color:var(--ink)}
+  .out.clipped{max-height:270px;overflow:hidden;
+    -webkit-mask-image:linear-gradient(#000 72%,transparent);mask-image:linear-gradient(#000 72%,transparent)}
 
   .note{font:400 14px/1.6 var(--sans);color:var(--text2);margin:0 0 18px}
   .warn{background:var(--b-unsure-bg);color:var(--b-unsure);border-radius:12px;padding:13px 16px;
@@ -127,6 +146,15 @@ document.documentElement.setAttribute("data-market",
     </div>
   </header>
 </div>
+
+<dialog class="doc" id="docModal">
+  <div class="sheet">
+    <div class="dhead"><h3 id="docTitle"></h3>
+      <button class="btn2" type="button" id="docClose">Close</button></div>
+    <div class="dbody" id="docBody"></div>
+    <div class="dfoot" id="docFoot"></div>
+  </div>
+</dialog>
 
 <main class="wrap" id="main">
   <div class="empty" id="empty" hidden>
@@ -207,7 +235,7 @@ document.documentElement.setAttribute("data-market",
   <footer class="site">
     <div class="fgrid">
       <div>
-        <p class="fbrand">JobScout</p>
+        <p class="fbrand"><a href="./">JobScout</a></p>
         <p class="fnote">Nothing on this page is submitted for you. Every field is yours to check, and the Submit button is yours to press.</p>
       </div>
       <div>
@@ -376,10 +404,50 @@ const asProse = t => String(t).split(/\n{2,}/).map(x => x.trim())
   .filter(x => x && !/^-{3,}$/.test(x))
   .map(x => `<p>${esc(x).replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>").replace(/\n/g, "<br>")}</p>`).join("");
 
+/* The rebuilt resume is the slow one — the model writes the whole document
+   and then every employer, date and number in it is checked against the
+   original, twice if the first draft invents a category word. Saying so is
+   the difference between "working" and "frozen". */
+const HOWLONG = {
+  letter: "about fifteen seconds",
+  tailor: "up to a minute \u2014 the whole document is written, then every name and number in it is checked against your own",
+  answers: "about twenty seconds",
+};
 function waiting(id, what){
-  $("#out-" + id).innerHTML = `<div class="waiting"><img class="cmark" src="claude-mark.png" alt="" width="20" height="20"><span>${esc(what)}…</span></div>`;
+  $("#out-" + id).innerHTML = `<div class="waiting">`
+    + `<img class="cmark" src="claude-mark.png" alt="" width="20" height="20">`
+    + `<span>${esc(what)}\u2026<small>${esc(HOWLONG[id] || "")}</small></span></div>`;
+  $("#out-" + id).classList.remove("clipped");
   $("#do-" + id).disabled = true;
 }
+
+/* A finished document, in a window of its own. <dialog> brings Esc, the
+   backdrop and focus handling; the card keeps a preview so nothing is hidden
+   behind a click. */
+function readable(id, title, plainFor){
+  const out = $("#out-" + id);
+  if (out.scrollHeight <= 300) return;            // short enough to just read
+  out.classList.add("clipped");
+  const b = document.createElement("button");
+  b.className = "readmore"; b.type = "button";
+  b.textContent = "Read the whole thing \u2192";
+  b.onclick = () => {
+    $("#docTitle").textContent = title;
+    $("#docBody").innerHTML = out.innerHTML;
+    const foot = $("#docFoot"); foot.innerHTML = "";
+    for (const src of ["cp-" + id, "dl-" + id, "dt-" + id]) {
+      const o = document.getElementById(src);
+      if (!o || o.hidden) continue;
+      const c = document.createElement("button");
+      c.className = "btn2"; c.type = "button"; c.textContent = o.textContent;
+      c.onclick = () => o.click();
+      foot.appendChild(c);
+    }
+    $("#docModal").showModal();
+  };
+  out.after(b);
+}
+$("#docClose").onclick = () => $("#docModal").close();
 function download(blob, name){
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
@@ -528,6 +596,7 @@ $("#do-letter").onclick = async () => {
     $("#do-letter").hidden = true;
     $("#gr-letter").textContent = "Grounded only in the resume you gave.";
     offer("letter", d.letter, `cover-letter-${slug}.txt`);
+    readable("letter", "Cover letter");
   }catch(e){ failed("letter", "Letter API unreachable: " + e, "Write the letter"); }
 };
 
@@ -571,6 +640,7 @@ $("#do-tailor").onclick = async () => {
     const cp = $("#cp-tailor");
     cp.hidden = false;
     cp.onclick = () => copyInto(cp, plain, "tailor");
+    readable("tailor", "Your resume, rebuilt for this job");
   }catch(e){ failed("tailor", "Resume API unreachable: " + e, "Rebuild my resume"); }
 };
 
@@ -582,12 +652,18 @@ $("#do-answers").onclick = async () => {
   waiting("answers", "reading the employer's form");
   try{
     const { r, d } = await post("/api/answers");
+    /* Workday and the other closed boards keep their forms behind a login.
+       That is a fact about the employer, and it was painted in the error
+       colour with NOT PUBLISHED stamped beside it, which reads as something
+       we broke. It is a note now, and it says what to do instead. */
     if (d.unsupported){
-      $("#out-answers").innerHTML = `<div class="warn">${esc(d.detail)}</div>`;
-      $("#st-answers").textContent = "not published"; $("#st-answers").className = "state";
+      $("#out-answers").innerHTML = `<p class="note" style="margin:0">`
+        + `${esc(d.host || "This employer")} keeps its application form behind a login, so the questions cannot be `
+        + `read ahead of time by anyone — not us, and not you. Open the posting when you are ready and answer `
+        + `them there: the letter and the rebuilt resume above are what most of those boxes ask for anyway.</p>`;
+      $("#st-answers").textContent = "their form is private"; $("#st-answers").className = "state";
       $("#do-answers").hidden = true;
-      $("#gr-answers").textContent = d.host
-        ? `${d.host} does not publish its form, so its questions cannot be read ahead of time.` : "";
+      $("#gr-answers").textContent = "";
       return;
     }
     if (!Array.isArray(d.questions))
@@ -629,6 +705,7 @@ $("#do-answers").onclick = async () => {
     $("#do-answers").hidden = true;
     $("#gr-answers").textContent = "Read from the employer's own form. Anything your resume does not settle is left for you.";
     offer("answers", qs.map(q => `${q.label}${q.required ? " [required]" : ""}\n${q.answer || "— " + (q.why || "yours to answer")}`).join("\n\n"), null);
+    readable("answers", "Their screening questions");
   }catch(e){ failed("answers", "Answers API unreachable: " + e, "Get their questions"); }
 };
 </script>

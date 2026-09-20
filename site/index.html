@@ -510,17 +510,37 @@ html.anim .tabs a:hover{transform:skewX(-7deg) translateY(-3px)}
    an event. What varies instead is WHERE it goes: each card throws its bloom
    at a different corner, NW / NE / SE / SW by position in the grid, so a row
    of them doesn't pulse in unison. */
+/* Press feedback is the brand's own mark, not a ripple. Eight dots on the
+   rose's ring with its graduated radii, revealed by a conic mask that sweeps
+   clockwise from bearing 000 — so they light N, NE, E, … in order instead of
+   blooming as one circle, which is what every framework ships and what this
+   used to be. Slower than the ripple was, because the order is the point.
+   Without @property the angle does not interpolate and all eight arrive
+   together: the right mark, without the sweep. */
+@property --sweep{syntax:'<angle>';inherits:false;initial-value:0deg}
 .bloomer .bl{
-  position:absolute;left:50%;top:50%;width:150%;aspect-ratio:1;border-radius:50%;
-  transform:translate(-50%,-50%) scale(.5);border:1.5px solid currentColor;
-  opacity:0;pointer-events:none
+  position:absolute;left:50%;top:50%;width:150%;aspect-ratio:1;
+  transform:translate(-50%,-50%) scale(.62);
+  opacity:0;pointer-events:none;--sweep:360deg;
+  background-image:
+    radial-gradient(ellipse 2.10% 2.10% at 50.0% 8.0%,currentColor 96%,transparent 0),
+    radial-gradient(ellipse 2.37% 2.37% at 79.7% 20.3%,currentColor 96%,transparent 0),
+    radial-gradient(ellipse 2.64% 2.64% at 92.0% 50.0%,currentColor 96%,transparent 0),
+    radial-gradient(ellipse 2.91% 2.91% at 79.7% 79.7%,currentColor 96%,transparent 0),
+    radial-gradient(ellipse 3.19% 3.19% at 50.0% 92.0%,currentColor 96%,transparent 0),
+    radial-gradient(ellipse 3.46% 3.46% at 20.3% 79.7%,currentColor 96%,transparent 0),
+    radial-gradient(ellipse 3.73% 3.73% at 8.0% 50.0%,currentColor 96%,transparent 0),
+    radial-gradient(ellipse 4.00% 4.00% at 20.3% 20.3%,currentColor 96%,transparent 0);
+  -webkit-mask-image:conic-gradient(from -90deg,#000 var(--sweep),transparent 0);
+          mask-image:conic-gradient(from -90deg,#000 var(--sweep),transparent 0)
 }
-.bloomer.blooming .bl{animation:bloomdir .78s var(--ease)}
-@keyframes bloomdir{
-  0%{opacity:0;transform:translate(-50%,-50%) scale(.5)}
-  22%{opacity:1}
-  100%{opacity:0;
-    transform:translate(calc(-50% + var(--bx,0) * 54px), calc(-50% + var(--by,0) * 54px)) scale(1.75)}}
+.bloomer.blooming .bl{animation:bearingbloom 1.15s var(--ease)}
+@keyframes bearingbloom{
+  0%{opacity:0;--sweep:0deg;transform:translate(-50%,-50%) scale(.62)}
+  14%{opacity:.95}
+  72%{--sweep:360deg}
+  100%{opacity:0;--sweep:360deg;
+    transform:translate(calc(-50% + var(--bx,0) * 54px), calc(-50% + var(--by,0) * 54px)) scale(1.5)}}
 
 /* their richest entry curve, used for the scored cards */
 @keyframes sent-in{from{opacity:0;transform:translateY(8px) scale(.985)}to{opacity:1;transform:none}}
@@ -667,12 +687,10 @@ html.anim .bell[aria-pressed="true"] svg{animation:ring .6s var(--ease)}
 @media(max-width:980px){
   .grid3,.jobs{grid-template-columns:repeat(2,1fr)}
   .taxgrid{grid-template-columns:repeat(3,1fr)}
-  .fgrid{grid-template-columns:1fr 1fr}
 }
 @media(max-width:620px){
   .wrap{padding:0 16px}
   .grid3,.jobs,.taxgrid{grid-template-columns:1fr}
-  .fgrid{grid-template-columns:1fr}
   /* On a phone the switch drops to flags so it cannot clip the edge, and the
      nav keeps only Browse — the rest are in the footer, which is 4,000px away.
      Browse carries .keep for exactly this reason. */
@@ -752,15 +770,20 @@ html.anim .bell[aria-pressed="true"] svg{animation:ring .6s var(--ease)}
      with border-radius:1600px - wider than the viewport, so only the curved
      bottom edge shows. Reproduced here, and the radius relaxes to flat as the
      band scrolls through, via a view() timeline where supported. */
-  .band{position:relative;margin:72px 0 0;padding:74px 0 96px;background:var(--midnight);
-    color:#fff;width:132vw;margin-left:calc(50% - 66vw);border-radius:0 0 1600px 1600px;
-    background-image:radial-gradient(rgba(255,255,255,.045) 1px,transparent 1px);
+  /* 2026-09-20: the ground and the ink used to disagree. `section.band` above
+     (0,1,1) paints this canvas-2 and beats the `background` here (0,1,0) —
+     but nothing competed with `color:#fff`, so "How JobScout works" was white
+     on cream. The light ground won, so the light ink comes with it, and the
+     dot pattern is inked for a light ground too. */
+  .band{position:relative;margin:72px 0 0;padding:74px 0 96px;
+    color:var(--text2);width:132vw;margin-left:calc(50% - 66vw);border-radius:0 0 1600px 1600px;
+    background-image:radial-gradient(var(--hair) 1px,transparent 1px);
     background-size:20px 20px}
   /* The band is 132vw, so its .wrap centres inside THAT, not inside the
      viewport. Capped here rather than in a new rule - an added `.band .wrap`
      has the SAME specificity as this one and loses to it on order. */
   .band>.wrap{max-width:min(1040px,100vw)}
-  .band h2{color:#fff}
+  .band h2{color:var(--ink)}
   @supports (animation-timeline: view()){
     @media (prefers-reduced-motion:no-preference){
       .band{animation:flatten linear both;animation-timeline:view();animation-range:exit 0% exit 90%}
@@ -984,7 +1007,7 @@ html.anim .bell[aria-pressed="true"] svg{animation:ring .6s var(--ease)}
   <footer class="site">
     <div class="fgrid">
       <div>
-        <p class="fbrand">JobScout</p>
+        <p class="fbrand"><a href="./">JobScout</a></p>
         <p class="fnote" id="fnote">Reads your resume, drops what cannot fit, and tells you why about the rest.</p>
       </div>
       <div>
@@ -1591,8 +1614,21 @@ savedCount();
      `view` is declared with `let` further down, so assigning it from here is a
      temporal-dead-zone throw — and a throw here kills every line after it. The
      variable is set where it is declared, from the same flag. */
-  const wantBrowse = history.state?.v === "browse" || location.hash === "#browse"
-    || (() => { try { return !!localStorage.getItem("jobscout.run"); } catch (e) { return false; } })();
+  /* Precedence, which this got wrong: the history entry wins, then the hash,
+     and the stored run is consulted ONLY by a visitor who arrived with
+     neither. It used to be an unconditional `||`, so refreshing the landing
+     page bounced you to the matches (a refresh keeps history.state), and so
+     did the logo on the saved page (it links to "./", no hash). */
+  /* The history entry decides, then the hash. Nothing else: a stored run used
+     to force Browse whenever neither was set, which meant refreshing the
+     landing page landed on the matches and so did the logo on the saved page,
+     because both arrive with no hash. Leaving for apply.html writes #browse
+     before it goes and Back restores the entry, so within a session the run is
+     still one click away — and arriving cold on the landing page is where
+     arriving cold belongs. Browse still opens straight onto the run. */
+  const wantBrowse = history.state?.v
+    ? history.state.v === "browse"
+    : location.hash === "#browse";
   window.__openOnBrowse = wantBrowse;
   if (!wantBrowse) return;
   $("#v-landing").classList.add("hide");
@@ -1941,7 +1977,10 @@ function browse(){
      feed block moves below it, and comes back on top when there is no run. */
   const feedBlock = $("#browseFeed"), head = $("#browseHeadWrap") || $(".browsehead");
   if (feedBlock && head && feedBlock.parentElement === head.parentElement) {
-    const wantAfter = !!scored;
+    /* `running` as well as `scored`: the swap used to wait for the scores, so
+       pressing Run showed the sweep above an empty matches slot for the eight
+       calls it takes, then reordered under the reader. */
+    const wantAfter = !!scored || running;
     const isAfter = !!(head.compareDocumentPosition(feedBlock) & Node.DOCUMENT_POSITION_FOLLOWING);
     if (wantAfter !== isAfter) {
       if (wantAfter) head.parentElement.appendChild(feedBlock);
@@ -2049,8 +2088,10 @@ function browse(){
         + `letter leads with your strongest real evidence and the recruiter decides the rest.</p>`
         + `<div class="routes">`
         + `<button class="rework" type="button">Rework your resume and run again</button>`
-        + `<button class="anyway" type="button" aria-pressed="${stretchOn}">${
-            stretchOn ? "Hide the apply buttons" : "Apply to these anyway"}</button>`
+        /* One way. Anyone who pressed this wanted it, and an "undo" beside it
+           only invites them to reconsider a decision they already made. It
+           resets with the next run, which is the only place it should. */
+        + (stretchOn ? "" : `<button class="anyway" type="button">Apply to these anyway</button>`)
         + `</div>`;
       /* Back to the box with the text still in it. It is the same textarea the
          run read, so an edit and a second press of Run is the whole loop — and
@@ -2073,11 +2114,11 @@ function browse(){
       };
       /* One deliberate opt-in, then every below-floor card carries the route.
          Nothing is drafted by drifting into it. */
-      nf.querySelector(".anyway").onclick = () => {
-        stretchOn = !stretchOn;
-        ev("stretch", stretchOn ? "on" : "off");
+      nf.querySelector(".anyway")?.addEventListener("click", () => {
+        stretchOn = true;
+        ev("stretch", "on");
         browse();
-      };
+      });
       host.appendChild(nf);
     }
     if (rows.length) rows.forEach((x, i) => host.appendChild(scoreCard(x, i)));

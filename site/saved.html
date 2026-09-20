@@ -41,9 +41,10 @@ document.documentElement.setAttribute("data-market",
   .row{display:grid;grid-template-columns:64px minmax(0,1fr);gap:2px 18px;padding:18px 22px;border-bottom:1px solid var(--hair);align-items:center}
   .row:last-child{border-bottom:0}
   .rose{width:64px;grid-row:1/4;align-self:center}
-  .wrow{display:flex;align-items:center;gap:12px}
-.wrow .rt{font:500 14.5px/1.4 var(--sans);color:var(--ink);margin:0}
-.wrow .rs{font:400 12px/1.4 var(--sans);color:var(--text3);margin:2px 0 0}
+  /* A search has no fit, so the rose column carries the plain mark: the same
+     eight bearings, the same graduated radii, no number. */
+  .wmark{width:64px;grid-row:1/4;align-self:center;display:block;fill:var(--hair2)}
+  @media (max-width:560px){ .wmark{width:52px} }
   .rose .fitnum{font-family:var(--serif);font-weight:480;font-size:26px;text-anchor:middle}
   .row .t{font-weight:500;font-size:16px;line-height:1.35}
   .row .t .co{color:var(--text2);font-weight:400}
@@ -122,20 +123,31 @@ const WKEY = "jobscout.watch";
 let watched = [];
 try { watched = JSON.parse(localStorage.getItem(WKEY) || "[]"); } catch(e){ watched = []; }
 function saveWatched(){ try{ localStorage.setItem(WKEY, JSON.stringify(watched)); }catch(e){} }
+/* The logo's own geometry: eight dots, radii graduating clockwise from
+   bearing 000 so it reads as a sweep rather than a wheel. */
+const MARKSVG = `<svg class="wmark" viewBox="0 0 104 104" aria-hidden="true">` +
+  Array.from({ length: 8 }, (_, i) => {
+    const th = (-90 + 45 * i) * Math.PI / 180;
+    return `<circle cx="${(52 + 38 * Math.cos(th)).toFixed(2)}" cy="${(52 + 38 * Math.sin(th)).toFixed(2)}"` +
+           ` r="${(3.4 + i * 0.62).toFixed(2)}"/>`;
+  }).join("") + `</svg>`;
+
 function renderWatched(){
   const host = document.getElementById("watched");
   if (!host) return;
   if (!watched.length){ host.innerHTML = ""; return; }
-  host.innerHTML = `<h2 class="gtitle">Searches you saved<span class="tag">on this device</span></h2>`
-    + `<p class="gnote">Nothing is emailed and nothing is sent anywhere. Each one is a way straight back to that slice of the day.</p>`
-    + watched.map((w, i) => `<div class="row wrow">
-        <div style="flex:1 1 auto">
-          <p class="rt">${esc(w.human || w.key)}</p>
-          <p class="rs">saved ${esc(w.at || "")}${w.market === "ke" ? " · Kenya" : ""}</p>
-        </div>
-        <a class="btn2" href="${w.market === "ke" ? "https://nairobi.jobscout.page/" : "./"}#browse">Open it \u2192</a>
-        <button class="rm" type="button" data-w="${i}">remove \u00d7</button>
-      </div>`).join("");
+  host.innerHTML = `<section class="group">`
+    + `<h2>Searches you saved<small>on this device</small></h2>`
+    + `<p>Nothing is emailed and nothing is sent anywhere. Each one is a way straight back to that slice of the day.</p>`
+    + `<div class="rows">`
+    + watched.map((w, i) => `<div class="row">${MARKSVG}
+        <div class="t">${esc(w.human || w.key)}${w.market === "ke" ? ` <span class="co">\u00b7 Kenya</span>` : ""}</div>
+        <div class="m">${w.at ? "saved " + esc(w.at) : "saved"}</div>
+        <div class="ctl">
+          <a class="plink go" href="${w.market === "ke" ? "https://nairobi.jobscout.page/" : "./"}#browse">Open this search \u2192</a>
+          <button class="rm" type="button" data-w="${i}">remove \u00d7</button></div>
+      </div>`).join("")
+    + `</div></section>`;
   host.querySelectorAll("[data-w]").forEach(b => b.onclick = () => {
     watched.splice(+b.dataset.w, 1); saveWatched(); renderWatched();
   });
@@ -251,7 +263,7 @@ render();
   <footer class="site">
     <div class="fgrid">
       <div>
-        <p class="fbrand">JobScout</p>
+        <p class="fbrand"><a href="./">JobScout</a></p>
         <p class="fnote">Reads your resume, drops what cannot fit, and tells you why about the rest.</p>
       </div>
       <div>

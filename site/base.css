@@ -215,11 +215,21 @@ nav.main a:hover{color:var(--ink)}
 
 /* ── footer ────────────────────────────────────────── */
 footer.site{padding:70px 0 40px;border-top:1px solid var(--hair);margin-top:70px}
-.fgrid{display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr;gap:28px}
+/* Five fixed columns, and only index.html has five groups. Every other page
+   has four, so the four were laid out in tracks sized for five and the fifth
+   sat empty — which is why the privacy footer squashed "Browse today's sweep"
+   over three lines while the home page's looked fine. Flex instead: the brand
+   keeps its width, the link groups share what is left however many there are,
+   and the wrap replaces the two column-count media queries below. */
+.fgrid{display:flex;flex-wrap:wrap;gap:28px 40px}
+.fgrid>*{flex:1 1 140px;min-width:0}
+.fgrid>:first-child{flex:2 1 240px}
 .fgrid h4{font:600 11.5px/1 var(--sans);letter-spacing:.08em;text-transform:uppercase;color:var(--text3);margin:0 0 16px}
 .fgrid a{display:block;font:400 14.5px/1 var(--sans);color:var(--text2);text-decoration:none;margin:0 0 12px}
 .fgrid a:hover{color:var(--ink)}
 .fbrand{font:400 26px/1 var(--serif);color:var(--ink);letter-spacing:-.02em;margin:0 0 10px}
+.fbrand a{color:inherit;text-decoration:none}
+.fbrand a:hover{text-decoration:underline;text-underline-offset:4px}
 .fnote{font:400 13.5px/1.6 var(--sans);color:var(--text3);max-width:270px;margin:0}
 .sources{margin-top:44px;padding-top:26px;border-top:1px solid var(--hair);
          font:400 13px/1.7 var(--sans);color:var(--text3)}
@@ -251,9 +261,7 @@ footer.site{padding:70px 0 40px;border-top:1px solid var(--hair);margin-top:70px
 h1.display,h2.sec{text-wrap:balance}
 @media(max-width:620px){
   .panel{padding:20px 18px}
-  .fgrid{grid-template-columns:1fr 1fr}
 }
-@media(max-width:420px){ .fgrid{grid-template-columns:1fr} }
 
 /* ── the mark, as the ground every page stands on ───────────────────────
    The hero's glow, kept behind the content on every page rather than only the
