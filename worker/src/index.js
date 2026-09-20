@@ -555,9 +555,25 @@ export default {
         // run refused twice over "SDKs" for a resume that says "Anthropic SDK",
         // which is the guard crying wolf — and a guard nobody trusts is worse
         // than none. Singular and plural both count as present.
+        /* A NUMBER SPELLED OUT IS THE SAME NUMBER. The resume says "eight
+           years"; the draft wrote "8 years", and the literal comparison
+           called the digit an invention and threw the document away -
+           twice, because the retry writes it the same way. Exactly the
+           "SDKs" failure above, in the other direction, and the same
+           damage: refusals nobody believes. Only small numbers, where the
+           two spellings are genuinely interchangeable in prose. */
+        const WORD_NUM = ["zero", "one", "two", "three", "four", "five", "six",
+                          "seven", "eight", "nine", "ten", "eleven", "twelve"];
         const here = t => {
           const q = squash(t);
-          return flat.includes(q) || (q.endsWith("s") && flat.includes(q.slice(0, -1)));
+          if (flat.includes(q)) return true;
+          if (q.endsWith("s") && flat.includes(q.slice(0, -1))) return true;
+          // 8 -> eight
+          if (/^\d{1,2}$/.test(q) && WORD_NUM[+q] && flat.includes(WORD_NUM[+q])) return true;
+          // eight -> 8
+          const n = WORD_NUM.indexOf(q);
+          if (n >= 0 && flat.includes(String(n))) return true;
+          return false;
         };
         return [...hard].filter(t => !here(t));
       };
@@ -587,7 +603,12 @@ export default {
       if (!out || !Array.isArray(out.sections))
         return json(502, { error: "upstream", detail: "The model did not return a usable resume. Nothing was charged to you." });
       if (invented.length)
-        return json(502, { error: "ungrounded", invented: invented.slice(0, 8),
+        /* 422, NOT 502. The draft was understood and refused on purpose;
+           502 says the upstream broke, which put a red line in the
+           browser console, counted as a server error in the sweep, and
+           would read as an outage on any error-rate graph. The guard
+           doing its job must not look like a fault. */
+        return json(422, { error: "ungrounded", invented: invented.slice(0, 8),
           detail: `The draft used ${invented.length} thing${invented.length > 1 ? "s" : ""} your resume does not contain (${invented.slice(0, 3).join(", ")}), twice. It was refused rather than shown to you.` });
 
       await recordRun(env, g.key, spentIn, spentOut, cost);
