@@ -104,7 +104,19 @@ p.sub{font:400 13.5px/1.5 var(--sans);color:var(--text2);margin:0 0 16px}
 .mhero .dot{color:var(--accent)}
 .mbox{display:flex;align-items:center;gap:8px;background:var(--surface);border-radius:var(--r-pill);
   padding:9px 9px 9px 16px}
-.mbox span{flex:1;font:400 14px/1 var(--sans);color:var(--text2)}
+.mbox textarea{
+  flex:1;min-width:0;border:0;background:none;resize:none;outline:none;
+  font:400 14px/1.45 var(--sans);color:var(--text);height:19px;max-height:96px;
+  padding:0}
+.mbox textarea::placeholder{color:var(--text2)}
+.mbox.tall{align-items:flex-end}
+.mbox.tall textarea{height:96px}
+.mbox b[disabled]{opacity:.55}
+/* The mark pulses while Claude is scoring: the arrow is the only thing on
+   screen that can say "working", and dead silence after the tap was the worst
+   moment in the real mobile flow too. */
+@keyframes mpulse{0%,100%{opacity:1}50%{opacity:.45}}
+.mbox b.busy{animation:mpulse 1s ease-in-out infinite}
 .mbox b{width:36px;height:36px;border-radius:50%;background:var(--btn);color:var(--btn-ink);
   display:grid;place-items:center;font-size:15px}
 .chips{display:flex;gap:6px;flex-wrap:wrap;margin:13px 0 0}
@@ -197,14 +209,15 @@ p.sub{font:400 13.5px/1.5 var(--sans);color:var(--text2);margin:0 0 16px}
 </div>
 
 <p class="note">
-  <b>This is a mockup, not the app.</b> It draws the real screens from
-  <code>mockups/feed-sample.json</code> — real postings, real companies — with
-  <b>example fit scores</b> computed from the posting id so they are stable, not
-  from Claude. Everything else is live: tapping a card opens the application
+  <b>This is a mockup of the native screens, driven for real.</b> Paste a resume
+  and tap the arrow: it posts to the same <code>/api/score</code> the apps use,
+  so the fits, the verdicts and the evidence are Claude's. Until you do, the
+  cards carry <b>example scores</b> computed from the posting id, and they say
+  so. The postings are the live sweep. Tapping a card opens the application
   screen, the heart saves, and the market, theme and platform controls drive the
-  same tokens the shipped apps use. It loads <code>site/base.css</code> directly,
-  so it cannot drift from production.
-</p>
+  same tokens the shipped apps use — it loads <code>site/base.css</code>
+  directly, so it cannot drift from production. The hourly scoring limit is
+  shared with the real site.</p>
 
 <script>
 const $ = (s, r = document) => r.querySelector(s);
@@ -221,8 +234,8 @@ const fitOf = id => { let h = 5381; for (const c of id) h = ((h << 5) + h + c.ch
 const bandOf = f => f >= 80 ? ["auto", "--b-auto"] : f >= 70 ? ["ping", "--b-ping"]
   : f >= 55 ? ["unsure", "--b-unsure"] : ["near-miss", "--b-near"];
 const postings = () => (FEED?.[market]?.postings) || [];
-const scored = () => postings().slice(0, 8).map(p => ({ ...p, fit: fitOf(p.id) }))
-  .sort((a, b) => b.fit - a.fit);
+const scored = () => scoredReal
+  || postings().slice(0, 8).map(p => ({ ...p, fit: fitOf(p.id) })).sort((a, b) => b.fit - a.fit);
 
 const MARK = `<svg viewBox="-3.5 -3.5 31 31" aria-hidden="true"><circle cx="12" cy="1" r="2.275"/><circle cx="19.7782" cy="4.2218" r="2.5694"/><circle cx="23" cy="12" r="2.8639"/><circle cx="19.7782" cy="19.7782" r="3.1583"/><circle cx="12" cy="23" r="3.4527"/><circle cx="4.2218" cy="19.7782" r="3.7471"/><circle cx="1" cy="12" r="4.0416"/><circle cx="4.2218" cy="4.2218" r="4.336"/></svg>`;
 const HEART = `<svg viewBox="0 0 24 24"><path d="M12 20s-7.5-4.7-7.5-9.8A4.2 4.2 0 0 1 12 7.4a4.2 4.2 0 0 1 7.5 2.8C19.5 15.3 12 20 12 20z"/></svg>`;
@@ -245,20 +258,49 @@ const cardHTML = (p, full) => {
     ${full ? `
       <div class="ev" style="background:var(--b-auto-bg)">
         <p class="lb" style="color:var(--b-auto)">&#8593; Strongest</p>
-        <p class="bd" style="color:var(--b-auto)">Direct overlap with ${esc(p.sector)} work, and the
-        location rule passes for this market.</p></div>
+        <p class="bd" style="color:var(--b-auto)">${esc(p.strongest
+          || `Direct overlap with ${p.sector} work, and the location rule passes.`)}</p></div>
       <div class="ev" style="background:var(--b-unsure-bg)">
         <p class="lb" style="color:var(--b-unsure)">&#8595; What to answer</p>
-        <p class="bd" style="color:var(--b-unsure)">Say how recently you did this, and name the tools
-        the posting lists that your resume does not.</p></div>` : ""}
+        <p class="bd" style="color:var(--b-unsure)">${esc(p.weakest
+          || "Say how recently you did this, and name the tools the posting lists that your resume does not.")}</p></div>` : ""}
   </div>`;
 };
+
+const API = "https://jobscout-app-api.kenmwara.workers.dev";
+let scoredReal = null, runErr = "";
+
+/* Eight postings to Claude, the same shape the apps send. text/plain on
+   purpose: a JSON content-type triggers a CORS preflight, and this file is
+   opened from file:// as often as from a server. */
+async function scoreReal(profile) {
+  const picks = postings().slice(0, 8);
+  const r = await fetch(API + "/api/score", {
+    method: "POST", headers: { "content-type": "text/plain" },
+    body: JSON.stringify({ profile, postings: picks, market }),
+  });
+  if (!r.ok) throw new Error(r.status === 429
+    ? "the demo's hourly limit - it scores for everyone from one budget"
+    : "the scorer returned " + r.status);
+  const j = await r.json();
+  const byId = Object.fromEntries((j.scores || j.results || []).map(x => [x.id, x]));
+  return picks.map(p => {
+    const sc = byId[p.id] || {};
+    return { ...p, fit: sc.fit ?? fitOf(p.id),
+             verdict: sc.verdict || sc.reason || "",
+             strongest: sc.strongest || "", weakest: sc.weakest || "" };
+  }).sort((a, b) => b.fit - a.fit);
+}
 
 const SCREENS = {
   home: () => `${head()}
     <div class="mhero">
       <h2>Find the work<br>made for you<span class="dot">.</span></h2>
-      <div class="mbox"><span>Paste your resume&hellip;</span><b data-go="run">&#8594;</b></div>
+      <div class="mbox" id="mbox">
+        <textarea id="resume" rows="1" placeholder="Paste your resume&hellip;"
+                  aria-label="Paste your resume"></textarea>
+        <b id="runBtn" role="button" tabindex="0"
+           aria-label="Score these postings against your resume">&#8594;</b></div>
       <div class="chips"><i>Remote</i><i>Hybrid</i><i>On site</i><i>Any of those</i></div>
     </div>
     <p class="sub">${postings().length} swept this morning &middot; tap the arrow to score them</p>
@@ -266,7 +308,9 @@ const SCREENS = {
 
   matches: () => `${head()}
     <h2 class="big">Your matches</h2>
-    <p class="sub">8 scored of ${postings().length} swept &middot; example scores</p>
+    <p class="sub">8 scored of ${postings().length} swept &middot; ${scoredReal
+      ? "scored by Claude just now" : "example scores &mdash; paste a resume to score for real"}
+      ${runErr ? `<br><span style="color:var(--b-unsure)">${esc(runErr)}</span>` : ""}</p>
     ${scored().map(p => cardHTML(p)).join("")}`,
 
   apply: () => {
@@ -306,7 +350,30 @@ const paint = () => {
       <svg viewBox="0 0 24 24">${path}</svg>${label}</button>`).join("");
 };
 
+async function runScore() {
+  const ta = $("#resume"), btn = $("#runBtn");
+  const profile = (ta?.value || "").trim();
+  if (profile.length < 40) { ta?.focus(); runErr = "Paste a bit more - at least a few lines.";
+    return paint(); }
+  runErr = ""; btn?.classList.add("busy");
+  try { scoredReal = await scoreReal(profile); }
+  catch (err) { runErr = "Could not score: " + err.message + ". Showing example scores."; }
+  btn?.classList.remove("busy");
+  ran = true; screen = "matches"; paint();
+}
+
+document.addEventListener("input", e => {
+  if (e.target.id === "resume")
+    $("#mbox").classList.toggle("tall", e.target.value.length > 60);
+});
+document.addEventListener("keydown", e => {
+  if (e.target.id === "runBtn" && (e.key === "Enter" || e.key === " ")) {
+    e.preventDefault(); runScore();
+  }
+});
+
 document.addEventListener("click", e => {
+  if (e.target.id === "runBtn") return runScore();
   const go = e.target.closest("[data-go]");
   if (go) {
     const to = go.dataset.go;
