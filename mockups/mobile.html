@@ -15,7 +15,11 @@
    whether a token actually resolved, and fall back until one does. The last
    resort is production, which is by definition not stale. */
 window.__tokens = new Promise(function (done) {
-  var tries = ["/site/base.css", "https://jobscout.page/base.css"];
+  /* The last resort is cache-busted: a stale copy of base.css in the HTTP
+     cache silently hands back the PREVIOUS palette, which looks like the
+     mockup drifting when it is really the browser. */
+  var tries = ["/site/base.css",
+               "https://jobscout.page/base.css?v=" + Math.floor(Date.now() / 6e4)];
   function ok() {
     return getComputedStyle(document.documentElement)
       .getPropertyValue("--canvas").trim() !== "";
@@ -40,7 +44,10 @@ window.__tokens = new Promise(function (done) {
   var t=q.get("theme"); if(t) d.setTheme(t);
 })(document.documentElement,new URLSearchParams(location.search))</script>
 <style>
-body{padding:0 0 60px}
+/* Its own ground: base.css arrives via a runtime <link> in the fallback
+   case, and this page must not depend on which of the three sources won. */
+body{padding:0 0 60px;background:var(--canvas);color:var(--text);
+  font:400 16px/1.5 var(--sans)}
 .rail{
   position:sticky;top:0;z-index:10;display:flex;gap:26px;flex-wrap:wrap;align-items:center;
   padding:14px 22px;background:var(--surface);border-bottom:1px solid var(--hair)}
@@ -326,6 +333,17 @@ wire("#segMarket", "m", v => { market = v; D.setAttribute("data-market", v); sav
 wire("#segTheme", "t", v => D.setTheme(v));
 wire("#segPlat", "p", v => D.setAttribute("data-plat", v));
 D.setAttribute("data-plat", "android");
+
+/* Read the rail's state back OFF the document rather than assuming it. With
+   ?market=ke the attribute was set by the head script while the rail still
+   said Canada and the JS still listed Canadian postings - three copies of one
+   fact, two of them wrong. */
+market = D.getAttribute("data-market") === "ke" ? "ke" : "ca";
+const sync = (sel, attr, value) => [...document.querySelectorAll(sel + " button")]
+  .forEach(b => b.setAttribute("aria-pressed", String(b.dataset[attr] === value)));
+sync("#segMarket", "m", market);
+sync("#segTheme", "t", D.getAttribute("data-theme") || "light");
+sync("#segPlat", "p", D.getAttribute("data-plat"));
 
 Promise.all([fetch("feed-sample.json").then(r => r.json()), window.__tokens])
   .then(([j, styled]) => {
