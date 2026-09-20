@@ -21,10 +21,10 @@ Claude call.
 **1 · Candidate.** Three cards, in the order the work actually happens: your
 resume, where you can work, and whether it has to be remote. The resume is the
 point of the thing, so it leads — upload a PDF, DOCX or TXT, or paste the text,
-processed in memory and never stored. Three sample candidates sit under the
-button for anyone who would rather not hand over a resume to see the pipeline
-run. Nothing is pre-selected, and a run with no candidate asks for one, so a
-result on screen is always a result about someone.
+processed in memory and never stored. The three sample candidates that used to
+sit under the button were removed in September 2026 - they asked the visitor to
+do the product's work before it had done any. A run with no resume asks for one,
+so a result on screen is always a result about someone.
 
 The two filters are built from the day's own sweep, not a hardcoded list, so a
 control can never offer a province the morning's postings cannot honour. A
@@ -128,7 +128,7 @@ Codemagic CI against the same guarded API. They run the same selection as the
 page, not a simplified one: the sector lexicon that travels inside the feed
 classifies the profile on the device, the same IDF ranking picks the eight that
 go to Claude, and the 55 floor governs what gets drafted. The Android app installs on any phone today —
-**download: [github.com/kenmwara/jobscout-app/releases/latest](https://github.com/kenmwara/jobscout-app/releases/latest/download/JobScout-release.apk)**
+**download: [github.com/kenmwara/jobscout-app/releases/latest](https://github.com/kenmwara/jobscout-app/releases/latest)**
 (signed, sideload, Android 8+; checksum in the release notes) — and is in
 closed testing on Google Play ahead of a public listing; iOS device
 distribution awaits an Apple Developer account.

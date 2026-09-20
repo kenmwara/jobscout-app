@@ -14,8 +14,8 @@ prefilter's own reasons, and every score and cover letter is a live Claude call.
 1. **Add your resume** — upload a PDF, DOCX or TXT, or paste the text,
    processed in-memory for one run, never stored or logged. Say where you can
    work and whether it must be remote; both controls are built from the day's
-   own sweep. Three sample candidates sit under the button for anyone who would
-   rather not hand over a resume. Nothing is pre-selected.
+   own sweep. (The three sample candidates were removed in September 2026:
+   they asked the visitor to do the product's work before it had done any.)
 2. **Live scoring.** The gate survivors go to Claude (Haiku-class) with an
    honest rubric — most postings are a poor fit and the model says so. Each
    result renders on the brand's **bearing rose** — the mark itself, carrying
@@ -38,6 +38,34 @@ prefilter's own reasons, and every score and cover letter is a live Claude call.
 
 The results come first on purpose. The gate list is the receipts, not the
 opening act — and prices are not quoted at the reader on any surface.
+
+
+### When nothing fits
+
+Most resumes will not clear the bar against a given day, and a product that
+stops there is a dead end. Below a fit of 55 nothing is drafted by default —
+the recommendation is to rewrite the resume, because that is what actually
+moves the odds — but three routes sit on that screen, not one:
+
+- **What to answer.** Each posting already carries the one thing it most wants
+  to see that the resume does not evidence, written as a to-do rather than a
+  verdict. The three nearest misses are quoted verbatim: that is the rewrite
+  list, and it came from the run rather than from this screen.
+- **Rework your resume and run again.** Back to the box with the text still in
+  it. The same experience described in the posting's words often scores very
+  differently.
+- **Apply to these anyway.** One deliberate opt-in, after which every
+  below-floor card offers the application page. The letter it writes is not
+  the normal letter written regardless: it is told the overlap is not obvious,
+  to find the strongest REAL parallel and lead with it, and to write about what
+  the candidate has done rather than announce what they have not. It never
+  claims the missing experience and it never argues against them either. The
+  recruiter decides.
+
+The floor is a rule about what may be CLAIMED. It was briefly also a rule
+about what had to be CONFESSED, and the letters that produced — "I lack the
+B2B SaaS analytics infrastructure experience this posting calls for" — would
+not have been read past the first line. That was a bug, and it is fixed.
 
 ## Markets
 
@@ -130,7 +158,7 @@ identical on the web, on Android and on iOS. Nothing rotates in it, which is
 deliberate: the dial it replaced turned a needle, and a rotation is the one
 thing that can land off-canvas when its pivot is wrong.
 
-**Try it on Android:** [download the APK](https://github.com/kenmwara/jobscout-app/releases/latest/download/JobScout-release.apk) (signed build, Android 8+, sideload; SHA-256 in the release notes) — the link always serves the newest build.
+**Try it on Android:** [download the APK](https://github.com/kenmwara/jobscout-app/releases/latest) (signed build, Android 8+, sideload; SHA-256 in the release notes) — the link always serves the newest build.
 
 Both apps carry the full feature set: upload a resume (PDF/DOCX/TXT) instead of typing it, open the original posting from any score card, and keep the ones worth keeping — **Save** puts a posting in your list, and only then does it get a stage to move through (applied → pending → responded → interviewed → callback). Nothing is sent anywhere and the app never submits an application.
 

@@ -26,7 +26,7 @@
 ## The demo flow (the 90 seconds)
 
 1. Land: one sentence of what this is + a live counter of today's real sweep (n postings, n sources) — proof it's alive, not a mock.
-2. **Add a resume** (upload or paste; processed in-memory, never stored — stated inline), say where you can work and whether it must be remote. Three sample candidates — a Vancouver platform engineer, a Calgary support specialist and a Toronto financial advisor, spanning three sectors so the routing is visible — sit under the button as the no-resume path. Nothing is pre-selected.
+2. **Add a resume** (upload or paste; processed in-memory, never stored — stated inline), say where you are and whether the work must be remote. The three sample candidates were removed in September 2026: they asked the visitor to do the product's work before it had done any, and the box is the whole entry point now.
 3. Watch postings stream through the gates: eligibility verdicts first (deterministic, instant, explained — "US-only remote: rejected for a Canada-based candidate"), then LLM scoring on the survivors with the rubric's reasoning rendered per posting.
 4. Top match: one-click grounded cover-letter draft (Claude, streaming).
 5. Footer tells the truth: what model, what it cost (live cents counter), what's cached, link to the code.
