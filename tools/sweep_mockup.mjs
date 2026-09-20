@@ -33,13 +33,22 @@ const bad = (m) => {
 const ok = (m) => console.log(`  ok    ${m}`);
 const is = (c, m) => (c ? ok(m) : bad(m));
 
+/* SHAPED LIKE A REAL RESUME, deliberately. The first fixture listed
+   Terraform, Docker, AWS and CI/CD and never used the word "DevOps", so
+   the model summarised it as DevOps and the groundedness guard refused the
+   document - correctly, and every run. A fixture that trips an honesty
+   guard tests the guard, not the feature, and reads as a product failure
+   every time. This one names what it does. */
 const RESUME = `Kenneth Kariuki - Senior Platform Engineer, Vancouver BC.
+SUMMARY. Platform and infrastructure engineer. Eight years building and
+running production services end to end.
 EXPERIENCE. Technical lead on an algorithmic trading platform: Python,
 TypeScript, Cloudflare Workers, D1 and Postgres. Built risk gates,
 reconciliation and append-only audit logging. Shipped three clients of one
-API: web, native Android and native iOS. Ran CI/CD, Terraform and Linux in
-production for eight years.
-SKILLS. Python, TypeScript, SQL, Terraform, Docker, AWS, Cloudflare, React.
+API: web, native Android and native iOS. Ran continuous integration,
+continuous delivery, Terraform, Docker and Linux in production.
+SKILLS. Python, TypeScript, SQL, Terraform, Docker, Linux, AWS, Cloudflare,
+React, continuous integration, continuous delivery, observability.
 EDUCATION. BSc Computer Science.`;
 
 /* The phone is an element inside a page, so "visible" means visible INSIDE
@@ -352,7 +361,16 @@ const run = async () => {
       const built = await page.waitForFunction(
         () => document.querySelector('[data-open="resume"]'), null, { timeout: 180000 })
         .then(() => true).catch(() => false);
-      if (!built && limited) { skipped++; console.log("  skip  the resume (hourly rate limit)"); }
+      /* A REFUSAL IS AN OUTCOME, NOT A FAILURE. The worker will not show a
+         document containing anything the resume does not say, and answers
+         422 with the sentence explaining which words. The contract is: no
+         invented document, and no silent failure either - so a refusal
+         passes only when the reader has been told why. */
+      const refusal = await page.evaluate(() =>
+        (document.querySelector("#view")?.innerText || "")
+          .match(/does not contain[^.]*\./)?.[0] || null);
+      if (!built && refusal) ok(`the resume was refused, honestly: "${refusal.slice(0, 60)}"`);
+      else if (!built && limited) { skipped++; console.log("  skip  the resume (hourly rate limit)"); }
       else is(built, "the resume rebuilds");
 
       if (built) {

@@ -105,7 +105,12 @@ for market in ("Canada", "Kenya"):
     check("Saved" in t, "Saved is reachable from the header")
 
     # the landing offers the box and the sector tiles
-    check("Paste your resume" in t or "Ken " in t, "the resume box is on the landing")
+    # WHAT THE LANDING OWES THE READER is a way to hand over a resume, not a
+    # particular string in the box. Keying on the placeholder made the check
+    # depend on the box being EMPTY, so it failed the moment a previous run
+    # left text in it - a red line about leftover state, not about the app.
+    check("Upload" in t and ("Paste your resume" in t or "Find the work" in t),
+          "the landing offers a way to hand over a resume")
     check("open" in t, "the sector tiles carry their counts")
 
     # a sector tile opens Browse, narrowed
