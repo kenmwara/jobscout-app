@@ -26,9 +26,24 @@
 <link rel="icon" href="/icons/favicon-16.png" sizes="16x16" type="image/png">
 <link rel="apple-touch-icon" href="/icons/apple-touch-icon-180.png">
 <link rel="manifest" href="/site.webmanifest">
-<meta name="theme-color" content="#080331">
+<meta name="theme-color" content="#f8f3eb" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0a0524" media="(prefers-color-scheme: dark)">
 <link rel="stylesheet" href="fonts-embedded.css">
-<script>if(/^(nairobi|ke)\./.test(location.hostname)||/[?&]market=ke\b/.test(location.search))document.documentElement.dataset.market="ke";</script>
+<script>/* Three axes, stamped before first paint (base.css keys on both).
+   market → the hero gradient and the flag chip, from the hostname.
+   theme  → the reader's device, or their stored choice; never the market.
+   Both attributes are ALWAYS written: the palette keys on [data-market="ca"],
+   not on the attribute being absent. ?market= and ?theme= override, which is
+   how all four combinations get verified. */
+(function(d,q){
+  var m=(q.get("market")||(/^(nairobi|ke)\./.test(location.hostname)?"ke":"ca")).toLowerCase();
+  d.setAttribute("data-market",m==="ke"?"ke":"ca");
+  var t=q.get("theme"),mq=matchMedia("(prefers-color-scheme: dark)");
+  if(t!=="dark"&&t!=="light"){try{t=localStorage.getItem("jobscout.theme")}catch(e){t=null}}
+  var set=function(){d.setAttribute("data-theme",(t==="dark"||t==="light")?t:(mq.matches?"dark":"light"))};
+  set();
+  if(mq.addEventListener)mq.addEventListener("change",set);else if(mq.addListener)mq.addListener(set);
+})(document.documentElement,new URLSearchParams(location.search))</script>
 <link rel="stylesheet" href="base.css">
 <style>
 /* The design language lives in base.css, which every page links. */
@@ -214,15 +229,13 @@ html.anim .job.arrive .rose .lit,html.anim .job.shown .rose .lit{transform:none;
 }
 .verdict{font:500 13px/1.35 var(--sans);color:var(--text2)}
 
-/* Band colours. The originals were contrast-checked on cream and go muddy on
-   Kenya's near-black, so the dark market gets its own set rather than reusing
-   them. */
-html,
-html[data-market="ca"]{--b-auto:#114e0b;--b-ping:#1b1463;--b-unsure:#cc3600;--b-near:#333333;
-  --b-auto-bg:#e3f0e4;--b-ping-bg:#dce4fb;--b-unsure-bg:#ffe6da;--b-near-bg:#e9e8ee}
-html[data-market="ke"]{--b-auto:#5fd98c;--b-ping:#8fb3ff;--b-unsure:#ff9466;--b-near:#a8b3a6;
-  --b-auto-bg:rgba(95,217,140,.14);--b-ping-bg:rgba(143,179,255,.14);
-  --b-unsure-bg:rgba(255,148,102,.14);--b-near-bg:rgba(168,179,166,.14)}
+/* Band colours — the only axis that owns hue, so they key on the THEME and
+   are identical in both markets. Kept byte-for-byte in step with base.css;
+   tools/check_palette.py fails if the two copies disagree. */
+:root{--b-auto:#114e0b;--b-ping:#1b1463;--b-unsure:#bf3200;--b-near:#333333;
+  --b-auto-bg:#e8f2e6;--b-ping-bg:#dce4fb;--b-unsure-bg:#fdeadf;--b-near-bg:#eceaf2}
+:root[data-theme="dark"]{--b-auto:#5fd07a;--b-ping:#a2baff;--b-unsure:#ff9b6f;--b-near:#ddd7e4;
+  --b-auto-bg:#1f2940;--b-ping-bg:#2c2a56;--b-unsure-bg:#36223e;--b-near-bg:#1e1a44}
 
 /* ── taxonomy footer ────────────────────────────────────────────────── */
 .taxtabs{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 26px}
@@ -294,15 +307,12 @@ html.anim .hero .wash{animation:wash 19s ease-in-out infinite alternate}
   50%{transform:scale(1.06) translate(2.5%,-1.5%)}
   100%{transform:scale(1.02) translate(-1.5%,1%)}
 }
-html .hero .wash,
-html[data-market="ca"] .hero .wash{
-  background:radial-gradient(52% 60% at 40% 46%,rgba(255,109,57,.30),transparent 68%),
-             radial-gradient(46% 54% at 66% 58%,rgba(240,152,215,.26),transparent 70%),
-             radial-gradient(60% 70% at 18% 82%,rgba(72,101,255,.34),transparent 72%)}
-html[data-market="ke"] .hero .wash{
-  background:radial-gradient(52% 60% at 42% 44%,rgba(47,189,106,.30),transparent 68%),
-             radial-gradient(44% 52% at 70% 62%,rgba(239,75,60,.20),transparent 70%),
-             radial-gradient(62% 72% at 16% 84%,rgba(11,61,34,.55),transparent 74%)}
+/* One hue per market, from --mkt-wash, so the drift never introduces a colour
+   the market does not own. */
+html .hero .wash{
+  background:radial-gradient(52% 60% at 40% 46%,rgba(var(--mkt-wash),.26),transparent 68%),
+             radial-gradient(60% 70% at 18% 82%,rgba(var(--mkt-wash),.30),transparent 72%),
+             radial-gradient(46% 54% at 70% 60%,rgba(8,3,49,.34),transparent 70%)}
 
 /* the mark: shear on hover, bloom on click */
 .mark{position:relative;width:26px;height:26px;display:block;flex:0 0 auto;cursor:pointer}
@@ -343,9 +353,9 @@ html.anim .cmark{animation:float 2.6s ease-in-out infinite}
   box-shadow:0 28px 50px -12px rgba(8,3,49,.20), 0 12px 24px -8px rgba(8,3,49,.12),
              0 4px 9px rgba(8,3,49,.07), 0 1px 3px rgba(8,3,49,.05)
 }
-html[data-market="ke"] .job:hover{
+:root[data-theme="dark"] .job:hover{
   box-shadow:0 28px 50px -10px rgba(0,0,0,.6), 0 12px 24px -8px rgba(0,0,0,.45),
-             0 4px 9px rgba(0,0,0,.3), 0 0 0 1px rgba(47,189,106,.18)
+             0 4px 9px rgba(0,0,0,.3), 0 0 0 1px rgba(162,186,255,.20)
 }
 .tabs a,.f,.mkt button,.taxtabs button{transition:all var(--t-micro) var(--ease)}
 .tabs a:hover{transform:translateY(-2px)}
@@ -573,7 +583,7 @@ html.anim .tabs a:hover{transform:skewX(-7deg) translateY(-3px)}
    specificity and is declared first, so it was winning — white at .16 on a
    cream page is exactly nothing. */
 .heromark.pagemark .ring circle{fill:var(--accent);opacity:.06}
-html[data-market="ke"] .heromark.pagemark .ring circle{opacity:.1}
+:root[data-theme="dark"] .heromark.pagemark .ring circle{opacity:.1}
 .heromark.pagemark .pop{display:none}
 .heromark .ring circle{fill:#fff;opacity:.16}
 .heromark .pop{opacity:0;transition:opacity .28s ease-out}
@@ -754,7 +764,7 @@ html.anim .bell[aria-pressed="true"] svg{animation:ring .6s var(--ease)}
   color:var(--text);text-decoration:none;transition:all var(--t-micro) var(--ease)}
 .job .applybtn{background:var(--ink);color:var(--canvas);border-color:transparent}
 .job .plink:hover{border-color:var(--accent);color:var(--accent)}
-.job .applybtn:hover{background:var(--accent);color:var(--accent-ink);border-color:transparent}
+.job .applybtn:hover{box-shadow:var(--sh-hover);transform:translateY(-1px)}
 .stage{padding:76px 0 0}
 .stage h2{font:400 clamp(26px,3.2vw,36px)/1.2 var(--serif);letter-spacing:-.02em;color:var(--ink);margin:12px 0 8px}
 .stage .note{font:400 15.5px/1.6 var(--sans);color:var(--text2);max-width:64ch;margin:0 0 6px}

@@ -11,14 +11,25 @@
 <link rel="icon" href="/icons/favicon-16.png" sizes="16x16" type="image/png">
 <link rel="apple-touch-icon" href="/icons/apple-touch-icon-180.png">
 <link rel="manifest" href="/site.webmanifest">
-<meta name="theme-color" content="#080331">
+<meta name="theme-color" content="#f8f3eb" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0a0524" media="(prefers-color-scheme: dark)">
 <link rel="stylesheet" href="fonts-embedded.css">
 <link rel="stylesheet" href="base.css">
-<script>/* The dark set is gated on data-market; every page has to stamp it or
-   nairobi serves Kenya content in Canada's colours. Same rule as index. */
-document.documentElement.setAttribute("data-market",
-  (new URLSearchParams(location.search).get("market") ||
-   (/^(nairobi|ke)\./.test(location.hostname) ? "ke" : "ca")).toLowerCase() === "ke" ? "ke" : "ca");</script>
+<script>/* Three axes, stamped before first paint (base.css keys on both).
+   market → the hero gradient and the flag chip, from the hostname.
+   theme  → the reader's device, or their stored choice; never the market.
+   Both attributes are ALWAYS written: the palette keys on [data-market="ca"],
+   not on the attribute being absent. ?market= and ?theme= override, which is
+   how all four combinations get verified. */
+(function(d,q){
+  var m=(q.get("market")||(/^(nairobi|ke)\./.test(location.hostname)?"ke":"ca")).toLowerCase();
+  d.setAttribute("data-market",m==="ke"?"ke":"ca");
+  var t=q.get("theme"),mq=matchMedia("(prefers-color-scheme: dark)");
+  if(t!=="dark"&&t!=="light"){try{t=localStorage.getItem("jobscout.theme")}catch(e){t=null}}
+  var set=function(){d.setAttribute("data-theme",(t==="dark"||t==="light")?t:(mq.matches?"dark":"light"))};
+  set();
+  if(mq.addEventListener)mq.addEventListener("change",set);else if(mq.addListener)mq.addListener(set);
+})(document.documentElement,new URLSearchParams(location.search))</script>
 
 <style>
 

@@ -1,0 +1,159 @@
+/* ===========================================================================
+   JobScout theme — Brand Kit v2.3
+   One palette. Two themes. N markets. Web and native share this file.
+
+   THE RULE
+   Three independent signals, three separate channels:
+     market -> the hero gradient + the active market chip. Nothing else.
+     theme  -> light / dark. The reader's choice, never the market's.
+     band   -> hue, exclusively. Nothing else competes for it.
+
+   Green means AUTO (fit >= 80) wherever it is small and saturated. It is not
+   available to a market at control scale — no buttons, pills, dots or labels.
+
+   Every ratio in a comment was measured against the stated ground.
+   =========================================================================== */
+
+:root {
+  /* --- surfaces ------------------------------------------------------- */
+  --canvas:        #f8f3eb;   /* the live web drifted to #e5e5ec — cool grey
+                                 under warm cards and warm-brown shadows */
+  --surface:       #ffffff;
+  --sunken:        #ece5d8;   /* segmented tracks, rails, avatar chips */
+  --hairline:      rgba(8, 3, 49, 0.13);
+  --blob:          rgba(72, 101, 255, 0.05);  /* the decorative circles */
+
+  /* --- text ----------------------------------------------------------- */
+  --text:          #080331;   /* 17.81:1 on canvas */
+  --text-2:        #5a5560;   /*  6.55:1 — replaces #878789 (3.25:1, fails AA) */
+
+  /* --- action --------------------------------------------------------- */
+  /* The live web already does this: deep-ink fill, cream label, 17.44:1.
+     It beats indigo-with-white (4.58:1), so it wins on both surfaces. */
+  --action:        #080331;
+  --action-on:     #f8f3eb;   /* 17.81:1 on --action */
+  --action-edge:   rgba(8, 3, 49, 0.18);  /* secondary button outline */
+
+  /* --- indigo: brand, links, selected state — never a button fill ------ */
+  --brand:         #4865ff;   /* the mark, and fills only: 4.15:1 on canvas */
+  --link:          #1b1463;   /* 14.33:1 — indigo is too weak for body links */
+  --selected-bg:   #dce4fb;
+  --selected-edge: #4865ff;
+  --selected-fg:   #1b1463;   /* 12.46:1 on --selected-bg */
+
+  /* --- fit bands: the only hue-bearing axis --------------------------- */
+  --auto-label:      #114e0b;  --auto-fill:      #e8f2e6;  /*  8.63:1 */
+  --ping-label:      #1b1463;  --ping-fill:      #dce4fb;  /* 12.46:1 */
+  --unsure-label:    #bf3200;  --unsure-fill:    #fdeadf;  /*  4.91:1
+                                  the live build uses #cc3600 on #ffe6da = 4.29:1 */
+  --nearmiss-label:  #333333;  --nearmiss-fill:  #eceaf2;  /* 11.4:1 */
+
+  /* Solid band colours — the mark's lit bearings and 1–2px marks only. */
+  --auto: #328a3b;  --ping: #4865ff;  --unsure: #ff6d39;  --nearmiss: #dce4fb;
+
+  /* --- evidence cards -------------------------------------------------- */
+  --strongest-bg: #e8f2e6;  --strongest-label: #114e0b;  --strongest-body: #3d4a3f;
+  --answer-bg:    #fdeadf;  --answer-label:    #bf3200;  --answer-body:    #5c4a42;
+
+  /* --- shape & depth --------------------------------------------------- */
+  --radius-pill: 1600px;  --radius-card: 16px;  --radius-inner: 12px;
+  --shadow-card: rgba(75, 68, 57, 0.07) 0 6px 14px 0,
+                 rgba(75, 68, 57, 0.05) 0 20px 32px 0;
+  --shadow-cta:  rgba(75, 68, 57, 0.10) 0 12px 24px 0,
+                 rgba(75, 68, 57, 0.10) 0 48px 48px 0;
+
+  /* --- type ------------------------------------------------------------ */
+  --font-serif: Newsreader, Georgia, serif;   /* headings, weight 400 ONLY */
+  --font-sans:  Inter, system-ui, sans-serif; /* body/UI, 400 and 500 only */
+}
+
+/* ===========================================================================
+   DARK — the reader's choice, on any market. Derived from deep-ink #080331,
+   not from a neutral or green black.
+   =========================================================================== */
+:root[data-theme="dark"] {
+  --canvas:   #0a0524;
+  --surface:  #16103a;   /* separates by hairline, not by luminance */
+  --sunken:   #1a1240;
+  --hairline: rgba(248, 243, 235, 0.13);
+  --blob:     rgba(162, 186, 255, 0.05);
+
+  --text:     #f8f3eb;   /* 17.93:1 on canvas */
+  --text-2:   #b9b3c4;   /*  9.72:1 on canvas */
+
+  /* The action inverts, keeping maximum contrast on both themes. */
+  --action:      #f8f3eb;
+  --action-on:   #0a0524;  /* 17.93:1 on --action */
+  --action-edge: rgba(248, 243, 235, 0.22);
+
+  --brand:         #a2baff;
+  --link:          #a2baff;  /* 9.59:1 on --surface */
+  --selected-bg:   #2c2a56;
+  --selected-edge: #a2baff;
+  --selected-fg:   #a2baff;  /* 7.00:1 on --selected-bg */
+
+  /* Forest and indigo both fail as labels on dark, so both lift. */
+  --auto-label:     #5fd07a;  --auto-fill:     #1f2940;  /* 7.44:1 */
+  --ping-label:     #a2baff;  --ping-fill:     #2c2a56;  /* 7.00:1 */
+  --unsure-label:   #ff9b6f;  --unsure-fill:   #36223e;  /* 6.99:1 */
+  --nearmiss-label: #ddd7e4;  --nearmiss-fill: #1e1a44;  /* 10.1:1 */
+
+  --auto: #5fd07a;  --ping: #a2baff;  --unsure: #ff9b6f;  --nearmiss: #ddd7e4;
+
+  --strongest-bg: #1f2940;  --strongest-label: #5fd07a;  --strongest-body: #cfd9d2;
+  --answer-bg:    #36223e;  --answer-label:    #ff9b6f;  --answer-body:    #ded0c9;
+
+  /* Warm-brown shadow reads as dirt on a dark ground; the border carries it. */
+  --shadow-card: none;  --shadow-cta: none;
+}
+
+/* ===========================================================================
+   MARKET — the hero gradient and the active market chip. That is the list.
+
+   ADDING A MARKET: one block below, plus a name, a flag, a region gate rule
+   and a source roster. No new colour, no design pass. The default --hero is
+   the brand one; a market gets its own only when it has its own domain and
+   its own pitch, which today is Kenya and only Kenya.
+   =========================================================================== */
+[data-market] {                       /* the default every market inherits */
+  --hero:
+    radial-gradient(78% 62% at 104% -4%,
+      rgba(72, 101, 255, 0.92) 0%, rgba(72, 101, 255, 0.45) 34%,
+      rgba(72, 101, 255, 0) 64%),
+    linear-gradient(152deg, #241a7a 0%, #150e52 38%, #080331 86%);
+}
+
+[data-market="ke"] {                  /* nairobi.jobscout.page */
+  --hero:
+    radial-gradient(78% 62% at 104% -4%,
+      rgba(45, 140, 50, 0.88) 0%, rgba(45, 140, 50, 0.42) 34%,
+      rgba(45, 140, 50, 0) 64%),
+    linear-gradient(152deg, #11401a 0%, #0c2a12 38%, #080331 86%);
+}
+
+/* [data-market="us"], [data-market="uk"] — nothing to write. They inherit. */
+
+/* If a market ever earns a hue, it comes from this ladder at fixed lightness
+   and chroma, so it can never brighten into something that reads as a band:
+     meadow 130° #11401a · teal 185° #0d3a3f · violet 275° #2c1a4e · plum 330° #431631
+   The band hues — ember 18°, forest 126°, indigo 230° — are excluded. */
+
+/* The hero is always a dark block, in both themes, so its text is always cream.
+   It is a BLOCK, not the page: on the live Kenya site the green runs to every
+   edge, which is what makes the market read as a different product. */
+.hero {
+  background: var(--hero);
+  color: #f8f3eb;
+  border-radius: var(--radius-card);
+}
+
+/* ===========================================================================
+   NEVER
+   - Do not tint the page ground, cards, text or controls by market.
+   - Do not put green on a control for market reasons; at that scale green
+     already means auto. (The live Kenya submit button is #2fbd6a.)
+   - Do not bind theme to market.
+   - Do not fill a primary button with --brand; it carries white at 4.58:1.
+     Use --action, and let indigo do selection and links.
+   - Do not use the solid band colours as text. Use the -label tokens.
+   =========================================================================== */

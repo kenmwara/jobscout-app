@@ -71,7 +71,11 @@ for (const [market, base] of BASES) {
   is(!dead.length, `${new Set(links).size} local links, ${dead.length ? "dead: " + dead : "all resolve"}`);
 
   // ── the logo goes home from every page ──────────────────────────────────
-  for (const p of ["saved", "privacy", "stats"]) {
+  // "stats" was here until 718a129 took the page off the public site. It kept
+  // being requested, 404ed, and the locator timed out - so this harness has
+  // been CRASHING rather than passing ever since, which is why nothing caught
+  // it. A check that cannot complete is not a check.
+  for (const p of ["saved", "privacy"]) {
     // Pages serves clean URLs; python -m http.server does not.
     const ext = LIVE ? "" : ".html";
     await page.goto(`${base.split("?")[0]}/${p}${ext}`, { waitUntil: "domcontentloaded" });

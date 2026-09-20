@@ -119,6 +119,49 @@ The rules the fixtures encode, each of which exists because it failed:
    in-sector dropped four of five healthcare postings and filled the slots with every
    "Manager, …" in the feed, off the one word in "pharmacy manager".
 
+### Colour: three axes, three channels
+
+The app carries three independent signals, and each owns exactly one channel.
+Getting this wrong is not a taste problem — it makes the UI state two things
+at once.
+
+| Signal | Channel | Notes |
+|---|---|---|
+| **market** | the hero gradient and the active market chip | That is the entire list. |
+| **theme** | light or dark | The reader's device, never the market's. |
+| **band** | hue, exclusively | `gate.verdict` depends on it across Telegram, ops, web and both apps. |
+
+**What this replaced.** The market drove everything: Canada was light, Kenya
+was dark with a green accent. So a fit of 72 — PING, which is indigo — sat
+beside a green `Prepare application` button, and *both were correct in the
+colour language while contradicting each other*. Green means auto (fit ≥ 80)
+wherever it is small and saturated, so a market may not spend it on a control;
+painting a whole market green also spends the strongest signal on a fact the
+flag chip already tells you, and every card in it reads as a success card.
+Binding dark to Kenya cost a second thing: nobody in Nairobi could have light,
+and nobody in Vancouver could have dark.
+
+**The action is deep-ink, not the brand.** `--btn`/`--btn-ink` are
+`var(--ink)`/`var(--canvas)`, so the button is deep-ink on cream in light and
+cream on deep-ink in dark — 17.44:1 and 17.93:1, and it inverts for free.
+Indigo carries white at only 4.58:1, so it stays brand, links and selected
+state.
+
+**Adding a market costs no colour.** `html[data-market]` is the default every
+market inherits; a market gets its own block only when it earns its own domain
+and its own pitch, which today is Kenya and only Kenya. The bands already hold
+green, indigo, orange and pale blue — you can just about paint two markets
+around that and you cannot paint four, and nobody remembers four market
+colours anyway. US and UK are Canada with a different region gate, not a
+different product: same surface, and the difference spent on the copy and the
+counts. One thing that breaks before the colour does: the segmented market
+pill stops working past three, and at four has to become a menu.
+
+The tokens live in `site/base.css` (the header comment carries the measured
+ratios) and `android/…/Tokens.kt`; `tools/check_palette.py` holds the two to
+each other. The artboards, and the theme CSS/JSON they were cut from, are in
+`docs/references/colour-2026-09-20/`.
+
 ### Run these before reading anything
 
 Nothing here needs a CI credit. Every one of them was written after a defect that
@@ -132,7 +175,7 @@ this codebase actually has.
 | `node tools/cycle3.mjs [--live]` | Playwright, both web markets, 46 behavioural assertions. Locally it rewrites `/apply` to `/apply.html`, because python's `http.server` has no clean URLs. |
 | `python tools/cycle3_mobile.py` | The same pass over adb, both markets. It taps by **visible label from a fresh dump every time** — the box grows as it fills, so a coordinate captured one step earlier misses. |
 | `node tools/labels_audit.mjs` | Lists every control's text beside its element, for reading. "Watch this search" under a bell that emails nothing survived three audits because nothing ever printed the two together. |
-| `python tools/check_palette.py` | Reads `site/base.css` **and** `Tokens.kt`: grounds ≥60&deg; off the accent, each role against the contrast bar that applies to *it*, bands against their own 14% tint over a card, no two foreground roles sharing a hex, and the two clients agreeing value for value. |
+| `python tools/check_palette.py` | The colour law below, asserted against `site/base.css` **and** `Tokens.kt`: the market touching anything but the hero; a role under the contrast bar that applies to it; a band that fails on its own fill, duplicates another band, or takes a text colour; a primary button filled with the brand; the action wearing the auto hue; `--live` used as text; and either client drifting from the other. |
 | `python tools/check_swift.py` | The file no machine here can compile: braced unicode escapes, `$0` in a nested closure, brace and paren balance. Two Codemagic failures in a row is what paid for it. |
 | `python tools/check_console.py` | A tool that dies while **reporting**. Python takes stdout's encoding from the console codepage; cp1252 carries the em dash this repo writes in every message, cp437 and cp850 do not. `check_palette.py` really did exit 1 with no findings, and `check_swift.py` was proven to find two defects on cp437 and die before naming either — the same exit code as a clean report. Asserts that any tool which *can* print such a character reconfigures stdout first, detecting the guard as a **call** rather than a substring. |
 | `bash tools/check_picker.sh` | 12 fixtures against `Select.kt` (see above). |

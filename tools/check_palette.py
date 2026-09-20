@@ -1,26 +1,44 @@
 #!/usr/bin/env python3
-"""The two things that decide whether a dark UI looks cheap, measured.
-
-Read from the real sources — site/base.css and Android's Tokens.kt — so the
-two clients cannot drift apart without this saying so.
+"""Three axes, three channels. This is the rule, asserted.
 
     python tools/check_palette.py
 
-What it asserts, and why each one earned its place:
+The app carries three independent signals, and each one owns exactly one
+channel:
 
-  1. **The chrome must not wear the accent's hue.** The Kenya ramp used to be
-     green at 140-144deg against a green accent at 142deg. When the greys are
-     the same colour as the accent, the accent has nothing to be brighter
-     than and the whole screen is one olive wash. This is the thing that
-     reads as cheap, and no amount of tuning the accent fixes it.
-  2. **AA on every ground a colour actually lands on** — canvas, surface and
-     chip, not just one of them.
-  3. **A band against its OWN tint**, composited at 14% over a card, because
-     that is where a band lives. Measuring it against the raw surface flatters
-     it by about a point.
-  4. **No two roles may be the same colour.** `b-near` was byte-identical to
-     `text2`, so a near-miss band was indistinguishable from body copy.
-  5. **Both clients agree**, value for value.
+    market  ->  the hero gradient and the active flag chip. That is the list.
+    theme   ->  light or dark. The reader's device, never the market's.
+    band    ->  hue, exclusively.
+
+Until v2.3 the market drove everything: Canada was light, Kenya was dark with
+a green accent. Two signals were painted in one hue, so a fit of 72 - PING,
+which is indigo - sat beside a green `Prepare application` button, and both
+were correct in the colour language while contradicting each other. Green
+means auto (fit >= 80) at control scale, so nothing else may claim it there.
+
+What each rule is here for:
+
+  1. THE MARKET MAY NOT TOUCH THE PALETTE. A market block may set only the
+     hero and its wash hue. This is the whole v2.3 rule in one assertion.
+  2. Contrast per theme, each role against the bar that applies to IT: body
+     copy AA 4.5; fills, dots and captions AA-large 3.0. Judging a 6px dot by
+     the body-copy bar is judging it as something it is not.
+  3. A band against ITS OWN fill, because that is the ground a band lives on.
+     Measuring against the raw surface flatters it by about a point.
+  4. A band may not be mistaken for body copy, and the four bands must be
+     four colours. `b-near` was once byte-identical to `text2`, so a near-miss
+     band was indistinguishable from body copy. Narrowed from "no two
+     foreground roles share a hex", which fired on identities the kit makes on
+     purpose - action-quiet IS the ping indigo, and --live IS the unsure
+     solid. What it no longer covers is noted at the rule.
+  5. Green is never the action colour, in either theme. Rule 1 stops the
+     market painting a control green; this stops the palette doing it.
+  6. Nothing paints WORDS with `--live`. It is a fill - a progress bar, a
+     filled heart, the display full stop - and reads 2.48:1 as text on cream.
+  7. index.html carries its own copy of the band tokens; it must agree with
+     base.css value for value.
+  8. Android's LIGHT_TOKENS / DARK_TOKENS must agree with the web's two
+     themes, so the clients cannot drift apart silently.
 
 Not a taste check. A palette can pass all of this and still be ugly; what it
 catches is the structural faults that are ugly for a reason.
@@ -31,9 +49,9 @@ import os
 import re
 import sys
 
-# The box-drawing rule in the market header is not in Windows' default console
-# codepage, and an unhandled UnicodeEncodeError while REPORTING is a check that
-# looks like a failure it did not find.
+# The section rules below are not in Windows' default console codepage, and an
+# unhandled UnicodeEncodeError while REPORTING is a check that looks like a
+# failure it did not find. See tools/check_console.py.
 try:
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 except Exception:
@@ -41,13 +59,12 @@ except Exception:
 
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
 AA = 4.5
-AA_LARGE = 3.0        # the bar for a fill, a dot or large type
-HUE_GAP = 60          # degrees the chrome must keep from the accent
-CHROMA_FREE = 6       # below this saturation a grey is neutral enough to ignore
+AA_LARGE = 3.0
+MARKET_MAY_SET = {"hero-img", "mkt-wash"}
 
 fails = []
-def bad(m): fails.append(m); print(f"  FAIL  {m}")
-def ok(m): print(f"  ok    {m}")
+def bad(m): fails.append(m); print("  FAIL  %s" % m)
+def ok(m): print("  ok    %s" % m)
 
 
 def rgb(h):
@@ -68,15 +85,9 @@ def ratio(a, b):
     return (max(la, lb) + 0.05) / (min(la, lb) + 0.05)
 
 
-def hsl(h):
+def hue(h):
     r, g, b = [c / 255 for c in rgb(h)]
-    hh, ll, ss = colorsys.rgb_to_hls(r, g, b)
-    return round(hh * 360), round(ss * 100), round(ll * 100)
-
-
-def gap(a, b):
-    d = abs(hsl(a)[0] - hsl(b)[0]) % 360
-    return min(d, 360 - d)
+    return round(colorsys.rgb_to_hls(r, g, b)[0] * 360)
 
 
 def over(fg, bg, a=0.14):
@@ -84,153 +95,224 @@ def over(fg, bg, a=0.14):
     return "#%02X%02X%02X" % tuple(round(f[i] * a + b[i] * (1 - a)) for i in range(3))
 
 
-def web_market(market):
-    css = io.open(os.path.join(ROOT, "site", "base.css"), encoding="utf-8").read()
+CSS = io.open(os.path.join(ROOT, "site", "base.css"), encoding="utf-8").read()
+RULES = re.findall(r"([^{}]+)\{([^{}]*)\}", CSS)
+
+
+def decls(body):
+    return {n: v.strip() for n, v in re.findall(r"--([\w-]+)\s*:\s*([^;]+)", body)}
+
+
+def blocks(selector):
     out = {}
-    for block in re.findall(r'html\[data-market="%s"\]\{([^}]*)\}' % market, css):
-        for name, val in re.findall(r"--([\w-]+)\s*:\s*(#[0-9a-fA-F]{6})", block):
-            out[name] = val.lower()
+    for sel, body in RULES:
+        if sel.strip().split("*/")[-1].strip() == selector:
+            out.update(decls(body))
     return out
 
 
-def android_market(market):
-    kt = io.open(os.path.join(ROOT, "android", "app", "src", "main", "java",
-                              "trade", "tbot", "jobscout", "Tokens.kt"), encoding="utf-8").read()
-    tag = "KE_TOKENS" if market == "ke" else "CA_TOKENS"
-    i = kt.index(tag)
-    block = kt[i:kt.index("\n)", i)]
+def resolve(raw):
+    """Flatten `var(--x)` aliases down to the hex they end at."""
     out = {}
-    for name, hexv in re.findall(r"(\w+)\s*=\s*Color\(0xFF([0-9A-Fa-f]{6})\)", block):
-        out[name] = "#" + hexv.lower()
+    for k, v in raw.items():
+        seen = 0
+        while v.startswith("var(--") and seen < 8:
+            v = raw.get(v[6:v.index(")")], "")
+            seen += 1
+        if re.fullmatch(r"#[0-9a-fA-F]{6}", v):
+            out[k] = v.lower()
     return out
 
 
-# `--live` may drive `color:` only where the thing it paints is a MARK, not
-# words: an SVG reading currentColor, or the single display full stop that is
-# a logo-mark in disguise. Everything else writing with it is the bug.
-ALLOWED_FILLS = (
-    "h1.display .dot",                      # the full stop, 34-48px, a mark
-    '.savebtn[aria-pressed="true"]',        # an SVG heart via currentColor
-)
+LIGHT_RAW = blocks(":root")
+DARK_RAW = dict(LIGHT_RAW)
+DARK_RAW.update(blocks(':root[data-theme="dark"]'))
+LIGHT, DARK = resolve(LIGHT_RAW), resolve(DARK_RAW)
 
-CAMEL = {"canvas-2": "canvas2", "b-auto": "bAuto", "b-ping": "bPing",
-         "b-unsure": "bUnsure", "b-near": "bNear"}
+# ── 1. the market may not touch the palette ─────────────────────────────
+print("\n-- the market axis --")
+markets = {}
+for sel, body in RULES:
+    sel = sel.strip().split("*/")[-1].strip()
+    m = re.match(r'html\[data-market(?:="(\w+)")?\]$', sel)
+    if m:
+        markets.setdefault(m.group(1) or "*", {}).update(decls(body))
 
-for market in ("ke", "ca"):
-    print(f"\n── {market.upper()} ──")
-    w = web_market(market)
-    if not w:
-        bad(f"{market}: no tokens parsed from base.css — this check cannot fire")
+# One default block every market inherits, plus an override for each market
+# that has earned its own hue. Adding the US or the UK must cost nothing, so
+# what is asserted is the DEFAULT's presence, not a block per market.
+if "*" not in markets:
+    bad("no default html[data-market] block - a new market would have no hero, "
+        "and this check cannot fire")
+elif len(markets) < 2:
+    bad("nothing overrides the default - the market axis says nothing")
+else:
+    stray = sorted({k for mk in markets.values() for k in mk} - MARKET_MAY_SET)
+    if stray:
+        bad("the market sets more than the hero: --%s" % ", --".join(stray))
+    else:
+        ok("each market sets only --%s" % " / --".join(sorted(MARKET_MAY_SET)))
+    dflt = markets["*"].get("mkt-wash")
+    same = [k for k, v in markets.items() if k != "*" and v.get("mkt-wash") == dflt]
+    if same:
+        bad("%s overrides the default with the same hue - it says nothing"
+            % ", ".join(same))
+    else:
+        ok("%d market(s) override the default, and only in their hue"
+           % (len(markets) - 1))
+
+# ── the two themes ──────────────────────────────────────────────────────
+for name, T, RAW in (("light", LIGHT, LIGHT_RAW), ("dark", DARK, DARK_RAW)):
+    print("\n-- %s --" % name)
+    if "canvas" not in T:
+        bad("%s: no tokens parsed from base.css - this check cannot fire" % name)
         continue
 
-    accent = w["accent"]
-    grounds = [k for k in ("canvas", "canvas-2", "surface", "chip") if k in w]
+    grounds = [k for k in ("canvas", "canvas-2", "surface", "chip", "sunken") if k in T]
 
-    # 1. the GROUNDS keep their distance from the accent. Not the text: the
-    #    olive-wash mechanism is a ground that shares the accent's hue, and
-    #    Canada's greys are deliberately biased toward its indigo while
-    #    sitting on cream, which is nowhere near it.
-    shares = [k for k in grounds
-              if hsl(w[k])[1] >= CHROMA_FREE and gap(w[k], accent) < HUE_GAP]
-    if shares:
-        bad(f"{market}: the ground wears the accent's hue — {', '.join(shares)}")
-    else:
-        ok(f"{market}: every ground is >={HUE_GAP}deg off the accent (or neutral)")
-
-    # 2. Each colour against the bar that applies to IT. `ink`, `text` and
-    #     `text2` carry body copy and keep AA 4.5. `accent`, `live` and `text3`
-    #     are fills, dots and captions — this language has said so since v2.2
-    #     ("indigo and forest are fill / large-text only, never body copy") —
-    #     and keep AA-large 3.0. Judging a 6px dot by the body-copy threshold
-    #     is judging it as something it is not.
+    # 2. each role against the bar that applies to it
     dim = []
-    # `live` is absent on purpose: it is a FILL — a progress bar, a filled
-    # heart, the full stop in the display line — and a decorative fill has no
-    # text bar to clear. Rule 6 is what keeps that true.
-    for k, bar in (("ink", AA), ("text", AA), ("text2", AA),
-                   ("text3", AA_LARGE), ("accent", AA_LARGE)):
-        if k not in w:
+    for k, bar in (("ink", AA), ("text", AA), ("text2", AA), ("text3", AA),
+                   ("accent", AA_LARGE), ("accent-quiet", AA)):
+        if k not in T:
             continue
         for g in grounds:
-            r = ratio(w[k], w[g])
+            r = ratio(T[k], T[g])
             if r < bar:
-                dim.append(f"{k} on {g} {r:.2f} (needs {bar})")
+                dim.append("%s on %s %.2f (needs %s)" % (k, g, r, bar))
     if dim:
-        bad(f"{market}: below its bar — {'; '.join(dim)}")
+        bad("%s: below its bar - %s" % (name, "; ".join(dim)))
     else:
-        ok(f"{market}: body copy clears AA, fills and dots clear AA-large, on every ground")
+        ok("%s: body copy clears AA, fills clear AA-large, on every ground" % name)
 
-    # 3. a band against its own tint over a card
+    # The ACTION is the button fill, which is deep-ink, not the brand. Indigo
+    # carries white at 4.58:1 and deep-ink carries cream at 17.44:1, so a
+    # primary button filled with the brand is the weakest thing on the page.
+    if "btn" in T and "btn-ink" in T:
+        r = ratio(T["btn-ink"], T["btn"])
+        (ok if r >= AA else bad)("%s: the action button reads at %.2f:1" % (name, r))
+        if "accent" in T and T["btn"] == T["accent"]:
+            bad("%s: the primary button is filled with the brand (%s)" % (name, T["btn"]))
+        else:
+            ok("%s: the button is the action colour, not the brand" % name)
+
+    # 3. a band against its own fill
     thin = []
     for k in ("b-auto", "b-ping", "b-unsure", "b-near"):
-        if k not in w:
+        if k not in T:
             continue
-        r = ratio(w[k], over(w[k], w["surface"]))
+        bg = T.get(k + "-bg") or over(T[k], T["surface"])
+        r = ratio(T[k], bg)
         if r < AA:
-            thin.append(f"{k} {r:.2f}")
+            thin.append("%s %.2f" % (k, r))
     if thin:
-        bad(f"{market}: band below AA on its own tint — {'; '.join(thin)}")
+        bad("%s: band below AA on its own fill - %s" % (name, "; ".join(thin)))
     else:
-        ok(f"{market}: every band clears AA on its own 14% tint over a card")
+        ok("%s: every band clears AA on its own fill" % name)
 
-    # 4. No two FOREGROUND roles share a colour. Grounds may: on a light
-    #     theme a card and a chip are both white, which is two roles agreeing
-    #     rather than colliding. What this is for is `b-near` having been
-    #     byte-identical to `text2`, so a near-miss band was indistinguishable
-    #     from body copy.
-    FG = ("ink", "text", "text2", "text3", "accent", "live",
-          "b-auto", "b-ping", "b-unsure", "b-near")
-    seen = {}
+    # 4. A BAND may not be mistaken for body copy, and the four bands must be
+    #    four colours. Narrowed from "no two foreground roles share a hex",
+    #    which fired on identities the kit creates on purpose: action-quiet IS
+    #    the ping indigo, and on dark the action, the quiet action and ping are
+    #    all #a2baff while --live IS the unsure solid. Those are one hue used
+    #    coherently in related roles.
+    #    WHAT THIS NO LONGER COVERS: two ACTION-family roles collapsing to one
+    #    colour. Nothing has ever gone wrong that way, and rule 5 still stops
+    #    the action taking the auto hue. The defect this was written for -
+    #    b-near byte-identical to text2, so a near-miss band read as body copy
+    #    - is still caught, and mutation-tested.
+    BANDS = ("b-auto", "b-ping", "b-unsure", "b-near")
+    TEXTS = ("ink", "text", "text2", "text3")
     dupes = []
-    for k, v in w.items():
-        if k not in FG:
+    for bk in BANDS:
+        for tk in TEXTS:
+            if bk in T and tk in T and T[bk] == T[tk]:
+                dupes.append("the %s band is the same colour as %s (%s)" % (bk, tk, T[bk]))
+    seen = {}
+    for bk in BANDS:
+        if bk not in T:
             continue
-        if v in seen:
-            dupes.append(f"{seen[v]} and {k} are both {v}")
-        seen[v] = k
+        if T[bk] in seen:
+            dupes.append("%s and %s are both %s" % (seen[T[bk]], bk, T[bk]))
+        seen[T[bk]] = bk
     if dupes:
-        bad(f"{market}: two roles, one colour — {'; '.join(dupes)}")
+        bad("%s: %s" % (name, "; ".join(dupes)))
     else:
-        ok(f"{market}: {len(seen)} roles, {len(seen)} distinct colours")
+        ok("%s: 4 bands, 4 colours, none of them a text colour" % name)
 
-    # 6. Nothing paints WORDS with a fill colour. This is the rule that found
-    #    the real fault: `--live` (#ff6d39, 2.48:1 on cream) was the colour of
-    #    "posted today" on every fresh card and of the `required` marker beside
-    #    a screening question. The answer was never to dull the orange — it is
-    #    the one place this brand is loud — but to stop writing with it.
-    if market == "ca":
-        painted = []
-        for f in ("site/base.css", "site/index.html", "site/apply.html", "site/saved.html"):
-            path = os.path.join(ROOT, f)
-            if not os.path.exists(path):
-                continue
-            css = io.open(path, encoding="utf-8").read()
-            for m in re.finditer(r"color\s*:\s*var\(--live\)", css):
-                line = css[:m.start()].count(chr(10)) + 1
-                rule = css[max(0, css.rfind(chr(10), 0, m.start())) : m.start()].strip()
-                # `color:` is also how you drive an SVG's currentColor, so a MARK
-                # may legitimately use it. Each exemption is named, with what it
-                # paints — anything new fails, which is the point.
-                if any(sel in rule for sel in ALLOWED_FILLS):
-                    continue
-                painted.append(f"{os.path.basename(f)}:{line}  ({rule[:40]})")
-        if painted:
-            bad(f"--live is a fill, used as text at {', '.join(painted)}")
+    # 5. green is never the action
+    if "accent" in T and "b-auto" in T:
+        d = abs(hue(T["accent"]) - hue(T["b-auto"])) % 360
+        d = min(d, 360 - d)
+        if d < 40:
+            bad("%s: the action (%s) wears the auto hue (%s), %ddeg apart"
+                % (name, T["accent"], T["b-auto"], d))
         else:
-            ok("--live is only ever a fill, never a text colour")
+            ok("%s: the action is %ddeg off the auto colour" % (name, d))
 
-    # 5. Android agrees with the web
-    a = android_market(market)
-    drift = []
-    for k, v in w.items():
-        ak = CAMEL.get(k, k)
-        if ak in a and a[ak] != v:
-            drift.append(f"{k}: web {v} / android {a[ak]}")
+# ── 6. --live is a fill, never a text colour ────────────────────────────
+print("\n-- the fill colour --")
+ALLOWED_FILLS = ("h1.display .dot", '.savebtn[aria-pressed="true"]')
+painted = []
+for f in ("site/base.css", "site/index.html", "site/apply.html", "site/saved.html"):
+    path = os.path.join(ROOT, f)
+    if not os.path.exists(path):
+        continue
+    src = io.open(path, encoding="utf-8").read()
+    for m in re.finditer(r"color\s*:\s*var\(--live\)", src):
+        line = src[:m.start()].count(chr(10)) + 1
+        rule = src[max(0, src.rfind(chr(10), 0, m.start())):m.start()].strip()
+        if any(sel in rule for sel in ALLOWED_FILLS):
+            continue
+        painted.append("%s:%d" % (os.path.basename(f), line))
+if painted:
+    bad("--live is a fill, used as text at %s" % ", ".join(painted))
+else:
+    ok("--live is only ever a fill, never a text colour")
+
+# ── 7. index.html's own copy of the bands ───────────────────────────────
+IDX = io.open(os.path.join(ROOT, "site", "index.html"), encoding="utf-8").read()
+for selector, T in ((":root", LIGHT), (':root[data-theme="dark"]', DARK)):
+    got = {}
+    for sel, body in re.findall(r"([^{}\n]+)\{([^{}]*)\}", IDX):
+        if sel.strip() == selector:
+            got.update({n: v.strip().lower() for n, v in
+                        re.findall(r"--(b-[\w-]+)\s*:\s*([^;]+)", body)})
+    if not got:
+        bad("index.html has no `%s` band block - this check cannot fire" % selector)
+        continue
+    drift = ["%s: css %s / index %s" % (k, T.get(k), v) for k, v in got.items() if T.get(k) != v]
     if drift:
-        bad(f"{market}: the clients disagree — {'; '.join(drift)}")
+        bad("index.html disagrees with base.css - %s" % "; ".join(drift))
     else:
-        ok(f"{market}: Android matches the web on every shared token")
+        ok("index.html's %d `%s` band tokens match base.css" % (len(got), selector))
+
+# ── 8. Android agrees with the web ──────────────────────────────────────
+print("\n-- the clients --")
+KT = io.open(os.path.join(ROOT, "android", "app", "src", "main", "java",
+                          "trade", "tbot", "jobscout", "Tokens.kt"), encoding="utf-8").read()
+CAMEL = {"canvas-2": "canvas2", "accent-ink": "accentInk", "btn-ink": "btnInk",
+         "chip-ink": "chipInk", "b-auto": "bAuto", "b-ping": "bPing",
+         "b-unsure": "bUnsure", "b-near": "bNear", "b-auto-bg": "bAutoBg",
+         "b-ping-bg": "bPingBg", "b-unsure-bg": "bUnsureBg", "b-near-bg": "bNearBg"}
+
+for tag, T in (("LIGHT_TOKENS", LIGHT), ("DARK_TOKENS", DARK)):
+    if tag not in KT:
+        bad("%s not found in Tokens.kt - this check cannot fire" % tag)
+        continue
+    i = KT.index(tag)
+    got = {n: "#" + h.lower() for n, h in re.findall(
+        r"(\w+)\s*=\s*Color\(0xFF([0-9A-Fa-f]{6})\)", KT[i:KT.index("\n)", i)])}
+    if not got:
+        bad("%s parsed to nothing - this check cannot fire" % tag)
+        continue
+    drift = ["%s: web %s / android %s" % (k, v, got[CAMEL.get(k, k)])
+             for k, v in T.items() if CAMEL.get(k, k) in got and got[CAMEL.get(k, k)] != v]
+    if drift:
+        bad("%s disagrees with the web - %s" % (tag, "; ".join(drift)))
+    else:
+        ok("%s matches the web on every shared token (%d compared)" % (tag, len(got)))
 
 print("")
-print(f"{len(fails)} FAILED" if fails else "ALL GREEN")
+print("%d FAILED" % len(fails) if fails else "ALL GREEN")
 sys.exit(1 if fails else 0)

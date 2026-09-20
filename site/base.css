@@ -36,7 +36,7 @@
     /* fit bands — product logic. text colour is contrast-checked on cream. */
     --auto:#114e0b;      --auto-fill:#328a3b;
     --ping:#1b1463;      --ping-fill:#4865ff;
-    --unsure:#cc3600;    --unsure-fill:#ff6d39;
+    --unsure:#bf3200;    --unsure-fill:#ff6d39;   /* #cc3600 was 4.29:1 on #ffe6da */
     --nearmiss:#333333;  --nearmiss-fill:#dce4fb;
 
     --text:#080331; --text2:#4a4560; --text3:#6b6780;
@@ -88,59 +88,89 @@
    hex. Notes and what was deliberately not copied: docs/REDESIGN-parallel.md
    ══════════════════════════════════════════════════════════════════════ */
 
-/* ═══════════════════════════════════════════════════════════════════════
-   TWO AUTHORED TOKEN SETS. Nothing below the token blocks uses a hex.
-   CA = light (the existing JobScout cream + indigo, Brand Kit v2.2).
-   KE = dark  (authored, NOT an inversion — see docs/REDESIGN-parallel.md).
-   ═══════════════════════════════════════════════════════════════════════ */
-html,
-html[data-market="ca"]{
-  --canvas:#f4f1ea;        /* page */
-  --canvas-2:#faf8f4;      /* alternating band */
-  --surface:#ffffff;       /* cards, input */
-  --ink:#080331;           /* display + primary text */
-  --text:#1a1636;
-  --text2:#565173;
-  --text3:#83809a;
-  --hair:rgba(8,3,49,.10);
-  --hair2:rgba(8,3,49,.16);
-  --accent:#4865ff;        /* indigo — links, active state */
-  --accent-ink:#ffffff;
-  --live:#ff6d39;          /* the one chromatic dot */
-  --btn:#080331;
-  --btn-ink:#ffffff;
+/* ════════════════════════════════════════════════════════════════════════
+   THREE AXES, THREE CHANNELS — Brand Kit v2.3.
+
+   The app carries three independent signals. Each one gets its own channel,
+   and none of them borrows another's:
+
+     market  →  the hero gradient and the active flag chip. That is the list.
+     theme   →  light or dark. The reader's device, never the market's.
+     band    →  hue, exclusively. Nothing else competes for it.
+
+   Green means AUTO (fit ≥ 80) at control scale, which is the strongest thing
+   the pipeline can say about a posting. So green is not available as a market
+   colour there: Kenya's green exists only as a large, dark, low-chroma hero
+   ground, never on a button, pill, dot or label.
+
+   What this replaced: market DROVE theme. Canada was light, Kenya was dark,
+   and a reader in Nairobi who wanted light — or one in Vancouver who wanted
+   dark — could not have it. Two of the three signals were painted in one hue,
+   so a Kenyan card read as a success card before anyone read the fit.
+
+   Every ratio in a comment below was measured, not estimated.
+   ════════════════════════════════════════════════════════════════════════ */
+:root{
+  --canvas:#f8f3eb;
+  --canvas-2:#fffdf9;      /* alternating band, one step up from canvas */
+  --surface:#ffffff;
+  --sunken:#ece5d8;        /* segmented-control track, rails */
+  --ink:#080331;           /* 17.81:1 on canvas */
+  --text:var(--ink);       /* an alias: the kit measures exactly two tones */
+  --text2:#5a5560;         /*  6.55:1 — replaces #83809a, which was 3.37:1 */
+  --text3:var(--text2);    /* also an alias. There is no third tone: the one
+                              that used to be here is the kit's named fix. */
+  --hair:rgba(8,3,49,.13);
+  --hair2:rgba(8,3,49,.22);
+  --accent:#4865ff;
+  --accent-ink:#ffffff;    /*  4.58:1 on --accent */
+  --accent-quiet:#1b1463;  /* 14.33:1 on canvas — ghost and link text */
+  --live:#ff6d39;          /* a FILL, never a text colour (2.48:1 on cream) */
+  /* THE ACTION IS DEEP-INK, not indigo. 17.44:1 against its cream label,
+     where indigo-with-white is 4.58:1 and barely passes. As aliases these
+     two invert by themselves: cream on deep-ink in the dark theme. */
+  --btn:var(--ink);
+  --btn-ink:var(--canvas);
   --chip:#ffffff;
   --chip-ink:#080331;
   --scrim:rgba(8,3,49,.55);
-  --sh-hover:0 6px 27px rgba(8,3,49,.09), 0 1.8px 8px rgba(8,3,49,.05), 0 .75px 3.4px rgba(8,3,49,.04);
-  --trough:rgba(8,3,49,.06);
-  --hero-img:linear-gradient(140deg,#2b2350,#4865ff 48%,#f098d7);
+  --sh-hover:0 6px 27px rgba(75,68,57,.09), 0 1.8px 8px rgba(75,68,57,.05), 0 .75px 3.4px rgba(75,68,57,.04);
+  --trough:var(--sunken);
 }
-html[data-market="ke"]{
-  /* Cool and near-neutral, 65-71deg off the accent. The old ramp was green at
-     140deg while the accent is green at 142deg, so the chrome and the accent
-     were the same colour and the screen was one olive wash. */
-  --canvas:#0e1014;
-  --canvas-2:#15181d;
-  --surface:#1b1f25;
-  --ink:#f3f5f8;
-  --text:#e5e8ed;
-  --text2:#a3aab6;
-  --text3:#8a919d;
-  --hair:rgba(243,245,248,.12);
-  --hair2:rgba(243,245,248,.22);
-  --accent:#35d07f;        /* Kenya green — the only green on the screen now */
-  --accent-ink:#06120a;
-  --live:#ff6f5e;          /* Kenya red, off the fluorescent */
-  --btn:#35d07f;
-  --btn-ink:#06120a;
-  --chip:#242a32;
-  --chip-ink:#e5e8ed;
-  --scrim:rgba(6,8,12,.64);
-  --sh-hover:0 6px 27px rgba(0,0,0,.45), 0 1.8px 8px rgba(0,0,0,.3);
-  --trough:rgba(243,245,248,.07);
-  --hero-img:linear-gradient(140deg,#0b1a14,#10553a 46%,#35d07f);
+
+/* ── DARK — the reader's choice, on either market ─────────────────────
+   Derived from deep-ink #080331, not from a neutral black, so it stays the
+   same brand in the dark rather than becoming a generic dark theme.
+   One block, not two: `data-theme` is stamped from the device by the same
+   inline script that stamps the market, so there is no @media copy of this
+   palette to drift out of step with it. */
+:root[data-theme="dark"]{
+  --canvas:#0a0524;
+  --canvas-2:#100b2f;
+  --surface:#16103a;       /* separates by hairline and border, not luminance */
+  --sunken:#1a1240;
+  --ink:#f8f3eb;           /* 17.93:1 on canvas */
+  --text:var(--ink);
+  --text2:#b9b3c4;         /*  9.72:1 on canvas */
+  --text3:var(--text2);
+  --hair:rgba(248,243,235,.13);
+  --hair2:rgba(248,243,235,.24);
+  /* Indigo is only 4.32:1 on this ground, so the action inverts: a lavender
+     fill carrying deep-ink text. */
+  --accent:#a2baff;
+  --accent-ink:#0a0524;    /* 10.38:1 on --accent */
+  --accent-quiet:#a2baff;  /*  9.59:1 on --surface */
+  --live:#ff9b6f;
+  /* --btn / --btn-ink are var(--ink) / var(--canvas) in :root, so the action
+     inverts here on its own: a cream fill carrying deep-ink, 17.93:1. */
+  --chip:#16103a;
+  --chip-ink:#f8f3eb;
+  --scrim:rgba(4,2,16,.66);
+  /* A warm-brown shadow reads as dirt on a dark ground; the border carries it. */
+  --sh-hover:0 0 0 1px rgba(248,243,235,.13);
+  --trough:var(--sunken);
 }
+
 :root{
   --serif:"Newsreader",Georgia,"Times New Roman",serif;
   --sans:"Inter",-apple-system,system-ui,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
@@ -162,28 +192,64 @@ body{
 .wrap{max-width:var(--max);margin:0 auto;padding:0 24px}
 a{color:inherit}
 
-/* ── band colours ────────────────────────────────────────────────────────
-   Contrast-checked on cream, and muddy on Kenya's near-black, so the dark
-   market gets its own set rather than a tint of these. */
-html,
-html[data-market="ca"]{--b-auto:#114e0b;--b-ping:#1b1463;--b-unsure:#b23200;--b-near:#333333;
-  --b-auto-bg:#e3f0e4;--b-ping-bg:#dce4fb;--b-unsure-bg:#ffe6da;--b-near-bg:#e9e8ee}
-/* The four hues are the product's semantic language and Canada paints the same
-   four — these are calmed, not moved. b-near goes WARM: the old one was the
-   exact colour of body copy. */
-html[data-market="ke"]{--b-auto:#52d98b;--b-ping:#8fb0f0;--b-unsure:#f2a16a;--b-near:#a89f97;
-  --b-auto-bg:rgba(82,217,139,.14);--b-ping-bg:rgba(143,176,240,.14);
-  --b-unsure-bg:rgba(242,161,106,.14);--b-near-bg:rgba(168,159,151,.14)}
+/* ── the fit bands: the only axis that owns hue ──────────────────────
+   Four meanings, one set, both markets. Each label is measured against its
+   OWN fill, which is the ground it actually lands on. */
+:root{
+  --b-auto:#114e0b;   --b-auto-bg:#e8f2e6;    /*  8.63:1 */
+  --b-ping:#1b1463;   --b-ping-bg:#dce4fb;    /* 12.46:1 */
+  --b-unsure:#bf3200; --b-unsure-bg:#fdeadf;  /*  4.91:1 */
+  --b-near:#333333;   --b-near-bg:#eceaf2;    /* 11.40:1 */
+}
+:root[data-theme="dark"]{
+  /* Forest and indigo both fail as labels on dark, so both lift. */
+  --b-auto:#5fd07a;   --b-auto-bg:#1f2940;    /*  7.44:1 */
+  --b-ping:#a2baff;   --b-ping-bg:#2c2a56;    /*  7.00:1 */
+  --b-unsure:#ff9b6f; --b-unsure-bg:#36223e;  /*  6.99:1 */
+  --b-near:#ddd7e4;   --b-near-bg:#1e1a44;    /* 10.10:1 */
+}
 
-/* ── v2.2 names, kept alive as aliases ──────────────────────────────────
-   saved, privacy and stats still write var(--midnight) and var(--info) in
-   their own rules. Rather than rewrite every one, the old names point at the
-   current system — so those pages re-tint with the market for free. */
-html{--sh:var(--sh-subtle)}
+/* ── MARKET — two places, never a third ─────────────────────────
+   The hero gradient and the tint under the active flag chip. Same
+   construction in both, one hue swapped. Nothing else in the app changes.
+   The hero is dark in BOTH themes, so its text is always cream. */
+/* The default every market inherits — the brand hero. ADDING A MARKET costs
+   a name, a flag, a region rule and a source roster; it does NOT cost a
+   colour. The bands already hold green, indigo, orange and pale blue: you
+   can just about paint two markets around that and you cannot paint four.
+   A market earns a hue when it earns its own domain and its own pitch,
+   which today is Kenya and only Kenya. */
+html[data-market]{
+  --hero-img:
+    radial-gradient(78% 62% at 104% -4%,
+      rgba(72,101,255,.92) 0%, rgba(72,101,255,.45) 34%, rgba(72,101,255,0) 64%),
+    linear-gradient(152deg,#241a7a 0%,#150e52 38%,#080331 86%);
+  --mkt-wash:72,101,255;
+}
+/* html[data-market="us"], html[data-market="uk"] — nothing to write.
+   If one ever earns a hue it comes off a ladder at fixed lightness and
+   chroma, with the band hues excluded, so it cannot brighten into
+   something that reads as a signal:
+     meadow 130deg #11401a · teal 185deg #0d3a3f
+     violet 275deg #2c1a4e · plum 330deg #431631
+   One more thing to expect before the colour: the segmented market pill
+   breaks past three. At four it has to become a menu. */
 html[data-market="ke"]{
+  --hero-img:
+    radial-gradient(78% 62% at 104% -4%,
+      rgba(45,140,50,.88) 0%, rgba(45,140,50,.42) 34%, rgba(45,140,50,0) 64%),
+    linear-gradient(152deg,#11401a 0%,#0c2a12 38%,#080331 86%);
+  --mkt-wash:45,140,50;
+}
+/* ── v2.2 names, kept alive as aliases ──────────────────────────
+   saved and privacy still write var(--midnight) and var(--info) in their own
+   rules. The old names point at the current system — and they now follow the
+   THEME rather than the market, which is the whole point of this pass. */
+:root{
   --indigo:var(--accent); --midnight:var(--ink); --info:var(--chip);
   --lavender:var(--hair2); --meadow:var(--b-auto); --ember:var(--b-unsure);
-  --sh:none}
+  --sh:var(--sh-subtle)}
+:root[data-theme="dark"]{--sh:none}
 
 /* ── site header ────────────────────────────────────────────────────── */
 header.site{padding:22px 0}
@@ -210,8 +276,12 @@ nav.main a:hover{color:var(--ink)}
   font:500 14px/1 var(--sans);color:var(--text2);padding:10px 20px;border-radius:11px;
   display:flex;align-items:center;gap:8px;transition:all .3s var(--ease)
 }
+/* The active half takes the market's own hue at 10% over the surface — the
+   second and last place the market is allowed to show. A tint, not a label:
+   at control scale a saturated green would be claiming `auto`. */
 .mkt button[aria-pressed="true"]{
-  background:var(--surface);color:var(--ink);box-shadow:var(--sh-hover)
+  background:linear-gradient(rgba(var(--mkt-wash),.10),rgba(var(--mkt-wash),.10)),var(--surface);
+  color:var(--ink);box-shadow:var(--sh-hover)
 }
 @media(max-width:860px){
   .mkt{position:static;transform:none;margin-left:auto}
@@ -281,6 +351,6 @@ body::before{
   -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 760 760'%3E%3Ccircle cx='380' cy='80' r='28.4'/%3E%3Ccircle cx='592.1' cy='167.9' r='54.1'/%3E%3Ccircle cx='680' cy='380' r='79.8'/%3E%3Ccircle cx='592.1' cy='592.1' r='105.5'/%3E%3Ccircle cx='380' cy='680' r='131.2'/%3E%3Ccircle cx='167.9' cy='592.1' r='156.9'/%3E%3Ccircle cx='80' cy='380' r='182.6'/%3E%3Ccircle cx='167.9' cy='167.9' r='208.3'/%3E%3C/svg%3E") no-repeat center/contain;
           mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 760 760'%3E%3Ccircle cx='380' cy='80' r='28.4'/%3E%3Ccircle cx='592.1' cy='167.9' r='54.1'/%3E%3Ccircle cx='680' cy='380' r='79.8'/%3E%3Ccircle cx='592.1' cy='592.1' r='105.5'/%3E%3Ccircle cx='380' cy='680' r='131.2'/%3E%3Ccircle cx='167.9' cy='592.1' r='156.9'/%3E%3Ccircle cx='80' cy='380' r='182.6'/%3E%3Ccircle cx='167.9' cy='167.9' r='208.3'/%3E%3C/svg%3E") no-repeat center/contain;
 }
-html[data-market="ke"] body::before{opacity:.1}
+:root[data-theme="dark"] body::before{opacity:.1}
 /* content sits on top of it */
 body>*{position:relative;z-index:1}
