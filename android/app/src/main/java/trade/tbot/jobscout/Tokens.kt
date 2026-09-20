@@ -1,5 +1,6 @@
 package trade.tbot.jobscout
 
+import android.content.Context
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.ReadOnlyComposable
@@ -142,8 +143,38 @@ private val CA_HERO = Triple(Color(0xFF241A7A), Color(0xFF150E52), Color(0xFF080
 private val KE_HERO = Triple(Color(0xFF11401A), Color(0xFF0C2A12), Color(0xFF080331))
 
 /**
+ * Three states, the same three the web has:
+ *
+ *   null / absent -> follow the OS   <- the default
+ *   "light"       -> force light
+ *   "dark"        -> force dark
+ *
+ * Stored under the app's own "jobscout" preferences, beside the tracker. A
+ * toggle would need all three: clearing the key is the only way to hand
+ * control back to the OS, so a two-way switch cannot express it.
+ */
+object ThemeChoice {
+    private const val KEY = "jobscout.theme"
+    private fun prefs(ctx: Context) = ctx.getSharedPreferences("jobscout", Context.MODE_PRIVATE)
+
+    /** "light", "dark", or null for "follow the OS". */
+    fun stored(ctx: Context): String? = prefs(ctx).getString(KEY, null)
+
+    fun set(ctx: Context, choice: String?) = prefs(ctx).edit().apply {
+        if (choice == "light" || choice == "dark") putString(KEY, choice) else remove(KEY)
+    }.apply()
+
+    /** The OS answer unless the reader has overridden it. */
+    fun isDark(ctx: Context, systemIsDark: Boolean): Boolean = when (stored(ctx)) {
+        "light" -> false
+        "dark" -> true
+        else -> systemIsDark
+    }
+}
+
+/**
  * The palette comes from the THEME and the hero from the MARKET, which is the
- * whole rule in one function. Callers pass `isSystemInDarkTheme()`.
+ * whole rule in one function.
  */
 fun tokensFor(market: String, dark: Boolean): Tokens {
     val base = if (dark) DARK_TOKENS else LIGHT_TOKENS

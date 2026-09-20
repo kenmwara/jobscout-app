@@ -37,6 +37,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -503,8 +504,10 @@ fun DemoScreen(vm: DemoVm = viewModel()) {
     val dismissed = remember { mutableStateListOf<String>() }
     var lastDismissed by remember { mutableStateOf<Pair<String, String>?>(null) }
     val ins = WindowInsets.safeDrawing.asPaddingValues()
-    // Theme follows the device, on either market — that is the point of v2.3.
-    val tokens = tokensFor(ui.market, isSystemInDarkTheme())
+    // Theme follows the device on either market, unless the reader has stored
+    // an override — the same three states the web resolves with light-dark().
+    val ctx = LocalContext.current
+    val tokens = tokensFor(ui.market, ThemeChoice.isDark(ctx, isSystemInDarkTheme()))
     val uriHandler = LocalUriHandler.current
 
     // A run moves you to the matches, which is the mockup's third frame; nothing else

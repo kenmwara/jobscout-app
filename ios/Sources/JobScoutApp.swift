@@ -397,8 +397,25 @@ func mimeFor(_ ext: String) -> String {
 
 @main
 struct JobScoutApp: App {
+    /* Three states, the same three the web resolves with light-dark():
+         nil / no stored value -> follow the trait collection   <- the default
+         "light" / "dark"      -> force it, via preferredColorScheme
+
+       A toggle needs all three, because clearing the stored value is the only
+       way to hand control back to the OS. Nothing in the UI sets this yet;
+       the mechanism is here so a settings row costs nothing. */
+    @AppStorage("jobscout.theme") private var themeChoice: String = ""
+
+    private var forced: ColorScheme? {
+        switch themeChoice {
+        case "light": return .light
+        case "dark": return .dark
+        default: return nil          // follow the device
+        }
+    }
+
     var body: some Scene {
-        WindowGroup { ContentView() }
+        WindowGroup { ContentView().preferredColorScheme(forced) }
     }
 }
 
