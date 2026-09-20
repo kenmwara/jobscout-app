@@ -209,6 +209,20 @@ struct PillButton: View {
     }
 }
 
+/// The same pill as a plain LABEL, for the cases where the tap belongs to
+/// something else - ShareLink owns its own button, so it needs the look
+/// without a second Button wrapped around it.
+struct PillLabel: View {
+    let text: String
+    var color: Color = midnightViolet
+    var body: some View {
+        Text(text).font(sans(13.5, .medium)).lineLimit(1)
+            .foregroundColor(color)
+            .padding(.horizontal, 17).padding(.vertical, 9)
+            .overlay(Capsule().stroke(hair2, lineWidth: 1.5))
+    }
+}
+
 /// The quiet text link (resume toggle, remove, clear all).
 struct LinkText: View {
     let text: String

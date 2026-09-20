@@ -2,6 +2,7 @@ package trade.tbot.jobscout
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
+import android.content.Intent
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.text.selection.SelectionContainer
@@ -17,6 +18,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -191,6 +193,29 @@ private fun <T> StepPanel(
     }
 }
 
+/**
+ * SHARE IS THE PHONE'S DOWNLOAD. The web offers Copy and Download on every
+ * draft; both native clients offered Copy alone, so the document the whole
+ * flow builds toward could be read and copied but never sent anywhere. A
+ * share sheet reaches mail, Drive, Files and the ATS's own app, which is
+ * what a download is FOR on a desktop.
+ */
+@Composable
+private fun ShareButton(label: String, subject: String, text: String) {
+    val ctx = LocalContext.current
+    PillButton(label) {
+        val send = Intent(Intent.ACTION_SEND).apply {
+            type = "text/plain"
+            putExtra(Intent.EXTRA_SUBJECT, subject)
+            putExtra(Intent.EXTRA_TEXT, text)
+        }
+        /* createChooser, not startActivity on the bare intent: without it
+           Android may hand the reader whichever app it decided last time,
+           with no way back. */
+        ctx.startActivity(Intent.createChooser(send, label))
+    }
+}
+
 /** Selectable so it can be copied into the employer's form, plus a one-tap copy. */
 @Composable
 private fun LongText(text: String) {
@@ -198,7 +223,10 @@ private fun LongText(text: String) {
     Column {
         SelectionContainer { Text(text, color = T.ink, fontSize = 15.sp, lineHeight = 24.sp) }
         Spacer(Modifier.height(12.dp))
-        PillButton("Copy") { clip.setText(AnnotatedString(text)) }
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            PillButton("Copy") { clip.setText(AnnotatedString(text)) }
+            ShareButton("Share", "Cover letter", text)
+        }
     }
 }
 
@@ -255,7 +283,10 @@ private fun RebuiltResume(r: ResumeResponse) {
                 color = T.text3, fontSize = 12.sp, lineHeight = 18.sp)
         }
         Spacer(Modifier.height(12.dp))
-        PillButton("Copy the resume") { clip.setText(AnnotatedString(plain)) }
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            PillButton("Copy the resume") { clip.setText(AnnotatedString(plain)) }
+            ShareButton("Share", "Resume", plain)
+        }
     }
 }
 

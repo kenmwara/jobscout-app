@@ -169,7 +169,15 @@ struct LongText: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text(text).font(sans(15)).foregroundColor(ink).lineSpacing(6).textSelection(.enabled)
-            PillButton(text: "Copy") { UIPasteboard.general.string = text }
+            /* SHARE IS THE PHONE'S DOWNLOAD. The web offers Copy AND
+               Download on every draft - "a resume has to be attachable" -
+               and both native clients offered Copy alone, so the document
+               this whole flow builds toward could be read and copied but
+               never sent anywhere. */
+            HStack(spacing: 8) {
+                PillButton(text: "Copy") { UIPasteboard.general.string = text }
+                ShareLink(item: text) { PillLabel(text: "Share") }
+            }
         }
     }
 }
@@ -237,8 +245,11 @@ struct RebuiltResume: View {
                 .padding(.top, 8)
             }
 
-            PillButton(text: "Copy the resume") { UIPasteboard.general.string = resumeText(r) }
-                .padding(.top, 12)
+            HStack(spacing: 8) {
+                PillButton(text: "Copy the resume") { UIPasteboard.general.string = resumeText(r) }
+                ShareLink(item: resumeText(r)) { PillLabel(text: "Share") }
+            }
+            .padding(.top, 12)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
