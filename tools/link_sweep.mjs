@@ -16,7 +16,7 @@ const LOCAL = process.argv.includes("--local");
 const ORIGINS = LOCAL
   ? ["http://127.0.0.1:8902"]
   : ["https://jobscout.page", "https://nairobi.jobscout.page"];
-const PAGES = ["", "browse", "saved", "privacy", "stats", "apply"];
+const PAGES = ["", "browse", "saved", "privacy", "apply"];
 
 const UA = { "user-agent": "Mozilla/5.0 (link-sweep; jobscout)" };
 const seen = new Map();          // url -> status, so an external host is hit once

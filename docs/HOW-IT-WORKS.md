@@ -104,7 +104,7 @@ page does not invent one.
   replied, interview, declined, marked by the person it happened to. The name
   must be on an allowlist inside the Worker, and an event carries no IP, no
   resume text, no job title and no company. The totals are public at
-  [jobscout.page/stats](https://jobscout.page/stats); what each event can and
+  `ops/stats.html`, which is not deployed; what each event can and
   cannot contain is written out on the
   [privacy page](https://jobscout.page/privacy). The page had been redesigned
   three times on taste before this existed.

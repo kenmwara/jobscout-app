@@ -330,7 +330,6 @@ fun MFoot(onOpen: (String) -> Unit) {
             listOf(
                 "How it works" to "https://jobscout.page/#how",
                 "Privacy" to "https://jobscout.page/privacy",
-                "Live stats" to "https://jobscout.page/stats",
             ).forEach { (label, url) ->
                 Text(
                     label,

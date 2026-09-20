@@ -25,7 +25,8 @@ const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const site = join(root, "site");
 const live = process.argv.includes("--live");
 const BASE = "https://jobscout.page/";
-const PAGES = ["index.html", "apply.html", "saved.html", "privacy.html", "stats.html"];
+// stats.html moved to ops/ on 2026-09-20 — it is no longer deployed.
+const PAGES = ["index.html", "apply.html", "saved.html", "privacy.html"];
 
 let fail = 0;
 const bad = (p, m) => { fail++; console.log(`  FAIL  ${p.padEnd(13)} ${m}`); };

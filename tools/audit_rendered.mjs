@@ -229,7 +229,8 @@ const ok = (m) => console.log(`  ok    ${m}`);
    "What is counted" — and no id on it, so every one of those links quietly
    landed at the top of the page instead. Nothing checked fragments at all. */
 {
-  const pages = ["index.html", "apply.html", "saved.html", "privacy.html", "stats.html"];
+  // stats.html moved to ops/ on 2026-09-20 — it is no longer deployed.
+  const pages = ["index.html", "apply.html", "saved.html", "privacy.html"];
   const src = Object.fromEntries(pages.map(f => [f, readFileSync(join(root, "site", f), "utf8")]));
   const idsOf = (html) => new Set(
     [...html.matchAll(/\sid="([^"]+)"/g)].map(m => m[1])
