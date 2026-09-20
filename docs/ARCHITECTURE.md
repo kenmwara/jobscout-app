@@ -152,16 +152,21 @@ Every colour is therefore defined **once**, as `light-dark(light, dark)`.
 Only the non-colour differences — shadows, the halo opacity, the card border —
 are written out in all three states, because `light-dark()` cannot carry them.
 
-⚠ **A toggle must reload.** Measured in Chrome 152: changing `color-scheme` at
-runtime does *not* re-resolve a `light-dark()` already substituted into a
-custom property. With `data-theme="dark"` and a computed `color-scheme: dark`,
-the body stayed cream — through a forced reflow, through re-setting
-`color-scheme` inline, and through re-declaring the token. Every state
-resolves correctly *on load*, in both directions, against either OS setting.
-So `setTheme()` persists the choice and the page re-enters through the head
-script. There is no toggle in the UI yet; the mechanism is in place on all
-three clients (`setTheme` on web, `ThemeChoice` on Android,
-`preferredColorScheme` on iOS).
+**The toggle is a three-state control** in the header — System / Light / Dark
+— because a two-state switch cannot express "follow the system", and that is
+the default, so a switch makes the default unreachable. It applies live; no
+reload.
+
+⚠ **A correction, because it is the kind of mistake that gets written down
+and believed.** An earlier version of this section claimed Chrome would not
+re-resolve `light-dark()` when `color-scheme` changed at runtime, and that a
+toggle therefore had to reload. That was wrong. Every one of those readings
+went through `body{transition:background .45s,color .45s}` **in a hidden
+browser pane, where transitions are paused at frame zero** — so
+`getComputedStyle` returned the colour the page was animating *from*. With
+transitions suppressed, all three states resolve synchronously and an OS flip
+lands live with no reload. `tools/check_theme.mjs` suppresses transitions
+before every read, and says so at the top; do not remove that.
 
 ⚠ `light-dark()` is Chrome 123+ / Safari 17.5+ / Firefox 120+, and on older
 engines the declaration is invalid at computed-value time rather than merely
@@ -203,6 +208,7 @@ this codebase actually has.
 | `python tools/cycle3_mobile.py` | The same pass over adb, both markets. It taps by **visible label from a fresh dump every time** — the box grows as it fills, so a coordinate captured one step earlier misses. |
 | `node tools/labels_audit.mjs` | Lists every control's text beside its element, for reading. "Watch this search" under a bell that emails nothing survived three audits because nothing ever printed the two together. |
 | `python tools/check_palette.py` | The colour law below, asserted against `site/base.css` **and** `Tokens.kt`: the market touching anything but the hero; a role under the contrast bar that applies to it; a band that fails on its own fill, duplicates another band, or takes a text colour; a primary button filled with the brand; the action wearing the auto hue; `--live` used as text; and either client drifting from the other. |
+| `node tools/check_theme.mjs [--live]` | The truth table in [THEME.md](THEME.md), executed: all 12 market x theme x OS cells, that switching market leaves the ground alone, that a stored choice survives a reload, that **no attribute is written when nothing is stored** (otherwise "follow the system" is unreachable after one load), that an OS flip lands live, and that the control offers three states rather than a switch. |
 | `python tools/check_swift.py` | The file no machine here can compile: braced unicode escapes, `$0` in a nested closure, brace and paren balance. Two Codemagic failures in a row is what paid for it. |
 | `python tools/check_console.py` | A tool that dies while **reporting**. Python takes stdout's encoding from the console codepage; cp1252 carries the em dash this repo writes in every message, cp437 and cp850 do not. `check_palette.py` really did exit 1 with no findings, and `check_swift.py` was proven to find two defects on cp437 and die before naming either — the same exit code as a clean report. Asserts that any tool which *can* print such a character reconfigures stdout first, detecting the guard as a **call** rather than a substring. |
 | `bash tools/check_picker.sh` | 12 fixtures against `Select.kt` (see above). |

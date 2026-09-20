@@ -60,7 +60,7 @@ except Exception:
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
 AA = 4.5
 AA_LARGE = 3.0
-MARKET_MAY_SET = {"hero-img", "mkt-wash"}
+MARKET_MAY_SET = {"hero", "mkt-wash"}
 
 fails = []
 def bad(m): fails.append(m); print("  FAIL  %s" % m)

@@ -53,16 +53,14 @@
 
   /* Three states: "system" | "light" | "dark". Removing the attribute is the
      only way to hand control back to the OS, so a two-way switch cannot
-     express this and a toggle needs all three.
+     express it and the toggle needs all three.
 
-     It RELOADS, and that is not laziness. Measured in Chrome 152: changing
-     `color-scheme` at runtime does NOT re-resolve a light-dark() that is
-     already substituted into a custom property. With data-theme="dark" and a
-     computed color-scheme of "dark", the body stayed cream - through a forced
-     reflow, through re-setting color-scheme inline, and through re-declaring
-     the token. Every state resolves correctly on LOAD, in both directions,
-     against either OS setting; only the live switch does not repaint. So the
-     choice is persisted and the page re-enters through the head script. */
+     It applies LIVE - no reload. An earlier version of this comment claimed
+     Chrome would not re-resolve light-dark() at runtime; that was measured
+     through `body{transition:background .45s}` in a hidden browser pane,
+     where transitions are paused at frame zero and every read returns the
+     START colour. With the transition suppressed, all three states resolve
+     synchronously, and so does an OS change with no attribute set. */
   d.setTheme=function(choice){
     try{
       if(choice==="light"||choice==="dark") localStorage.setItem("jobscout.theme",choice);
@@ -70,10 +68,8 @@
     }catch(e){}
     if(choice==="light"||choice==="dark") d.setAttribute("data-theme",choice);
     else d.removeAttribute("data-theme");
-    return true;
+    d.dispatchEvent(new CustomEvent("themechange",{detail:choice}));
   };
-  /* Apply a stored choice without a reload only at boot, where nothing has
-     been resolved yet. A toggle calls setTheme then location.reload(). */
 
   var q_t=q.get("theme");
   if(q_t==="light"||q_t==="dark"||q_t==="system"){ d.setTheme(q_t); return; }
@@ -87,7 +83,7 @@
 /* ── hero ───────────────────────────────────────────────────────────── */
 .hero{position:relative;border-radius:var(--r-card);overflow:hidden;margin:6px 0 0;
       min-height:560px;display:flex;align-items:center;justify-content:center;isolation:isolate}
-.hero .bg{position:absolute;inset:0;background:var(--hero-img);z-index:-2}
+.hero .bg{position:absolute;inset:0;background:var(--hero);z-index:-2}
 .hero .bg::after{content:"";position:absolute;inset:0;background:var(--scrim)}
 .hero .inner{width:100%;max-width:760px;padding:72px 24px;text-align:center;color:#fff}
 h1.display{
@@ -753,7 +749,31 @@ html.anim .bell[aria-pressed="true"] svg{animation:ring .6s var(--ease)}
   nav.main a{display:none}
   nav.main a.keep{display:inline-flex;padding:9px 10px}
   .mkt button{padding:8px 11px;font-size:0;gap:0}
-  .mkt .flag{width:22px;height:15px}
+  /* The theme control: THREE states, because a switch cannot express "follow
+   the system" and that is the default. Same trough-and-pill shape as the
+   market switch, icon-only so it does not crowd the header. */
+.thm{display:flex;background:var(--trough);border-radius:12px;padding:3px;gap:2px;
+  border:1px solid var(--hair)}
+.thm button{
+  appearance:none;border:0;background:transparent;cursor:pointer;color:var(--text2);
+  padding:6px 8px;border-radius:9px;display:grid;place-items:center;
+  transition:background var(--t-micro) var(--ease),color var(--t-micro) var(--ease)}
+.thm button svg{width:15px;height:15px;display:block;fill:none;stroke:currentColor;
+  stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.thm button:hover{color:var(--ink)}
+.thm button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:var(--sh-hover)}
+.thm button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+/* NEVER hidden on a small screen. Hiding it there would make the light
+   theme unreachable on a phone, which is the same hole a two-state
+   switch leaves: the reader cannot get to a state that exists. It gets
+   tighter instead, and the row is allowed to wrap. */
+@media(max-width:860px){
+  header.site .row{flex-wrap:wrap;row-gap:10px}
+  /* Bigger, not smaller, on a phone: a 26px target is under the 44px
+     guidance, and this is the only way to a state the OS is not offering. */
+  .thm button{padding:0;min-width:40px;min-height:40px}
+}
+.mkt .flag{width:22px;height:15px}
   header.site{padding:16px 0 10px}
   .hero{min-height:0}
   .hero .inner{padding:48px 18px}
@@ -912,6 +932,20 @@ html.anim .bell[aria-pressed="true"] svg{animation:ring .6s var(--ease)}
         <button type="button" data-mkt="ke" aria-pressed="false">
           <svg class="flag" viewBox="0 0 24 16"><rect width="24" height="16" fill="#fff"/><rect width="24" height="4.6" fill="#000"/><rect y="5.6" width="24" height="4.8" fill="#be0027"/><rect y="11.4" width="24" height="4.6" fill="#009a49"/><ellipse cx="12" cy="8" rx="2.3" ry="5" fill="#be0027" stroke="#fff" stroke-width=".7"/></svg>
           Kenya
+        </button>
+      </div>
+      <div class="thm" id="thmTop" aria-label="Colour theme">
+        <button type="button" data-thm="system" aria-pressed="true"
+                title="Follow your device" aria-label="Theme: follow your device">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2.5" y="4" width="19" height="13" rx="2"/><path d="M8.5 20.5h7M12 17.5v3"/></svg>
+        </button>
+        <button type="button" data-thm="light" aria-pressed="false"
+                title="Light" aria-label="Theme: light">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M4.2 4.2l1.6 1.6M18.2 18.2l1.6 1.6M2.5 12h2.2M19.3 12h2.2M4.2 19.8l1.6-1.6M18.2 5.8l1.6-1.6"/></svg>
+        </button>
+        <button type="button" data-thm="dark" aria-pressed="false"
+                title="Dark" aria-label="Theme: dark">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.2A8.2 8.2 0 1 1 9.8 4a6.6 6.6 0 0 0 10.2 10.2z"/></svg>
         </button>
       </div>
       <nav class="main">
@@ -2540,6 +2574,27 @@ function sources(){
 }
 
 reveal(); relight(); rotate();
+
+/* The theme control. Three states, and the pressed one is read back from the
+   attribute rather than remembered separately, so it cannot disagree with
+   what the page is actually showing. */
+(function(){
+  const box = document.getElementById("thmTop");
+  if (!box) return;
+  const d = document.documentElement;
+  const current = () => d.getAttribute("data-theme") || "system";
+  const paint = () => box.querySelectorAll("button").forEach(b =>
+    b.setAttribute("aria-pressed", String(b.dataset.thm === current())));
+  box.addEventListener("click", e => {
+    const b = e.target.closest("button[data-thm]");
+    if (!b) return;
+    d.setTheme(b.dataset.thm);
+    paint();
+    if (window.EV) EV("theme", b.dataset.thm);
+  });
+  d.addEventListener("themechange", paint);
+  paint();
+})();
 </script>
 </body>
 </html>

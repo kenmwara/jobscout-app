@@ -39,16 +39,14 @@
 
   /* Three states: "system" | "light" | "dark". Removing the attribute is the
      only way to hand control back to the OS, so a two-way switch cannot
-     express this and a toggle needs all three.
+     express it and the toggle needs all three.
 
-     It RELOADS, and that is not laziness. Measured in Chrome 152: changing
-     `color-scheme` at runtime does NOT re-resolve a light-dark() that is
-     already substituted into a custom property. With data-theme="dark" and a
-     computed color-scheme of "dark", the body stayed cream - through a forced
-     reflow, through re-setting color-scheme inline, and through re-declaring
-     the token. Every state resolves correctly on LOAD, in both directions,
-     against either OS setting; only the live switch does not repaint. So the
-     choice is persisted and the page re-enters through the head script. */
+     It applies LIVE - no reload. An earlier version of this comment claimed
+     Chrome would not re-resolve light-dark() at runtime; that was measured
+     through `body{transition:background .45s}` in a hidden browser pane,
+     where transitions are paused at frame zero and every read returns the
+     START colour. With the transition suppressed, all three states resolve
+     synchronously, and so does an OS change with no attribute set. */
   d.setTheme=function(choice){
     try{
       if(choice==="light"||choice==="dark") localStorage.setItem("jobscout.theme",choice);
@@ -56,10 +54,8 @@
     }catch(e){}
     if(choice==="light"||choice==="dark") d.setAttribute("data-theme",choice);
     else d.removeAttribute("data-theme");
-    return true;
+    d.dispatchEvent(new CustomEvent("themechange",{detail:choice}));
   };
-  /* Apply a stored choice without a reload only at boot, where nothing has
-     been resolved yet. A toggle calls setTheme then location.reload(). */
 
   var q_t=q.get("theme");
   if(q_t==="light"||q_t==="dark"||q_t==="system"){ d.setTheme(q_t); return; }

@@ -222,7 +222,7 @@ a{color:inherit}
    paint four, and nobody remembers four market colours anyway. A market earns
    a hue when it earns its own domain and its own pitch — today Kenya, only. */
 html[data-market]{
-  --hero-img:
+  --hero:
     radial-gradient(78% 62% at 104% -4%,
       rgba(72,101,255,.92) 0%, rgba(72,101,255,.45) 34%, rgba(72,101,255,0) 64%),
     linear-gradient(152deg,#241a7a 0%,#150e52 38%,#080331 86%);
@@ -237,7 +237,7 @@ html[data-market]{
    One thing that breaks before the colour does: the segmented market pill
    stops working past three. At four it has to become a menu. */
 html[data-market="ke"]{
-  --hero-img:
+  --hero:
     radial-gradient(78% 62% at 104% -4%,
       rgba(45,140,50,.88) 0%, rgba(45,140,50,.42) 34%, rgba(45,140,50,0) 64%),
     linear-gradient(152deg,#11401a 0%,#0c2a12 38%,#080331 86%);
