@@ -540,6 +540,27 @@ struct ContentView: View {
         }   // ScrollViewReader
     }
 
+    /* The same key the App struct reads to resolve preferredColorScheme.
+       @AppStorage is observable on both sides, so writing it here redraws
+       the window's colour scheme without anything else being wired up. */
+    @AppStorage("jobscout.theme") private var themeChoice: String = ""
+
+    private var themeLabel: String {
+        switch themeChoice {
+        case "system": return "Device"
+        case "dark": return "Dark"
+        default: return "Light"        // absent or "light": the default
+        }
+    }
+
+    private var themeNext: String {
+        switch themeChoice {
+        case "": return "system"
+        case "system": return "dark"
+        default: return ""             // back to the default, stored as empty
+        }
+    }
+
     /// The floating pill navigation: mark, wordmark, live chip, saved.
     private var header: some View {
         HStack(spacing: 10) {
@@ -555,6 +576,16 @@ struct ContentView: View {
             .buttonStyle(.plain)
             if vm.feed != nil { liveChip }
             Spacer()
+            /* THREE STATES ON ONE CONTROL. A switch cannot express the
+               third, and the third - follow the phone - is the one most
+               people want; leaving it out is why the mechanism in the App
+               struct sat unused since it was written. It names the state it
+               is IN and cycles Light, Device, Dark. A word rather than an
+               icon: this bar already speaks in words, and a word carries its
+               own accessibility label. */
+            Button(themeLabel) { themeChoice = themeNext }
+                .font(sans(14, .medium)).foregroundColor(muted)
+                .buttonStyle(.plain)
             Button("Saved (\(vm.tracker.count))") { showTracker = true }
                 .font(sans(14, .medium)).foregroundColor(midnightViolet)
                 .buttonStyle(.plain)

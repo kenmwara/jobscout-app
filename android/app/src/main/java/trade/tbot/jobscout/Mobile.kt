@@ -70,6 +70,13 @@ fun MHead(
     onSaved: (() -> Unit)? = null,
     /** The wordmark goes home, as the web's has since the redesign. */
     onHome: (() -> Unit)? = null,
+    /* THEME.md section 6: the toggle is a required feature. ThemeChoice has
+       carried all three states since it was written and nothing ever called
+       set(), so the stored value could only be absent - this app was
+       permanently light with no route to dark, on a phone whose owner may
+       have asked their whole device for dark. */
+    themeChoice: String? = null,
+    onTheme: (() -> Unit)? = null,
     onMarket: (String) -> Unit,
 ) {
     Row(
@@ -89,6 +96,22 @@ fun MHead(
             Text("JobScout", style = H2, fontSize = 15.sp, color = T.ink)
         }
         Spacer(Modifier.weight(1f))
+        if (onTheme != null) {
+            /* THREE STATES ON ONE CONTROL, because a switch cannot express
+               the third and the third - follow the phone - is the one most
+               people want. It names the state it is IN and cycles Light,
+               Device, Dark. A word rather than an icon: this bar already
+               speaks in words, and a word is its own accessibility label. */
+            Text(
+                ThemeChoice.label(themeChoice),
+                fontSize = 11.sp, fontWeight = FontWeight.Medium, color = T.text3,
+                modifier = Modifier
+                    .clip(Pill9999)
+                    .clickable(onClick = onTheme)
+                    .padding(horizontal = 8.dp, vertical = 6.dp),
+            )
+            Spacer(Modifier.width(6.dp))
+        }
         if (onSaved != null) {
             Text(
                 if (saved > 0) "Saved ($saved)" else "Saved",

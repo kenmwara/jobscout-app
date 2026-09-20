@@ -180,10 +180,31 @@ object ThemeChoice {
     }.apply()
 
     /** Light unless the reader asked for dark, or asked to follow the phone. */
-    fun isDark(ctx: Context, systemIsDark: Boolean): Boolean = when (stored(ctx)) {
+    fun isDark(ctx: Context, systemIsDark: Boolean): Boolean =
+        isDark(stored(ctx), systemIsDark)
+
+    /* The same rule against a choice the UI is already holding. Compose does
+       not observe SharedPreferences, so the screen watches a state value and
+       the preference stays the durable copy; both have to resolve
+       identically or the theme would differ between a tap and a restart. */
+    fun isDark(choice: String?, systemIsDark: Boolean): Boolean = when (choice) {
         "dark" -> true
         "system" -> systemIsDark
         else -> false          // absent or "light": the default
+    }
+
+    /** light -> match the device -> dark -> light. */
+    fun next(choice: String?): String? = when (choice) {
+        null -> "system"
+        "system" -> "dark"
+        else -> null
+    }
+
+    /** What the button says it is showing now. */
+    fun label(choice: String?): String = when (choice) {
+        null -> "Light"
+        "system" -> "Device"
+        else -> "Dark"
     }
 }
 

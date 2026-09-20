@@ -507,7 +507,17 @@ fun DemoScreen(vm: DemoVm = viewModel()) {
     // Theme follows the device on either market, unless the reader has stored
     // an override — the same three states the web resolves with light-dark().
     val ctx = LocalContext.current
-    val tokens = tokensFor(ui.market, ThemeChoice.isDark(ctx, isSystemInDarkTheme()))
+    /* HELD IN STATE, NOT RE-READ FROM PREFERENCES EVERY FRAME. Compose
+       redraws what it observes and SharedPreferences is not observable, so a
+       tap that only wrote the preference would change the stored value and
+       leave the screen exactly as it was until the next cold start. The
+       preference remains the durable copy; this is the one the UI watches. */
+    /* `remember`, not `rememberSaveable`: on an activity recreation this
+       composable re-runs and reads the preference again, which is the
+       durable copy and the right answer. Saving it twice would only add a
+       second thing to keep in step. */
+    var themeChoice by remember { mutableStateOf(ThemeChoice.stored(ctx)) }
+    val tokens = tokensFor(ui.market, ThemeChoice.isDark(themeChoice, isSystemInDarkTheme()))
     val uriHandler = LocalUriHandler.current
 
     // A run moves you to the matches, which is the mockup's third frame; nothing else
@@ -551,6 +561,13 @@ fun DemoScreen(vm: DemoVm = viewModel()) {
                     onHome = {
                         screen = Screen.LANDING
                         sector = null; policy = null; query = ""
+                    },
+                    themeChoice = themeChoice,
+                    /* Both copies move together: the state the screen watches
+                       and the preference that survives the process. */
+                    onTheme = {
+                        themeChoice = ThemeChoice.next(themeChoice)
+                        ThemeChoice.set(ctx, themeChoice)
                     },
                 ) { vm.setMarket(it) }
             }
