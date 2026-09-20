@@ -1,26 +1,12 @@
 {
   "name": "JobScout theme",
-  "version": "3.1",
+  "version": "3.2",
   "generated": "2026-09-20",
   "source": "css/theme-resolution.css \u2014 regenerate from that file, never hand-edit",
   "note": "market sets --hero only; theme sets everything else.",
-  "openDecision": {
-    "see": "docs/THEME.md \u00a716",
-    "shipping": "A",
-    "optionC": {
-      "--evidence-bg": {
-        "light": "#f1f1fa",
-        "dark": "#2b284f"
-      },
-      "--evidence-rule-answer": {
-        "light": "#b86b03",
-        "dark": "#e89f59"
-      },
-      "--evidence-rule-strongest": {
-        "light": "#3e954d",
-        "dark": "#7ac683"
-      }
-    }
+  "decisions": {
+    "\u00a716": "evidence cards are neutral + a 2px accent rule (option C, both themes)",
+    "ember": "--unsure moved from #ff6d39 (hue 39) to #b86b03/#e89f59 (hue 63)"
   },
   "bandRamp": {
     "ramp": {
@@ -138,10 +124,11 @@
       "--ping": "#617ad1",
       "--unsure": "#b86b03",
       "--nearmiss": "#7d7d97",
-      "--strongest-bg": "#e7f4e8",
+      "--evidence-bg": "#f1f1fa",
+      "--evidence-rule-answer": "#b86b03",
+      "--evidence-rule-strongest": "#3e954d",
       "--strongest-label": "#225b2c",
       "--strongest-body": "#495349",
-      "--answer-bg": "#fbede1",
       "--answer-label": "#713f00",
       "--answer-body": "#584e45",
       "--scrim": "rgba(8,3,49,.66)",
@@ -182,10 +169,11 @@
       "--ping": "#93adff",
       "--unsure": "#e89f59",
       "--nearmiss": "#aeafc7",
-      "--strongest-bg": "#223424",
+      "--evidence-bg": "#2b284f",
+      "--evidence-rule-answer": "#e89f59",
+      "--evidence-rule-strongest": "#7ac683",
       "--strongest-label": "#92d098",
       "--strongest-body": "#ccd6cd",
-      "--answer-bg": "#3d2b1a",
       "--answer-label": "#ecaf78",
       "--answer-body": "#dbd1c8",
       "--scrim": "rgba(0,0,0,.66)",
@@ -197,6 +185,8 @@
     }
   },
   "shared": {
+    "--strongest-bg": "var(--evidence-bg)",
+    "--answer-bg": "var(--evidence-bg)",
     "--radius-pill": "1600px",
     "--radius-card": "16px",
     "--radius-inner": "12px",

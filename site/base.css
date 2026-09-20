@@ -29,15 +29,18 @@
   html{
     --indigo:#4865ff; --ink:#080331; --midnight:#1b1463; --lavender:#a2baff; --stone:#333333;
     --canvas:#f8f3eb; --surface:#ffffff; --tinted:#f098d7; --accent:#ffaefe;
-    --vibrant:#ff6d39; --info:#dce4fb;
-    --forest:#328a3b; --meadow:#114e0b; --ember:#ff6d39; --ember-deep:#cc3600;
+    --info:#dce4fb;
     --blossom:#f098d7; --petal:#ffaefe;
 
-    /* fit bands — product logic. text colour is contrast-checked on cream. */
-    --auto:#114e0b;      --auto-fill:#328a3b;
-    --ping:#1b1463;      --ping-fill:#4865ff;
-    --unsure:#bf3200;    --unsure-fill:#ff6d39;   /* #cc3600 was 4.29:1 on #ffe6da */
-    --nearmiss:#333333;  --nearmiss-fill:#dce4fb;
+    /* THE PRE-EMBER BAND TOKENS ARE GONE, not aliased. --vibrant, --forest,
+       --ember-deep, --auto, --auto-fill, --ping, --ping-fill, --unsure,
+       --unsure-fill, --nearmiss and --nearmiss-fill all still resolved here
+       to the OLD palette - #ff6d39 ember, #328a3b forest, #114e0b meadow -
+       and nothing read any of them: zero `var(--name)` across base.css,
+       every page and the phone. Dead definitions holding the exact hexes
+       the v3.1 changelog says to eradicate, one copy-paste away from
+       coming back. The live band tokens are --b-auto and friends in the
+       :root block below; --meadow and --ember stay, aliased to them. */
 
     --text:#080331; --text2:#4a4560; --text3:#6b6780;
     --hair:rgba(8,3,49,.10); --hair2:rgba(8,3,49,.18);
@@ -283,23 +286,49 @@
      than cream, so each bloom composited to #efecec: 1.06:1 DARKER, with the
      hue dragged from 37deg to 0. A glow that darkens is a shadow, and that
      is what made the light page look blotchy. */
-  /* THE DARK ALPHAS ARE SOLVED, NOT PICKED. Measured in pixels by
-     tools/check_halo.mjs: .50 put the top-right corner at 1.174 against the
-     flat canvas, .59 at 1.202, and the spec peak is 1.258. Two points give
-     the curve between declared alpha and the composite the corner actually
-     reaches - the corner sees about 70% of the declared value, because it
-     samples the gradient's falloff rather than its centre - and .71 is what
-     that curve wants. The other two blooms keep their ratio to the first.
+  /* TWO THEMES, TWO AXES, AND THAT IS THE POINT.
 
-     Light measured 1.049 against a 1.053 spec and is not touched. */
-  --halo-1: light-dark(rgba(255,252,242,.92), rgba(43, 57,108,.71));
-  --halo-2: light-dark(rgba(255,250,240,.80), rgba(58, 42, 96,.60));
-  --halo-3: light-dark(rgba(255,253,246,.85), rgba(36, 52,100,.54));
+     DARK IS BRIGHTNESS, and it is solved rather than picked. Measured in
+     pixels by tools/check_halo.mjs: alpha .50 put the top-right corner at
+     1.174 against the flat canvas, .59 at 1.202, spec peak 1.258. Two
+     points give the curve between declared alpha and what the corner
+     actually reaches - about 70% of the declared value, because the corner
+     samples the falloff rather than the centre - and .71 is what that curve
+     wants. The other two keep their ratio to the first.
 
-  /* The evidence cards ARE the auto and unsure rungs, not a second palette
-     that has to be kept in step with the first. */
-  --strongest-body: light-dark(#495349, #ccd6cd);   /* 7.07 / 8.88 */
-  --answer-body:    light-dark(#584e45, #dbd1c8);   /* 7.06 / 8.96 */
+     LIGHT CANNOT BE BRIGHTNESS. Section 14 asks for blooms lighter than the
+     canvas; on cream that means white-on-cream, and pure white at alpha 1
+     over #f8f3eb is 1.105:1. The entire range is ten percent. The spec's
+     1.053 spends half of it and composites to #fefbf1 - dE 2.9 at the PEAK,
+     the just-noticeable step, before any falloff. Reported twice as "there
+     is no halo", and both times the meter said it was on spec.
+
+     So light carries HUE. Amber and peach at low alpha: a warm glow on warm
+     paper, dE 8.5 / 6.0 / 7.2 at the peak with luminance contrast still
+     about 1.06, which reads as warmth rather than as a bright patch. A
+     contrast meter scores that near 1.000, which is why check_halo now
+     measures dE as well - it was using the dark theme's metric on both. */
+  --halo-1: light-dark(rgba(255,214,150,.26), rgba(43, 57,108,.71));
+  --halo-2: light-dark(rgba(255,206,178,.22), rgba(58, 42, 96,.60));
+  --halo-3: light-dark(rgba(255,228,176,.24), rgba(36, 52,100,.54));
+
+  /* THE EVIDENCE CARD IS A NEUTRAL (section 16, option C).
+     One fill was serving a 70x22 pill and an evidence card measured at
+     16,448px2 - the same tint over 66x the area on dark - and at card
+     scale a hint becomes a field of brown. Both bands now share a neutral
+     at the SURFACE's own hue, and the band colour moves to a 2px left rule
+     and the label, where it is still unambiguous and no longer a wash.
+
+     The rule section 11 was missing, and the reason this is not just a
+     nicer pair of hexes: colour intensity is a budget spent over AREA.
+     Above roughly 4,000px2 a surface is neutral. Badges, toggles and
+     selection keep their fills - that exception is why a wide button,
+     which also crosses the number, is left alone. */
+  --evidence-bg:             light-dark(#f1f1fa, #2b284f);
+  --evidence-rule-strongest: light-dark(#3e954d, #7ac683);   /* = --auto   */
+  --evidence-rule-answer:    light-dark(#b86b03, #e89f59);   /* = --unsure */
+  --strongest-body: light-dark(#495349, #ccd6cd);   /* 7.15 / 9.26 on the neutral */
+  --answer-body:    light-dark(#584e45, #dbd1c8);   /* 7.22 / 9.19 on the neutral */
 }
 
 /* Shadows are not colours, so light-dark() cannot carry them: the warm-brown

@@ -168,10 +168,22 @@ p.sub{font:400 13.5px/1.5 var(--sans);color:var(--text2);margin:0 0 16px}
 .nofit .k{font:500 10.5px/1 var(--sans);letter-spacing:.09em;text-transform:uppercase;
   color:var(--b-unsure);margin:0 0 8px}
 .nofit .asks{list-style:none;margin:0 0 12px;padding:0;display:grid;gap:7px}
-.nofit .asks li{padding:10px 12px;border-radius:var(--r-input);background:var(--b-unsure-bg);
+.nofit .asks li{padding:10px 12px 10px 14px;border-radius:var(--r-input);
+  background:var(--evidence-bg);border-left:2px solid var(--evidence-rule-answer);
   font:400 12px/1.5 var(--sans);color:var(--answer-body)}
 .nofit .asks em{display:block;font:500 10px/1.3 var(--sans);letter-spacing:.08em;
   text-transform:uppercase;color:var(--b-unsure);font-style:normal;margin:0 0 4px}
+
+/* The kept sweep, as a row rather than a single destructive button. */
+.sweep{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin:0 0 10px;
+  padding:12px 13px;background:var(--surface);border:1px solid var(--hair);
+  border-radius:var(--r-card)}
+.sweep .mk{display:flex;align-items:center;gap:7px;flex:1 1 100%;
+  font:500 13px/1.3 var(--sans);color:var(--ink)}
+.sweep .mk svg{width:15px;height:15px;fill:var(--accent);flex:0 0 auto}
+.sweep .rm{appearance:none;background:transparent;border:0;cursor:pointer;
+  font:400 12px/1 var(--sans);color:var(--text2);padding:8px 6px}
+.sweep .rm:hover{color:var(--ink)}
 
 .card{background:var(--surface);border:1px solid var(--hair);border-radius:var(--r-card);
   padding:14px;margin:0 0 11px;cursor:pointer}
@@ -187,10 +199,23 @@ p.sub{font:400 13.5px/1.5 var(--sans);color:var(--text2);margin:0 0 16px}
   padding:5px 8px;border-radius:6px;margin:10px 8px 0 0}
 .pill{display:inline-block;font:500 11px/1 var(--sans);padding:5px 9px;border-radius:var(--r-pill);
   border:1px solid var(--hair2);color:var(--text2);margin-top:10px}
-.ev{margin:11px 0 0;padding:10px 11px;border-radius:var(--r-inner,12px)}
+/* SECTION 16, OPTION C. Measured at 16,448px2 each - four times the
+   4,000px2 the rule names - and carrying the band's own tint over all of
+   it. Both now sit on the neutral and wear the band as a 2px rule and a
+   label. The BODY had the label's colour too, so the paragraph was the
+   label at a smaller size; it gets its own token, which is the pair
+   section 16's table quotes. */
+.ev{margin:11px 0 0;padding:10px 11px 10px 13px;border-radius:var(--r-inner,12px);
+  background:var(--evidence-bg)}
 .ev p{margin:0}
 .ev .lb{font:500 10px/1 var(--sans);letter-spacing:.08em;text-transform:uppercase;margin-bottom:5px!important}
 .ev .bd{font:400 12.5px/1.5 var(--sans)}
+.ev-strongest{border-left:2px solid var(--evidence-rule-strongest)}
+.ev-strongest .lb{color:var(--b-auto)}
+.ev-strongest .bd{color:var(--strongest-body)}
+.ev-answer{border-left:2px solid var(--evidence-rule-answer)}
+.ev-answer .lb{color:var(--b-unsure)}
+.ev-answer .bd{color:var(--answer-body)}
 .cta{display:block;width:100%;appearance:none;border:0;cursor:pointer;margin:13px 0 0;
   background:var(--btn);color:var(--btn-ink);border-radius:var(--r-pill);
   font:500 14px/1 var(--sans);padding:13px}
@@ -399,7 +424,11 @@ const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c =>
 const D = document.documentElement;
 
 let FEED = null, market = "ca", screen = "home", saved = new Set(), current = null, ran = false;
-let savedSearch = false;
+/* PER MARKET, like the web - its saved page lists a Canada row and a Kenya
+   row together. A single boolean meant switching market silently discarded
+   the sweep you had kept. */
+const savedSearches = new Set();
+const isSearchSaved = () => savedSearches.has(market);
 const draftState = {};
 
 /* THE SAME THREE STEPS apply.html USES. The async clipboard API is refused
@@ -643,13 +672,13 @@ const cardHTML = (p, full) => {
     <span class="band" style="color:var(${tok});background:var(${tok}-bg)">${word}</span>
     <span class="pill">${pol}</span>
     ${full ? `
-      <div class="ev" style="background:var(--b-auto-bg)">
-        <p class="lb" style="color:var(--b-auto)">&#8593; Strongest</p>
-        <p class="bd" style="color:var(--b-auto)">${esc(p.strongest
+      <div class="ev ev-strongest">
+        <p class="lb">&#8593; Strongest</p>
+        <p class="bd">${esc(p.strongest
           || `Direct overlap with ${p.sector} work, and the location rule passes.`)}</p></div>
-      <div class="ev" style="background:var(--b-unsure-bg)">
-        <p class="lb" style="color:var(--b-unsure)">&#8595; What to answer</p>
-        <p class="bd" style="color:var(--b-unsure)">${esc(p.weakest
+      <div class="ev ev-answer">
+        <p class="lb">&#8595; What to answer</p>
+        <p class="bd">${esc(p.weakest
           || "Say how recently you did this, and name the tools the posting lists that your resume does not.")}</p></div>` : ""}
   </div>`;
 };
@@ -707,9 +736,9 @@ const SCREENS = {
     <p class="sub">${scored().length} scored of ${postings().length} swept &middot; ${scoredReal
       ? "scored by Claude just now" : "example scores &mdash; paste a resume to score for real"}
       ${runErr ? `<br><span style="color:var(--b-unsure)">${esc(runErr)}</span>` : ""}</p>
-    <button class="savesearch" type="button" id="saveSearch" aria-pressed="${savedSearch}">
+    <button class="savesearch" type="button" id="saveSearch" aria-pressed="${isSearchSaved()}">
       <svg viewBox="0 0 24 24"><path d="M6.5 3.5h11v17l-5.5-4-5.5 4z"/></svg>
-      ${savedSearch ? "Search saved" : "Save this search"}
+      ${isSearchSaved() ? "Search saved" : "Save this search"}
       <span class="n">${market === "ke" ? "Kenya" : "Canada"} &middot; today</span>
     </button>
     ${clearsFloor() ? "" : nofitHTML()}
@@ -766,17 +795,26 @@ const SCREENS = {
 
   saved: () => {
     const rows = scored().filter(p => saved.has(p.id));
-    const n = rows.length + (savedSearch ? 1 : 0);
+    const n = rows.length + savedSearches.size;
+    /* A KEPT SWEEP HAS TO OPEN. It was one button that only unsaved, so the
+       obvious tap destroyed the thing you had kept and nothing led back to
+       the sweep. The web's row carries "Open this search" with remove
+       beside it; this is the same row. */
+    const sweeps = [...savedSearches].map(m => `
+      <div class="sweep">
+        <span class="mk">
+          <svg viewBox="0 0 24 24"><path d="M6.5 3.5h11v17l-5.5-4-5.5 4z"/></svg>
+          ${m === "ke" ? "Kenya" : "Canada"} sweep</span>
+        <button class="mini-cta solid" type="button" data-sweep-open="${m}">Open this search &rarr;</button>
+        <button class="rm" type="button" data-sweep-rm="${m}"
+                aria-label="Remove the ${m === "ke" ? "Kenya" : "Canada"} sweep">remove &times;</button>
+      </div>`).join("");
     return `${head()}
       <h2 class="big">Saved</h2>
       <p class="sub">${n} kept &middot; stays on this device</p>
-      ${savedSearch ? `<button class="savesearch" type="button" id="saveSearch"
-          aria-pressed="true">
-        <svg viewBox="0 0 24 24"><path d="M6.5 3.5h11v17l-5.5-4-5.5 4z"/></svg>
-        ${market === "ke" ? "Kenya" : "Canada"} sweep
-        <span class="n">tap to unsave</span></button>` : ""}
+      ${sweeps}
       ${rows.length ? rows.map(p => cardHTML(p)).join("")
-        : (savedSearch ? "" : `<p class="empty">Nothing saved yet.<br>
+        : (savedSearches.size ? "" : `<p class="empty">Nothing saved yet.<br>
             Tap the heart on a match, or save the whole search.</p>`)}`;
   },
 };
@@ -876,7 +914,28 @@ document.addEventListener("keydown", e => {
 
 document.addEventListener("click", e => {
   if (e.target.id === "runBtn") return runScore();
-  if (e.target.closest("#saveSearch")) { savedSearch = !savedSearch; return paint(); }
+  if (e.target.closest("#saveSearch")) {
+    savedSearches.has(market) ? savedSearches.delete(market) : savedSearches.add(market);
+    return paint();
+  }
+  const sweepOpen = e.target.closest("[data-sweep-open]");
+  if (sweepOpen) {
+    const m = sweepOpen.dataset.sweepOpen;
+    /* Switching market first, when the sweep is the other one's - the same
+       as the web's Kenya row pointing at nairobi rather than pretending the
+       Canada board is it. The scores belong to the old feed, so they go. */
+    if (m !== market) {
+      market = m;
+      D.setAttribute("data-market", m);
+      document.querySelectorAll("#segMarket button").forEach(b =>
+        b.setAttribute("aria-pressed", String(b.dataset.m === m)));
+      scoredReal = null; saved.clear();
+    }
+    screen = ran && scoredReal ? "matches" : "home";
+    return paint();
+  }
+  const sweepRm = e.target.closest("[data-sweep-rm]");
+  if (sweepRm) { savedSearches.delete(sweepRm.dataset.sweepRm); return paint(); }
   const sh = $("#sheet");
   if (sh && !sh.hidden) {
     /* Identity, not a rectangle hit-test: a keyboard-issued click reports

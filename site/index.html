@@ -876,8 +876,13 @@ nav.main{margin-left:18px}
    not say. They were #fffdf9 with #6e6973 at 5.26:1; the rung is 7.58:1 and
    carries the hue that means "answer this". */
 .nofit .asks li{
-  padding:12px 14px;border-radius:var(--r-input);background:var(--b-unsure-bg);
-  border:1px solid transparent;font:400 13px/1.5 var(--sans);color:var(--answer-body)}
+  /* Section 16 option C: a block of body text sits on a neutral, and the
+     band colour is the rule down its left edge plus the label above it.
+     These cards were the tinted-field case the section is about. */
+  padding:12px 14px 12px 16px;border-radius:var(--r-input);
+  background:var(--evidence-bg);border:1px solid transparent;
+  border-left:2px solid var(--evidence-rule-answer);
+  font:400 13px/1.5 var(--sans);color:var(--answer-body)}
 .nofit .asks em{display:block;font:500 10.5px/1 var(--sans);letter-spacing:.09em;
   text-transform:uppercase;color:var(--b-unsure);font-style:normal;margin:0 0 5px}
 .nofit .routes{display:flex;gap:10px;flex-wrap:wrap;margin:18px 0 0}

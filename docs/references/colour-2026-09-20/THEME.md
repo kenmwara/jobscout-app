@@ -706,10 +706,11 @@ same scrim, the same elevation and the same footer.
 
 ---
 
-## 16. OPEN: how much colour a large surface may carry
+## 16. DECIDED: colour intensity is a budget spent over area
 
-**Not yet decided. The tokens currently ship option A.** This section exists so
-the decision is made deliberately rather than by default.
+**Decided 2026-09-20: option C, in both themes.** The tokens ship it. This
+section keeps the reasoning and the two rejected options, because the rule it
+produces is the one most likely to be re-broken.
 
 ### The mistake
 
@@ -739,9 +740,9 @@ the field.
 
 | | dark card | light card | chroma | the band colour lives in |
 |---|---|---|---|---|
-| **A** *(shipping)* | `#3d2b1a` | `#fbede1` | .038 / .022 | the fill |
+| **A** *(was shipping)* | `#3d2b1a` | `#fbede1` | .038 / .022 | the fill |
 | **B** | `#332c27` | `#f6f1ec` | .014 / .009 | a trace in the fill |
-| **C** | `#2b284f` | `#f1f1fa` | at the **surface's** hue | a 2px rule + the label |
+| **C** *(shipping)* | `#2b284f` | `#f1f1fa` | at the **surface's** hue | a 2px rule + the label |
 
 All three pass AA identically, so this is purely a question of how much colour
 a large surface should carry. On dark, A is a brown slab — it is lighter than
@@ -768,19 +769,20 @@ is why light survives the same mistake.
 
 `--auto-fill` / `--unsure-fill` are unchanged and keep serving pills.
 
-### The rule §11 is missing either way
+### The rule this produces — the one to keep
 
 > A tinted fill is for elements at **pill scale**. Above roughly 4,000px² a
 > surface is neutral — the canvas's or the surface's own hue — and the band
 > colour moves to a rule, a label, or a small mark. Colour intensity is not a
 > constant; it is a budget spent over area.
 
-### Recommendation
+### Why C rather than A on light
 
-**C in both themes.** Not because A is broken on light — it is not, and it is
-the nicer of the two there — but because the rule above holds at any size in
-either theme and survives the next component nobody has thought about yet. A
-theme-specific exception is the kind of thing that rots quietly.
+A is not broken on light — it is the nicer of the two there, because the tint
+is *darker* than its white surface and so reads as a recessed panel. The rule
+above is what decided it: it holds at any size in either theme and survives the
+next component nobody has thought about yet. A theme-specific exception is the
+kind of thing that rots quietly.
 
 `boards/Tint-At-Scale.png` and `boards/Tint-Light.png` show all three.
 

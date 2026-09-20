@@ -1,4 +1,4 @@
-# JobScout theme — v3.1
+# JobScout theme — v3.2
 
 Two themes, N markets, one palette. Generated 2026-09-20.
 
@@ -6,9 +6,12 @@ Two themes, N markets, one palette. Generated 2026-09-20.
 
 ## Read this first
 
-One thing is **still undecided**: see `docs/THEME.md` §16. The tokens in here
-ship **option A**; option C is written out and commented at the foot of both
-CSS files, ready to uncomment. Nothing else is pending.
+**`docs/CHANGELOG.md` is the actionable list** — seven numbered items for the
+app, worked top to bottom. Items 1 and 2 are one-line fixes that account for
+most of what currently looks wrong.
+
+Nothing is pending. §16 is decided (option C, both themes) and the tokens ship
+it; the brand assets are rebuilt with the new ember.
 
 ## docs/THEME.md — the source of truth
 
@@ -23,7 +26,7 @@ If an implementation disagrees with it, the implementation is wrong.
 | 13 | What landed on the live site, and what the tokens never reached |
 | 14 | The halo — plus a per-page audit of where it actually renders |
 | 15 | Modals and sheets |
-| 16 | **OPEN** — how much colour a large surface may carry |
+| 16 | **DECIDED** — colour intensity is a budget spent over area |
 
 ## What's in here
 
@@ -32,11 +35,16 @@ css/
   theme-resolution.css   ← ship this. Every colour once, as light-dark().
   jobscout-theme.css     ← same palette as two blocks, for older browsers.
 docs/
+  CHANGELOG.md           ← START HERE. Seven items for the app.
   THEME.md               ← the spec
   punch-list.md          ← earlier findings, superseded by §13
 demos/
   halo-demo.html         ← the halo, both themes. Flip data-theme on <html>.
   sheet-demo.html        ← the cover-letter sheet: as built, then fixed.
+brand/
+  JobScout-BrandKit.pdf       rebuilt with the new ember
+  JobScout-MarkReference.pdf  "
+  jobscout-brand-assets.zip   marks, PNGs, tokens/brand.{css,json}
 reference/
   jobscout-band-ramp.json  the OKLCH rungs + the four hues
   jobscout-theme.json      every token by theme, generated from the CSS
@@ -81,6 +89,16 @@ take real overrides for this reason. §15.
 `body::before`. Measured per route, it renders on `/browse` and is entirely
 absent on `/saved`, which also carries a 30×30px dot grid that is louder than
 the halo it stands in for. §14.
+
+## Ember moved
+
+`--unsure` went from `#ff6d39` (OKLCH hue 39) to `#b86b03` / `#e89f59` (hue
+63). Hue 39 sits in the gap between Apple’s red (29) and orange (63) — close
+enough to red to read as an *error*, which UNSURE is not, and it is the hue
+that goes muddy when darkened. Ember also improves from **2.54:1 to 3.70:1**
+on cream, moving from "decorative surfaces only" to "large text and fills
+only". Everything in `brand/` is rebuilt; CHANGELOG item 7 has the find-and-
+replace table for the app.
 
 ## A correction worth keeping
 

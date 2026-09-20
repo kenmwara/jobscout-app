@@ -348,6 +348,65 @@ if painted:
 else:
     ok("--accent is only ever the mark; text links take --link")
 
+# -- 6c. the retired palette, banned from shipped source --------------
+# The v3.1 changelog moves ember from hue 39 to 63 and the whole band ramp
+# with it. Two copies survived the move: dead definitions at the top of
+# base.css, and bandFor()/bandFill() in Rose.kt and RoseView.swift - the fit
+# dial, carrying its own band colours, so the dial beside a score disagreed
+# with the pill under it and with itself in dark, since those were light
+# values only. Section 6b's comparison only sees the token SETS; a hex
+# written anywhere else is invisible to it. This sees those.
+print("\n-- the retired palette --")
+RETIRED = {
+    "ff6d39": "ember, hue 39", "cc3600": "ember-deep, hue 39",
+    "328a3b": "forest, pre-ramp", "114e0b": "meadow, pre-ramp",
+    "5fd07a": "auto label, pre-ramp", "ff9b6f": "unsure label, pre-ramp",
+    "2fbd6a": "the Kenya green that was on a control",
+    "144d2b": "the 1.94:1 letter link", "bf3200": "unsure, pre-ramp",
+}
+SHIPPED = ["site/base.css", "site/index.html", "site/apply.html",
+           "site/saved.html", "site/privacy.html", "mockups/mobile.html",
+           "android/app/src/main/java/trade/tbot/jobscout/",
+           "ios/Sources/", "worker/src/"]
+
+
+def _decomment(src):
+    """Prose explaining a removal is not a use. Both files now carry that
+    prose, and a guard that fires on its own documentation gets muted."""
+    src = re.sub(r"/\*.*?\*/", " ", src, flags=re.S)      # css, kotlin, swift
+    src = re.sub(r"<!--.*?-->", " ", src, flags=re.S)      # html
+    src = re.sub(r"(?m)//.*$", " ", src)                   # kotlin, swift, js
+    src = re.sub(r"(?m)^\s*#.*$", " ", src)                # python
+    return src
+
+
+def _files():
+    for entry in SHIPPED:
+        full = os.path.join(ROOT, entry)
+        if os.path.isdir(full):
+            for base, _, names in os.walk(full):
+                for n in names:
+                    if n.rsplit(".", 1)[-1] in ("kt", "swift", "js", "css", "html"):
+                        yield os.path.join(base, n)
+        elif os.path.exists(full):
+            yield full
+
+
+found = []
+for path in _files():
+    try:
+        src = _decomment(io.open(path, encoding="utf-8").read())
+    except OSError:
+        continue
+    low = src.lower()
+    for hexv, what in RETIRED.items():
+        if hexv in low:
+            found.append("%s (%s) in %s" % (hexv, what, os.path.basename(path)))
+if found:
+    bad("the retired palette is still shipped: " + "; ".join(sorted(set(found))[:4]))
+else:
+    ok("no retired band colour survives in any shipped file")
+
 # 7. index.html carries its own copy of the band tokens, in the same
 #    light-dark() form. Both sides are RESOLVED before comparing, so the two
 #    files are held to the same values rather than to the same spelling.
