@@ -102,23 +102,30 @@ p.sub{font:400 13.5px/1.5 var(--sans);color:var(--text2);margin:0 0 16px}
   position:relative;overflow:hidden}
 .mhero h2{font:400 25px/1.2 var(--serif);color:#f8f3eb;margin:0 0 14px;letter-spacing:-.02em}
 .mhero .dot{color:var(--accent)}
-.mbox{display:flex;align-items:center;gap:8px;background:var(--surface);border-radius:var(--r-pill);
-  padding:9px 9px 9px 16px}
+.mbox{
+  display:flex;align-items:center;gap:10px;background:var(--surface);
+  border-radius:var(--r-input);padding:8px 8px 8px 16px;
+  box-shadow:var(--sh-hover);text-align:left}
+.mbox .sep{flex:0 0 auto;width:1px;height:26px;background:var(--hair)}
 .mbox textarea{
   flex:1;min-width:0;border:0;background:none;resize:none;outline:none;
-  font:400 14px/1.45 var(--sans);color:var(--text);height:19px;max-height:96px;
-  padding:0}
+  font:400 14px/1.45 var(--sans);color:var(--text);height:20px;max-height:104px;
+  padding:0;scrollbar-width:thin}
 .mbox textarea::placeholder{color:var(--text2)}
+/* Once it holds a resume the controls go to the bottom edge, so the text
+   starts at the top of the box the way it does in a real field. */
 .mbox.tall{align-items:flex-end}
-.mbox.tall textarea{height:96px}
+.mbox.tall textarea{height:104px}
+.mbox.tall .sep{height:20px}
 .mbox b[disabled]{opacity:.55}
 /* The clip. Same affordance as the real box: paste OR upload, and the upload
    goes through the app's own /api/extract so a PDF becomes text the same way
    it does on the phone. */
 .mbox .clip{
-  flex:0 0 auto;display:grid;place-items:center;width:30px;height:30px;
-  border:0;background:none;cursor:pointer;color:var(--text2);border-radius:8px}
-.mbox .clip:hover{color:var(--ink);background:var(--sunken)}
+  flex:0 0 auto;display:grid;place-items:center;width:36px;height:36px;
+  border:0;background:none;cursor:pointer;color:var(--text2);
+  border-radius:var(--r-btn)}
+.mbox .clip:hover,.mbox .clip:focus-visible{color:var(--ink);background:var(--canvas-2)}
 .mbox .clip svg{width:17px;height:17px;fill:none;stroke:currentColor;
   stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
 .mbox .clip.busy{animation:mpulse 1s ease-in-out infinite}
@@ -316,6 +323,7 @@ const SCREENS = {
       <div class="mbox" id="mbox">
         <textarea id="resume" rows="1" placeholder="Paste your resume&hellip;"
                   aria-label="Paste your resume"></textarea>
+        <span class="sep" aria-hidden="true"></span>
         <button class="clip" id="clipBtn" type="button"
                 aria-label="Upload your resume as a PDF, Word file or text">
           <svg viewBox="0 0 24 24"><path d="M20 11.5 12.4 19a4.6 4.6 0 0 1-6.5-6.5l7.8-7.8a3 3 0 0 1 4.3 4.3l-7.7 7.7a1.5 1.5 0 0 1-2.1-2.1l7-7"/></svg>
