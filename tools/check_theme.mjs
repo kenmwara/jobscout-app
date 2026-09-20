@@ -161,6 +161,50 @@ const run = async () => {
     await ctx.close();
   }
 
+  // ── the control renders AT EVERY WIDTH ──────────────────────────────
+  /* This exists because the control's CSS was inserted just before a comment
+     that happened to sit inside @media(max-width:620px). Chrome's CSS nesting
+     kept the nested @media valid, so it styled the control on a phone - the
+     only width I checked - and nowhere else. At 1440px the buttons had no
+     size, no stroke and no colour: three blank boxes on the live site.
+     Presence is not the assertion. Rendered size, resolved stroke, and not
+     colliding with the two things either side of it are. */
+  console.log("\n-- the control at every width --");
+  for (const width of [1920, 1440, 1280, 1024, 860, 768, 600, 480, 375]) {
+    const ctx = await browser.newContext({ viewport: { width, height: 900 } });
+    const page = await ctx.newPage();
+    await page.goto(CA, { waitUntil: "domcontentloaded" });
+    const m = await page.evaluate(() => {
+      const box = (s) => { const e = document.querySelector(s); if (!e) return null;
+        const r = e.getBoundingClientRect(); return { x: r.x, r: r.right, w: r.width, h: r.height }; };
+      const t = document.getElementById("thmTop");
+      if (!t) return { missing: true };
+      const svg = t.querySelector("svg");
+      const sr = svg.getBoundingClientRect();
+      const hit = t.querySelector("button").getBoundingClientRect();
+      const over = (a, b) => !!a && !!b && !(a.r <= b.x || b.r <= a.x);
+      return {
+        thm: box("#thmTop"), svgW: Math.round(sr.width), svgH: Math.round(sr.height),
+        stroke: getComputedStyle(svg).stroke,
+        tap: Math.round(Math.min(hit.width, hit.height)),
+        overMkt: over(box("#thmTop"), box(".mkt")),
+        overNav: over(box("#thmTop"), box("nav.main")),
+        hscroll: document.documentElement.scrollWidth > window.innerWidth + 1,
+      };
+    });
+    const w = `${width}px`;
+    if (m.missing) bad(`${w}: the control is not in the DOM`);
+    else if (m.thm.w === 0 || m.thm.h === 0) bad(`${w}: the control is not rendered`);
+    else if (m.svgW === 0 || m.svgH === 0) bad(`${w}: the icons are ${m.svgW}x${m.svgH} - the CSS is not reaching them`);
+    else if (m.stroke === "none") bad(`${w}: the icons have no stroke - they draw as blank boxes`);
+    else if (m.overMkt) bad(`${w}: the control overlaps the market switch`);
+    else if (m.overNav) bad(`${w}: the control overlaps the nav`);
+    else if (m.hscroll) bad(`${w}: the header forces a horizontal scroll`);
+    else if (width <= 860 && m.tap < 40) bad(`${w}: ${m.tap}px tap target, under the 44px guidance`);
+    else ok(`${w}: ${m.svgW}px icons, ${m.tap}px targets, clear of both neighbours`);
+    await ctx.close();
+  }
+
   await browser.close();
   console.log("");
   console.log(fails ? `${fails} FAILED` : "ALL GREEN");
