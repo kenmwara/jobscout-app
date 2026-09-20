@@ -262,7 +262,7 @@ class DemoVm(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    fun toggleStretch() = _ui.update { it.copy(stretch = !it.stretch) }
+    fun allowStretch() = _ui.update { it.copy(stretch = true) }
 
     /** Write the run to disk and return the state unchanged, so it can sit inside an update {}. */
     private fun keepRun(u: Ui): Ui {
@@ -851,7 +851,7 @@ private fun LazyListScope.matches(ui: Ui, feed: Feed?, vm: DemoVm, onRework: () 
             },
             stretch = ui.stretch,
             onRework = onRework,
-            onStretch = { vm.toggleStretch() },
+            onStretch = { vm.allowStretch() },
         )
     }
     items(sorted, key = { it.id }) { s ->
@@ -1022,7 +1022,8 @@ private fun NoFit(
         Spacer(Modifier.height(14.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(9.dp)) {
             PillButton("Rework your resume", filled = true, onClick = onRework)
-            PillButton(if (stretch) "Hide apply buttons" else "Apply to these anyway", onClick = onStretch)
+            // One way: whoever pressed this wanted it. It resets with the next run.
+            if (!stretch) PillButton("Apply to these anyway", onClick = onStretch)
         }
     }
 }

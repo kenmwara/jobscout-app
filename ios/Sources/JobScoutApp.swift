@@ -802,8 +802,9 @@ struct ContentView: View {
                 PillButton(text: "Rework your resume", filled: true) {
                     withAnimation { scrollTo?("resumebox") }
                 }
-                PillButton(text: vm.stretch ? "Hide apply buttons" : "Apply to these anyway") {
-                    vm.stretch.toggle()
+                // One way: whoever pressed this wanted it. It resets with the next run.
+                if !vm.stretch {
+                    PillButton(text: "Apply to these anyway") { vm.stretch = true }
                 }
                 Spacer(minLength: 0)
             }

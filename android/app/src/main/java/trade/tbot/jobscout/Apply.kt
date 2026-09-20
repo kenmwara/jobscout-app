@@ -308,10 +308,9 @@ private fun CopyChip(text: String) {
 private fun Answers(r: AnswersResponse) {
     val clip = LocalClipboardManager.current
     if (r.unsupported) {
+        // A fact about the employer, and it ends with what to do instead.
         Text(
-            r.detail.orEmpty().ifEmpty {
-                "This employer's board does not publish its form, so the questions cannot be read before you open it."
-            },
+            "This employer keeps its application form behind a login, so the questions cannot be read ahead of time by anyone \u2014 not us, and not you. Open the posting when you are ready and answer them there: the letter and the rebuilt resume above are what most of those boxes ask for anyway.",
             color = T.text2, fontSize = 14.sp, lineHeight = 21.sp,
         )
         return
