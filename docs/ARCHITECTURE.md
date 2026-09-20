@@ -141,6 +141,33 @@ flag chip already tells you, and every card in it reads as a success card.
 Binding dark to Kenya cost a second thing: nobody in Nairobi could have light,
 and nobody in Vancouver could have dark.
 
+**Theme resolution: three states, one attribute.** Absence of `data-theme`
+means *follow the OS*, and that is the default — `base.css` expresses it with
+`light-dark()` plus `color-scheme`, so the common case needs no JavaScript at
+all. `data-theme="light"` and `data-theme="dark"` force it. `data-market` is a
+separate attribute and must never set `data-theme`; all four combinations are
+legal, and Kenya in light is not a bug.
+
+Every colour is therefore defined **once**, as `light-dark(light, dark)`.
+Only the non-colour differences — shadows, the halo opacity, the card border —
+are written out in all three states, because `light-dark()` cannot carry them.
+
+⚠ **A toggle must reload.** Measured in Chrome 152: changing `color-scheme` at
+runtime does *not* re-resolve a `light-dark()` already substituted into a
+custom property. With `data-theme="dark"` and a computed `color-scheme: dark`,
+the body stayed cream — through a forced reflow, through re-setting
+`color-scheme` inline, and through re-declaring the token. Every state
+resolves correctly *on load*, in both directions, against either OS setting.
+So `setTheme()` persists the choice and the page re-enters through the head
+script. There is no toggle in the UI yet; the mechanism is in place on all
+three clients (`setTheme` on web, `ThemeChoice` on Android,
+`preferredColorScheme` on iOS).
+
+⚠ `light-dark()` is Chrome 123+ / Safari 17.5+ / Firefox 120+, and on older
+engines the declaration is invalid at computed-value time rather than merely
+light. If that floor ever matters, wrap a two-block fallback in
+`@supports not (color: light-dark(#000,#fff))` rather than reverting.
+
 **The action is deep-ink, not the brand.** `--btn`/`--btn-ink` are
 `var(--ink)`/`var(--canvas)`, so the button is deep-ink on cream in light and
 cream on deep-ink in dark — 17.44:1 and 17.93:1, and it inverts for free.

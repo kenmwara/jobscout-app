@@ -29,20 +29,56 @@
 <meta name="theme-color" content="#f8f3eb" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#0a0524" media="(prefers-color-scheme: dark)">
 <link rel="stylesheet" href="fonts-embedded.css">
-<script>/* Three axes, stamped before first paint (base.css keys on both).
-   market → the hero gradient and the flag chip, from the hostname.
-   theme  → the reader's device, or their stored choice; never the market.
-   Both attributes are ALWAYS written: the palette keys on [data-market="ca"],
-   not on the attribute being absent. ?market= and ?theme= override, which is
-   how all four combinations get verified. */
+<script>/* Two independent attributes, stamped before first paint.
+
+   market: always written, from the hostname. The palette keys on
+   [data-market="ca"], not on the attribute being absent.
+
+   theme: written ONLY to force a theme. Its ABSENCE is the default and means
+   "follow the OS", which base.css expresses with light-dark() + color-scheme
+   and needs no JavaScript at all. This script exists purely so a reader who
+   has FORCED a theme does not get a cream flash on every navigation, which is
+   why it is inline in <head> ahead of the stylesheet.
+
+   Three states, and a toggle would need all three - removing the attribute is
+   the only way to hand control back to the OS, so a two-way switch cannot
+   express it. There is no toggle in the UI yet; `setTheme` is the whole
+   mechanism when one is added.
+
+   ?market= and ?theme= override for testing; ?theme=system clears a stored
+   choice, which is how the OS-following state gets verified. */
 (function(d,q){
   var m=(q.get("market")||(/^(nairobi|ke)\./.test(location.hostname)?"ke":"ca")).toLowerCase();
   d.setAttribute("data-market",m==="ke"?"ke":"ca");
-  var t=q.get("theme"),mq=matchMedia("(prefers-color-scheme: dark)");
-  if(t!=="dark"&&t!=="light"){try{t=localStorage.getItem("jobscout.theme")}catch(e){t=null}}
-  var set=function(){d.setAttribute("data-theme",(t==="dark"||t==="light")?t:(mq.matches?"dark":"light"))};
-  set();
-  if(mq.addEventListener)mq.addEventListener("change",set);else if(mq.addListener)mq.addListener(set);
+
+  /* Three states: "system" | "light" | "dark". Removing the attribute is the
+     only way to hand control back to the OS, so a two-way switch cannot
+     express this and a toggle needs all three.
+
+     It RELOADS, and that is not laziness. Measured in Chrome 152: changing
+     `color-scheme` at runtime does NOT re-resolve a light-dark() that is
+     already substituted into a custom property. With data-theme="dark" and a
+     computed color-scheme of "dark", the body stayed cream - through a forced
+     reflow, through re-setting color-scheme inline, and through re-declaring
+     the token. Every state resolves correctly on LOAD, in both directions,
+     against either OS setting; only the live switch does not repaint. So the
+     choice is persisted and the page re-enters through the head script. */
+  d.setTheme=function(choice){
+    try{
+      if(choice==="light"||choice==="dark") localStorage.setItem("jobscout.theme",choice);
+      else localStorage.removeItem("jobscout.theme");
+    }catch(e){}
+    if(choice==="light"||choice==="dark") d.setAttribute("data-theme",choice);
+    else d.removeAttribute("data-theme");
+    return true;
+  };
+  /* Apply a stored choice without a reload only at boot, where nothing has
+     been resolved yet. A toggle calls setTheme then location.reload(). */
+
+  var q_t=q.get("theme");
+  if(q_t==="light"||q_t==="dark"||q_t==="system"){ d.setTheme(q_t); return; }
+  var t=null; try{t=localStorage.getItem("jobscout.theme")}catch(e){}
+  if(t==="light"||t==="dark") d.setAttribute("data-theme",t);
 })(document.documentElement,new URLSearchParams(location.search))</script>
 <link rel="stylesheet" href="base.css">
 <style>
@@ -233,10 +269,11 @@ html.anim .job.arrive .rose .lit,html.anim .job.shown .rose .lit{transform:none;
 /* Band colours — the only axis that owns hue, so they key on the THEME and
    are identical in both markets. Kept byte-for-byte in step with base.css;
    tools/check_palette.py fails if the two copies disagree. */
-:root{--b-auto:#114e0b;--b-ping:#1b1463;--b-unsure:#bf3200;--b-near:#333333;
-  --b-auto-bg:#e8f2e6;--b-ping-bg:#dce4fb;--b-unsure-bg:#fdeadf;--b-near-bg:#eceaf2}
-:root[data-theme="dark"]{--b-auto:#5fd07a;--b-ping:#a2baff;--b-unsure:#ff9b6f;--b-near:#ddd7e4;
-  --b-auto-bg:#1f2940;--b-ping-bg:#2c2a56;--b-unsure-bg:#36223e;--b-near-bg:#1e1a44}
+:root{
+  --b-auto:   light-dark(#114e0b, #5fd07a);  --b-auto-bg:   light-dark(#e8f2e6, #1f2940);
+  --b-ping:   light-dark(#1b1463, #a2baff);  --b-ping-bg:   light-dark(#dce4fb, #2c2a56);
+  --b-unsure: light-dark(#bf3200, #ff9b6f);  --b-unsure-bg: light-dark(#fdeadf, #36223e);
+  --b-near:   light-dark(#333333, #ddd7e4);  --b-near-bg:   light-dark(#eceaf2, #1e1a44)}
 
 /* ── taxonomy footer ────────────────────────────────────────────────── */
 .taxtabs{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 26px}
@@ -354,6 +391,10 @@ html.anim .cmark{animation:float 2.6s ease-in-out infinite}
   box-shadow:0 28px 50px -12px rgba(8,3,49,.20), 0 12px 24px -8px rgba(8,3,49,.12),
              0 4px 9px rgba(8,3,49,.07), 0 1px 3px rgba(8,3,49,.05)
 }
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .job:hover{
+  box-shadow:0 28px 50px -10px rgba(0,0,0,.6), 0 12px 24px -8px rgba(0,0,0,.45),
+             0 4px 9px rgba(0,0,0,.3), 0 0 0 1px rgba(162,186,255,.20)
+}}
 :root[data-theme="dark"] .job:hover{
   box-shadow:0 28px 50px -10px rgba(0,0,0,.6), 0 12px 24px -8px rgba(0,0,0,.45),
              0 4px 9px rgba(0,0,0,.3), 0 0 0 1px rgba(162,186,255,.20)
@@ -586,6 +627,8 @@ html.anim .tabs a:hover{transform:skewX(-7deg) translateY(-3px)}
    specificity and is declared first, so it was winning — white at .16 on a
    cream page is exactly nothing. */
 .heromark.pagemark .ring circle{fill:var(--accent);opacity:.06}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]) .heromark.pagemark .ring circle{opacity:.1}}
 :root[data-theme="dark"] .heromark.pagemark .ring circle{opacity:.1}
 .heromark.pagemark .pop{display:none}
 .heromark .ring circle{fill:#fff;opacity:.16}

@@ -15,20 +15,56 @@
 <meta name="theme-color" content="#0a0524" media="(prefers-color-scheme: dark)">
 <link rel="stylesheet" href="fonts-embedded.css">
 <link rel="stylesheet" href="base.css">
-<script>/* Three axes, stamped before first paint (base.css keys on both).
-   market → the hero gradient and the flag chip, from the hostname.
-   theme  → the reader's device, or their stored choice; never the market.
-   Both attributes are ALWAYS written: the palette keys on [data-market="ca"],
-   not on the attribute being absent. ?market= and ?theme= override, which is
-   how all four combinations get verified. */
+<script>/* Two independent attributes, stamped before first paint.
+
+   market: always written, from the hostname. The palette keys on
+   [data-market="ca"], not on the attribute being absent.
+
+   theme: written ONLY to force a theme. Its ABSENCE is the default and means
+   "follow the OS", which base.css expresses with light-dark() + color-scheme
+   and needs no JavaScript at all. This script exists purely so a reader who
+   has FORCED a theme does not get a cream flash on every navigation, which is
+   why it is inline in <head> ahead of the stylesheet.
+
+   Three states, and a toggle would need all three - removing the attribute is
+   the only way to hand control back to the OS, so a two-way switch cannot
+   express it. There is no toggle in the UI yet; `setTheme` is the whole
+   mechanism when one is added.
+
+   ?market= and ?theme= override for testing; ?theme=system clears a stored
+   choice, which is how the OS-following state gets verified. */
 (function(d,q){
   var m=(q.get("market")||(/^(nairobi|ke)\./.test(location.hostname)?"ke":"ca")).toLowerCase();
   d.setAttribute("data-market",m==="ke"?"ke":"ca");
-  var t=q.get("theme"),mq=matchMedia("(prefers-color-scheme: dark)");
-  if(t!=="dark"&&t!=="light"){try{t=localStorage.getItem("jobscout.theme")}catch(e){t=null}}
-  var set=function(){d.setAttribute("data-theme",(t==="dark"||t==="light")?t:(mq.matches?"dark":"light"))};
-  set();
-  if(mq.addEventListener)mq.addEventListener("change",set);else if(mq.addListener)mq.addListener(set);
+
+  /* Three states: "system" | "light" | "dark". Removing the attribute is the
+     only way to hand control back to the OS, so a two-way switch cannot
+     express this and a toggle needs all three.
+
+     It RELOADS, and that is not laziness. Measured in Chrome 152: changing
+     `color-scheme` at runtime does NOT re-resolve a light-dark() that is
+     already substituted into a custom property. With data-theme="dark" and a
+     computed color-scheme of "dark", the body stayed cream - through a forced
+     reflow, through re-setting color-scheme inline, and through re-declaring
+     the token. Every state resolves correctly on LOAD, in both directions,
+     against either OS setting; only the live switch does not repaint. So the
+     choice is persisted and the page re-enters through the head script. */
+  d.setTheme=function(choice){
+    try{
+      if(choice==="light"||choice==="dark") localStorage.setItem("jobscout.theme",choice);
+      else localStorage.removeItem("jobscout.theme");
+    }catch(e){}
+    if(choice==="light"||choice==="dark") d.setAttribute("data-theme",choice);
+    else d.removeAttribute("data-theme");
+    return true;
+  };
+  /* Apply a stored choice without a reload only at boot, where nothing has
+     been resolved yet. A toggle calls setTheme then location.reload(). */
+
+  var q_t=q.get("theme");
+  if(q_t==="light"||q_t==="dark"||q_t==="system"){ d.setTheme(q_t); return; }
+  var t=null; try{t=localStorage.getItem("jobscout.theme")}catch(e){}
+  if(t==="light"||t==="dark") d.setAttribute("data-theme",t);
 })(document.documentElement,new URLSearchParams(location.search))</script>
 
 <style>

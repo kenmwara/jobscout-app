@@ -111,25 +111,68 @@ def blocks(selector):
     return out
 
 
-def resolve(raw):
-    """Flatten `var(--x)` aliases down to the hex they end at."""
+LD = re.compile(r"light-dark\(\s*([^,]+?)\s*,\s*(.+?)\s*\)\s*$")
+
+
+def resolve(raw, side):
+    """Both themes come from ONE declaration: light-dark(light, dark).
+
+    `side` is 0 for light, 1 for dark. A `var(--x)` alias is followed to
+    whatever it ends at on the SAME side, so `--btn: var(--ink)` is deep-ink
+    in light and cream in dark without being written twice anywhere.
+    """
     out = {}
-    for k, v in raw.items():
-        seen = 0
-        while v.startswith("var(--") and seen < 8:
-            v = raw.get(v[6:v.index(")")], "")
-            seen += 1
+    for k in raw:
+        v, hops = raw[k], 0
+        while hops < 8:
+            m = LD.match(v)
+            if m:
+                v = m.group(1 + side).strip()
+                continue
+            if v.startswith("var(--"):
+                v = raw.get(v[6:v.index(")")], "")
+                hops += 1
+                continue
+            break
         if re.fullmatch(r"#[0-9a-fA-F]{6}", v):
             out[k] = v.lower()
     return out
 
 
-LIGHT_RAW = blocks(":root")
-DARK_RAW = dict(LIGHT_RAW)
-DARK_RAW.update(blocks(':root[data-theme="dark"]'))
-LIGHT, DARK = resolve(LIGHT_RAW), resolve(DARK_RAW)
+RAW = blocks(":root")
+# Nothing may define a COLOUR under [data-theme]: that is what light-dark() is
+# for, and a second block is exactly the drift it replaced. Non-colour
+# declarations - shadows, opacities, color-scheme - still belong there.
+themed = {k: v for k, v in blocks(':root[data-theme="dark"]').items()
+          if re.search(r"#[0-9a-fA-F]{6}", v)}
+LIGHT, DARK = resolve(RAW, 0), resolve(RAW, 1)
+LIGHT_RAW = DARK_RAW = RAW
 
 # ── 1. the market may not touch the palette ─────────────────────────────
+print("\n-- theme resolution --")
+if themed:
+    bad("a colour is defined under [data-theme]: %s - use light-dark(), so "
+        "there is one place per colour" % ", ".join("--" + k for k in sorted(themed)))
+else:
+    ok("every colour is defined once, with light-dark()")
+
+n_ld = sum(1 for v in RAW.values() if LD.match(v))
+if n_ld < 10:
+    bad("only %d light-dark() tokens - this is not measuring the palette" % n_ld)
+else:
+    ok("%d tokens carry both themes, %d more alias them" % (n_ld, len(LIGHT) - n_ld))
+
+# Absence of the attribute must mean "follow the OS", which needs BOTH the
+# declaration and the two forcing rules. Without color-scheme, light-dark()
+# has nothing to switch on and every colour silently resolves light.
+need = ("color-scheme: light dark", '[data-theme="light"]{ color-scheme: light; }',
+        '[data-theme="dark"]{ color-scheme: dark; }')
+missing = [n for n in need if n not in CSS]
+if missing:
+    bad("theme resolution incomplete, missing: %s" % "; ".join(missing))
+else:
+    ok("three states: absent follows the OS, light and dark force it")
+
 print("\n-- the market axis --")
 markets = {}
 for sel, body in RULES:
@@ -273,22 +316,26 @@ if painted:
 else:
     ok("--live is only ever a fill, never a text colour")
 
-# ── 7. index.html's own copy of the bands ───────────────────────────────
+# 7. index.html carries its own copy of the band tokens, in the same
+#    light-dark() form. Both sides are RESOLVED before comparing, so the two
+#    files are held to the same values rather than to the same spelling.
 IDX = io.open(os.path.join(ROOT, "site", "index.html"), encoding="utf-8").read()
-for selector, T in ((":root", LIGHT), (':root[data-theme="dark"]', DARK)):
-    got = {}
-    for sel, body in re.findall(r"([^{}\n]+)\{([^{}]*)\}", IDX):
-        if sel.strip() == selector:
-            got.update({n: v.strip().lower() for n, v in
+idx_raw = {}
+for sel, body in re.findall(r"([^{}\n]+)\{([^{}]*)\}", IDX):
+    if sel.strip() == ":root":
+        idx_raw.update({n: v.strip() for n, v in
                         re.findall(r"--(b-[\w-]+)\s*:\s*([^;]+)", body)})
-    if not got:
-        bad("index.html has no `%s` band block - this check cannot fire" % selector)
-        continue
-    drift = ["%s: css %s / index %s" % (k, T.get(k), v) for k, v in got.items() if T.get(k) != v]
-    if drift:
-        bad("index.html disagrees with base.css - %s" % "; ".join(drift))
-    else:
-        ok("index.html's %d `%s` band tokens match base.css" % (len(got), selector))
+if not idx_raw:
+    bad("index.html has no `:root` band block - this check cannot fire")
+else:
+    for label, side, T in (("light", 0, LIGHT), ("dark", 1, DARK)):
+        got = resolve(idx_raw, side)
+        drift = ["%s: css %s / index %s" % (k, T.get(k), v)
+                 for k, v in got.items() if T.get(k) != v]
+        if drift:
+            bad("index.html disagrees with base.css on %s - %s" % (label, "; ".join(drift)))
+        else:
+            ok("index.html's %d band tokens match base.css on %s" % (len(got), label))
 
 # ── 8. Android agrees with the web ──────────────────────────────────────
 print("\n-- the clients --")
