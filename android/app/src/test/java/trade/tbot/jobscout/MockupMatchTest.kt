@@ -43,7 +43,7 @@ class MockupMatchTest {
 
     private fun tree(market: String, content: @androidx.compose.runtime.Composable () -> Unit): String {
         compose.setContent {
-            CompositionLocalProvider(LocalTokens provides tokensFor(market)) {
+            CompositionLocalProvider(LocalTokens provides tokensFor(market, dark = false)) {
                 JobScoutTheme { Column { content() } }
             }
         }
@@ -133,7 +133,7 @@ class MockupMatchTest {
 
     // ── the bands themselves ───────────────────────────────────────────────
     @Test fun `band words match the mockup's four routes`() {
-        val ca = CA_TOKENS
+        val ca = LIGHT_TOKENS
         assertEquals("auto", ca.bandWord(92))
         assertEquals("auto", ca.bandWord(85))
         assertEquals("ping", ca.bandWord(78))
@@ -141,13 +141,39 @@ class MockupMatchTest {
         assertEquals("near-miss", ca.bandWord(42))
     }
 
-    // ── both markets are authored, and differ ──────────────────────────────
-    @Test fun `kenya is its own dark set, not an inverted canada`() {
-        // The mockup's Kenya frames are near-black with a green accent and a red dot.
-        assertTrue("Kenya canvas must be darker than Canada's",
-            KE_TOKENS.canvas.luminance() < CA_TOKENS.canvas.luminance())
-        assertTrue("the markets must not share an accent", KE_TOKENS.accent != CA_TOKENS.accent)
-        assertTrue("the markets must not share a live dot", KE_TOKENS.live != CA_TOKENS.live)
+    /* THREE AXES, THREE CHANNELS (v2.3). This test used to assert the
+       opposite — that Kenya was its own dark set with its own accent. That
+       was the bug: a green accent at control scale put a green
+       `Prepare application` button beside a PING pill, and both were correct
+       in the colour language while contradicting each other. */
+    @Test fun `the market changes the hero and nothing else`() {
+        for (dark in listOf(false, true)) {
+            val ca = tokensFor("ca", dark)
+            val ke = tokensFor("ke", dark)
+            assertEquals("the market may not touch the palette",
+                ca.copy(heroFrom = ke.heroFrom, heroMid = ke.heroMid, heroTo = ke.heroTo), ke)
+            assertTrue("but the hero must actually differ", ca.heroMid != ke.heroMid)
+        }
+    }
+
+    @Test fun `green is never a control colour, in either market`() {
+        // Green means auto, fit >= 80. Nothing else may claim it at that scale.
+        for (dark in listOf(false, true)) for (m in listOf("ca", "ke")) {
+            val t = tokensFor(m, dark)
+            assertTrue("$m/$dark: the brand must not be the auto colour", t.accent != t.bAuto)
+            // Deep-ink, never the brand: indigo carries white at 4.58:1 and
+            // deep-ink carries cream at 17.44:1.
+            assertTrue("$m/$dark: a primary button must not be filled with the brand",
+                t.btn != t.accent)
+            assertEquals("$m/$dark: the button is the ink", t.ink, t.btn)
+        }
+    }
+
+    @Test fun `theme is the readers choice on either market`() {
+        for (m in listOf("ca", "ke")) {
+            assertTrue("$m: dark must actually be darker",
+                tokensFor(m, true).canvas.luminance() < tokensFor(m, false).canvas.luminance())
+        }
     }
 
     // One setContent per rule, so the two markets are two tests rather than one

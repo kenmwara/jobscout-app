@@ -668,8 +668,13 @@ struct ContentView: View {
                  : "Run the pipeline")
                 .font(sans(16, .medium))
                 .frame(maxWidth: .infinity, minHeight: 54)
-                .background(busy ? lavender : indigo)
-                .foregroundColor(busy ? midnightViolet : .white)
+                .background(busy ? lavender : ink)
+                // Not `.white`: on dark the action inverts to a lavender fill, and
+                // white on lavender is 1.9:1. `actionInk` is white on light and
+                // deep-ink on dark. The busy fill is lavender in BOTH themes, so its
+                // ink is the static one - `midnightViolet` resolves TO lavender on
+                // dark, which would have erased the label entirely.
+                .foregroundColor(busy ? lavenderInk : canvasBg)
                 .clipShape(Capsule())
         }
         .buttonStyle(.plain)

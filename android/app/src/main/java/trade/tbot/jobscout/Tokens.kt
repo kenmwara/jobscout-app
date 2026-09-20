@@ -8,16 +8,24 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 
 /**
- * The v3 token sets, one per market, lifted from site/base.css.
+ * The v2.3 token sets: ONE palette, TWO themes, lifted from site/base.css.
  *
- * Two AUTHORED sets, not one inverted into the other — Kenya's dark ground needs its
- * own band colours because the light ones go muddy on near-black. Values are copied
- * from the mockup's resolved custom properties (extracted 2026-09-19, CA `0d98ef3d`
- * / KE `dd63597f`), so a drift here is a drift from the contract.
+ * Three independent signals, three separate channels, and none of them borrows
+ * another's:
  *
- * The app was light-only until now: Theme.kt declared its colours as top-level vals,
- * which cannot change with the market. These live in a CompositionLocal instead, so
- * switching market repaints everything that reads them.
+ *   market -> the hero gradient and the active flag chip. That is the list.
+ *   theme  -> light or dark. The reader's device, never the market's.
+ *   band   -> hue, exclusively.
+ *
+ * This replaced a set per MARKET, where Canada was light and Kenya was dark. Two
+ * things were wrong with that. Kenya's accent was green, so a fit of 72 — PING,
+ * which is indigo — sat beside a green `Prepare application` button, and both were
+ * correct in the colour language while contradicting each other; at control scale
+ * green already means auto (fit >= 80). And a reader in Nairobi who wanted light,
+ * or one in Vancouver who wanted dark, could not have it.
+ *
+ * Kenya keeps a real identity: the same gradient construction with one hue swapped,
+ * so its green appears only as a large dark ground and never on a control.
  */
 @Immutable
 data class Tokens(
@@ -69,69 +77,81 @@ data class Tokens(
     }
 }
 
-/** html, html[data-market="ca"] — the cream-and-indigo set. */
-val CA_TOKENS = Tokens(
-    canvas = Color(0xFFF4F1EA),
-    canvas2 = Color(0xFFFAF8F4),
+/** :root — cream and deep-ink. Both markets. */
+val LIGHT_TOKENS = Tokens(
+    canvas = Color(0xFFF8F3EB),
+    canvas2 = Color(0xFFFFFDF9),
     surface = Color(0xFFFFFFFF),
-    ink = Color(0xFF080331),
-    text = Color(0xFF1A1636),
-    text2 = Color(0xFF565173),
-    text3 = Color(0xFF83809A),
-    hair = Color(0x1A080331),
-    hair2 = Color(0x29080331),
+    ink = Color(0xFF080331),      // 17.81:1 on canvas
+    text = Color(0xFF080331),
+    text2 = Color(0xFF5A5560),    //  6.55:1 — replaces #83809A, which was 3.37:1
+    text3 = Color(0xFF5A5560),    // no third tone; the kit measures exactly two
+    hair = Color(0x21080331),
+    hair2 = Color(0x38080331),
     accent = Color(0xFF4865FF),
-    accentInk = Color(0xFFFFFFFF),
-    live = Color(0xFFFF6D39),
+    accentInk = Color(0xFFFFFFFF),  // 4.58:1 on accent
+    live = Color(0xFFFF6D39),       // a FILL. Never text: 2.48:1 on cream.
+    // THE ACTION IS DEEP-INK: 17.44:1 with its cream label, against 4.58:1
+    // for indigo-with-white. Indigo is brand, links and selection only.
     btn = Color(0xFF080331),
-    btnInk = Color(0xFFFFFFFF),
+    btnInk = Color(0xFFF8F3EB),
     chip = Color(0xFFFFFFFF),
     chipInk = Color(0xFF080331),
     scrim = Color(0x8C080331),
-    heroFrom = Color(0xFF2B2350), heroMid = Color(0xFF4865FF), heroTo = Color(0xFFF098D7),
-    bAuto = Color(0xFF114E0B), bAutoBg = Color(0xFFE3F0E4),
-    bPing = Color(0xFF1B1463), bPingBg = Color(0xFFDCE4FB),
-    bUnsure = Color(0xFFB23200), bUnsureBg = Color(0xFFFFE6DA),
-    bNear = Color(0xFF333333), bNearBg = Color(0xFFE9E8EE),
+    heroFrom = Color(0xFF241A7A), heroMid = Color(0xFF150E52), heroTo = Color(0xFF080331),
+    bAuto = Color(0xFF114E0B), bAutoBg = Color(0xFFE8F2E6),    //  8.63:1
+    bPing = Color(0xFF1B1463), bPingBg = Color(0xFFDCE4FB),    // 12.46:1
+    bUnsure = Color(0xFFBF3200), bUnsureBg = Color(0xFFFDEADF), //  4.91:1
+    bNear = Color(0xFF333333), bNearBg = Color(0xFFECEAF2),    // 11.40:1
 )
 
-/** html[data-market="ke"] — authored dark, not an inversion. */
-val KE_TOKENS = Tokens(
-    /* Cool and near-neutral, 65-71deg off the accent. Every grey used to wear
-       the accent's own hue - canvas 140deg, surface 140deg, chip 143deg, text2
-       111deg, against a green accent at 142deg - so the chrome and the accent
-       were the same colour and the screen was one olive wash. Mirrors
-       site/base.css; both verified by tools/check_palette.py. */
-    canvas = Color(0xFF0E1014),
-    canvas2 = Color(0xFF15181D),
-    surface = Color(0xFF1B1F25),
-    ink = Color(0xFFF3F5F8),
-    text = Color(0xFFE5E8ED),
-    text2 = Color(0xFFA3AAB6),
-    text3 = Color(0xFF8A919D),
-    hair = Color(0x1FF3F5F8),
-    hair2 = Color(0x38F3F5F8),
-    accent = Color(0xFF35D07F),
-    accentInk = Color(0xFF06120A),
-    live = Color(0xFFFF6F5E),
-    btn = Color(0xFF35D07F),
-    btnInk = Color(0xFF06120A),
-    chip = Color(0xFF242A32),
-    chipInk = Color(0xFFE5E8ED),
-    scrim = Color(0xA306080C),
-    heroFrom = Color(0xFF0B1A14), heroMid = Color(0xFF10553A), heroTo = Color(0xFF35D07F),
-    /* The four hues are the product's semantic language and Canada paints the
-       same four - calmed, not moved. bNear goes WARM: the old one was the exact
-       colour of body copy, so a near-miss band was indistinguishable from it. */
-    bAuto = Color(0xFF52D98B), bAutoBg = Color(0x2452D98B),
-    bPing = Color(0xFF8FB0F0), bPingBg = Color(0x248FB0F0),
-    bUnsure = Color(0xFFF2A16A), bUnsureBg = Color(0x24F2A16A),
-    bNear = Color(0xFFA89F97), bNearBg = Color(0x24A89F97),
+/** :root[data-theme="dark"] — derived from deep-ink #080331, not a neutral
+ *  black, so it is still this brand in the dark. Both markets. */
+val DARK_TOKENS = Tokens(
+    canvas = Color(0xFF0A0524),
+    canvas2 = Color(0xFF100B2F),
+    surface = Color(0xFF16103A),   // separates by hairline, not luminance
+    ink = Color(0xFFF8F3EB),       // 17.93:1 on canvas
+    text = Color(0xFFF8F3EB),
+    text2 = Color(0xFFB9B3C4),     //  9.72:1 on canvas
+    text3 = Color(0xFFB9B3C4),
+    hair = Color(0x21F8F3EB),
+    hair2 = Color(0x3DF8F3EB),
+    /* Indigo is only 4.32:1 on this ground, so the action inverts: a lavender
+       fill carrying deep-ink text, 10.38:1. */
+    accent = Color(0xFFA2BAFF),
+    accentInk = Color(0xFF0A0524),
+    live = Color(0xFFFF9B6F),
+    btn = Color(0xFFF8F3EB),   // the action inverts: cream fill, 17.93:1
+    btnInk = Color(0xFF0A0524),
+    chip = Color(0xFF16103A),
+    chipInk = Color(0xFFF8F3EB),
+    scrim = Color(0xA8040210),
+    heroFrom = Color(0xFF241A7A), heroMid = Color(0xFF150E52), heroTo = Color(0xFF080331),
+    /* Forest and indigo both fail as labels on dark, so both lift. */
+    bAuto = Color(0xFF5FD07A), bAutoBg = Color(0xFF1F2940),    //  7.44:1
+    bPing = Color(0xFFA2BAFF), bPingBg = Color(0xFF2C2A56),    //  7.00:1
+    bUnsure = Color(0xFFFF9B6F), bUnsureBg = Color(0xFF36223E), //  6.99:1
+    bNear = Color(0xFFDDD7E4), bNearBg = Color(0xFF1E1A44),    // 10.10:1
 )
 
-fun tokensFor(market: String): Tokens = if (market == "ke") KE_TOKENS else CA_TOKENS
+/* MARKET — two places, never a third. The hero is the first; the active flag
+   chip (drawn in MainActivity from `accent` at low alpha) is the second. Same
+   construction, one hue swapped, and the hero is dark in BOTH themes. */
+private val CA_HERO = Triple(Color(0xFF241A7A), Color(0xFF150E52), Color(0xFF080331))
+private val KE_HERO = Triple(Color(0xFF11401A), Color(0xFF0C2A12), Color(0xFF080331))
 
-val LocalTokens = compositionLocalOf { CA_TOKENS }
+/**
+ * The palette comes from the THEME and the hero from the MARKET, which is the
+ * whole rule in one function. Callers pass `isSystemInDarkTheme()`.
+ */
+fun tokensFor(market: String, dark: Boolean): Tokens {
+    val base = if (dark) DARK_TOKENS else LIGHT_TOKENS
+    val (from, mid, to) = if (market == "ke") KE_HERO else CA_HERO
+    return base.copy(heroFrom = from, heroMid = mid, heroTo = to)
+}
+
+val LocalTokens = compositionLocalOf { LIGHT_TOKENS }
 
 /** `T.canvas` at any call site, without threading the set through every signature. */
 val T: Tokens

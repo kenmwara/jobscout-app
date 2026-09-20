@@ -18,6 +18,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.slideInVertically
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -502,7 +503,8 @@ fun DemoScreen(vm: DemoVm = viewModel()) {
     val dismissed = remember { mutableStateListOf<String>() }
     var lastDismissed by remember { mutableStateOf<Pair<String, String>?>(null) }
     val ins = WindowInsets.safeDrawing.asPaddingValues()
-    val tokens = tokensFor(ui.market)
+    // Theme follows the device, on either market — that is the point of v2.3.
+    val tokens = tokensFor(ui.market, isSystemInDarkTheme())
     val uriHandler = LocalUriHandler.current
 
     // A run moves you to the matches, which is the mockup's third frame; nothing else

@@ -1,29 +1,80 @@
 import SwiftUI
+import UIKit
 
-// ── JobScout v2.1 — August Health language, tokens mirror site/index.html :root ──
-// Indigo (4.15:1 on cream) and forest (3.9) are FILL / large-text only, never body copy.
-let indigo = Color(hex: 0x4865FF)
-let midnightViolet = Color(hex: 0x1B1463)
-let ink = Color(hex: 0x080331)
-let muted = Color(hex: 0x4A4560)          // --text2
-let text3 = Color(hex: 0x6B6780)
-let canvasBg = Color(hex: 0xF8F3EB)
-let cardBg = Color.white
-let info = Color(hex: 0xDCE4FB)
-let lavender = Color(hex: 0xA2BAFF)
-let meadow = Color(hex: 0x114E0B)
-let forest = Color(hex: 0x328A3B)
-let emberDeep = Color(hex: 0xCC3600)
-let stone = Color(hex: 0x333333)
-let hairline = Color(hex: 0x080331).opacity(0.10)
-let hair2 = Color(hex: 0x080331).opacity(0.18)
-private let warmBrown = Color(hex: 0x4B4439)
+// ── JobScout v2.3 — ONE palette, TWO themes. Mirrors site/base.css. ─────────
+//
+// Three independent signals, three separate channels:
+//   market -> the hero gradient and the flag chip (iOS has no hero band yet,
+//             so nothing here carries it - see the note at the bottom).
+//   theme  -> light or dark. The reader's device, never the market's.
+//   band   -> hue, exclusively. Green means AUTO (fit >= 80) at control
+//             scale, so nothing else may claim it there.
+//
+// Every token below was a literal, which is the whole reason this app has
+// been light-only on a dark phone: a literal cannot follow the appearance.
+// A dynamic UIColor can, and it keeps each token's name and type, so not one
+// call site in the other five files had to change.
+//
+// Ratios are measured, light / dark: see tools/check_palette.py, which holds
+// the web and Android to the same numbers.
+
+private func rgb(_ hex: UInt32) -> UIColor {
+    UIColor(red: CGFloat((hex >> 16) & 0xFF) / 255,
+            green: CGFloat((hex >> 8) & 0xFF) / 255,
+            blue: CGFloat(hex & 0xFF) / 255, alpha: 1)
+}
+
+/// `traits` is named rather than `$0`: inside a nested closure `$0` binds to
+/// the innermost one, which cost a build here on 2026-09-19.
+private func dyn(_ light: UInt32, _ dark: UInt32) -> Color {
+    Color(UIColor { traits in traits.userInterfaceStyle == .dark ? rgb(dark) : rgb(light) })
+}
+
+private func dynAlpha(_ hex: UInt32, _ a: CGFloat, _ darkHex: UInt32, _ darkA: CGFloat) -> Color {
+    Color(UIColor { traits in
+        traits.userInterfaceStyle == .dark
+            ? rgb(darkHex).withAlphaComponent(darkA) : rgb(hex).withAlphaComponent(a)
+    })
+}
+
+// Indigo is BRAND, links and selected state - never a primary button fill,
+// where it carries white at only 4.58:1. The action is `ink` on `canvasBg`,
+// which is deep-ink/cream in light and cream/deep-ink in dark: 17.44:1 and
+// 17.93:1, and it inverts for free.
+let indigo = dyn(0x4865FF, 0xA2BAFF)
+let midnightViolet = dyn(0x1B1463, 0xA2BAFF)
+let ink = dyn(0x080331, 0xF8F3EB)         // 17.81:1 / 17.93:1 on canvas
+let muted = dyn(0x5A5560, 0xB9B3C4)       // --text2. 6.55:1 / 9.72:1 - was
+                                          // 0x4A4560, of the #878789 family
+let text3 = dyn(0x5A5560, 0xB9B3C4)       // no third tone; the kit has two
+let canvasBg = dyn(0xF8F3EB, 0x0A0524)
+let cardBg = dyn(0xFFFFFF, 0x16103A)
+let info = dyn(0xDCE4FB, 0x2C2A56)        // the ping fill
+let lavender = dyn(0xA2BAFF, 0xA2BAFF)
+// `lavender` is the SAME fill in both themes, so whatever sits on it must be
+// deep-ink in both themes too - a dynamic ink would turn cream on dark and
+// disappear. 10.38:1.
+let lavenderInk = Color(hex: 0x080331)
+// Forest and indigo both fail as labels on dark, so both lift.
+let meadow = dyn(0x114E0B, 0x5FD07A)      // the auto label
+let forest = dyn(0x328A3B, 0x5FD07A)      // the auto solid, for lit bearings
+let emberDeep = dyn(0xBF3200, 0xFF9B6F)   // the unsure label
+let stone = dyn(0x333333, 0xDDD7E4)       // the near-miss label
+let hairline = dynAlpha(0x080331, 0.13, 0xF8F3EB, 0.13)
+let hair2 = dynAlpha(0x080331, 0.22, 0xF8F3EB, 0.24)
+// A warm-brown shadow reads as dirt on a dark ground, so on dark it goes to
+// zero and the hairline border carries the separation instead.
+private func warmShadowColor(_ a: CGFloat) -> Color {
+    Color(UIColor { traits in
+        traits.userInterfaceStyle == .dark ? .clear : rgb(0x4B4439).withAlphaComponent(a)
+    })
+}
 
 /// One hue per candidate (border + rose) and its card ground, same as the web.
 let personaHues: [(Color, Color)] = [
-    (forest, Color(hex: 0xF2F7F1)),
-    (emberDeep, Color(hex: 0xFDF3EE)),
-    (indigo, Color(hex: 0xF1F3FD)),
+    (forest, dyn(0xF2F7F1, 0x1F2940)),
+    (emberDeep, dyn(0xFDF3EE, 0x36223E)),
+    (indigo, dyn(0xF1F3FD, 0x2C2A56)),
 ]
 
 // The same two variable TTFs the site embeds and Android bundles (google/fonts, OFL),
@@ -38,8 +89,8 @@ func sans(_ size: CGFloat, _ weight: Font.Weight = .regular) -> Font {
 extension View {
     /// August's warm-brown shadow instead of the system grey.
     func warmShadow(_ radius: CGFloat = 20, y: CGFloat = 10) -> some View {
-        self.shadow(color: warmBrown.opacity(0.10), radius: radius, x: 0, y: y)
-            .shadow(color: warmBrown.opacity(0.05), radius: 3, x: 0, y: 2)
+        self.shadow(color: warmShadowColor(0.10), radius: radius, x: 0, y: y)
+            .shadow(color: warmShadowColor(0.05), radius: 3, x: 0, y: 2)
     }
 }
 
