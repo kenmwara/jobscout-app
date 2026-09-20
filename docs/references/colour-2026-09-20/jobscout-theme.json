@@ -1,105 +1,189 @@
 {
-  "$meta": {
-    "name": "JobScout theme",
-    "version": "2.3",
-    "date": "2026-09-19",
-    "rule": "market -> hero gradient + market chip only; theme -> reader's choice; band -> hue, exclusively.",
-    "adding-a-market": "one [data-market] block if it earns a hue, else nothing \u2014 it inherits the brand hero."
-  },
-  "light": {
-    "canvas": "#f8f3eb",
-    "surface": "#ffffff",
-    "sunken": "#ece5d8",
-    "hairline": "rgba(8, 3, 49, 0.13)",
-    "blob": "rgba(72, 101, 255, 0.05)",
-    "text": "#080331",
-    "text-2": "#5a5560",
-    "action": "#080331",
-    "action-on": "#f8f3eb",
-    "action-edge": "rgba(8, 3, 49, 0.18)",
-    "brand": "#4865ff",
-    "link": "#1b1463",
-    "selected-bg": "#dce4fb",
-    "selected-edge": "#4865ff",
-    "selected-fg": "#1b1463",
-    "auto-label": "#114e0b",
-    "auto-fill": "#e8f2e6",
-    "ping-label": "#1b1463",
-    "ping-fill": "#dce4fb",
-    "unsure-label": "#bf3200",
-    "unsure-fill": "#fdeadf",
-    "nearmiss-label": "#333333",
-    "nearmiss-fill": "#eceaf2",
-    "auto": "#328a3b",
-    "ping": "#4865ff",
-    "unsure": "#ff6d39",
-    "nearmiss": "#dce4fb",
-    "strongest-bg": "#e8f2e6",
-    "strongest-label": "#114e0b",
-    "strongest-body": "#3d4a3f",
-    "answer-bg": "#fdeadf",
-    "answer-label": "#bf3200",
-    "answer-body": "#5c4a42"
-  },
-  "dark": {
-    "canvas": "#0a0524",
-    "surface": "#16103a",
-    "sunken": "#1a1240",
-    "hairline": "rgba(248, 243, 235, 0.13)",
-    "blob": "rgba(162, 186, 255, 0.05)",
-    "text": "#f8f3eb",
-    "text-2": "#b9b3c4",
-    "action": "#f8f3eb",
-    "action-on": "#0a0524",
-    "action-edge": "rgba(248, 243, 235, 0.22)",
-    "brand": "#a2baff",
-    "link": "#a2baff",
-    "selected-bg": "#2c2a56",
-    "selected-edge": "#a2baff",
-    "selected-fg": "#a2baff",
-    "auto-label": "#5fd07a",
-    "auto-fill": "#1f2940",
-    "ping-label": "#a2baff",
-    "ping-fill": "#2c2a56",
-    "unsure-label": "#ff9b6f",
-    "unsure-fill": "#36223e",
-    "nearmiss-label": "#ddd7e4",
-    "nearmiss-fill": "#1e1a44",
-    "auto": "#5fd07a",
-    "ping": "#a2baff",
-    "unsure": "#ff9b6f",
-    "nearmiss": "#ddd7e4",
-    "strongest-bg": "#1f2940",
-    "strongest-label": "#5fd07a",
-    "strongest-body": "#cfd9d2",
-    "answer-bg": "#36223e",
-    "answer-label": "#ff9b6f",
-    "answer-body": "#ded0c9"
-  },
-  "market": {
-    "default": "brand hero \u2014 indigo bloom over midnight-violet to deep-ink",
-    "ke": "meadow bloom over deep forest to deep-ink (own domain, own pitch)",
-    "us": "inherits default",
-    "uk": "inherits default",
-    "hue-ladder": {
-      "meadow": "#11401a",
-      "teal": "#0d3a3f",
-      "violet": "#2c1a4e",
-      "plum": "#431631"
+  "name": "JobScout theme",
+  "version": "3.0",
+  "generated": "2026-09-20",
+  "source": "css/theme-resolution.css \u2014 regenerate from that file, never hand-edit",
+  "note": "market sets --hero only; theme sets everything else.",
+  "bandRamp": {
+    "ramp": {
+      "light-fill": [
+        0.955,
+        0.022
+      ],
+      "light-label": [
+        0.42,
+        0.096
+      ],
+      "light-body": [
+        0.43,
+        0.02
+      ],
+      "dark-fill": [
+        0.305,
+        0.038
+      ],
+      "dark-label": [
+        0.8,
+        0.101
+      ],
+      "dark-body": [
+        0.865,
+        0.016
+      ],
+      "solid-l": [
+        0.6,
+        0.136
+      ],
+      "solid-d": [
+        0.76,
+        0.122
+      ]
     },
-    "excluded-hues": {
-      "ember": 18,
-      "forest": 126,
-      "indigo": 230
+    "hues": {
+      "auto": 147,
+      "ping": 270,
+      "unsure": 63,
+      "nearmiss": 285
+    },
+    "bands": {
+      "auto": {
+        "solid_l": "#3e954d",
+        "solid_d": "#7ac683",
+        "light_label": "#225b2c",
+        "light_fill": "#e7f4e8",
+        "dark_label": "#92d098",
+        "dark_fill": "#223424",
+        "dark_body": "#ccd6cd",
+        "light_body": "#495349"
+      },
+      "ping": {
+        "solid_l": "#617ad1",
+        "solid_d": "#93adff",
+        "light_label": "#394981",
+        "light_fill": "#eaf0ff",
+        "dark_label": "#a4bbff",
+        "dark_fill": "#272e42",
+        "dark_body": "#ced2dd",
+        "light_body": "#4b4f5b"
+      },
+      "unsure": {
+        "solid_l": "#b86b03",
+        "solid_d": "#e89f59",
+        "light_label": "#713f00",
+        "light_fill": "#fbede1",
+        "dark_label": "#ecaf78",
+        "dark_fill": "#3d2b1a",
+        "dark_body": "#dbd1c8",
+        "light_body": "#584e45"
+      },
+      "nearmiss": {
+        "solid_l": "#7d7d97",
+        "solid_d": "#aeafc7",
+        "light_label": "#4b4b5c",
+        "light_fill": "#eff0f4",
+        "dark_label": "#bbbcd0",
+        "dark_fill": "#2e2e34",
+        "dark_body": "#d2d2d5",
+        "light_body": "#4f4f53"
+      }
     }
   },
-  "live-build-fixes": {
-    "action colour": "app uses #4865ff + white (4.58:1); web uses #080331 + cream (17.44:1) \u2014 adopt the web's",
-    "page ground": "#e5e5ec -> #f8f3eb",
-    "unsure pill": "#cc3600 on #ffe6da (4.29:1) -> #bf3200 on #fdeadf (4.91:1)",
-    "secondary labels": "#878789 (3.25:1) -> #5a5560 (6.55:1)",
-    "kenya submit button": "#2fbd6a -> --action (green at control scale means auto)",
-    "kenya page ground": "green runs full-bleed -> constrain to the .hero block",
-    "hero period": "#ef4b3c is not a kit colour -> --unsure #ff6d39, or drop it"
+  "themes": {
+    "light": {
+      "--canvas": "#f8f3eb",
+      "--surface": "#ffffff",
+      "--sunken": "#ece5d8",
+      "--hairline": "rgba(8,3,49,.13)",
+      "--halo-1": "rgba(255,252,242,.92)",
+      "--halo-2": "rgba(255,250,240,.80)",
+      "--halo-3": "rgba(255,253,246,.85)",
+      "--text": "#080331",
+      "--text-2": "#5a5560",
+      "--text-long": "#080331",
+      "--action": "#080331",
+      "--action-on": "#f8f3eb",
+      "--action-edge": "rgba(8,3,49,.18)",
+      "--brand": "#4865ff",
+      "--link": "#1b1463",
+      "--selected-bg": "#eaf0ff",
+      "--selected-edge": "#4865ff",
+      "--selected-fg": "#394981",
+      "--auto-label": "#225b2c",
+      "--auto-fill": "#e7f4e8",
+      "--ping-label": "#394981",
+      "--ping-fill": "#eaf0ff",
+      "--unsure-label": "#713f00",
+      "--unsure-fill": "#fbede1",
+      "--nearmiss-label": "#4b4b5c",
+      "--nearmiss-fill": "#eff0f4",
+      "--auto": "#3e954d",
+      "--ping": "#617ad1",
+      "--unsure": "#b86b03",
+      "--nearmiss": "#7d7d97",
+      "--strongest-bg": "#e7f4e8",
+      "--strongest-label": "#225b2c",
+      "--strongest-body": "#495349",
+      "--answer-bg": "#fbede1",
+      "--answer-label": "#713f00",
+      "--answer-body": "#584e45",
+      "--scrim": "rgba(8,3,49,.66)",
+      "--sheet-edge": "1px solid transparent",
+      "--shadow-card": "rgba(75,68,57,.07) 0 6px 14px 0, rgba(75,68,57,.05) 0 20px 32px 0",
+      "--shadow-sheet": "0 -2px 8px rgba(75,68,57,.06), 0 -18px 48px rgba(75,68,57,.16)",
+      "--shadow-cta": "rgba(75,68,57,.10) 0 12px 24px 0, rgba(75,68,57,.10) 0 48px 48px 0",
+      "--card-border": "1px solid transparent"
+    },
+    "dark": {
+      "--canvas": "#0a0524",
+      "--surface": "#1c1544",
+      "--sunken": "#1a1240",
+      "--hairline": "rgba(248,243,235,.13)",
+      "--halo-1": "rgba(43, 57,108,.50)",
+      "--halo-2": "rgba(58, 42, 96,.42)",
+      "--halo-3": "rgba(36, 52,100,.38)",
+      "--text": "#f8f3eb",
+      "--text-2": "#b9b3c4",
+      "--text-long": "#ded9e8",
+      "--action": "#f8f3eb",
+      "--action-on": "#0a0524",
+      "--action-edge": "rgba(248,243,235,.22)",
+      "--brand": "#a2baff",
+      "--link": "#a2baff",
+      "--selected-bg": "#272e42",
+      "--selected-edge": "#a2baff",
+      "--selected-fg": "#a4bbff",
+      "--auto-label": "#92d098",
+      "--auto-fill": "#223424",
+      "--ping-label": "#a4bbff",
+      "--ping-fill": "#272e42",
+      "--unsure-label": "#ecaf78",
+      "--unsure-fill": "#3d2b1a",
+      "--nearmiss-label": "#bbbcd0",
+      "--nearmiss-fill": "#2e2e34",
+      "--auto": "#7ac683",
+      "--ping": "#93adff",
+      "--unsure": "#e89f59",
+      "--nearmiss": "#aeafc7",
+      "--strongest-bg": "#223424",
+      "--strongest-label": "#92d098",
+      "--strongest-body": "#ccd6cd",
+      "--answer-bg": "#3d2b1a",
+      "--answer-label": "#ecaf78",
+      "--answer-body": "#dbd1c8",
+      "--scrim": "rgba(0,0,0,.66)",
+      "--sheet-edge": "1px solid rgba(248,243,235,.13)",
+      "--shadow-card": "none",
+      "--shadow-sheet": "none",
+      "--shadow-cta": "none",
+      "--card-border": "1px solid var(--hairline)"
+    }
+  },
+  "shared": {
+    "--radius-pill": "1600px",
+    "--radius-card": "16px",
+    "--radius-inner": "12px",
+    "--radius-sheet": "22px",
+    "--font-serif": "Newsreader, Georgia, serif",
+    "--font-sans": "Inter, system-ui, sans-serif"
   }
 }

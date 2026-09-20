@@ -301,7 +301,7 @@
       </div>
       <div>
         <h4>Find work</h4>
-        <a href="./">Browse today&rsquo;s sweep</a><a href="saved">Saved jobs</a>
+        <a href="./#browse">Browse today&rsquo;s sweep</a><a href="saved">Saved jobs</a>
       </div>
       <div>
         <h4>Markets</h4>
@@ -322,7 +322,10 @@ const $ = s => document.querySelector(s);
 document.addEventListener("DOMContentLoaded", () => {
   $("#backLink").onclick = e => {
     e.preventDefault();
-    if (history.length > 1) history.back(); else location.href = "./";
+    /* "./" is the cold LANDING. With no history to go back to, the fallback
+       has to land where Browse lands, or this link means one thing on a
+       normal visit and another on a fresh tab. */
+    if (history.length > 1) history.back(); else location.href = "./#browse";
   };
 });
 const API = "https://jobscout-app-api.kenmwara.workers.dev";

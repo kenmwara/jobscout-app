@@ -69,8 +69,14 @@
 <style>
 
   *{box-sizing:border-box}
-  body{margin:0;background:var(--canvas);color:var(--text);font-family:var(--sans);font-size:16px;line-height:1.6;
-    background-image:radial-gradient(rgba(8,3,49,.07) 1px,transparent 1px);background-size:24px 24px;-webkit-font-smoothing:antialiased}
+  /* NO GROUND HERE. This rule used to paint an opaque --canvas plus its own
+     24px dot grid, and an opaque body background covers <html>'s fixed halo
+     layers completely - which is why /saved measured 1.000 at all six corners
+     in both themes while /browse measured on spec. The halo was never missing
+     from this route; it was underneath. base.css carries the canvas, the three
+     blooms and the same dot texture on <html>, once, for every page. */
+  body{margin:0;color:var(--text);font-family:var(--sans);font-size:16px;line-height:1.6;
+    -webkit-font-smoothing:antialiased}
   .wrap{max-width:720px;margin:0 auto;padding:0 20px 80px}
   header{padding:14px 0 0}
   header .pill{display:flex;align-items:center;gap:12px;background:var(--surface);border-radius:1600px;box-shadow:var(--sh);padding:12px 18px 12px 18px}
@@ -99,7 +105,7 @@
         JobScout
       </a>
       <nav class="main" style="margin-left:auto;display:flex;gap:8px;align-items:center">
-        <a href="./">Browse</a>
+        <a href="./#browse">Browse</a>
         <a href="saved">Saved jobs</a>
       </nav>
     </div>
@@ -175,7 +181,7 @@
       </div>
       <div>
         <h4>Find work</h4>
-        <a href="./">Browse today&rsquo;s sweep</a><a href="saved">Saved jobs</a>
+        <a href="./#browse">Browse today&rsquo;s sweep</a><a href="saved">Saved jobs</a>
       </div>
       <div>
         <h4>Markets</h4>

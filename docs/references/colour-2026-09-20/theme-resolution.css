@@ -112,8 +112,28 @@
   --answer-label:    light-dark(#713f00, #ecaf78);
   --answer-body:     light-dark(#584e45, #dbd1c8);   /* 7.06 / 8.96 */
 
+  /* --- modals and sheets ------------------------------------------------
+     One scrim alpha serves both themes: it puts the content behind at
+     2.78:1 on light and 2.68:1 on dark. A scrim is meant to FAIL contrast —
+     at the 0.55 the mockup uses, the page behind still reads at 4.08:1,
+     which is why a half-covered heading looks like a rendering fault
+     rather than something deliberately pushed back. */
+  --scrim: light-dark(rgba(8,3,49,.66), rgba(0,0,0,.66));
+
+  /* A sheet is the one surface that casts UPWARD. On dark there is no
+     shadow, so --sheet-edge carries the separation instead.
+
+     NOT light-dark(): this value is two shadows, so it contains a top-level
+     comma, and light-dark() would see three arguments and drop the whole
+     declaration. Multi-part values take a real override, like the shadows
+     at the foot of this block. */
+  --shadow-sheet: 0 -2px 8px rgba(75,68,57,.06),
+                  0 -18px 48px rgba(75,68,57,.16);
+  --sheet-edge: light-dark(1px solid transparent, 1px solid rgba(248,243,235,.13));
+
   /* --- shape ------------------------------------------------------------ */
   --radius-pill: 1600px;  --radius-card: 16px;  --radius-inner: 12px;
+  --radius-sheet: 22px;   /* top corners only — a sheet has no bottom edge */
   --font-serif: Newsreader, Georgia, serif;
   --font-sans:  Inter, system-ui, sans-serif;
 
@@ -128,12 +148,14 @@
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     --shadow-card: none;
+    --shadow-sheet: none;
     --shadow-cta:  none;
     --card-border: 1px solid var(--hairline);
   }
 }
 :root[data-theme="dark"] {
   --shadow-card: none;
+  --shadow-sheet: none;
   --shadow-cta:  none;
   --card-border: 1px solid var(--hairline);
 }

@@ -580,8 +580,130 @@ The ground moves to `<html>` so `body::before` can sit behind body's own box.
 Nothing else needs a z-index. The halo is at -1; everything in normal flow is
 above it. The hero, cards, modals and header all paint over it normally.
 
+### Verifying it is actually on
+
+Measured per page, per theme, 2026-09-20. **`/browse` has it; `/saved` does not.**
+
+| | top-L | top-R | mid-L | mid-R | bot-L | bot-R |
+|---|---|---|---|---|---|---|
+| browse · light | 1.000 | **1.051** | 1.017 | 1.000 | 1.000 | 1.034 |
+| browse · dark | 1.007 | **1.174** | 1.042 | 1.000 | 1.000 | 1.064 |
+| saved · light | 1.000 | 1.000 | 1.000 | 1.000 | 1.000 | 1.000 |
+| saved · dark | 1.000 | 1.000 | 1.000 | 1.000 | 1.000 | 1.000 |
+
+Median of each corner against the flat canvas; spec peak is 1.053 light and
+1.258 dark. Browse light lands on spec, browse dark at about 70% of it. Saved
+is 1.000 at every corner in both themes — the layer is not there at all.
+
+**This is the failure §14 is written to prevent.** `body::before` is one rule
+on one element; if it reaches one route and not another, the halo is being
+applied per page or per layout component rather than once, globally.
+
+### Saved has a different background instead
+
+A **30×30px dot grid**, `#e7e2dd` on cream — **1.165:1**. Light theme only;
+the dark saved margin has four unique colours in the entire left gutter.
+
+It is not in this spec, and it is **louder than the halo it stands in for**
+(1.053:1 at peak). Two routes, two background systems, and the noisier one is
+winning. Pick one: the halo, site-wide, on `body::before`. If the dot grid is
+wanted as well it becomes a fourth layer in that same rule, at an amplitude
+below the halo's — not a per-page background.
+
 ---
 
-## 15. One-line summary to keep in your head
+## 15. Modals and sheets
+
+No — the cover-letter popup is a desktop dialog dropped onto a phone. Seven
+things, measured from `mockups/mobile.html`.
+
+### 15.1 The scrim is too weak
+
+It is the right colour — deep-ink `#080331`, not neutral black, which is
+correct. It is at **0.55**, and at that alpha the page behind still reads at
+**4.08:1**. That passes AA. **A scrim is supposed to fail.** Because the
+content behind stays legible *and* the dialog's top edge slices the "Cloud
+Engineer" heading in half, it reads as a rendering fault rather than as
+something deliberately pushed back.
+
+```
+  deep-ink over cream     0.55 -> 4.08:1     0.66 -> 2.78:1
+  black over ink          0.55 -> 4.00:1     0.66 -> 2.68:1
+```
+
+`--scrim` is 0.66 in both themes — one value, and both land near 2.7:1.
+
+### 15.2 It is a dialog, not a sheet
+
+Inset on all four sides with gaps above and below, so you get a ~600px
+reading window *plus* a second scrollbar, inside a phone that already
+scrolls. On a phone a long document is a **bottom sheet**: full width, rising
+to ~90% height, `--radius-sheet` on the top corners only, flat to the bottom
+edge. The strip of page left showing at the top is what says "this is on top
+of something", and it is the thing to tap to dismiss.
+
+### 15.3 A raw OS scrollbar inside a branded surface
+
+`#8b8b8b` track, `#fcfcfc` thumb, with arrow buttons — sitting inside a
+rounded sheet and clipping its corner. Style it to `--hairline` at 4px, or
+let the sheet's own overflow carry it.
+
+### 15.4 No elevation
+
+A white sheet on a dimmed page with no shadow and no border reads as pasted
+on. A sheet is the one surface that casts **upward**: `--shadow-sheet`. On
+dark there is no shadow at all, so `--sheet-edge` carries it.
+
+### 15.5 The letter has no letterhead
+
+"Ken Kariuki kenmwara@gmail.com +1 778 847 3965" runs as body text at the
+same size and weight as the letter itself. It is a letterhead: name at
+`--text` 500, contact at `--text-2` 11px, then a `--hairline` rule, then the
+body. This is the same inverted-hierarchy error as §12.3.
+
+### 15.6 Two button shapes for two different jobs
+
+"Close" is a wide outlined pill at top-right, competing with the title; the
+real action, "Copy", is a small pill at bottom-left. Invert it: Close is a
+30px circular `--sunken` icon button, and Copy is a **full-width**
+`--action` button in a footer with a `--hairline` above it.
+
+### 15.7 The title is sans
+
+`--font-serif` at 20px. Newsreader is for titles, and a sheet header is a
+title. Add a 34×4 grab handle above it in `--hairline` — the affordance that
+says the sheet scrolls and can be dragged away.
+
+### The tokens
+
+```css
+--scrim:        light-dark(rgba(8,3,49,.66), rgba(0,0,0,.66));
+--sheet-edge:   light-dark(1px solid transparent,
+                           1px solid rgba(248,243,235,.13));
+--radius-sheet: 22px;   /* top corners only */
+
+/* NOT light-dark(): two shadows means a top-level comma, so light-dark()
+   would see three arguments and silently drop the whole declaration.
+   Multi-part values take a real override. */
+--shadow-sheet: 0 -2px 8px rgba(75,68,57,.06),
+                0 -18px 48px rgba(75,68,57,.16);
+```
+```css
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --shadow-sheet: none; } }
+:root[data-theme="dark"] { --shadow-sheet: none; }
+```
+
+**This applies to every multi-part value**, and it fails silently — the
+declaration simply vanishes, so the first symptom is a missing shadow rather
+than an error. `--shadow-card` and `--shadow-cta` are already handled this
+way for the same reason.
+
+A centred dialog is still right on desktop, at a max-width — but it takes the
+same scrim, the same elevation and the same footer.
+
+---
+
+## 16. One-line summary to keep in your head
 
 > **Market is the hero. Theme is everything else. They never touch.**

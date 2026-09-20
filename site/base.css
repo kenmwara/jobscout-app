@@ -166,7 +166,26 @@
   --sunken:   light-dark(#ece5d8, #1a1240);   /* segmented tracks, rails */
   --hair:     light-dark(rgba(8,3,49,.13), rgba(248,243,235,.13));
   --hair2:    light-dark(rgba(8,3,49,.22), rgba(248,243,235,.24));
-  --scrim:    light-dark(rgba(8,3,49,.55), rgba(4,2,16,.66));
+  /* A SCRIM IS MEANT TO FAIL CONTRAST. At .55 the page behind still read
+     4.08:1 - passing AA - so it looked like a rendering fault rather than
+     something deliberately pushed back. .66 puts it at 2.78:1 on light and
+     2.68:1 on dark: one value, both near 2.7. */
+  --scrim: light-dark(rgba(8,3,49,.66), rgba(0,0,0,.66));
+
+  /* A sheet is the one surface that casts UPWARD. NOT light-dark(): this
+     value has a top-level comma, so light-dark() would see three arguments
+     and drop the whole declaration silently. Multi-part values need a real
+     override, which the dark blocks below give it. */
+  --shadow-sheet: 0 -2px 8px rgba(75,68,57,.06),
+                  0 -18px 48px rgba(75,68,57,.16);
+  /* A COLOUR, not a border shorthand. light-dark() is defined to return a
+     <color>; `light-dark(1px solid X, 1px solid Y)` parses as a function with
+     the wrong argument type, so `border:var(--sheet-edge)` is invalid at
+     computed-value time and falls back to border-style:none - measured 0px.
+     In dark, where --shadow-sheet is none, that left the sheet with no edge
+     at all against the scrim. Same trap --shadow-sheet was called out for. */
+  --sheet-edge: light-dark(transparent, rgba(248,243,235,.13));
+  --radius-sheet: 22px;   /* top corners only - a sheet has no bottom edge */
 
   /* ── text ── the kit measures exactly two tones ── */
   --ink:   light-dark(#080331, #f8f3eb);   /* 17.81 / 17.93 on canvas */
@@ -255,9 +274,13 @@
      than cream, so each bloom composited to #efecec: 1.06:1 DARKER, with the
      hue dragged from 37deg to 0. A glow that darkens is a shadow, and that
      is what made the light page look blotchy. */
-  --halo-1: light-dark(rgba(255,252,242,.92), rgba(43, 57,108,.50));
-  --halo-2: light-dark(rgba(255,250,240,.80), rgba(58, 42, 96,.42));
-  --halo-3: light-dark(rgba(255,253,246,.85), rgba(36, 52,100,.38));
+  /* Dark alphas raised ~18% (.50/.42/.38): the top-right corner measured
+     1.174 against the flat canvas where the spec peak is 1.258, so the layer
+     was reaching about 70% of its amplitude. Light measured 1.051 against a
+     1.053 spec and is left alone. */
+  --halo-1: light-dark(rgba(255,252,242,.92), rgba(43, 57,108,.59));
+  --halo-2: light-dark(rgba(255,250,240,.80), rgba(58, 42, 96,.50));
+  --halo-3: light-dark(rgba(255,253,246,.85), rgba(36, 52,100,.45));
 
   /* The evidence cards ARE the auto and unsure rungs, not a second palette
      that has to be kept in step with the first. */
@@ -273,9 +296,9 @@
   --sh-hover:0 6px 27px rgba(75,68,57,.09), 0 1.8px 8px rgba(75,68,57,.05), 0 .75px 3.4px rgba(75,68,57,.04);
 }
 @media (prefers-color-scheme: dark){
-  :root[data-theme="system"]{ --sh-hover:0 0 0 1px var(--hair); }
+  :root[data-theme="system"]{ --sh-hover:0 0 0 1px var(--hair); --shadow-sheet:none; }
 }
-:root[data-theme="dark"]{ --sh-hover:0 0 0 1px var(--hair); }
+:root[data-theme="dark"]{ --sh-hover:0 0 0 1px var(--hair); --shadow-sheet:none; }
 
 /* The three states. Absence is light, which is also what `light` forces;
    `system` is the only one that hands the decision to the device. */

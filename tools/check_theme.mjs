@@ -24,6 +24,11 @@ const BASE = LIVE ? "https://jobscout.page" : "http://localhost:8787";
 const KE = LIVE ? "https://nairobi.jobscout.page" : `${BASE}/index.html?market=ke`;
 const CA = LIVE ? BASE : `${BASE}/index.html?market=ca`;
 
+/* Every route a reader can actually land on. */
+const ROUTES = LIVE
+  ? ["/", "/saved", "/apply", "/privacy"]
+  : ["/index.html", "/saved.html", "/apply.html", "/privacy.html"];
+
 const CANVAS = { light: "#f8f3eb", dark: "#0a0524" };
 // A custom property is NOT normalised by getComputedStyle - it comes back as
 // authored - so compare with the whitespace stripped rather than guessing
@@ -234,6 +239,83 @@ const run = async () => {
      scripts set attributes the cached CSS has no rules for. That shipped, and
      it looked exactly like a broken toggle: "I have to do a hard reset before
      I can change light/dark modes". site/_headers pins base.css to the HTML. */
+  /* ONE GROUND, EVERY ROUTE.
+     /saved and /privacy each declared their own
+       body{background:var(--canvas); background-image:radial-gradient(dots)}
+     and an opaque body background covers <html>'s fixed halo layers
+     completely. Those two routes measured 1.000 against the flat canvas at
+     all six corners in BOTH themes while /browse measured on spec. The halo
+     was never missing there - it was underneath, and a per-page dot grid
+     LOUDER than the halo was standing in for it.
+
+     A layer that is one rule on one element either reaches every page or it
+     is not global, so this is asserted per ROUTE - the defect lived on the
+     two routes nothing in this harness had ever opened. And it asserts WHO
+     PAINTS, not what colour came out: a route can composite to the right hex
+     and still have thrown the halo away. */
+  console.log("");
+  console.log("-- the ground belongs to <html>, on every route --");
+  for (const route of ROUTES) {
+    for (const theme of ["light", "dark"]) {
+      const ctx = await browser.newContext(
+        { colorScheme: theme, viewport: { width: 1280, height: 900 } });
+      const page = await ctx.newPage();
+      await page.goto(BASE + route, { waitUntil: "domcontentloaded" });
+      const g = await page.evaluate(() => {
+        const s = document.createElement("style");
+        s.textContent = "*,*::before,*::after{transition:none!important;animation:none!important}";
+        document.head.appendChild(s);
+        void document.body.offsetHeight;
+        const H = getComputedStyle(document.documentElement);
+        const B = getComputedStyle(document.body);
+        return {
+          layers: (H.backgroundImage.match(/gradient/g) || []).length,
+          fixed: /fixed/.test(H.backgroundAttachment),
+          bodyPaints:
+            B.backgroundColor !== "rgba(0, 0, 0, 0)" || B.backgroundImage !== "none",
+          bodyGround: B.backgroundImage === "none" ? B.backgroundColor : B.backgroundImage,
+        };
+      });
+      const tag = route + " " + theme;
+      if (g.bodyPaints)
+        bad(tag + ": body paints its own ground (" + g.bodyGround.slice(0, 46) +
+            ") - that covers the halo");
+      else if (g.layers < 4)
+        bad(tag + ": <html> carries " + g.layers +
+            " background layers, want 4 (3 blooms + the dot texture)");
+      else if (!g.fixed)
+        bad(tag + ": the halo scrolls with the page instead of sitting behind it");
+      else ok(tag + ": 4 fixed layers on <html>, body paints nothing");
+      await ctx.close();
+    }
+  }
+
+  /* BROWSE MEANS ONE PLACE.
+     index.html resolves #browse on load and its own nav link switches the
+     view in place; the other three linked to "./", which is the LANDING. The
+     same word in the same nav went to two different screens depending on
+     which page you clicked it from. Assert the destination, not that a link
+     with the right label exists. */
+  console.log("");
+  console.log("-- one word, one destination --");
+  for (const route of ROUTES.filter((r) => !/^\/(index\.html)?$/.test(r))) {
+    const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+    const page = await ctx.newPage();
+    await page.goto(BASE + route, { waitUntil: "domcontentloaded" });
+    const hrefs = await page.evaluate(() =>
+      [...document.querySelectorAll("a")]
+        /* Not === "Browse": the footer calls it "Browse today's sweep", and
+           an exact match silently passed that one as "no Browse link". */
+        .filter((a) => a.textContent.trim().startsWith("Browse"))
+        .map((a) => a.getAttribute("href")));
+    if (!hrefs.length) bad(route + ": no link labelled Browse");
+    else if (hrefs.some((h) => !/#browse$/.test(h)))
+      bad(route + ": Browse -> " + hrefs.join(", ") +
+          " - that is the landing, not the browse view");
+    else ok(route + ": Browse -> " + hrefs[0] + " (all " + hrefs.length + ")");
+    await ctx.close();
+  }
+
   if (LIVE) {
     console.log("\n-- what the browser is told to cache --");
     const maxAge = async (u) => {

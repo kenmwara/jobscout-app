@@ -90,8 +90,19 @@
   --strongest-bg: #e7f4e8;  --strongest-label: #225b2c;  --strongest-body: #495349;
   --answer-bg:    #fbede1;  --answer-label:    #713f00;  --answer-body:    #584e45;
 
+  /* --- modals and sheets ------------------------------------------------
+     0.66 puts the content behind the scrim at 2.78:1 here and 2.68:1 on
+     dark. A scrim is meant to FAIL contrast; at 0.55 the page behind still
+     reads at 4.08:1, which makes a half-covered heading look like a fault
+     rather than something deliberately pushed back. */
+  --scrim:        rgba(8, 3, 49, 0.66);
+  --shadow-sheet: 0 -2px 8px rgba(75, 68, 57, 0.06),
+                  0 -18px 48px rgba(75, 68, 57, 0.16);  /* sheets cast UP */
+  --sheet-edge:   1px solid transparent;
+
   /* --- shape & depth --------------------------------------------------- */
   --radius-pill: 1600px;  --radius-card: 16px;  --radius-inner: 12px;
+  --radius-sheet: 22px;   /* top corners only — a sheet has no bottom edge */
   --shadow-card: rgba(75, 68, 57, 0.07) 0 6px 14px 0,
                  rgba(75, 68, 57, 0.05) 0 20px 32px 0;
   --shadow-cta:  rgba(75, 68, 57, 0.10) 0 12px 24px 0,
@@ -153,7 +164,9 @@
   --answer-bg:    #3d2b1a;  --answer-label:    #ecaf78;  --answer-body:    #dbd1c8;
 
   /* Warm-brown shadow reads as dirt on a dark ground; the border carries it. */
-  --shadow-card: none;  --shadow-cta: none;
+  --shadow-card: none;  --shadow-cta: none;  --shadow-sheet: none;
+  --scrim:      rgba(0, 0, 0, 0.66);
+  --sheet-edge: 1px solid rgba(248, 243, 235, 0.13);
 }
 
 /* ===========================================================================
