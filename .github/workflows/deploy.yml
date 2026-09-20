@@ -43,6 +43,25 @@ jobs:
             echo "::error::CLOUDFLARE_API_TOKEN is not set - add it in repo Settings > Secrets > Actions."
             exit 1
           fi
+          # Stamp the stylesheet's content hash into every reference to it.
+          #
+          # WHY. Pages serves HTML at max-age=0 and other assets at 14400, and
+          # on the custom domain a _headers rule that LOWERS base.css is
+          # ignored - while the same file's rule RAISING fonts-embedded.css is
+          # honoured, and both are honoured on *.pages.dev. So it is the zone,
+          # which this workflow cannot reach. The result was new HTML paired
+          # with a four-hour-old palette: the toggle set data-theme="system",
+          # the cached CSS had no rule for it, and nothing repainted until a
+          # hard reset. Reported exactly that way.
+          #
+          # A content hash makes the URL change whenever the file does, so no
+          # cache policy anywhere can pair new markup with an old palette. The
+          # checkout is fresh, so this never touches the repo.
+          CSSHASH=$(md5sum site/base.css | cut -c1-10)
+          sed -i "s|href=\"base.css\"|href=\"base.css?v=$CSSHASH\"|g" site/*.html
+          echo "stylesheet pinned to $CSSHASH"
+          grep -ho 'href="base.css[^"]*"' site/*.html | sort -u
+
           npx --yes wrangler@4.95.0 pages deploy site \
             --project-name jobscout-app \
             --branch main \
