@@ -206,9 +206,22 @@ p.sub{font:400 13.5px/1.5 var(--sans);color:var(--text2);margin:0 0 16px}
 .sheet .wbody{padding:14px;overflow:auto;font:400 13.5px/1.65 var(--sans);
   color:var(--text-long,var(--text))}
 .sheet .wbody p{margin:0 0 11px}
-.sheet .wbody .q{margin:0 0 14px}
-.sheet .wbody .q .ask{font:500 13px/1.45 var(--sans);color:var(--ink);margin:0 0 4px}
-.sheet .wbody .q .ans{font:400 13px/1.6 var(--sans);color:var(--text2);margin:0}
+.sheet .wbody .q{margin:0 0 16px;padding:0 0 14px;border-bottom:1px solid var(--hair)}
+.sheet .wbody .q:last-child{border-bottom:0;padding-bottom:0}
+.sheet .qtop{display:flex;align-items:flex-start;gap:10px;margin:0 0 5px}
+.sheet .qtop .lbl{flex:1;font:500 13px/1.45 var(--sans);color:var(--ink);margin:0}
+.sheet .qtop .lbl i{font-style:normal;font-weight:500;color:var(--b-unsure);
+  font-size:11px;letter-spacing:.04em;text-transform:uppercase}
+.sheet .qcopy{
+  flex:0 0 auto;appearance:none;cursor:pointer;display:flex;align-items:center;gap:5px;
+  background:transparent;border:1px solid var(--hair2);border-radius:var(--r-pill);
+  padding:5px 9px;font:500 11.5px/1 var(--sans);color:var(--text2)}
+.sheet .qcopy:hover{color:var(--ink);border-color:var(--ink)}
+.sheet .qcopy svg{width:12px;height:12px;fill:none;stroke:currentColor;stroke-width:1.8}
+.sheet .wbody .ans{font:400 13px/1.6 var(--sans);color:var(--text);margin:0}
+.sheet .wbody .yours{font:400 13px/1.6 var(--sans);color:var(--text2);margin:0;font-style:italic}
+.sheet .wbody .cite{font:400 11.5px/1.5 var(--sans);color:var(--text2);margin:5px 0 0}
+.sheet .wbody .note{font:400 13px/1.6 var(--sans);color:var(--text2);margin:0}
 .sheet .wfoot{display:flex;gap:8px;padding:11px 14px;border-top:1px solid var(--hair)}
 
 /* The drafting screen: three sections, each one endpoint. */
@@ -290,7 +303,7 @@ p.sub{font:400 13.5px/1.5 var(--sans);color:var(--text2);margin:0 0 16px}
           <div class="wtop"><h4 id="sheetTitle"></h4>
             <button class="mini-cta" data-sheet-close>Close</button></div>
           <div class="wbody" id="sheetBody"></div>
-          <div class="wfoot"><button class="mini-cta solid" id="sheetCopy">Copy</button></div>
+          <div class="wfoot"><button class="mini-cta solid" id="sheetCopy">Copy all</button></div>
         </div>
       </div>
       <div class="tabbar" id="tabbar"></div>
@@ -333,11 +346,30 @@ const DRAFT = {
         typeof x === "string" ? x : [x.title, ...(x.lines || x.bullets || [])].join("\n")
       )].filter(Boolean).join("\n\n")) : null },
   answers: { verb: "reading their form", path: "/api/answers",
-    render: d => (d.questions && d.questions.length)
-      ? d.questions.map(q => `<div class="q"><p class="ask">${esc(q.q || q.question || q)}</p>
-          <p class="ans">${esc(q.a || q.answer || "")}</p></div>`).join("")
-      : null },
+    render: d => {
+      /* A form behind a login is a FACT ABOUT THE EMPLOYER, not a failure of
+         ours - the web page learned to say so rather than stamping an error
+         on it. */
+      if (d.unsupported) return `<p class="note">${esc(d.host || "This employer")}
+        keeps its application form behind a login, so the questions cannot be read
+        ahead of time by anyone &mdash; not us, and not you. Open the posting when
+        you are ready and answer them there: the letter and the rebuilt resume are
+        what most of those boxes ask for anyway.</p>`;
+      if (!Array.isArray(d.questions) || !d.questions.length) return null;
+      return d.questions.map((q, i) => `<div class="q">
+        <div class="qtop">
+          <p class="lbl">${esc(q.label)}${q.required ? " <i>required</i>" : ""}</p>
+          ${q.answer ? `<button class="qcopy" type="button" data-q="${i}"
+             aria-label="Copy the answer to &quot;${esc(q.label)}&quot;">${COPYICON}<span>Copy</span></button>` : ""}
+        </div>
+        ${q.answer ? `<p class="ans">${esc(q.answer)}</p>`
+                   : `<p class="yours">${esc(q.why || "yours to answer")}</p>`}
+        ${q.from ? `<p class="cite">from your resume: &ldquo;${esc(q.from)}&rdquo;</p>` : ""}
+      </div>`).join("");
+    } },
 };
+
+const COPYICON = `<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8.5" y="8.5" width="11" height="11" rx="2"/><path d="M5.5 15.5h-1a2 2 0 0 1-2-2v-9a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>`;
 
 const SHEET_TITLE = { letter: "Cover letter", resume: "Your resume, aimed at it",
                       answers: "Their screening questions" };
@@ -656,10 +688,23 @@ document.addEventListener("click", e => {
     /* Identity, not a rectangle hit-test: a keyboard-issued click reports
        coordinates 0,0, which is outside every rectangle. */
     if (e.target === sh || e.target.closest("[data-sheet-close]")) return closeSheet();
+    /* One field at a time is how a form is actually filled. Only answered
+       questions have a button, so there is nothing here that can paste
+       "yours to answer" into an employer's textarea. */
+    const qc = e.target.closest(".qcopy");
+    if (qc) {
+      const ans = qc.closest(".q").querySelector(".ans");
+      navigator.clipboard?.writeText(ans ? ans.innerText : "").then(() => {
+        const lab = qc.querySelector("span");
+        lab.textContent = "Copied";
+        setTimeout(() => (lab.textContent = "Copy"), 1400);
+      });
+      return;
+    }
     if (e.target.closest("#sheetCopy")) {
       navigator.clipboard?.writeText($("#sheetBody").innerText).then(() => {
         const b = $("#sheetCopy"); b.textContent = "Copied";
-        setTimeout(() => (b.textContent = "Copy"), 1400);
+        setTimeout(() => (b.textContent = "Copy all"), 1400);
       });
       return;
     }
