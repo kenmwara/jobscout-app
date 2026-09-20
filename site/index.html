@@ -626,9 +626,13 @@ html.anim .tabs a:hover{transform:skewX(-7deg) translateY(-3px)}
    specificity and is declared first, so it was winning — white at .16 on a
    cream page is exactly nothing. */
 .heromark.pagemark .ring circle{fill:var(--accent);opacity:.06}
+/* .055 for the same measured reason as body::before in base.css: this is
+   --accent, which is a pale lavender on dark, so the light theme's .06 indigo
+   and a dark .10 lavender are not the same whisper - they are 1.051 and 1.110
+   against their own grounds. */
 @media (prefers-color-scheme: dark){
-  :root[data-theme="system"] .heromark.pagemark .ring circle{opacity:.1}}
-:root[data-theme="dark"] .heromark.pagemark .ring circle{opacity:.1}
+  :root[data-theme="system"] .heromark.pagemark .ring circle{opacity:.055}}
+:root[data-theme="dark"] .heromark.pagemark .ring circle{opacity:.055}
 .heromark.pagemark .pop{display:none}
 .heromark .ring circle{fill:#fff;opacity:.16}
 .heromark .pop{opacity:0;transition:opacity .28s ease-out}
@@ -1571,11 +1575,16 @@ function scoreCard(x, i){
           <button class="up" type="button" aria-expanded="false" data-ev="${esc(x.strongest || "\u2014")}">\u2191 strongest</button>
           <button class="down" type="button" aria-expanded="false" data-ev="${esc(x.weakest || "\u2014")}">\u2193 what to answer</button>
         </div>
+        <!-- EVERY match can be applied to. Below the floor the button is the
+             quiet "Apply anyway", which still sets the stretch flag so the
+             letter leads with the strongest real parallel - but it is always
+             THERE. Gating it behind the global opt-in meant a 42 the
+             candidate believes in had no route at all on a mixed list, and
+             the score is our opinion, not their decision. -->
         <div class="act">${x.fit >= FIT_FLOOR
           ? `<button class="applybtn" type="button">Prepare application \u2192</button>`
-          : stretchOn
-            ? `<button class="applybtn stretch" type="button">Apply anyway \u2192</button>`
-            : ""}${plink(p.url)}</div>
+          : `<button class="applybtn stretch" type="button">Apply anyway \u2192</button>`
+          }${plink(p.url)}</div>
       </div>
       <div class="foot">
         <span class="loc">${esc(p.location || "Location not stated")}</span>

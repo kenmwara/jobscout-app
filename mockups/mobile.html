@@ -1,0 +1,340 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>JobScout — mobile mockup</title>
+<!-- The REAL tokens. Not a copy: this file cannot drift from production,
+     because market, theme and every colour come from the shipped stylesheet.
+     If a token changes there, this page changes with it. -->
+<link rel="stylesheet" href="../site/fonts-embedded.css">
+<link rel="stylesheet" href="../site/base.css">
+<script>/* The tokens must come from the REAL stylesheet, and this file gets
+   opened three ways: served from the repo root, served from mockups/ (where
+   ../site escapes the root and 404s), and double-clicked off disk. So: check
+   whether a token actually resolved, and fall back until one does. The last
+   resort is production, which is by definition not stale. */
+window.__tokens = new Promise(function (done) {
+  var tries = ["/site/base.css", "https://jobscout.page/base.css"];
+  function ok() {
+    return getComputedStyle(document.documentElement)
+      .getPropertyValue("--canvas").trim() !== "";
+  }
+  function next() {
+    if (ok() || !tries.length) return done(ok());
+    var l = document.createElement("link");
+    l.rel = "stylesheet"; l.href = tries.shift();
+    l.onload = next; l.onerror = next;
+    document.head.appendChild(l);
+  }
+  next();
+});</script>
+<script>/* Same two attributes, same three theme states, as the site. Light is
+   the default; "system" is the explicit opt-in. */
+(function(d,q){
+  d.setAttribute("data-market",(q.get("market")||"ca")==="ke"?"ke":"ca");
+  d.setTheme=function(c){
+    var r=(c==="dark"||c==="system")?c:"light";
+    if(r==="light") d.removeAttribute("data-theme"); else d.setAttribute("data-theme",r);
+  };
+  var t=q.get("theme"); if(t) d.setTheme(t);
+})(document.documentElement,new URLSearchParams(location.search))</script>
+<style>
+body{padding:0 0 60px}
+.rail{
+  position:sticky;top:0;z-index:10;display:flex;gap:26px;flex-wrap:wrap;align-items:center;
+  padding:14px 22px;background:var(--surface);border-bottom:1px solid var(--hair)}
+.rail h1{font:400 19px/1 var(--serif);color:var(--ink);margin:0 auto 0 0;letter-spacing:-.02em}
+.rail .g{display:flex;align-items:center;gap:9px}
+.rail .g > b{font:500 10.5px/1 var(--sans);letter-spacing:.09em;text-transform:uppercase;color:var(--text2)}
+.seg{display:flex;background:var(--trough);border:1px solid var(--hair);border-radius:11px;padding:3px;gap:2px}
+.seg button{
+  appearance:none;border:0;background:transparent;cursor:pointer;color:var(--text2);
+  font:500 13px/1 var(--sans);padding:7px 11px;border-radius:8px;display:flex;align-items:center;gap:6px}
+.seg button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:var(--sh-hover)}
+.seg button svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:1.7;
+  stroke-linecap:round;stroke-linejoin:round}
+.note{max-width:760px;margin:26px auto 0;padding:0 22px;font:400 14px/1.6 var(--sans);color:var(--text2)}
+.note b{color:var(--ink);font-weight:500}
+
+/* ── the phone ─────────────────────────────────────────────────────── */
+.stage{display:flex;justify-content:center;padding:30px 20px 0}
+.device{
+  width:390px;height:box;flex:0 0 auto;border-radius:44px;padding:11px;
+  background:var(--ink);box-shadow:0 30px 70px -18px rgba(8,3,49,.45);position:relative}
+.screen{
+  width:368px;height:760px;border-radius:34px;overflow:hidden;background:var(--canvas);
+  position:relative;display:flex;flex-direction:column}
+.stat{display:flex;align-items:center;justify-content:space-between;padding:10px 20px 4px;
+  font:600 12.5px/1 var(--sans);color:var(--ink);flex:0 0 auto}
+.stat .ic{display:flex;gap:4px;align-items:center}
+.stat .ic i{display:block;width:15px;height:9px;border:1.3px solid currentColor;border-radius:2px;opacity:.75}
+html[data-plat="ios"] .device{border-radius:52px}
+html[data-plat="ios"] .screen{border-radius:42px}
+html[data-plat="ios"] .notch{position:absolute;top:11px;left:50%;transform:translateX(-50%);
+  width:118px;height:29px;background:var(--ink);border-radius:18px;z-index:5}
+html[data-plat="android"] .notch{position:absolute;top:19px;left:50%;transform:translateX(-50%);
+  width:9px;height:9px;background:var(--ink);border-radius:50%;z-index:5}
+
+.view{flex:1;overflow-y:auto;overscroll-behavior:contain;padding:0 16px 84px}
+.view::-webkit-scrollbar{width:0}
+
+/* app chrome */
+.ahead{display:flex;align-items:center;gap:10px;padding:8px 0 14px;position:sticky;top:0;
+  background:var(--canvas);z-index:4}
+.ahead .bk{appearance:none;border:0;background:transparent;cursor:pointer;color:var(--ink);
+  font:500 15px/1 var(--sans);padding:6px 4px 6px 0;display:flex;align-items:center;gap:5px}
+.ahead .mk{display:flex;align-items:center;gap:7px;font:500 16px/1 var(--serif);color:var(--ink)}
+.ahead .mk svg{width:19px;height:19px;fill:var(--accent)}
+.ahead .fl{margin-left:auto;font-size:15px}
+h2.big{font:400 27px/1.15 var(--serif);color:var(--ink);letter-spacing:-.02em;margin:4px 0 6px}
+h2.big .dot{color:var(--accent)}
+p.sub{font:400 13.5px/1.5 var(--sans);color:var(--text2);margin:0 0 16px}
+
+.mhero{border-radius:var(--r-card);background:var(--hero);padding:26px 18px 20px;margin:0 0 18px;
+  position:relative;overflow:hidden}
+.mhero h2{font:400 25px/1.2 var(--serif);color:#f8f3eb;margin:0 0 14px;letter-spacing:-.02em}
+.mhero .dot{color:var(--accent)}
+.mbox{display:flex;align-items:center;gap:8px;background:var(--surface);border-radius:var(--r-pill);
+  padding:9px 9px 9px 16px}
+.mbox span{flex:1;font:400 14px/1 var(--sans);color:var(--text2)}
+.mbox b{width:36px;height:36px;border-radius:50%;background:var(--btn);color:var(--btn-ink);
+  display:grid;place-items:center;font-size:15px}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin:13px 0 0}
+.chips i{font:500 12px/1 var(--sans);font-style:normal;padding:8px 12px;border-radius:var(--r-pill);
+  background:rgba(248,243,235,.14);color:#f8f3eb}
+
+.card{background:var(--surface);border:1px solid var(--hair);border-radius:var(--r-card);
+  padding:14px;margin:0 0 11px;cursor:pointer}
+.card .row1{display:flex;gap:11px;align-items:flex-start}
+.card .logo{width:34px;height:34px;border-radius:9px;background:var(--canvas-2);color:var(--text2);
+  display:grid;place-items:center;font:600 11.5px/1 var(--sans);flex:0 0 auto}
+.card .t{flex:1;min-width:0}
+.card .t p{margin:0}
+.card .r{font:500 14.5px/1.3 var(--sans);color:var(--ink)}
+.card .c{font:400 12.5px/1.4 var(--sans);color:var(--text2);margin-top:2px!important}
+.card .fit{font:500 15px/1 var(--sans);flex:0 0 auto}
+.band{display:inline-block;font:500 10.5px/1 var(--sans);letter-spacing:.07em;text-transform:uppercase;
+  padding:5px 8px;border-radius:6px;margin:10px 8px 0 0}
+.pill{display:inline-block;font:500 11px/1 var(--sans);padding:5px 9px;border-radius:var(--r-pill);
+  border:1px solid var(--hair2);color:var(--text2);margin-top:10px}
+.ev{margin:11px 0 0;padding:10px 11px;border-radius:var(--r-inner,12px)}
+.ev p{margin:0}
+.ev .lb{font:500 10px/1 var(--sans);letter-spacing:.08em;text-transform:uppercase;margin-bottom:5px!important}
+.ev .bd{font:400 12.5px/1.5 var(--sans)}
+.cta{display:block;width:100%;appearance:none;border:0;cursor:pointer;margin:13px 0 0;
+  background:var(--btn);color:var(--btn-ink);border-radius:var(--r-pill);
+  font:500 14px/1 var(--sans);padding:13px}
+.cta.quiet{background:transparent;color:var(--ink);border:1px solid var(--hair2)}
+.heart{appearance:none;border:0;background:transparent;cursor:pointer;color:var(--text2);padding:4px}
+.heart svg{width:19px;height:19px;stroke:currentColor;fill:none;stroke-width:1.7}
+.heart[aria-pressed="true"]{color:var(--accent)}
+.heart[aria-pressed="true"] svg{fill:currentColor}
+
+.tabbar{position:absolute;left:0;right:0;bottom:0;display:flex;background:var(--surface);
+  border-top:1px solid var(--hair);padding:9px 0 calc(9px + env(safe-area-inset-bottom,0px))}
+.tabbar button{flex:1;appearance:none;border:0;background:transparent;cursor:pointer;
+  display:grid;justify-items:center;gap:4px;color:var(--text2);
+  font:500 10.5px/1 var(--sans);padding:4px 0}
+.tabbar button svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.7;
+  stroke-linecap:round;stroke-linejoin:round}
+.tabbar button[aria-pressed="true"]{color:var(--accent)}
+.hide{display:none!important}
+.empty{text-align:center;color:var(--text2);font:400 13.5px/1.6 var(--sans);padding:50px 20px}
+</style>
+</head>
+<body>
+
+<div class="rail">
+  <h1>JobScout &middot; mobile</h1>
+
+  <div class="g"><b>Market</b>
+    <div class="seg" id="segMarket">
+      <button data-m="ca" aria-pressed="true">🇨🇦 Canada</button>
+      <button data-m="ke" aria-pressed="false">🇰🇪 Kenya</button>
+    </div>
+  </div>
+
+  <div class="g"><b>Theme</b>
+    <div class="seg" id="segTheme">
+      <button data-t="light" aria-pressed="true" title="Light">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M4.2 4.2l1.6 1.6M18.2 18.2l1.6 1.6M2.5 12h2.2M19.3 12h2.2M4.2 19.8l1.6-1.6M18.2 5.8l1.6-1.6"/></svg>
+        Light</button>
+      <button data-t="system" aria-pressed="false" title="Match your device setting">
+        <svg viewBox="0 0 24 24"><rect x="2.5" y="4" width="19" height="13" rx="2"/><path d="M8.5 20.5h7M12 17.5v3"/></svg>
+        Device</button>
+      <button data-t="dark" aria-pressed="false" title="Dark">
+        <svg viewBox="0 0 24 24"><path d="M20 14.2A8.2 8.2 0 1 1 9.8 4a6.6 6.6 0 0 0 10.2 10.2z"/></svg>
+        Dark</button>
+    </div>
+  </div>
+
+  <div class="g"><b>Platform</b>
+    <div class="seg" id="segPlat">
+      <button data-p="android" aria-pressed="true">Android</button>
+      <button data-p="ios" aria-pressed="false">iPhone</button>
+    </div>
+  </div>
+</div>
+
+<div class="stage">
+  <div class="device">
+    <div class="notch"></div>
+    <div class="screen">
+      <div class="stat"><span id="clock">9:41</span>
+        <span class="ic">▮▮▮ <i></i></span></div>
+      <div class="view" id="view"></div>
+      <div class="tabbar" id="tabbar"></div>
+    </div>
+  </div>
+</div>
+
+<p class="note">
+  <b>This is a mockup, not the app.</b> It draws the real screens from
+  <code>mockups/feed-sample.json</code> — real postings, real companies — with
+  <b>example fit scores</b> computed from the posting id so they are stable, not
+  from Claude. Everything else is live: tapping a card opens the application
+  screen, the heart saves, and the market, theme and platform controls drive the
+  same tokens the shipped apps use. It loads <code>site/base.css</code> directly,
+  so it cannot drift from production.
+</p>
+
+<script>
+const $ = (s, r = document) => r.querySelector(s);
+const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c =>
+  ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const D = document.documentElement;
+
+let FEED = null, market = "ca", screen = "home", saved = new Set(), current = null, ran = false;
+
+/* A stable pseudo-score so the mockup shows the four bands without pretending
+   Claude produced them. djb2 over the id, mapped 38..96. */
+const fitOf = id => { let h = 5381; for (const c of id) h = ((h << 5) + h + c.charCodeAt(0)) >>> 0;
+  return 38 + (h % 59); };
+const bandOf = f => f >= 80 ? ["auto", "--b-auto"] : f >= 70 ? ["ping", "--b-ping"]
+  : f >= 55 ? ["unsure", "--b-unsure"] : ["near-miss", "--b-near"];
+const postings = () => (FEED?.[market]?.postings) || [];
+const scored = () => postings().slice(0, 8).map(p => ({ ...p, fit: fitOf(p.id) }))
+  .sort((a, b) => b.fit - a.fit);
+
+const MARK = `<svg viewBox="-3.5 -3.5 31 31" aria-hidden="true"><circle cx="12" cy="1" r="2.275"/><circle cx="19.7782" cy="4.2218" r="2.5694"/><circle cx="23" cy="12" r="2.8639"/><circle cx="19.7782" cy="19.7782" r="3.1583"/><circle cx="12" cy="23" r="3.4527"/><circle cx="4.2218" cy="19.7782" r="3.7471"/><circle cx="1" cy="12" r="4.0416"/><circle cx="4.2218" cy="4.2218" r="4.336"/></svg>`;
+const HEART = `<svg viewBox="0 0 24 24"><path d="M12 20s-7.5-4.7-7.5-9.8A4.2 4.2 0 0 1 12 7.4a4.2 4.2 0 0 1 7.5 2.8C19.5 15.3 12 20 12 20z"/></svg>`;
+const head = (back) => `<div class="ahead">${back
+  ? `<button class="bk" data-go="${esc(back)}">&#8592; Back</button>`
+  : `<span class="mk">${MARK} JobScout</span>`}
+  <span class="fl">${market === "ke" ? "🇰🇪" : "🇨🇦"}</span></div>`;
+
+const cardHTML = (p, full) => {
+  const [word, tok] = bandOf(p.fit);
+  const pol = p.remote_policy === "remote" ? "Remote" : p.remote_policy === "hybrid" ? "Hybrid" : "On site";
+  return `<div class="card" data-id="${esc(p.id)}">
+    <div class="row1">
+      <span class="logo">${esc((p.company || "?").slice(0, 2).toUpperCase())}</span>
+      <div class="t"><p class="r">${esc(p.title)}</p><p class="c">${esc(p.company)}</p></div>
+      <span class="fit" style="color:var(${tok})">${p.fit}</span>
+    </div>
+    <span class="band" style="color:var(${tok});background:var(${tok}-bg)">${word}</span>
+    <span class="pill">${pol}</span>
+    ${full ? `
+      <div class="ev" style="background:var(--b-auto-bg)">
+        <p class="lb" style="color:var(--b-auto)">&#8593; Strongest</p>
+        <p class="bd" style="color:var(--b-auto)">Direct overlap with ${esc(p.sector)} work, and the
+        location rule passes for this market.</p></div>
+      <div class="ev" style="background:var(--b-unsure-bg)">
+        <p class="lb" style="color:var(--b-unsure)">&#8595; What to answer</p>
+        <p class="bd" style="color:var(--b-unsure)">Say how recently you did this, and name the tools
+        the posting lists that your resume does not.</p></div>` : ""}
+  </div>`;
+};
+
+const SCREENS = {
+  home: () => `${head()}
+    <div class="mhero">
+      <h2>Find the work<br>made for you<span class="dot">.</span></h2>
+      <div class="mbox"><span>Paste your resume&hellip;</span><b data-go="run">&#8594;</b></div>
+      <div class="chips"><i>Remote</i><i>Hybrid</i><i>On site</i><i>Any of those</i></div>
+    </div>
+    <p class="sub">${postings().length} swept this morning &middot; tap the arrow to score them</p>
+    ${postings().slice(0, 4).map(p => cardHTML({ ...p, fit: fitOf(p.id) })).join("")}`,
+
+  matches: () => `${head()}
+    <h2 class="big">Your matches</h2>
+    <p class="sub">8 scored of ${postings().length} swept &middot; example scores</p>
+    ${scored().map(p => cardHTML(p)).join("")}`,
+
+  apply: () => {
+    const p = current;
+    if (!p) return `${head("matches")}<p class="empty">No posting chosen.</p>`;
+    return `${head("matches")}
+      <h2 class="big">${esc(p.title)}</h2>
+      <p class="sub">${esc(p.company)} &middot; ${esc(p.location || "—")}</p>
+      ${cardHTML(p, true)}
+      <button class="cta">Prepare application &#8594;</button>
+      <button class="cta quiet">Open the employer&rsquo;s posting &#8599;</button>
+      <button class="cta quiet" data-save="${esc(p.id)}">
+        ${saved.has(p.id) ? "Saved" : "Save this match"}</button>`;
+  },
+
+  saved: () => {
+    const rows = scored().filter(p => saved.has(p.id));
+    return `${head()}
+      <h2 class="big">Saved</h2>
+      <p class="sub">${rows.length} kept &middot; stays on this device</p>
+      ${rows.length ? rows.map(p => cardHTML(p)).join("")
+        : `<p class="empty">Nothing saved yet.<br>Open a match and tap Save.</p>`}`;
+  },
+};
+
+const TABS = [
+  ["home", "Home", `<path d="M3.5 10.5 12 3.5l8.5 7M5.5 9.5V20h13V9.5"/>`],
+  ["matches", "Matches", `<circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/>`],
+  ["saved", "Saved", `<path d="M6.5 3.5h11v17l-5.5-4-5.5 4z"/>`],
+];
+
+const paint = () => {
+  $("#view").innerHTML = (SCREENS[screen] || SCREENS.home)();
+  $("#view").scrollTop = 0;
+  $("#tabbar").innerHTML = TABS.map(([id, label, path]) =>
+    `<button data-go="${id}" aria-pressed="${screen === id || (screen === "apply" && id === "matches")}">
+      <svg viewBox="0 0 24 24">${path}</svg>${label}</button>`).join("");
+};
+
+document.addEventListener("click", e => {
+  const go = e.target.closest("[data-go]");
+  if (go) {
+    const to = go.dataset.go;
+    if (to === "run") { ran = true; screen = "matches"; } else screen = to;
+    return paint();
+  }
+  const sv = e.target.closest("[data-save]");
+  if (sv) { const id = sv.dataset.save; saved.has(id) ? saved.delete(id) : saved.add(id); return paint(); }
+  const card = e.target.closest(".card");
+  if (card && screen !== "apply") {
+    current = scored().find(p => p.id === card.dataset.id)
+      || postings().map(p => ({ ...p, fit: fitOf(p.id) })).find(p => p.id === card.dataset.id);
+    screen = "apply"; return paint();
+  }
+});
+
+const wire = (sel, attr, fn) => $(sel).addEventListener("click", e => {
+  const b = e.target.closest("button"); if (!b) return;
+  [...e.currentTarget.querySelectorAll("button")].forEach(x =>
+    x.setAttribute("aria-pressed", String(x === b)));
+  fn(b.dataset[attr]);
+});
+wire("#segMarket", "m", v => { market = v; D.setAttribute("data-market", v); saved.clear(); paint(); });
+wire("#segTheme", "t", v => D.setTheme(v));
+wire("#segPlat", "p", v => D.setAttribute("data-plat", v));
+D.setAttribute("data-plat", "android");
+
+Promise.all([fetch("feed-sample.json").then(r => r.json()), window.__tokens])
+  .then(([j, styled]) => {
+    FEED = j; paint();
+    if (!styled) $(".note").insertAdjacentHTML("afterbegin",
+      "<b>Tokens did not load.</b> Serve the repo root, or check the network. ");
+  })
+  .catch(() => { $("#view").innerHTML = `<p class="empty">Could not load feed-sample.json.<br>
+    Serve this folder over http rather than opening the file directly.</p>`; });
+</script>
+</body>
+</html>

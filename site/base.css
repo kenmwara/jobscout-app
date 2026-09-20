@@ -359,8 +359,13 @@ body::before{
   -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 760 760'%3E%3Ccircle cx='380' cy='80' r='28.4'/%3E%3Ccircle cx='592.1' cy='167.9' r='54.1'/%3E%3Ccircle cx='680' cy='380' r='79.8'/%3E%3Ccircle cx='592.1' cy='592.1' r='105.5'/%3E%3Ccircle cx='380' cy='680' r='131.2'/%3E%3Ccircle cx='167.9' cy='592.1' r='156.9'/%3E%3Ccircle cx='80' cy='380' r='182.6'/%3E%3Ccircle cx='167.9' cy='167.9' r='208.3'/%3E%3C/svg%3E") no-repeat center/contain;
           mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 760 760'%3E%3Ccircle cx='380' cy='80' r='28.4'/%3E%3Ccircle cx='592.1' cy='167.9' r='54.1'/%3E%3Ccircle cx='680' cy='380' r='79.8'/%3E%3Ccircle cx='592.1' cy='592.1' r='105.5'/%3E%3Ccircle cx='380' cy='680' r='131.2'/%3E%3Ccircle cx='167.9' cy='592.1' r='156.9'/%3E%3Ccircle cx='80' cy='380' r='182.6'/%3E%3Ccircle cx='167.9' cy='167.9' r='208.3'/%3E%3C/svg%3E") no-repeat center/contain;
 }
+/* .055, not .1 - MEASURED. The halo is --accent over --canvas, and on dark
+   that is a pale lavender on a near-black ground where 10% reads as a panel
+   sitting over the content. Against its own canvas: light at .06 is 1.051:1,
+   dark at .10 was 1.110:1 - more than twice as present - and .055 is 1.052:1,
+   which is the same whisper in both themes. */
 @media (prefers-color-scheme: dark){
-  :root[data-theme="system"] body::before{opacity:.1}}
-:root[data-theme="dark"] body::before{opacity:.1}
+  :root[data-theme="system"] body::before{opacity:.055}}
+:root[data-theme="dark"] body::before{opacity:.055}
 /* content sits on top of it */
 body>*{position:relative;z-index:1}
