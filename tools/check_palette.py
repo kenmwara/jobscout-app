@@ -31,6 +31,14 @@ import os
 import re
 import sys
 
+# The box-drawing rule in the market header is not in Windows' default console
+# codepage, and an unhandled UnicodeEncodeError while REPORTING is a check that
+# looks like a failure it did not find.
+try:
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+except Exception:
+    pass
+
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
 AA = 4.5
 AA_LARGE = 3.0        # the bar for a fill, a dot or large type

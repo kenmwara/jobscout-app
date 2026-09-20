@@ -119,6 +119,26 @@ The rules the fixtures encode, each of which exists because it failed:
    in-sector dropped four of five healthcare postings and filled the slots with every
    "Manager, …" in the feed, off the one word in "pharmacy manager".
 
+### Run these before reading anything
+
+Nothing here needs a CI credit. Every one of them was written after a defect that
+read correctly in source and could not fire at runtime, which is the failure mode
+this codebase actually has.
+
+| Command | What it would catch |
+|---|---|
+| `node tools/audit_site.mjs` | Static: dead links, orphaned ids, unreferenced assets. |
+| `node tools/audit_rendered.mjs` | The rendered DOM in both markets. Check 15: a class the stylesheet styles and the page never sets (this found 4.2KB of CSS painting a panel that had not existed for months). 16: a `setView` target with no view behind it. 17: a retry button whose label differs from the label it restores. |
+| `node tools/cycle3.mjs [--live]` | Playwright, both web markets, 46 behavioural assertions. Locally it rewrites `/apply` to `/apply.html`, because python's `http.server` has no clean URLs. |
+| `python tools/cycle3_mobile.py` | The same pass over adb, both markets. It taps by **visible label from a fresh dump every time** — the box grows as it fills, so a coordinate captured one step earlier misses. |
+| `node tools/labels_audit.mjs` | Lists every control's text beside its element, for reading. "Watch this search" under a bell that emails nothing survived three audits because nothing ever printed the two together. |
+| `python tools/check_palette.py` | Reads `site/base.css` **and** `Tokens.kt`: grounds ≥60&deg; off the accent, each role against the contrast bar that applies to *it*, bands against their own 14% tint over a card, no two foreground roles sharing a hex, and the two clients agreeing value for value. |
+| `python tools/check_swift.py` | The file no machine here can compile: braced unicode escapes, `$0` in a nested closure, brace and paren balance. Two Codemagic failures in a row is what paid for it. |
+| `bash tools/check_picker.sh` | 12 fixtures against `Select.kt` (see above). |
+
+**A check that asserts presence proves nothing.** Every one of these was
+mutation-tested — break the thing on purpose, watch it fail, put it back.
+
 ## Honesty rules (inherited from the fleet)
 
 Numbers shown are measured or labeled. The demo scores REAL postings from the real daily sweep. Nothing in the UI claims capabilities the private pipeline doesn't have.

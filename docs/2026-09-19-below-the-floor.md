@@ -174,6 +174,119 @@ Closed-testing gate is unchanged: 12 testers, 14 days.
   every one of those 8 came from a company career page that no board carries.
   Fixing it means the picker's four copies and the eval harness in the other
   repo; it was not worth doing mid-cycle.
-- **iOS is written but not compiled.** No Xcode on this machine. Braces
-  balance and the paren count matches HEAD, but it wants a Codemagic
-  `ios-simulator` run before anyone calls it done.
+- ~~**iOS is written but not compiled.**~~ Closed below: `ios-simulator`
+  build **181** is green.
+
+
+---
+
+# After the build: what the phone found
+
+Build 22 went live on the Alpha track and Ken installed it. Everything below
+came out of using the two apps and the two sites, not out of reading them.
+
+## The popup, four times wrong
+
+The résumé and cover-letter helpers now open **straight into the popup** —
+centred, dismissed by clicking outside — and so do the screening questions, on
+the first click. Getting there cost four defects, three of them invisible on a
+reading of the code:
+
+- The reading window reused the class `.doc`, which the résumé pane already
+  owned. `.doc{margin:0 0 6px}` beat `.docwin{margin:auto}`, so the centred
+  dialog sat against the top-left corner. **Renamed `.docwin`.** When a new
+  rule "does nothing", grep the class before touching it — that is the same law
+  the `.band>.wrap` collision wrote in September, on its third appearance.
+- `<dialog>`'s **`close` event does not fire in this Chrome** (it fires
+  `beforetoggle`/`toggle` instead), so state never cleaned up after Escape.
+  `closeWin()` is now reached from the Close button, the backdrop, Escape and
+  both events.
+- Backdrop-close was a rectangle hit test against the click coordinates — and a
+  keyboard-issued click has coordinates `0,0`, which is outside the rectangle,
+  so pressing Enter on the Close button closed the window *and* the one behind
+  it. It compares target identity now.
+- The **copy icons were dead** because the window was built by cloning
+  `innerHTML`, which does not clone listeners, and the source card's overflow
+  hid 8 of the 10 rows. The window **moves the live node** and puts it back on
+  close.
+
+## When the form is gated
+
+`Open the employer's posting` reaches an ATS that will not show its
+questionnaire without an account often enough to matter. The worker now falls
+back to `genericForm(posting)` and returns `generic: true` — the eight
+questions every ATS asks, answered from the résumé, clearly labelled as a
+prepared set rather than that employer's real form. An empty state that says
+"we could not reach it" is a dead end; this is the same two minutes of work
+saved.
+
+## Mirrored to the phones
+
+Both markets, both apps: the mark **pulses while a run is in flight** (the dead
+silence after the upload arrow was the single worst moment in the mobile flow),
+matches save individually and not just as a sweep, the footer is on all three
+frames and points at the app's own screens rather than the website, the
+backdrop halo is drawn behind every frame, and Kenya's application titles came
+off the navy that swallowed them.
+
+## The Kenya palette, measured rather than tasted
+
+"Less uglier colours" is a taste report with a structural cause. Kenya's greys
+ran 140–144° against an accent at 142°: **the ground was wearing the accent's
+hue**, so the accent had nothing to be brighter than and the whole screen was
+one olive wash. No amount of tuning the accent fixes that — the greys move.
+
+`tools/check_palette.py` reads `site/base.css` and `Tokens.kt` and asserts five
+things: the grounds stay ≥60° off the accent (or are neutral), every colour
+clears the bar **that applies to it** (body copy AA 4.5; fills, dots and
+captions AA-large 3.0), a band clears AA against **its own 14% tint over a
+card** rather than the raw surface, no two foreground roles share a hex, and
+the two clients agree value for value.
+
+Its first run flagged four things on **Canada**, and three were the check being
+too blunt for a light theme — rescoped rather than shipped as noise. The
+fourth was real: `--live` (#ff6d39) is a **fill** — a progress bar, a filled
+heart, the full stop in the display line — and three places wrote *words* with
+it at **2.48:1** on cream. The fix is not to dull the one loud colour in the
+brand; it is to stop painting words with it. `.age.new` and the `required`
+marker take `--b-unsure`, which itself moved `#cc3600 → #b23200` because it sat
+at 4.15 on its own tint. Rule 6 keeps it that way, with each legitimate
+`currentColor` use named.
+
+`tools/check_swift.py` is the same idea for the file no machine here can
+compile. Its rule 3 first produced 20 false positives (it matched against the
+stripped text and sliced the original), then flagged `var body: some Scene`;
+both were fixed before it was allowed to pass.
+
+## The mark: I overruled a decision that had already been made
+
+Ken asked about promoting the uncropped full-circles mark. The decision doc
+recommended keeping the crop primary and carrying the uncropped version as a
+display cut — and, in a comparison table, noted that at the shipped ramp the
+two largest dots sit **0.041 units apart** (0.88px at 512, i.e. merged). I
+verified that independently and changed the ramp's top from 4.336 to 4.089 in
+both the site and Android.
+
+That was wrong. `tokens/brand.json` says it in plain words: *"at 270 and 315
+the two largest dots touch — the sweep closing on itself. The crop hid this;
+the display cut owns it, which is why it has a floor."* The touch is the
+design. Both files are back on the canonical `r = 2.275 + 0.2944i` ramp, and
+the Android mark is cropped again — it draws at 18dp in the lockup, which is
+exactly the case the floor exists for.
+
+**The law: a measurement that contradicts the token source is a question for
+the token source, not a licence to edit the geometry.**
+
+## Brand kit v2.3
+
+Installed over v2.2 in `jobscout/brandkit`: 13 new files (seven
+`mark-display-*.svg`, four document PDFs, two template assets), 14 changed
+(including `tokens/brand.json`, `README.md`, `assets.py`, `rose.py` and both
+Play feature graphics), 87 byte-identical. `site/icons/og-1280x640.png` was
+refreshed from the kit; the app's Android mipmaps were already identical to the
+kit's, all 23.
+
+The two cuts, from the kit's own README: **`jobscout-mark.svg`** is the mark —
+plate-less, cropped by its own square, good down to 16px.
+**`jobscout-mark-display.svg`** is the display cut — nothing cut, **48px and
+above with clear space**, never inside a plate and never in a lockup.
