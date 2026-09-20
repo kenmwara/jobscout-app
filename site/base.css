@@ -70,8 +70,31 @@
      positioning on the header keeps working (overflow:hidden would break it). */
   html{overflow-x:clip;scroll-behavior:smooth}
   body{overflow-x:clip}
-  body{margin:0;background:var(--canvas);color:var(--text);font-family:var(--sans);font-size:16.5px;line-height:1.6;-webkit-font-smoothing:antialiased}
-  body{background-image:radial-gradient(rgba(8,3,49,.07) 1px,transparent 1px);background-size:24px 24px;background-attachment:fixed}
+  /* THE GROUND AND THE TEXTURE LIVE ON <html>, NOT BODY. These two rules are
+     NESTED inside html{}, so they compute as `html body` at (0,0,2) and beat
+     the bare `body{background:transparent}` further down this file at
+     (0,0,1) - whatever the order. That is why the halo was invisible on
+     every page: body::before sits at z-index -1, behind body's own
+     background, and body was painting opaque cream over it.
+     Specificity, not order. Moving both up to <html> puts the halo between
+     the ground and the content, which is where it belongs. */
+  body{margin:0;color:var(--text);font-family:var(--sans);font-size:16.5px;line-height:1.6;-webkit-font-smoothing:antialiased}
+  /* THE HALO AND THE TEXTURE ARE HTML'S OWN FIXED LAYERS, not a pseudo-
+     element. body::before at z-index:-1 painted - its background-image was
+     correct - and was never visible, because body carries overflow-x:clip
+     (there to contain the gates band without breaking the sticky header) and
+     a clipped ancestor clips a position:fixed descendant. Chasing that
+     through stacking contexts is not worth it when html already paints a
+     fixed layer for the dots: the halo joins it. Same three blooms, same
+     fixed behaviour, no seams, no z-index, nothing to clip it. */
+  html{
+    background-image:
+      radial-gradient(62% 48% at 88%  2%, var(--halo-1) 0%, transparent 64%),
+      radial-gradient(54% 42% at  2% 30%, var(--halo-2) 0%, transparent 62%),
+      radial-gradient(70% 52% at 74% 92%, var(--halo-3) 0%, transparent 66%),
+      radial-gradient(rgba(8,3,49,.07) 1px,transparent 1px);
+    background-size:auto,auto,auto,24px 24px;
+    background-attachment:fixed,fixed,fixed,fixed}
   .wrap{max-width:1200px;margin:0 auto;padding:0 24px}
   main.wrap{max-width:1040px}
   a{color:var(--midnight);text-decoration:none}
@@ -272,19 +295,8 @@
 }
 *{box-sizing:border-box}
 html,body{margin:0}
-/* The ground is on <html> so body::before can sit BEHIND body's own box. */
-html{background:var(--canvas)}
-/* One fixed layer, site-wide. Fixed means it never scrolls, never seams
-   where two sections meet, and composites on its own GPU layer - a gradient
-   per section fails all three. Nothing else needs a z-index: this is at -1
-   and everything in normal flow is above it, so the hero, the cards, the
-   modals and the header all paint over it normally. */
-body::before{
-  content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
-  background:
-    radial-gradient(62% 48% at 88%  2%, var(--halo-1) 0%, transparent 64%),
-    radial-gradient(54% 42% at  2% 30%, var(--halo-2) 0%, transparent 62%),
-    radial-gradient(70% 52% at 74% 92%, var(--halo-3) 0%, transparent 66%)}
+/* The ground, the halo and the dot texture are all html's, as fixed layers. */
+html{background-color:var(--canvas)}
 body{
   background:transparent; color:var(--text);
   font:400 16px/1.5 var(--sans); letter-spacing:-.011em;
