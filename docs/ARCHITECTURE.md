@@ -134,6 +134,7 @@ this codebase actually has.
 | `node tools/labels_audit.mjs` | Lists every control's text beside its element, for reading. "Watch this search" under a bell that emails nothing survived three audits because nothing ever printed the two together. |
 | `python tools/check_palette.py` | Reads `site/base.css` **and** `Tokens.kt`: grounds ≥60&deg; off the accent, each role against the contrast bar that applies to *it*, bands against their own 14% tint over a card, no two foreground roles sharing a hex, and the two clients agreeing value for value. |
 | `python tools/check_swift.py` | The file no machine here can compile: braced unicode escapes, `$0` in a nested closure, brace and paren balance. Two Codemagic failures in a row is what paid for it. |
+| `python tools/check_console.py` | A tool that dies while **reporting**. Python takes stdout's encoding from the console codepage; cp1252 carries the em dash this repo writes in every message, cp437 and cp850 do not. `check_palette.py` really did exit 1 with no findings, and `check_swift.py` was proven to find two defects on cp437 and die before naming either — the same exit code as a clean report. Asserts that any tool which *can* print such a character reconfigures stdout first, detecting the guard as a **call** rather than a substring. |
 | `bash tools/check_picker.sh` | 12 fixtures against `Select.kt` (see above). |
 
 **A check that asserts presence proves nothing.** Every one of these was

@@ -23,6 +23,16 @@ import os
 import re
 import sys
 
+# Every message below writes an em dash, which cp437 and cp850 cannot encode.
+# Without this the FAIL path dies BEFORE naming what it found, exiting 1 with a
+# traceback instead of a report — the same exit code as a clean finding, and
+# nothing on screen to say which. Proven on this repo: two real defects found,
+# zero printed.
+try:
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+except Exception:
+    pass
+
 BS = chr(92)
 SRC = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "ios", "Sources")
 
