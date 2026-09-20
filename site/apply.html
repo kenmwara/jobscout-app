@@ -312,18 +312,37 @@ function render(){
   if (p.url) link.href = p.url; else { link.hidden = true; }
   if (tracker[p.id]?.status === "applied") applied();
 
-  // Below the fit floor every endpoint behind these steps refuses, so the page
-  // says so instead of offering three buttons that each fail.
-  if (isScored && +S.fit < 55){
+  /* Below the floor the page used to stop here. The refusal was right and the
+     full stop was not: it is the candidate's evening to spend, and the posting
+     is right there above. So the honest screen stays, and it now has a door —
+     one that changes what gets written rather than lowering the bar. */
+  if (isScored && +S.fit < 55 && !S.stretch){
     $("#steps").hidden = true; $("#needProfile").hidden = true;
     $("#main").insertAdjacentHTML("beforeend",
-      `<div class="panel"><p class="eyebrow">Not offered</p>
+      `<div class="panel" id="floor"><p class="eyebrow">Not recommended</p>
        <h2 style="font:450 23px/1.2 var(--serif);margin:0 0 10px;color:var(--ink)">This one scored ${+S.fit} out of 100</h2>
-       <p class="note">A cover letter, a rebuilt resume and the screening answers are only offered from 55 up —
-       below that the honest answer is that your resume does not fit this posting, and dressing it up would not change
-       that. The posting is still open above if you want to judge for yourself.</p></div>`);
+       <p class="note">A cover letter, a rebuilt resume and the screening answers are written from 55 up, because
+       below that the honest read is that your resume does not answer this posting — and rewriting the resume so it
+       does is worth more than a good letter. That is the recommendation.</p>
+       <p class="note">If you want to apply regardless, that is your call to make, not ours. The letter you get will
+       not pretend: it names the gap in one plain sentence and spends the rest on what genuinely transfers.</p>
+       <button class="btn2" id="anyway" type="button">Draft it anyway →</button></div>`);
+    $("#anyway").onclick = () => {
+      S.stretch = true;
+      try { sessionStorage.setItem("jobscout.apply", JSON.stringify(S)); } catch (e) {}
+      $("#floor").remove();
+      render();
+    };
     return;
   }
+  /* Named at the top of the steps, so a stretch letter is never mistaken for
+     the product's recommendation — including on a reload, which restores the
+     flag from sessionStorage along with everything else. */
+  if (S.stretch && !$("#stretchnote")) $("#steps").insertAdjacentHTML("afterbegin",
+    `<div class="warn" id="stretchnote">You scored ${isScored ? +S.fit : "below the bar"} out of 100 here and asked to
+     apply anyway. Nothing below claims experience you do not have: the letter names the gap and leads with what
+     transfers, and the resume only reorders what your own resume already says. What each step lists as missing is
+     the honest shopping list — add a line only where it is true of you.</div>`);
   if (S.profile) $("#steps").hidden = false;
   else $("#needProfile").hidden = false;
 }
@@ -490,9 +509,12 @@ function failed(id, msg, label){
   const b = $("#do-" + id);
   b.disabled = false; b.textContent = label;
 }
+/* `stretch` is the candidate's explicit "anyway". The worker refuses below the
+   floor without it, and with it writes a candid letter rather than a flattering
+   one — so it has to travel on every call, not just the letter. */
 const post = (path) => fetch(API + path, {
   method: "POST", headers: { "content-type": "application/json" },
-  body: JSON.stringify({ profile: S.profile, posting: p, fit: S.fit }),
+  body: JSON.stringify({ profile: S.profile, posting: p, fit: S.fit, stretch: !!S.stretch }),
 }).then(r => r.json().then(d => ({ r, d })));
 
 $("#do-letter").onclick = async () => {

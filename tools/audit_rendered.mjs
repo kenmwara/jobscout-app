@@ -158,7 +158,10 @@ const ok = (m) => console.log(`  ok    ${m}`);
   const guard = /const isScored = [\s\S]{0,160}/.exec(apply)?.[0] || "";
   if (!/fit !== null/.test(guard))
     bad("apply.html has no isScored guard — Number.isFinite(+null) is true, so it prints \"scored 0 out of 100\"");
-  else if (!/if \(isScored && \+S\.fit < 55\)/.test(apply))
+  // The intent is 'the branch is gated on isScored', not the exact spelling —
+  // pinning the whole condition made a legitimate '&& !S.stretch' read as a
+  // regression. Anchored on the guard, open at the end.
+  else if (!/if \(isScored && \+S\.fit < 55\b/.test(apply))
     bad("apply.html computes isScored but the floor branch does not use it");
   else ok("apply.html tells \"not scored\" apart from a zero");
 }
@@ -304,6 +307,50 @@ const ok = (m) => console.log(`  ok    ${m}`);
   }
   if (offenders.length) offenders.forEach((o) => bad(`temporal dead zone: ${o}`));
   else ok(`${bodies.length} IIFE bodies, none touching a binding declared below`);
+}
+
+/* ── 15. A class the CSS styles and the page never sets ────────────────────
+   `.scores` and `.scard` were styled for months and set on nothing. The rules
+   nested under them — the whole below-floor panel among them — never applied.
+   Valid CSS, present elements, silent failure: the same shape as the two
+   temporal-dead-zone bugs above, and just as invisible to a check that only
+   asks whether a thing EXISTS.
+
+   Conservative on purpose: any mention of the bare word anywhere outside the
+   <style> block counts as used, so a class assembled by concatenation is never
+   reported. What it catches is the name only the stylesheet believes in. */
+{
+  const style = html.slice(html.indexOf("<style>"), html.lastIndexOf("</style>"));
+  const rest = html.slice(0, html.indexOf("<style>")) + html.slice(html.lastIndexOf("</style>"));
+
+  // Class selectors, minus the ones inside comments (which is where the
+  // deleted names are now explained).
+  const bare = style.replace(/\/\*[\s\S]*?\*\//g, " ");
+  const styled = new Set();
+  for (const m of bare.matchAll(/\.(-?[A-Za-z_][\w-]*)/g)) styled.add(m[1]);
+
+  // A name is "used" if it appears anywhere else in the file at all.
+  const orphans = [...styled].filter((c) => !new RegExp(`\\b${c.replace(/-/g, "\\-")}\\b`).test(rest));
+
+  if (orphans.length) orphans.forEach((c) => bad(`.${c} is styled but the page never sets it`));
+  else ok(`${styled.size} styled classes, every one of them set somewhere`);
+}
+
+/* ── 16. Every setView() names a view that exists ──────────────────────────
+   setView("home") hid both #v-landing and #v-browse and left a header above
+   an empty document. No error, no blank-screen crash, nothing for a check
+   that asks whether elements are present — the elements were all present and
+   all hidden. */
+{
+  const views = new Set([...html.matchAll(/id="v-([\w-]+)"/g)].map((m) => m[1]));
+  // A comment explaining the bug is not a call site — the first run of this
+  // check flagged its own cautionary tale.
+  const code = html.replace(/\/\*[\s\S]*?\*\//g, " ").replace(/^[ 	]*\/\/.*$/gm, " ");
+  const calls = [...code.matchAll(/setView\(\s*"([\w-]+)"/g)].map((m) => m[1]);
+  const wrong = [...new Set(calls)].filter((v) => !views.has(v));
+  if (!views.size) bad("no #v-* view containers found — this check cannot fire");
+  else if (wrong.length) wrong.forEach((v) => bad(`setView("${v}") names no #v-${v} container`));
+  else ok(`${new Set(calls).size} setView targets, all of them real views`);
 }
 
 console.log("");

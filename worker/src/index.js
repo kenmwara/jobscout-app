@@ -206,10 +206,18 @@ async function guarded(request, env, breakerNote) {
   // from FIT_FLOOR up; this is the same rule enforced where the money is spent, so the
   // API cannot be used to write a letter for a job the profile does not fit.
   const fit = Number(body.fit);
-  if (!Number.isFinite(fit) || fit < FIT_FLOOR)
+  /* Below the floor nothing drafts BY DEFAULT. `stretch` is the candidate
+     saying, deliberately, that they want to apply anyway — and it does not buy
+     a flattering letter, it buys a candid one (see the letter endpoint). The
+     flag must be explicit, so nothing below the floor can be drafted by
+     accident or by a caller that simply omitted the fit. */
+  const stretch = body.stretch === true;
+  if (!Number.isFinite(fit))
+    return json(400, { error: "bad_request", detail: "fit required" });
+  if (fit < FIT_FLOOR && !stretch)
     return json(400, { error: "below_floor",
-      detail: `Drafting is only offered for a fit of ${FIT_FLOOR} or better; this posting scored ${Number.isFinite(fit) ? fit : "unknown"}.` });
-  return { key, spent, profile, p, fit };
+      detail: `Drafting is only offered for a fit of ${FIT_FLOOR} or better; this posting scored ${fit}.` });
+  return { key, spent, profile, p, fit, stretch };
 }
 
 const postingText = p =>
@@ -406,19 +414,31 @@ export default {
     if (url.pathname === "/api/letter" && request.method === "POST") {
       const g = await guarded(request, env, "letter drafting resumes tomorrow");
       if (g instanceof Response) return g;
-      const { profile, p } = g;
-      const d = await draft(env, 550,
+      const { profile, p, stretch } = g;
+      const common =
         "Draft a short, specific cover letter (150-200 words) grounded ONLY in the " +
         "candidate profile provided — never invent experience, credentials, or claims. " +
         "Plain professional voice, no flattery padding, no 'I am writing to express'. " +
-        "Open with the single strongest genuine alignment. Sign off as 'the candidate'. " +
+        "Sign off as 'the candidate'. " +
         // It kept opening with a markdown heading, which every client renders as
         // literal asterisks because a letter is plain text everywhere it is shown.
-        "Write PLAIN TEXT only: no markdown, no ** bold, no headings, and do not title it.",
+        "Write PLAIN TEXT only: no markdown, no ** bold, no headings, and do not title it.";
+      /* A stretch letter is not the normal letter written anyway. The candidate
+         already knows they do not fit on paper — pretending otherwise wastes the
+         only advantage they have, which is being straight about it. */
+      const d = await draft(env, 550,
+        stretch
+          ? common + " This candidate does NOT meet the posting's stated bar and knows it. " +
+            "Do not paper over that. Name the principal gap plainly, in one sentence, without " +
+            "apology or self-deprecation, and spend the rest on the nearest genuine evidence " +
+            "they DO have — adjacent work, transferable results, things they have actually " +
+            "shipped. Never claim the missing experience, never imply it, and never pad with " +
+            "enthusiasm in its place."
+          : common + " Open with the single strongest genuine alignment.",
         `PROFILE:\n${profile}\n\nPOSTING:\n${postingText(p)}`);
       if (d instanceof Response) return d;
       await recordRun(env, g.key, d.usage.input_tokens, d.usage.output_tokens, d.cost);
-      return json(200, { letter: plainText(d.text), meta: meta(d, g.spent) });
+      return json(200, { letter: plainText(d.text), stretch, meta: meta(d, g.spent) });
     }
 
     // Resume helper: the profile rephrased toward one posting, plus the honest
