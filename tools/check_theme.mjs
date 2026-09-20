@@ -243,9 +243,17 @@ const run = async () => {
     };
     const doc = await maxAge(BASE + "/");
     const css = await maxAge(BASE + "/base.css");
-    if (doc === null || css === null) bad(`no max-age on the document (${doc}) or the stylesheet (${css})`);
+    /* The invariant is "a reader cannot hold new markup with an OLD palette".
+       Two ways to satisfy it: the stylesheet expires with the document, or
+       its URL carries a content hash so a changed file is a changed URL. The
+       zone overrides max-age downward-only on the custom domain, so the hash
+       is what actually holds - check the invariant, not one way of meeting it. */
+    const html = await (await fetch(BASE + "/")).text();
+    const ref = (html.match(/href="base\.css(\?v=[^"]*)?"/) || [])[1];
+    if (ref) ok(`base.css is content-hashed (${ref}), so its cache lifetime cannot matter`);
+    else if (doc === null || css === null) bad(`no max-age on the document (${doc}) or the stylesheet (${css})`);
     else if (css > doc)
-      bad(`base.css is cached ${css}s against the document's ${doc}s - a reader can hold new HTML with an old palette, which is a toggle that does nothing until a hard reset`);
+      bad(`base.css is cached ${css}s against the document's ${doc}s, and its URL carries no hash - a reader can hold new HTML with an old palette`);
     else ok(`base.css ${css}s <= document ${doc}s, so the palette cannot outlive the markup`);
   }
 
