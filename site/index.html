@@ -563,7 +563,13 @@ html.anim .tabs a:hover{transform:skewX(-7deg) translateY(-3px)}
    an event. What varies instead is WHERE it goes: each card throws its bloom
    at a different corner, NW / NE / SE / SW by position in the grid, so a row
    of them doesn't pulse in unison. */
-/* Press feedback is the brand's own mark, not a ripple. Eight dots on the
+/* Press feedback on the CHIPS. It was on the cards too until 2026-09-20:
+   the dots are laid out at 150% of their host and scale to 1.5, which on a
+   sector chip is a press and on a card is a set of large circles sweeping
+   through the title for over a second. Size the motif to the host, or give it
+   only to hosts its size.
+
+   Press feedback is the brand's own mark, not a ripple. Eight dots on the
    rose's ring with its graduated radii, revealed by a conic mask that sweeps
    clockwise from bearing 000 — so they light N, NE, E, … in order instead of
    blooming as one circle, which is what every framework ships and what this
@@ -1549,11 +1555,12 @@ function renderScores(scores, passers, profile, meta, cached){
 function scoreCard(x, i){
   const p = x.p, [route, col, bg] = BAND(x.fit), age = ageOf(p);
   const el = document.createElement("div");
-  el.className = "job bloomer" + (x.top ? " top" : "");
+  /* No `bloomer`: the press motif is sized to its host, and a card is big
+     enough that it sweeps across the title for 1.15s. It stays on the chips. */
+  el.className = "job" + (x.top ? " top" : "");
   el.dataset.id = x.id;
   el.dataset.title = p.title || x.id;
-  el.innerHTML = `<span class="bl" aria-hidden="true"></span>
-      <button class="dismiss" type="button" aria-label="Dismiss this match">\u00d7</button>
+  el.innerHTML = `      <button class="dismiss" type="button" aria-label="Dismiss this match">\u00d7</button>
       <span class="swipehint" aria-hidden="true">Not for me</span>
       <div class="top">
         <span class="logo">${esc((p.company || "?").slice(0, 2).toUpperCase())}</span>
@@ -2043,8 +2050,7 @@ const BELL = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke
 
 function browseCard(p){
   const a = ageOf(p);
-  return `<article class="job bloomer" data-id="${esc(p.id)}" data-title="${esc(p.title)}">
-    <span class="bl" aria-hidden="true"></span>
+  return `<article class="job" data-id="${esc(p.id)}" data-title="${esc(p.title)}">
     <div class="top">
       <span class="logo">${esc((p.company || "?").slice(0, 2).toUpperCase())}</span>
       <span style="display:flex;align-items:center;gap:10px">
