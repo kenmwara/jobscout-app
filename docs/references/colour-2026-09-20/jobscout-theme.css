@@ -21,7 +21,15 @@
   --surface:       #ffffff;
   --sunken:        #ece5d8;   /* segmented tracks, rails, avatar chips */
   --hairline:      rgba(8, 3, 49, 0.13);
-  --blob:          rgba(72, 101, 255, 0.05);  /* the decorative circles */
+  /* --blob is RETIRED. It painted brand indigo at 5% over the ground, and
+     indigo is far darker than cream, so each bloom came out a grey smudge:
+     it dropped the page 1.06:1 and pulled its hue from 37deg to 0. That is
+     the #f8f3eb / #f2eeec patchwork on the live light page. The halo in
+     theme-resolution.css replaces it — see the block at the foot of that
+     file. A halo ADDS LIGHT, in the canvas's own hue family. */
+  --halo-1:        rgba(255, 252, 242, 0.92);
+  --halo-2:        rgba(255, 250, 240, 0.80);
+  --halo-3:        rgba(255, 253, 246, 0.85);
 
   /* --- text ----------------------------------------------------------- */
   --text:          #080331;   /* 17.81:1 on canvas */
@@ -105,7 +113,9 @@
                             hairline. Luminance alone never separates on dark. */
   --sunken:   #1a1240;
   --hairline: rgba(248, 243, 235, 0.13);
-  --blob:     rgba(162, 186, 255, 0.05);
+  --halo-1:   rgba(43,  57, 108, 0.50);
+  --halo-2:   rgba(58,  42,  96, 0.42);
+  --halo-3:   rgba(36,  52, 100, 0.38);
 
   --text:     #f8f3eb;   /* 17.93:1 on canvas — headings and emphasis */
   --text-2:   #b9b3c4;   /*  9.72:1 on canvas */

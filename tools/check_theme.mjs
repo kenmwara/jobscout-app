@@ -49,7 +49,18 @@ const probe = (page) => page.evaluate(() => {
   const out = {
     market: document.documentElement.getAttribute("data-market"),
     theme: document.documentElement.getAttribute("data-theme"),
-    canvas: hex(getComputedStyle(document.body).backgroundColor),
+    /* THE PAGE'S GROUND, wherever it lives. It moved from <body> to <html>
+       when the halo became a fixed body::before layer - body is transparent
+       now, and reading it returned rgba(0,0,0,0) for every cell. A probe
+       that names an element rather than the thing it is measuring breaks on
+       the first structural change. */
+    canvas: (() => {
+      for (const el of [document.documentElement, document.body]) {
+        const c = getComputedStyle(el).backgroundColor;
+        if (c && !/rgba\(0, 0, 0, 0\)|transparent/.test(c)) return hex(c);
+      }
+      return "none";
+    })(),
     text: hex(getComputedStyle(document.body).color),
     hero: cs.getPropertyValue("--hero").trim(),
     surface: hex(cs.getPropertyValue("--surface").trim().startsWith("#")

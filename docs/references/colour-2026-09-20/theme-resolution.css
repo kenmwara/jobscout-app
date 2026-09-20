@@ -27,7 +27,22 @@
                                  1.17:1 on canvas, the same step light uses */
   --sunken:   light-dark(#ece5d8, #1a1240);
   --hairline: light-dark(rgba(8,3,49,.13), rgba(248,243,235,.13));
-  --blob:     light-dark(rgba(72,101,255,.05), rgba(162,186,255,.05));
+
+  /* --- the halo -------------------------------------------------------
+     Three blooms on one fixed layer behind the whole site. See the block
+     at the foot of this file for the rule that uses them.
+
+     Each one is LIGHTER than the canvas and in the canvas's own hue family:
+     warm on cream, indigo on ink. --blob did the opposite — it painted
+     brand indigo at 5% over the ground, and indigo is far darker than
+     cream, so every bloom came out a grey smudge that dropped the page
+     1.06:1 and dragged its hue from 37deg to 0. A halo adds light. */
+  --halo-1: light-dark(rgba(255,252,242,.92), rgba(43, 57,108,.50));
+  --halo-2: light-dark(rgba(255,250,240,.80), rgba(58, 42, 96,.42));
+  --halo-3: light-dark(rgba(255,253,246,.85), rgba(36, 52,100,.38));
+
+  /* --blob is retired. Two systems drawing the same glow is what produced
+     the patchwork of #f8f3eb and #f2eeec on the live light page. */
 
   /* --- text ----------------------------------------------------------- */
   --text:   light-dark(#080331, #f8f3eb);   /* 17.81 / 17.93 on canvas */
@@ -127,7 +142,32 @@
 :root[data-theme="light"] { color-scheme: light; }
 :root[data-theme="dark"]  { color-scheme: dark;  }
 
-body { background: var(--canvas); color: var(--text); }
+/* ===========================================================================
+   THE HALO — one fixed layer, site-wide.
+
+   The ground lives on <html> so body::before can sit behind body's own box.
+   position:fixed means it never scrolls, never seams where two sections
+   meet, and composites on its own GPU layer, so it costs nothing on scroll.
+   Per-section background gradients do the opposite on all three counts.
+
+   Everything that paints its own ground — the hero block, cards, modals,
+   the header — sits above it with no z-index needed: the halo is at -1 and
+   everything in normal flow is above that.
+   =========================================================================== */
+html { background: var(--canvas); }
+body { background: transparent; color: var(--text); }
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(62% 48% at 88%  2%, var(--halo-1) 0%, transparent 64%),
+    radial-gradient(54% 42% at  2% 30%, var(--halo-2) 0%, transparent 62%),
+    radial-gradient(70% 52% at 74% 92%, var(--halo-3) 0%, transparent 66%);
+}
 
 /* ===========================================================================
    The head script. Put it INLINE in <head>, before any stylesheet, so the

@@ -111,7 +111,10 @@ h1.display .dot{color:var(--accent)}  /* brand, not --live: --live IS the
   font:400 16px/1.4 var(--sans);color:var(--ink);padding:12px 0;
   resize:none;max-height:132px;overflow-y:auto;scrollbar-width:thin
 }
-.box textarea::placeholder{color:var(--text3)}
+/* The browser default is #757575: 4.61:1 light and 3.68:1 dark, failing both.
+   Every placeholder on the page takes --text-2. */
+.box textarea::placeholder{color:var(--text2)}
+input::placeholder,textarea::placeholder{color:var(--text2);opacity:1}
 .box{align-items:flex-end}
 .box .ic,.box .hint,.box .sep,.box .up,.box .go{margin-bottom:3px}
 .box .go{
@@ -216,7 +219,10 @@ p.lede{font:400 16px/1.6 var(--sans);color:var(--text2);max-width:520px;margin:0
   font:500 13.5px/1 var(--sans);transition:all var(--t-micro) var(--ease)
 }
 .secrow button:hover{border-color:var(--hair2);color:var(--ink)}
-.secrow button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:transparent}
+/* Same rule as the bell above - a selected chip is the ping rung, not a
+   brand fill. Not on Ken's list, but it is the identical defect two hundred
+   lines away and leaving it would just queue up the next report. */
+.secrow button[aria-pressed="true"]{background:var(--selected-bg);color:var(--selected-fg);border-color:transparent}
 .secrow button .n{opacity:.55;font-variant-numeric:tabular-nums}
 @media(max-width:620px){
   .secrow{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;
@@ -741,7 +747,9 @@ html.anim .coach .hand{display:inline-block;animation:nudge 1.9s ease-in-out inf
   transition:all var(--t-micro) var(--ease)
 }
 .bell:hover{border-color:var(--hair2);color:var(--ink)}
-.bell[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:transparent}
+/* Selected, not branded: --brand carries white at 4.58:1, which is the same
+   error as the old Remote pill and the Kenya submit button. */
+.bell[aria-pressed="true"]{background:var(--selected-bg);color:var(--selected-fg);border-color:var(--selected-edge,transparent)}
 html.anim .bell[aria-pressed="true"] svg{animation:ring .6s var(--ease)}
 @keyframes ring{0%,100%{transform:rotate(0)}20%{transform:rotate(14deg)}45%{transform:rotate(-11deg)}70%{transform:rotate(6deg)}}
 
@@ -847,7 +855,11 @@ nav.main{margin-left:18px}
    same #browseJobs.jobs grid. There is no separate .scores grid and there has
    not been one for months — the rules that assumed it were deleted on
    2026-09-19, along with `.scores .nofit`, which had left this panel bare. ── */
-.nofit{grid-column:1/-1;background:var(--chip);border:1px solid var(--hair);
+/* --surface, not --chip: this panel is a card and was the one block still on
+   the old values in BOTH themes. Dark measured page->panel at 1.05:1 with no
+   hue difference at all - the exact flatness section 10 is about, still
+   sitting on the block where it was first noticed. */
+.nofit{grid-column:1/-1;background:var(--surface);border:1px solid var(--hair);
   border-radius:var(--r-card);padding:22px 26px;font:400 15px/1.6 var(--sans);color:var(--text2)}
 .nofit b{color:var(--ink);font-weight:500}
 .nofit .lead{margin:0;max-width:68ch}
@@ -860,11 +872,14 @@ nav.main{margin-left:18px}
   grid-template-columns:repeat(3,1fr);align-items:start}
 @media(max-width:980px){.nofit .asks{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:620px){.nofit .asks{grid-template-columns:1fr}}
+/* These ARE the unsure rung - what the postings asked for and the resume did
+   not say. They were #fffdf9 with #6e6973 at 5.26:1; the rung is 7.58:1 and
+   carries the hue that means "answer this". */
 .nofit .asks li{
-  padding:12px 14px;border-radius:var(--r-input);background:var(--canvas-2);
-  border:1px solid var(--hair);font:400 13px/1.5 var(--sans);color:var(--text2)}
+  padding:12px 14px;border-radius:var(--r-input);background:var(--b-unsure-bg);
+  border:1px solid transparent;font:400 13px/1.5 var(--sans);color:var(--answer-body)}
 .nofit .asks em{display:block;font:500 10.5px/1 var(--sans);letter-spacing:.09em;
-  text-transform:uppercase;color:var(--text3);font-style:normal;margin:0 0 5px}
+  text-transform:uppercase;color:var(--b-unsure);font-style:normal;margin:0 0 5px}
 .nofit .routes{display:flex;gap:10px;flex-wrap:wrap;margin:18px 0 0}
 .nofit .routes button{
   appearance:none;cursor:pointer;border-radius:var(--r-pill);padding:10px 16px;
@@ -875,7 +890,10 @@ nav.main{margin-left:18px}
 .nofit .anyway:hover{border-color:var(--accent);color:var(--accent)}
 .nofit .anyway[aria-pressed="true"]{border-color:var(--b-unsure);color:var(--b-unsure)}
 /* a stretch is never dressed as a recommendation: outline, not the filled button */
-.job .applybtn.stretch{background:transparent;color:var(--b-unsure);
+/* NOT --b-unsure. That is a band hue on a control, and the wrong band: the
+   card is a NEAR-MISS and the button was wearing unsure's amber. A button is
+   the action colour, quietly. */
+.job .applybtn.stretch{background:transparent;color:var(--ink);
   border:1px dashed var(--b-unsure)}
 .job .applybtn.stretch:hover{background:var(--b-unsure-bg)}
 .job .act{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}

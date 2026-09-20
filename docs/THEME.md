@@ -482,6 +482,106 @@ to the ramp's 7.5:1 automatically.
 
 ---
 
-## 13. One-line summary to keep in your head
+## 13. What landed, and what the tokens never reached
+
+Sampled from the live pages, 2026-09-20. **The ramp landed exactly** — in the
+job-card grid, both themes, every pill matches §11 to two decimals:
+
+| | light | dark |
+|---|---|---|
+| strongest | `#e7f4e8` / `#225b2c` · **7.11** | `#223424` / `#92d098` · **7.38** |
+| what to answer | `#fbede1` / `#713f00` · **7.58** | `#3d2b1a` / `#ecaf78` · **7.04** |
+| near-miss | `#eff0f4` / `#4b4b5c` · **7.50** | `#2e2e34` / `#bbbcd0` · **7.21** |
+| ground / card | `#f8f3eb` / `#ffffff` | `#0a0524` / `#1c1544` |
+
+The cream is back, the grey panel is gone, and the Remote chip is neutral in
+both themes. §12.1 and §12.2 are done.
+
+### The summary panel never got the tokens
+
+The block at the top of `#browse` — "Today's postings are a stretch…" and the
+what-to-answer cards under it — is still on the old values in **both** themes:
+
+| | measured | should be |
+|---|---|---|
+| dark ground | `#0f0a2a` | `#0a0524` |
+| dark panel | `#100b2f` | `#1c1544` |
+| dark answer card | `#100b2f`, grey text | `#3d2b1a` / `#ecaf78` |
+| light panel | `#ffffff` ✓ | ✓ |
+| light answer card | `#fffdf9`, `#6e6973` · 5.26 | `#fbede1` / `#713f00` · 7.58 |
+
+Dark page→panel there measures **1.05:1** with zero hue difference — which is
+exactly §10's flatness, on the one block where it was first noticed. It is a
+separate component and the tokens were never wired into it.
+
+### Four smaller misses
+
+1. **Search placeholder** is `#757575`: **4.61:1** on light, **3.68:1** on
+   dark. Both fail AA. Use `--text-2`.
+2. **"Apply anyway"** wears `--unsure-label` on a NEAR-MISS card — a band hue
+   on a control, and the wrong band. It is a button: `--action`.
+3. **"Saved" filter, active** is `#4865ff` with white, **4.58:1**. Same error
+   as the old Remote pill. Use `--selected-bg` / `--selected-fg`.
+4. **Market chip, active** is `#e7ebff` light / `#24215c` dark. Neither is a
+   token; `--selected-bg` is `#eaf0ff` / `#272e42`.
+
+---
+
+## 14. The halo
+
+One fixed layer behind the whole site. The CSS is at the foot of
+`theme-resolution.css`; this is why it is built that way.
+
+### A halo adds light
+
+`--blob` was `rgba(72,101,255,.05)` — brand indigo painted over the ground.
+Indigo is far darker than cream, so every bloom came out a grey smudge:
+
+```
+  #4865ff at 5% over #f8f3eb  ->  #efecec
+  cream    L 0.966  C 0.012  hue 37°
+  haloed   L 0.945  C 0.003  hue  0°
+  it DARKENS 1.06:1 and kills the hue
+```
+
+That is the `#f8f3eb` / `#f2eeec` patchwork on the live light page — the
+ground reads blotchy because the glow is a shadow.
+
+**The rule: every bloom is lighter than the canvas, and in the canvas's own
+hue family.** Warm on cream, indigo on ink. Cool blooms on cream turn it grey
+even when they are lighter — a light-but-cool halo swings the hue to 180°.
+
+### One layer, fixed
+
+```css
+html { background: var(--canvas); }
+body { background: transparent; }
+
+body::before {
+  content: ""; position: fixed; inset: 0;
+  z-index: -1; pointer-events: none;
+  background:
+    radial-gradient(62% 48% at 88%  2%, var(--halo-1) 0%, transparent 64%),
+    radial-gradient(54% 42% at  2% 30%, var(--halo-2) 0%, transparent 62%),
+    radial-gradient(70% 52% at 74% 92%, var(--halo-3) 0%, transparent 66%);
+}
+```
+
+The ground moves to `<html>` so `body::before` can sit behind body's own box.
+
+| Do | Don't |
+|---|---|
+| One fixed layer for the site | A gradient per section — they seam where sections meet |
+| `position: fixed` | `background-attachment: fixed` — repaints on scroll |
+| `radial-gradient` | `filter: blur()` on a big element — expensive every frame |
+| `z-index: -1`, `pointer-events: none` | Positive z-index — it will cover the header |
+| Let cards paint their own ground | Making cards translucent so the halo shows through |
+
+Nothing else needs a z-index. The halo is at -1; everything in normal flow is
+above it. The hero, cards, modals and header all paint over it normally.
+
+---
+
+## 15. One-line summary to keep in your head
 
 > **Market is the hero. Theme is everything else. They never touch.**

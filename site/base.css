@@ -219,6 +219,23 @@
      it can never be text - words wearing it would claim a band. */
   --live: var(--b-unsure-solid);
 
+  /* SELECTION is the ping rung. Aliased, not repeated: a selected control and
+     a PING band are the same indigo doing the same job, and a second copy of
+     those four hexes is a second thing to keep in step. */
+  --selected-bg: var(--b-ping-bg);
+  --selected-fg: var(--b-ping);
+
+  /* THE HALO - three blooms on one fixed layer behind the whole site.
+     Every bloom is LIGHTER than the canvas and in the canvas's own hue
+     family: warm on cream, indigo on ink. The old one did the opposite - it
+     painted brand indigo at 5-6% over the ground, and indigo is far darker
+     than cream, so each bloom composited to #efecec: 1.06:1 DARKER, with the
+     hue dragged from 37deg to 0. A glow that darkens is a shadow, and that
+     is what made the light page look blotchy. */
+  --halo-1: light-dark(rgba(255,252,242,.92), rgba(43, 57,108,.50));
+  --halo-2: light-dark(rgba(255,250,240,.80), rgba(58, 42, 96,.42));
+  --halo-3: light-dark(rgba(255,253,246,.85), rgba(36, 52,100,.38));
+
   /* The evidence cards ARE the auto and unsure rungs, not a second palette
      that has to be kept in step with the first. */
   --strongest-body: light-dark(#495349, #ccd6cd);   /* 7.07 / 8.88 */
@@ -255,8 +272,21 @@
 }
 *{box-sizing:border-box}
 html,body{margin:0}
+/* The ground is on <html> so body::before can sit BEHIND body's own box. */
+html{background:var(--canvas)}
+/* One fixed layer, site-wide. Fixed means it never scrolls, never seams
+   where two sections meet, and composites on its own GPU layer - a gradient
+   per section fails all three. Nothing else needs a z-index: this is at -1
+   and everything in normal flow is above it, so the hero, the cards, the
+   modals and the header all paint over it normally. */
+body::before{
+  content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
+  background:
+    radial-gradient(62% 48% at 88%  2%, var(--halo-1) 0%, transparent 64%),
+    radial-gradient(54% 42% at  2% 30%, var(--halo-2) 0%, transparent 62%),
+    radial-gradient(70% 52% at 74% 92%, var(--halo-3) 0%, transparent 66%)}
 body{
-  background:var(--canvas); color:var(--text);
+  background:transparent; color:var(--text);
   font:400 16px/1.5 var(--sans); letter-spacing:-.011em;
   -webkit-font-smoothing:antialiased;
   transition:background .45s var(--ease), color .45s var(--ease);
@@ -331,12 +361,11 @@ nav.main a:hover{color:var(--ink)}
   font:500 14px/1 var(--sans);color:var(--text2);padding:10px 20px;border-radius:11px;
   display:flex;align-items:center;gap:8px;transition:all .3s var(--ease)
 }
-/* The active half takes the market's own hue at 10% over the surface — the
-   second and last place the market is allowed to show. A tint, not a label:
-   at control scale a saturated green would be claiming `auto`. */
+/* The market does NOT colour its own chip. It reads as SELECTED, and
+   selection is a theme token - the ping rung - exactly like every other
+   selected control. The market's whole list is the hero. */
 .mkt button[aria-pressed="true"]{
-  background:linear-gradient(rgba(var(--mkt-wash),.10),rgba(var(--mkt-wash),.10)),var(--surface);
-  color:var(--ink);box-shadow:var(--sh-hover)
+  background:var(--selected-bg);color:var(--selected-fg);box-shadow:var(--sh-hover)
 }
 @media(max-width:860px){
   .mkt{position:static;transform:none;margin-left:auto}
