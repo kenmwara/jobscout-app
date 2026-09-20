@@ -546,7 +546,7 @@ fun DemoScreen(vm: DemoVm = viewModel()) {
 
     CompositionLocalProvider(LocalTokens provides tokens) {
         // The main frame had a flat fill and no texture at all.
-        Box(Modifier.fillMaxSize().background(T.canvas).backdrop(T.ink)) {
+        Box(Modifier.fillMaxSize().background(T.canvas).ground()) {
           Column(Modifier.fillMaxSize()) {
             /* Outside the list, so it stays. It used to be the first item in it,
                which put the market switch, Saved and the wordmark off screen as
@@ -1026,7 +1026,7 @@ private fun InfoSheet(page: String, onClose: () -> Unit) {
     val uri = LocalUriHandler.current
     val ins = WindowInsets.safeDrawing.asPaddingValues()
     val how = page == "how"
-    Box(Modifier.fillMaxSize().background(T.canvas).backdrop(T.ink)) {
+    Box(Modifier.fillMaxSize().background(T.canvas).ground()) {
         LazyColumn(
             Modifier.fillMaxSize(),
             contentPadding = PaddingValues(16.dp, ins.calculateTopPadding() + 14.dp, 16.dp,
@@ -1406,7 +1406,7 @@ private fun TrackerScreen(
     BackHandler(onBack = onClose)
     val ins = WindowInsets.safeDrawing.asPaddingValues()
     run {
-        Box(Modifier.fillMaxSize().background(T.canvas).backdrop(T.ink)) {
+        Box(Modifier.fillMaxSize().background(T.canvas).ground()) {
             LazyColumn(
                 Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(16.dp, ins.calculateTopPadding() + 12.dp, 16.dp, ins.calculateBottomPadding() + 40.dp),

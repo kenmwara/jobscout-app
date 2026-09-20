@@ -12,7 +12,14 @@ import androidx.compose.material3.Typography
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
+import kotlinx.coroutines.delay
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
@@ -121,24 +128,84 @@ fun Modifier.warmShadow(elevation: Dp, shape: Shape): Modifier =
  * old `dots()` hard-coded Ink — which on the Kenya ground is near-black on
  * near-black, so that texture has never once been visible there.
  */
-fun Modifier.backdrop(tint: Color, step: Dp = 24.dp, alpha: Float = .07f): Modifier = drawBehind {
-    val w = size.width
-    val h = size.height
-    // fractions of the width, so it scales with the phone rather than the dp grid
-    for ((cx, cy, cr, a) in listOf(
-        listOf(-0.18f, 0.10f, 0.62f, 0.040f),
-        listOf(1.16f, 0.30f, 0.70f, 0.034f),
-        listOf(0.30f, 0.86f, 0.80f, 0.026f),
-        listOf(1.02f, 0.98f, 0.46f, 0.030f),
-    )) drawCircle(tint.copy(alpha = a), cr * w, Offset(cx * w, cy * h))
+/**
+ * THE GROUND, the same one the web paints on <html>: three blooms that ADD
+ * light, the dot texture, and the page mark - the eight-dot rose at 180% of
+ * the width at a whisper of the accent - wandering on a 48s figure. It draws
+ * behind the root box the list scrolls inside, so it is pinned to the screen
+ * by construction and everything scrolls over it.
+ *
+ * This replaced backdrop(), which drew four ink circles at 3-4% OVER the
+ * canvas: the retired --blob idea section 14 killed on the web, because a
+ * glow that darkens is a shadow. The dot texture is kept as it was.
+ *
+ * The wander is an infinite transition, which Compose scales by the system
+ * animator duration scale - a reader who has animations off gets it still.
+ */
+@Composable
+fun Modifier.ground(step: Dp = 24.dp, alpha: Float = .07f): Modifier {
+    val t = T
+    /* IN STEPS, NOT PER FRAME. An infinite transition redraws the ground on
+       every frame, and a window that never goes idle breaks anything that
+       waits for idleness - uiautomator returned "null root node" on one dump
+       in three, and TalkBack's traversal waits on the same signal. So the
+       mark eases to the next point on its figure every twelve seconds over 1.2s
+       and rests between: visibly moving, idle most of the time. Compose
+       scales the tween by the animator duration scale, so a reader who has
+       animations off gets it still. */
+    val drift = remember { Animatable(0f) }
+    LaunchedEffect(Unit) {
+        var k = 0
+        while (true) {
+            k += 1
+            drift.animateTo(k / 8f, tween(1_200, easing = FastOutSlowInEasing))
+            delay(12_000)   // idle ~90% of the time; the bridge still failed at 6s/1.6s
+        }
+    }
+    val phase = drift.value
+    return drawBehind {
+        val w = size.width
+        val h = size.height
 
-    val s = step.toPx()
-    val r = 0.75.dp.toPx()
-    val c = tint.copy(alpha = alpha)
-    var y = s / 2
-    while (y < size.height) {
-        var x = s / 2
-        while (x < size.width) { drawCircle(c, r, Offset(x, y)); x += s }
-        y += s
+        // the blooms: base.css's three radial-gradients, positioned the same way
+        for ((cx, cy, rx, col) in listOf(
+            listOf(0.88f, 0.02f, 0.62f, t.halo1),
+            listOf(0.02f, 0.30f, 0.54f, t.halo2),
+            listOf(0.74f, 0.92f, 0.70f, t.halo3),
+        )) {
+            val c = Offset((cx as Float) * w, (cy as Float) * h)
+            val r = (rx as Float) * w
+            drawCircle(Brush.radialGradient(listOf(col as Color, Color.Transparent), c, r), r, c)
+        }
+
+        // the mark: eight dots, radii 2.275 -> 4.336 on a width/24 grid, as Mark()
+        // draws them, at page scale. A slow figure of a few percent each way,
+        // with the breath and the lean the web's keyframes carry.
+        val ph = phase * 2f * Math.PI.toFloat()
+        val dx = 0.03f * w * kotlin.math.sin(ph)
+        val dy = 0.03f * w * kotlin.math.sin(ph * 2f + 1f) * 0.6f
+        val scale = 1f + 0.045f * (0.5f - 0.5f * kotlin.math.cos(ph))
+        val lean = Math.toRadians((2.0 - 2.0 * kotlin.math.cos(ph.toDouble())))
+        val markW = 1.8f * w * scale
+        val u = markW / 24f
+        val centre = Offset(w / 2f + dx, h / 2f + dy)
+        val dot = t.accent.copy(alpha = .06f)
+        for (i in 0 until 8) {
+            val th = Math.toRadians((-90 + 45 * i).toDouble()) + lean
+            val r = (2.275f + (4.336f - 2.275f) * i / 7f) * u
+            drawCircle(dot, r, Offset(centre.x + (11f * u * Math.cos(th)).toFloat(),
+                                      centre.y + (11f * u * Math.sin(th)).toFloat()))
+        }
+
+        // the dot texture, unchanged
+        val s = step.toPx()
+        val rr = 0.75.dp.toPx()
+        val c = t.ink.copy(alpha = alpha)
+        var y = s / 2
+        while (y < size.height) {
+            var x = s / 2
+            while (x < size.width) { drawCircle(c, rr, Offset(x, y)); x += s }
+            y += s
+        }
     }
 }

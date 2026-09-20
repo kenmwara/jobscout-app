@@ -71,7 +71,25 @@ body{padding:0 0 60px;background:var(--canvas);color:var(--text);
   background:var(--ink);box-shadow:0 30px 70px -18px rgba(8,3,49,.45);position:relative}
 .screen{
   width:368px;height:760px;border-radius:34px;overflow:hidden;background:var(--canvas);
-  position:relative;display:flex;flex-direction:column}
+  /* z-index:0 makes the screen a stacking context, so the ground below can
+     sit at -1 ABOVE the screen's own canvas and beneath everything in flow.
+     Without it, -1 falls behind the screen and the ground is invisible -
+     the same trap the web's halo fell into. */
+  position:relative;z-index:0;display:flex;flex-direction:column}
+/* THE PHONE'S GROUND: the same three blooms and dot texture <html> paints on
+   the web, plus the page mark, pinned to the SCREEN rather than to the page
+   - this is the phone's viewport. Content scrolls inside .view over it. */
+.screen .ground{position:absolute;inset:0;z-index:-1;pointer-events:none;overflow:hidden;
+  background-image:
+    radial-gradient(62% 48% at 88%  2%, var(--halo-1) 0%, transparent 64%),
+    radial-gradient(54% 42% at  2% 30%, var(--halo-2) 0%, transparent 62%),
+    radial-gradient(70% 52% at 74% 92%, var(--halo-3) 0%, transparent 66%),
+    radial-gradient(rgba(8,3,49,.07) 1px,transparent 1px);
+  background-size:auto,auto,auto,24px 24px}
+/* base.css pins the mark to the page; inside the phone it is pinned to the
+   screen. 180% of 368px is 662px - the discs at roughly the scale they have
+   on a desktop, cropped by the screen's own corners. */
+.screen .heromark.pagemark{position:absolute;left:50%;top:50%;width:180%;z-index:auto}
 .stat{display:flex;align-items:center;justify-content:space-between;padding:10px 20px 4px;
   font:600 12.5px/1 var(--sans);color:var(--ink);flex:0 0 auto}
 .stat .ic{display:flex;gap:4px;align-items:center}
@@ -386,6 +404,22 @@ p.sub{font:400 13.5px/1.5 var(--sans);color:var(--text2);margin:0 0 16px}
   <div class="device">
     <div class="notch"></div>
     <div class="screen">
+      <div class="ground" aria-hidden="true">
+        <div class="heromark pagemark" aria-hidden="true">
+                <svg viewBox="0 0 760 760">
+                  <defs>
+                    <radialGradient id="markpop2" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse"
+                      gradientTransform="translate(380 330) scale(330 330)">
+                      <stop stop-color="#fff" stop-opacity=".32"/>
+                      <stop offset=".5" stop-color="#fff" stop-opacity=".11"/>
+                      <stop offset="1" stop-color="#fff" stop-opacity="0"/>
+                    </radialGradient>
+                  </defs>
+                  <g class="ring"><circle cx="380.0" cy="80.0" r="28.4"/><circle cx="592.1" cy="167.9" r="54.1"/><circle cx="680.0" cy="380.0" r="79.8"/><circle cx="592.1" cy="592.1" r="105.5"/><circle cx="380.0" cy="680.0" r="131.2"/><circle cx="167.9" cy="592.1" r="156.9"/><circle cx="80.0" cy="380.0" r="182.6"/><circle cx="167.9" cy="167.9" r="208.3"/></g>
+                  <g class="pop" fill="url(#markpop2)"><circle cx="380.0" cy="80.0" r="28.4"/><circle cx="592.1" cy="167.9" r="54.1"/><circle cx="680.0" cy="380.0" r="79.8"/><circle cx="592.1" cy="592.1" r="105.5"/><circle cx="380.0" cy="680.0" r="131.2"/><circle cx="167.9" cy="592.1" r="156.9"/><circle cx="80.0" cy="380.0" r="182.6"/><circle cx="167.9" cy="167.9" r="208.3"/></g>
+                </svg>
+              </div>
+      </div>
       <div class="stat"><span id="clock">9:41</span>
         <span class="ic">▮▮▮ <i></i></span></div>
       <div class="view" id="view"></div>
@@ -1025,6 +1059,9 @@ Promise.all([fetch("feed-sample.json").then(r => r.json()), window.__tokens])
         Serve the folder over http: <code>mockups/mobile.html</code> at
         <code>localhost:4173</code>.</p>`; });
   });
+</script>
+<script>
+if (!matchMedia("(prefers-reduced-motion: reduce)").matches) document.documentElement.classList.add("anim");
 </script>
 </body>
 </html>

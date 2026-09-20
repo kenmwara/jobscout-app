@@ -1022,6 +1022,22 @@ nav.main{margin-left:18px}
   </header>
 </div>
 
+<!-- THE PAGE MARK, behind the landing and browse alike: a body-level
+     sibling of <main>, so both views scroll over it. Rules in base.css. -->
+<div class="heromark pagemark" aria-hidden="true">
+        <svg viewBox="0 0 760 760">
+          <defs>
+            <radialGradient id="markpop2" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse"
+              gradientTransform="translate(380 330) scale(330 330)">
+              <stop stop-color="#fff" stop-opacity=".32"/>
+              <stop offset=".5" stop-color="#fff" stop-opacity=".11"/>
+              <stop offset="1" stop-color="#fff" stop-opacity="0"/>
+            </radialGradient>
+          </defs>
+          <g class="ring"><circle cx="380.0" cy="80.0" r="28.4"/><circle cx="592.1" cy="167.9" r="54.1"/><circle cx="680.0" cy="380.0" r="79.8"/><circle cx="592.1" cy="592.1" r="105.5"/><circle cx="380.0" cy="680.0" r="131.2"/><circle cx="167.9" cy="592.1" r="156.9"/><circle cx="80.0" cy="380.0" r="182.6"/><circle cx="167.9" cy="167.9" r="208.3"/></g>
+          <g class="pop" fill="url(#markpop2)"><circle cx="380.0" cy="80.0" r="28.4"/><circle cx="592.1" cy="167.9" r="54.1"/><circle cx="680.0" cy="380.0" r="79.8"/><circle cx="592.1" cy="592.1" r="105.5"/><circle cx="380.0" cy="680.0" r="131.2"/><circle cx="167.9" cy="592.1" r="156.9"/><circle cx="80.0" cy="380.0" r="182.6"/><circle cx="167.9" cy="167.9" r="208.3"/></g>
+        </svg>
+      </div>
 <main>
 <div id="v-landing">
   <div class="wrap">
@@ -1107,20 +1123,6 @@ nav.main{margin-left:18px}
 </div>
 
 <div id="v-browse" class="hide">
-  <div class="heromark pagemark" aria-hidden="true">
-        <svg viewBox="0 0 760 760">
-          <defs>
-            <radialGradient id="markpop2" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse"
-              gradientTransform="translate(380 330) scale(330 330)">
-              <stop stop-color="#fff" stop-opacity=".32"/>
-              <stop offset=".5" stop-color="#fff" stop-opacity=".11"/>
-              <stop offset="1" stop-color="#fff" stop-opacity="0"/>
-            </radialGradient>
-          </defs>
-          <g class="ring"><circle cx="380.0" cy="80.0" r="28.4"/><circle cx="592.1" cy="167.9" r="54.1"/><circle cx="680.0" cy="380.0" r="79.8"/><circle cx="592.1" cy="592.1" r="105.5"/><circle cx="380.0" cy="680.0" r="131.2"/><circle cx="167.9" cy="592.1" r="156.9"/><circle cx="80.0" cy="380.0" r="182.6"/><circle cx="167.9" cy="167.9" r="208.3"/></g>
-          <g class="pop" fill="url(#markpop2)"><circle cx="380.0" cy="80.0" r="28.4"/><circle cx="592.1" cy="167.9" r="54.1"/><circle cx="680.0" cy="380.0" r="79.8"/><circle cx="592.1" cy="592.1" r="105.5"/><circle cx="380.0" cy="680.0" r="131.2"/><circle cx="167.9" cy="592.1" r="156.9"/><circle cx="80.0" cy="380.0" r="182.6"/><circle cx="167.9" cy="167.9" r="208.3"/></g>
-        </svg>
-      </div>
   <div class="wrap">
     <!-- The feed first: what the day is made of, before the day itself. -->
     <div class="feedhead" id="browseFeed">

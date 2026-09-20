@@ -49,7 +49,7 @@ fun ApplyScreen(vm: DemoVm, a: Apply, onClose: () -> Unit) {
     val bandColor = T.band(a.fit).first
     val p = a.posting
 
-    Box(Modifier.fillMaxSize().background(T.canvas).backdrop(T.ink)) {
+    Box(Modifier.fillMaxSize().background(T.canvas).ground()) {
         LazyColumn(
             Modifier.fillMaxSize(),
             contentPadding = PaddingValues(16.dp, ins.calculateTopPadding() + 12.dp, 16.dp, ins.calculateBottomPadding() + 40.dp),

@@ -66,6 +66,13 @@ data class Tokens(
     val evidenceRuleAnswer: Color,
     val strongestBody: Color,
     val answerBody: Color,
+    /* THE HALO - base.css --halo-1/2/3, with the alpha in the colour. Light
+       carries HUE (amber, peach, gold at low alpha: white on cream caps at
+       1.105:1 and is invisible), dark carries brightness in the canvas's own
+       hue family (250deg; the spec's 227deg read as navy). Section 14. */
+    val halo1: Color,
+    val halo2: Color,
+    val halo3: Color,
 ) {
     /** 140deg in CSS runs top-left to bottom-right, which is what Brush.linearGradient does by default. */
     val hero: Brush get() = Brush.linearGradient(listOf(heroFrom, heroMid, heroTo))
@@ -124,6 +131,9 @@ val LIGHT_TOKENS = Tokens(
     evidenceRuleAnswer = Color(0xFFB86B03),
     strongestBody = Color(0xFF495349),   // 7.15:1 on the neutral
     answerBody = Color(0xFF584E45),      // 7.22:1 on the neutral
+    halo1 = Color(0x42FFD696),           // rgba(255,214,150,.26)
+    halo2 = Color(0x38FFCEB2),           // rgba(255,206,178,.22)
+    halo3 = Color(0x3DFFE4B0),           // rgba(255,228,176,.24)
 )
 
 /** :root[data-theme="dark"] — derived from deep-ink #080331, not a neutral
@@ -165,6 +175,9 @@ val DARK_TOKENS = Tokens(
     evidenceRuleAnswer = Color(0xFFE89F59),
     strongestBody = Color(0xFFCCD6CD),   // 9.26:1 on the neutral
     answerBody = Color(0xFFDBD1C8),      // 9.19:1 on the neutral
+    halo1 = Color(0xB83B2D80),           // rgba(59,45,128,.72)  hue 250
+    halo2 = Color(0x993A2A60),           // rgba(58,42,96,.60)   hue 258
+    halo3 = Color(0x8C382B7A),           // rgba(56,43,122,.55)  hue 250
 )
 
 /* MARKET — two places, never a third. The hero is the first; the active flag

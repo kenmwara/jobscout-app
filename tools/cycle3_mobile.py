@@ -26,8 +26,26 @@ def sh(*a, t=60):
 
 
 def dump():
-    sh("shell", "uiautomator", "dump", "/sdcard/u.xml")
-    return sh("shell", "cat", "/sdcard/u.xml").stdout.decode("utf-8", "replace")
+    # The bridge waits for an idle window and answers "null root node" when
+    # it does not get one in time - one dump in three under the ground's
+    # wander, before it was made to step. A transient bridge error is not a
+    # finding about the app; try again before believing an empty tree.
+    # AND REMOVE THE OLD FILE FIRST. A failed dump leaves the previous one in
+    # place, and cat returned it - a full, healthy tree of whatever screen the
+    # last good dump saw. That is how "the landing" read as Browse: it was the
+    # sector-tile step's dump from a minute earlier, not the screen.
+    xml = ""
+    for _ in range(4):
+        sh("shell", "rm", "-f", "/sdcard/u.xml")
+        out = sh("shell", "uiautomator", "dump", "/sdcard/u.xml").stdout.decode("utf-8", "replace")
+        xml = sh("shell", "cat", "/sdcard/u.xml").stdout.decode("utf-8", "replace")
+        # A tree with a handful of text nodes is the bridge answering before
+        # the app has laid out - "<node" alone let those through. The landing
+        # carries 35; anything under 20 is not the app yet.
+        if "dumped to" in out and xml.count('text="') - xml.count('text=""') >= 20:
+            return xml
+        time.sleep(1.0)
+    return xml
 
 
 def nodes():
@@ -100,7 +118,15 @@ for market in ("Canada", "Kenya"):
     tap("JobScout", wait=2.0)
     swipe_top()
 
+    # A market switch refetches the feed and re-lays the landing; the hero
+    # can be a second or two behind the header. Kenya failed this on a single
+    # read while three manual dumps in a row showed it whole. Poll, briefly.
     t = text()
+    for _ in range(6):
+        if "Upload" in t and ("Paste your resume" in t or "Find the work" in t):
+            break
+        time.sleep(1.0)
+        t = text()
     check("JobScout" in t, "the header is on screen and stays there")
     check("Saved" in t, "Saved is reachable from the header")
 
@@ -109,6 +135,8 @@ for market in ("Canada", "Kenya"):
     # particular string in the box. Keying on the placeholder made the check
     # depend on the box being EMPTY, so it failed the moment a previous run
     # left text in it - a red line about leftover state, not about the app.
+    if not ("Upload" in t and ("Paste your resume" in t or "Find the work" in t)):
+        say("        screen read: " + t[:260])
     check("Upload" in t and ("Paste your resume" in t or "Find the work" in t),
           "the landing offers a way to hand over a resume")
     check("open" in t, "the sector tiles carry their counts")
