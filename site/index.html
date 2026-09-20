@@ -58,7 +58,8 @@ h1.display{
   font:400 clamp(40px,7.2vw,72px)/1.06 var(--serif);
   letter-spacing:-.03em;margin:0 0 30px;color:#fff;text-wrap:balance
 }
-h1.display .dot{color:var(--live)}
+h1.display .dot{color:var(--accent)}  /* brand, not --live: --live IS the
+   unsure band solid, so the period was wearing a band meaning */
 
 /* the one box: resume in, run out */
 .box{
@@ -463,7 +464,9 @@ html.anim #pop.on{animation:popin .16s var(--ease)}
   line-height:0;color:var(--text3);transition:color var(--t-micro) var(--ease),transform .4s var(--spring)
 }
 .savebtn:hover{color:var(--text)}
-.savebtn[aria-pressed="true"]{color:var(--live)}
+/* Selected state is indigo. It was --live, which is the unsure solid, so a
+   SAVED job read as unsure. */
+.savebtn[aria-pressed="true"]{color:var(--accent)}
 .savebtn[aria-pressed="true"] svg{fill:currentColor}
 .savebtn:active{transform:scale(.85)}
 html.anim .savebtn[aria-pressed="true"]{animation:float 1.6s ease-in-out 1}

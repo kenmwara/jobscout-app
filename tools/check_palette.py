@@ -252,7 +252,10 @@ for name, T, RAW in (("light", LIGHT, LIGHT_RAW), ("dark", DARK, DARK_RAW)):
 
 # ── 6. --live is a fill, never a text colour ────────────────────────────
 print("\n-- the fill colour --")
-ALLOWED_FILLS = ("h1.display .dot", '.savebtn[aria-pressed="true"]')
+# No exemptions. Both former ones - the display period and the saved heart -
+# were moved onto the brand, because --live IS the unsure band solid and a
+# saved job should not read as unsure. Rule 6 is absolute now.
+ALLOWED_FILLS = ()
 painted = []
 for f in ("site/base.css", "site/index.html", "site/apply.html", "site/saved.html"):
     path = os.path.join(ROOT, f)
