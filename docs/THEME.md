@@ -801,6 +801,14 @@ kind of thing that rots quietly.
 
 ---
 
+## 18. Time — see the motion spec
+
+Colour has three axes; the fourth is time, and it lives in its own spec:
+`docs/references/motion-2026-09-20/docs/MOTION.md`, with the build order and
+what shipped recorded in `docs/ARCHITECTURE.md` ("Time is the fourth axis").
+Two of its numbers are laws here: entries 340–520ms, exits 160ms and never
+overshooting; and reduced motion means no motion, not less information.
+
 ## 17. One-line summary to keep in your head
 
 > **Market is the hero. Theme is everything else. They never touch.**

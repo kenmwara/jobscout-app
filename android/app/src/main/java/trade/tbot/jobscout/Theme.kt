@@ -13,6 +13,9 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.CubicBezierEasing
+import androidx.compose.animation.core.FiniteAnimationSpec
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.runtime.LaunchedEffect
@@ -142,6 +145,23 @@ fun Modifier.warmShadow(elevation: Dp, shape: Shape): Modifier =
  * The wander is an infinite transition, which Compose scales by the system
  * animator duration scale - a reader who has animations off gets it still.
  */
+/**
+ * TIME, the fourth axis (motion v1, 2026-09-20): the web's four curves in
+ * base.css, solved for Compose from the same damped-spring parameters
+ * (omega = 2pi/T, k = omega^2, unit mass). Do NOT reach for Compose's named
+ * constants - StiffnessMedium is 1500 against snap's 1218 and the two clients
+ * drift on the clock, the failure check_palette exists to prevent for colour.
+ * tools/check_palette.py holds these to base.css within 1ms / 0.01.
+ */
+object Motion {
+    val snap: FiniteAnimationSpec<Float> = spring(dampingRatio = 0.72f, stiffness = 1218f)    // 180ms
+    val settle: FiniteAnimationSpec<Float> = spring(dampingRatio = 1.00f, stiffness = 342f)   // 340ms
+    val arrive: FiniteAnimationSpec<Float> = spring(dampingRatio = 0.62f, stiffness = 146f)   // 520ms, 8.3% over
+    val exit: FiniteAnimationSpec<Float> = tween(160, easing = CubicBezierEasing(0.4f, 0f, 1f, 1f))
+    const val STAGGER_DOT = 46L   // ms between bearings
+    const val ARRIVE_MS = 520     // the dot spring's period, for the numeral's clock
+}
+
 @Composable
 fun Modifier.ground(step: Dp = 24.dp, alpha: Float = .07f): Modifier {
     val t = T

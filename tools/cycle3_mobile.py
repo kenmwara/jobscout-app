@@ -121,11 +121,15 @@ for market in ("Canada", "Kenya"):
     # A market switch refetches the feed and re-lays the landing; the hero
     # can be a second or two behind the header. Kenya failed this on a single
     # read while three manual dumps in a row showed it whole. Poll, briefly.
+    # And swipe to the top on EVERY read: the market's feed reload re-lays
+    # the list under the reader, and one swipe before the poll left the hero
+    # above the viewport on a read that was otherwise fresh and whole.
     t = text()
     for _ in range(6):
         if "Upload" in t and ("Paste your resume" in t or "Find the work" in t):
             break
         time.sleep(1.0)
+        swipe_top(3)
         t = text()
     check("JobScout" in t, "the header is on screen and stays there")
     check("Saved" in t, "Saved is reachable from the header")

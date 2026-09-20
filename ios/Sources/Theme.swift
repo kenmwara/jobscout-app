@@ -208,6 +208,30 @@ struct Chip: View {
     }
 }
 
+/// TIME, the fourth axis (motion v1, 2026-09-20): the web's four curves from
+/// base.css. SwiftUI's `response` IS the natural period, so it equals the CSS
+/// duration directly; the damping fractions are the ones the linear() curves
+/// were sampled from. Do not eyeball an equivalent - the two clients drift.
+enum Motion {
+    static let snap = Animation.spring(response: 0.180, dampingFraction: 0.72)
+    static let settle = Animation.spring(response: 0.340, dampingFraction: 1.00)
+    static let arrive = Animation.spring(response: 0.520, dampingFraction: 0.62)
+    static let exit = Animation.easeIn(duration: 0.16)
+    static let staggerDot = 0.046
+}
+
+/// Every actionable surface has three states; the press is the one that was
+/// missing. Scale by mass (.96 for a control), and it resolves on EXIT timing
+/// - a give that eases in is not a give.
+struct PressStyle: ButtonStyle {
+    var scale: CGFloat = 0.96
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .scaleEffect(configuration.isPressed ? scale : 1)
+            .animation(configuration.isPressed ? Motion.exit : Motion.settle, value: configuration.isPressed)
+    }
+}
+
 /// August's outlined pill; `filled` is the info-tinted state (saved, letter).
 struct PillButton: View {
     let text: String
@@ -224,7 +248,7 @@ struct PillButton: View {
                 .clipShape(Capsule())
                 .overlay(Capsule().stroke(filled ? Color.clear : hair2, lineWidth: 1.5))
         }
-        .buttonStyle(.plain)
+        .buttonStyle(PressStyle())
         .disabled(!enabled)
     }
 }
@@ -252,7 +276,7 @@ struct LinkText: View {
         Button(action: action) {
             Text(text).font(sans(14, .medium)).foregroundColor(color).padding(.vertical, 6)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(PressStyle())
     }
 }
 

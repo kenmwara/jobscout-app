@@ -238,6 +238,27 @@ rebuilt brand kit and `MEASURED.md` (what the reference files actually
 measure, including two `light-dark()` shorthands that drop the declaration)
 are in `docs/references/colour-2026-09-20/`.
 
+### Time is the fourth axis (motion v1, 2026-09-20)
+
+The static system says what is true; the temporal system says it is alive.
+`base.css` carries four real damped-spring curves as `linear()` — **snap**
+180ms (controls), **settle** 340ms (anything with area, critically damped),
+**arrive** 520ms (the rose and its numeral, 8.3% overshoot), **exit** 160ms
+(anything leaving; it never overshoots and is always faster than an entry) —
+plus stagger, travel and the press scale. Android solves the same springs
+(`Motion` in `Theme.kt`, k = (2π/T)²) and iOS uses `response` = the CSS
+duration; `check_palette.py` rule 8 holds Android to base.css within 1ms and
+0.01 damping, because "close enough" constants are how two clients end up on
+different clocks. What moves: each lit dot of the rose arrives one 46ms apart
+from bearing 000 while the numeral counts on that clock and seats as the last
+dot lands; settled roses breathe out of step (web/mockup only — on Android an
+infinite animation would keep the window from idling, the reason the ground's
+wander is stepped); only AUTO's pill pulses, once. Every actionable surface has
+rest / hover / **press**, the press on exit timing; sector tiles carry a bar at
+count/max; a filtered list leaves before it arrives. The lit count stays
+round(fit/100·8) — the score, not the band — and the numeral stays serif on all
+three clients. Spec and reasoning: `docs/references/motion-2026-09-20/`.
+
 ### Run these before reading anything
 
 Nothing here needs a CI credit. Every one of them was written after a defect that
@@ -250,6 +271,8 @@ this codebase actually has.
 | `node tools/audit_rendered.mjs` | The rendered DOM in both markets. Check 15: a class the stylesheet styles and the page never sets (this found 4.2KB of CSS painting a panel that had not existed for months). 16: a `setView` target with no view behind it. 17: a retry button whose label differs from the label it restores. |
 | `node tools/cycle3.mjs [--live] [--dark]` | Playwright, both web markets, 76 behavioural assertions, in either theme. Walks the cold route (save a job, open it from `/saved` with nothing in session, upload a file) and every landing control. A 429 from the hourly scoring guard makes board checks **skip**, counted and named — a run full of skips has verified nothing and says so. Locally it rewrites `/apply` to `/apply.html`, because python's `http.server` has no clean URLs. |
 | `node tools/sweep_mockup.mjs [--dark]` | Every control on the phone mockup, both markets: rail, upload, run, the fit floor (off a synthetic board, so it needs no API call), hearts, saved sweeps, tabs, drafts, the sheet's geometry, Copy. Unit-tests the letterhead extractor with no browser. A grounded refusal from the worker passes **when the reader is told why**. |
+| `node tools/check_rose.mjs` | The rose in the list: lit dots = round(fit/100·8) read from the SVG's own aria-label, the 104-box geometry, no dot clipped, every numeral seated on its score, breathing offsets pairwise distinct, only AUTO's pill pulsing, and under reduced motion the same information with no CSS animation running. Serves the repo root (the mockup links `../site/base.css`). |
+| `node tools/check_motion.mjs` | The tokens resolve; a tile, a chip and the mockup card have three DISTINCT states with the press on exit timing and no drop shadow on dark; nothing but `<html>` paints a ground over half the viewport; twelve light-ground samples stay in the cream's hue family in OKLCH. Found the reveal's `transform:none` pinning every hover and press. |
 | `node tools/check_halo.mjs [--live]` | The halo in pixels: six regions per route per theme, content hidden. Dark on luminance contrast and hue; light on ΔE. Its first run reported green while measuring a light page against the dark constant. |
 | `node tools/link_sweep.mjs [--live]` | Every link on every page fetched for real, both domains; a fragment counts as resolved when the destination routes it by script (`#browse`). |
 | `node tools/api_sweep.mjs` | The worker's endpoints for contract (a bad body must be refused, not 500) and the postings' own URLs. |

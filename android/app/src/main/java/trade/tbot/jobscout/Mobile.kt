@@ -1,6 +1,9 @@
 package trade.tbot.jobscout
 
 import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
@@ -16,6 +19,7 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
@@ -469,12 +473,20 @@ fun MJob(
      *  redesign; the phone had no way to say "not this one". */
     onDismiss: (() -> Unit)? = null,
 ) {
+    /* MOTION v1: the press. Compose has no :active, so the card reads its own
+       interaction source and gives .988 on Motion.exit (160ms) while pressed,
+       returning on Motion.settle - a give that eases in is not a give. */
+    val press = remember { MutableInteractionSource() }
+    val pressed by press.collectIsPressedAsState()
+    val give by animateFloatAsState(if (pressed) 0.988f else 1f,
+        animationSpec = if (pressed) Motion.exit else Motion.settle, label = "press")
     Row(
         Modifier.fillMaxWidth()
+            .graphicsLayer { scaleX = give; scaleY = give }
             .clip(CardShape)
             .background(T.surface)
             .border(1.dp, T.hair, CardShape)
-            .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
+            .then(if (onClick != null) Modifier.clickable(interactionSource = press, indication = null, onClick = onClick) else Modifier)
             .padding(13.dp),
         horizontalArrangement = Arrangement.spacedBy(11.dp),
     ) {

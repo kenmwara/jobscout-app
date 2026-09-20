@@ -1,6 +1,7 @@
 package trade.tbot.jobscout
 
-import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Box
@@ -8,10 +9,9 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -56,14 +56,23 @@ fun BearingRose(fit: Int, modifier: Modifier = Modifier, diameter: Dp = 84.dp) {
     val col = T.band(f).first
     val lit = maxOf(1, (f / 100f * 8f).roundToInt())
 
-    // One animation, staggered per dot: dot i is fully open once progress passes
-    // (i+1)/lit, so the rose fills clockwise in the order the score fills it.
-    var started by remember(f) { mutableStateOf(false) }
-    LaunchedEffect(f) { started = true }
-    val progress by animateFloatAsState(
-        targetValue = if (started) 1f else 0f,
-        animationSpec = tween(620), label = "bloom",
-    )
+    /* MOTION v1: each lit dot arrives on Motion.arrive (the web's
+       --spring-arrive: 520ms, 8.3% overshoot), one Motion.STAGGER_DOT apart
+       from bearing 000, so the fill IS the score forming. The numeral counts up
+       on the same clock - cubic-out over (lit-1)*46 + 520ms - and seats on the
+       frame the last dot lands. Nothing here runs after it settles: an infinite
+       breathe would keep the window from idling, which is what law 8's stepped
+       wander exists to avoid (uiautomator, TalkBack). */
+    val dots = remember(f) { List(8) { Animatable(0f) } }
+    val count = remember(f) { Animatable(0f) }
+    LaunchedEffect(f) {
+        for (i in 0 until lit) launch {
+            delay(i * Motion.STAGGER_DOT)
+            dots[i].animateTo(1f, Motion.arrive)
+        }
+        count.animateTo(1f, tween(((lit - 1) * Motion.STAGGER_DOT).toInt() + Motion.ARRIVE_MS,
+                                  easing = CubicBezierEasing(0.33f, 1f, 0.68f, 1f)))
+    }
 
     // The unlit dots are the page's hairline, so they read as absent on either ground.
     val unlit = T.hair2
@@ -73,14 +82,14 @@ fun BearingRose(fit: Int, modifier: Modifier = Modifier, diameter: Dp = 84.dp) {
             val c = center
             for (i in 0 until 8) {
                 val on = i < lit
-                val p = if (on) ((progress * lit) - i).coerceIn(0f, 1f) else 1f
+                val p = if (on) dots[i].value else 1f
                 val r = if (on) LIT_R * u * (0.34f + 0.66f * p) else UNLIT_R * u
                 drawCircle(if (on) col else unlit, radius = r, center = dotCentre(i, c, u))
             }
         }
         // The web's .fitnum: serif at weight 400, 24 units of the 104 box.
         Text(
-            "$f", color = col, fontFamily = Serif, fontWeight = FontWeight.Normal,
+            "${(f * count.value).roundToInt()}", color = col, fontFamily = Serif, fontWeight = FontWeight.Normal,
             fontSize = (diameter.value * 24f / BOX).sp,
         )
     }

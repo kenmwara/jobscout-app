@@ -47,8 +47,9 @@ struct BearingRose: View {
                     .fill(on ? band(f).1 : paleDot)
                     .frame(width: d, height: d)
                     .position(roseDot(i, side: side))
-                    // Staggered, so the rose fills in the order the score fills it.
-                    .animation(.easeOut(duration: 0.42).delay(Double(i) * 0.07), value: bloom)
+                    // MOTION v1: each bearing arrives on the web's --spring-arrive
+                    // (520ms, 8.3% overshoot), one --stagger-dot apart, from 000.
+                    .animation(Motion.arrive.delay(Double(i) * Motion.staggerDot), value: bloom)
             }
             // The web's .fitnum: serif at weight 400, 24 units of the 104 box.
             Text("\(f)")
