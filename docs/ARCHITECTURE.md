@@ -209,6 +209,20 @@ peach at low alpha, ΔE 6.0), because white on cream caps at 1.105:1 and the
 spec's white bloom was ΔE 2.9 at its peak — on spec and invisible.
 `tools/check_halo.mjs` reads the pixels, dark on contrast, light on ΔE.
 
+**The page mark rides with the halo.** The eight-dot rose sits behind every
+view at 1400px, `position:fixed` at the viewport's centre, `z-index:-1`
+inside the page's own stacking context — above `<html>`'s halo, below every
+card — and wanders on a 48s figure (`markwander`, off under reduced motion).
+One rule in `base.css`; pages carry only the markup, at body level (on
+`index.html` a sibling of `<main>`, so the landing and browse share one
+layer; inside `#v-browse` the landing had the halo and no discs). The mockup
+paints the same ground under the phone frame. Android draws it in
+`Modifier.ground()` — three radial brushes from per-theme `halo1/2/3` tokens,
+the dot texture, the mark — behind the root box the list scrolls in, so it is
+pinned by construction. Its wander **steps** (a 1.2s ease every 12s) rather
+than animating per frame: a window that never idles breaks uiautomator and
+stalls TalkBack alike. iOS does not carry the ground yet.
+
 **The evidence card is a neutral** (THEME.md §16, decided: option C).
 `--evidence-bg` at the surface's own hue, the band as a 2px left rule plus
 the label; colour intensity is a budget spent over area, and a tinted fill
@@ -239,7 +253,7 @@ this codebase actually has.
 | `node tools/check_halo.mjs [--live]` | The halo in pixels: six regions per route per theme, content hidden. Dark on luminance contrast and hue; light on ΔE. Its first run reported green while measuring a light page against the dark constant. |
 | `node tools/link_sweep.mjs [--live]` | Every link on every page fetched for real, both domains; a fragment counts as resolved when the destination routes it by script (`#browse`). |
 | `node tools/api_sweep.mjs` | The worker's endpoints for contract (a bad body must be refused, not 500) and the postings' own URLs. |
-| `python tools/cycle3_mobile.py` | The same pass over adb, both markets. It taps by **visible label from a fresh dump every time** — the box grows as it fills, so a coordinate captured one step earlier misses. |
+| `python tools/cycle3_mobile.py` | The same pass over adb, both markets. It taps by **visible label from a fresh dump every time** — the box grows as it fills, so a coordinate captured one step earlier misses. And it **removes `/sdcard/u.xml` before each dump**: a failed dump ("null root node", one in three under a busy window) leaves the previous file in place and `cat` returns it whole — a full, healthy tree of the wrong screen. The landing read as Browse for an afternoon that way. |
 | `node tools/labels_audit.mjs` | Lists every control's text beside its element, for reading. "Watch this search" under a bell that emails nothing survived three audits because nothing ever printed the two together. |
 | `python tools/check_palette.py` | The colour law below, asserted against `site/base.css` **and** `Tokens.kt`: the market touching anything but the hero; a role under the contrast bar that applies to it; a band that fails on its own fill, duplicates another band, or takes a text colour; a primary button filled with the brand; the action wearing the auto hue; `--live` used as text; and either client drifting from the other. |
 | `node tools/check_theme.mjs [--live]` | The truth table in [THEME.md](THEME.md), executed: all 12 market x theme x OS cells, that switching market leaves the ground alone, that a stored choice survives a reload, that **no attribute is written when nothing is stored** (otherwise "follow the system" is unreachable after one load), that an OS flip lands live, and that the control offers three states rather than a switch. |

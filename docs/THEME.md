@@ -612,6 +612,19 @@ below the halo's — not a per-page background.
 
 ---
 
+### 14b. The page mark, pinned with the halo
+
+The eight-dot rose behind the browse view is part of the ground, not of the
+page: `position:fixed` at the viewport's centre, `z-index:-1` inside the
+page's stacking context, above the halo and below every card, on every
+route including `/saved` and the landing. It wanders on a 48s figure — a
+few percent each way with a breath and a lean — and holds still under
+`prefers-reduced-motion`. One rule in `base.css`; a page carries only the
+markup, at body level. Android draws the same ground (blooms, texture, mark)
+in `Modifier.ground()` and steps the wander every 12s so the window idles
+between moves. Measured: 0px of drift across 600px of scroll, cards hit-test
+above it, no horizontal scroll.
+
 ## 15. Modals and sheets
 
 No — the cover-letter popup is a desktop dialog dropped onto a phone. Seven

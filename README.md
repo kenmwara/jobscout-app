@@ -206,6 +206,14 @@ caption anyway.
 > `[skip ci]` on the HEAD commit of a push skips the **GitHub** deploy for
 > the whole push, so a site commit beneath it never deploys — push site
 > commits on their own, or `gh workflow run deploy.yml --ref main`.
+>
+> **2026-09-20: the queue stopped dispatching altogether** — nothing started
+> after 06:32Z, webhook- or API-triggered, on an Active pay-as-you-go account
+> with minutes accruing and the status page green (the only visible change:
+> free macOS minutes crossed 500). The `v0.9.1` release build sat `queued`
+> with no message; Codemagic support ticket #20160. Play publishing is
+> **manual** (no `publishing:` block): download the AAB from the build's
+> artifacts and upload it in the Play Console.
 
 Both halves deploy from a push to `main`, and neither needs a command run by hand.
 

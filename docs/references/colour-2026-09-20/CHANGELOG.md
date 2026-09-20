@@ -164,3 +164,10 @@ at the same hue and made a long dark page read as one flat field.
 Then, per route and per theme, read the computed background of a corner of
 `<body>` — the halo should lift it 1.05:1 on light and 1.26:1 on dark, and the
 same numbers should hold on `/browse` and `/saved` alike.
+
+## 8. The page mark travels with the halo — §14b
+
+Landed 2026-09-20 on web (landing, browse, saved), the mockup and Android.
+The rose is `position:fixed`, `z-index:-1`, wandering on `markwander` 48s,
+reduced-motion aware; Android's `ground()` steps its wander so the window
+idles. iOS still has no ground.
