@@ -43,6 +43,15 @@ private func dynAlpha(_ hex: UInt32, _ a: CGFloat, _ darkHex: UInt32, _ darkA: C
 // 17.93:1, and it inverts for free.
 let indigo = dyn(0x4865FF, 0xA2BAFF)
 let midnightViolet = dyn(0x1B1463, 0xA2BAFF)
+
+/* SECTION 16, OPTION C. The evidence card is a neutral at the surface's own
+   hue; the band colour is a 2px rule and the label. A tinted fill is for
+   pill scale - the card measured four times the 4,000px2 the rule names. */
+let evidenceBg = dyn(0xF1F1FA, 0x2B284F)
+let evidenceRuleStrongest = dyn(0x3E954D, 0x7AC683)
+let evidenceRuleAnswer = dyn(0xB86B03, 0xE89F59)
+let strongestBody = dyn(0x495349, 0xCCD6CD)
+let answerBody = dyn(0x584E45, 0xDBD1C8)
 let ink = dyn(0x080331, 0xF8F3EB)         // 17.81:1 / 17.93:1 on canvas
 let muted = dyn(0x5A5560, 0xB9B3C4)       // --text2. 6.55:1 / 9.72:1 - was
                                           // 0x4A4560, of the #878789 family
@@ -73,11 +82,22 @@ private func warmShadowColor(_ a: CGFloat) -> Color {
     })
 }
 
+/* THE BAND FILLS, NAMED. They existed only as literals inside personaHues
+   and as hexes inside the rose, which is how the rose kept the pre-ember
+   palette while everything else moved. Named once, read everywhere. */
+let autoFill = dyn(0xE7F4E8, 0x223424)
+let unsureFill = dyn(0xFBEDE1, 0x3D2B1A)
+let pingFill = dyn(0xEAF0FF, 0x272E42)
+let nearFill = dyn(0xEFF0F4, 0x2E2E34)
+/* The ping LABEL. iOS carried the fill and borrowed --link for the text,
+   which is a different token at a different contrast. */
+let pingLabel = dyn(0x394981, 0xA4BBFF)
+
 /// One hue per candidate (border + rose) and its card ground, same as the web.
 let personaHues: [(Color, Color)] = [
-    (forest, dyn(0xE7F4E8, 0x223424)),
-    (emberDeep, dyn(0xFBEDE1, 0x3D2B1A)),
-    (indigo, dyn(0xEAF0FF, 0x272E42)),
+    (forest, autoFill),
+    (emberDeep, unsureFill),
+    (indigo, pingFill),
 ]
 
 // The same two variable TTFs the site embeds and Android bundles (google/fonts, OFL),

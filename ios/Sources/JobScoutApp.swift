@@ -880,17 +880,22 @@ struct ContentView: View {
        the product uses. Same tinted row with a micro-label as the web's popover
        and the phone's card, so a receipt reads the same everywhere. */
     @ViewBuilder
-    private func evidenceRow(_ label: String, _ text: String, _ fg: Color, _ bg: Color) -> some View {
+    private func evidenceRow(_ label: String, _ text: String, _ fg: Color,
+                             _ rule: Color, _ bodyColor: Color) -> some View {
         if !text.isEmpty {
-            VStack(alignment: .leading, spacing: 4) {
-                Text(label.uppercased())
-                    .font(sans(10, .medium)).tracking(0.9).foregroundColor(fg)
-                Text(text).font(sans(12.5)).foregroundColor(muted).lineSpacing(3)
-                    .fixedSize(horizontal: false, vertical: true)
+            HStack(alignment: .top, spacing: 0) {
+                // the band, as a rule down the left edge
+                Rectangle().fill(rule).frame(width: 2)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(label.uppercased())
+                        .font(sans(10, .medium)).tracking(0.9).foregroundColor(fg)
+                    Text(text).font(sans(12.5)).foregroundColor(bodyColor).lineSpacing(3)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.leading, 11).padding(.trailing, 11).padding(.vertical, 9)
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, 11).padding(.vertical, 9)
-            .background(bg)
+            .background(evidenceBg)
             .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
             .padding(.top, 5)
         }
@@ -907,8 +912,12 @@ struct ContentView: View {
                         .font(sans(16)).foregroundColor(ink).lineSpacing(3)
                     Chip(text: route.uppercased(), color: bandColor, ground: bandFill(s.fit).opacity(0.18))
                     Text(s.verdict).font(sans(14)).foregroundColor(muted).lineSpacing(4)
-                    evidenceRow("Strongest", s.strongest, meadow, meadow.opacity(0.10))
-                    evidenceRow("What to answer", s.weakest, emberDeep, emberDeep.opacity(0.08))
+                    /* Section 16, option C: the neutral plus a rule, not
+                       a tint across the whole card. */
+                    evidenceRow("Strongest", s.strongest, meadow,
+                                evidenceRuleStrongest, strongestBody)
+                    evidenceRow("What to answer", s.weakest, emberDeep,
+                                evidenceRuleAnswer, answerBody)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
             }

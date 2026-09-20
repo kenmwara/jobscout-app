@@ -90,20 +90,23 @@ struct MiniRose: View {
 /// pill grounds. (Lived in DialView.swift until the needle dial was retired.)
 func band(_ fit: Int) -> (String, Color) {
     switch fit {
-    case 80...: return ("auto", Color(hex: 0x114E0B))
-    case 70...: return ("ping", Color(hex: 0x1B1463))
-    case 55...: return ("unsure", Color(hex: 0xCC3600))
-    default: return ("near-miss", Color(hex: 0x333333))
+    /* The pre-ember palette lived here - #114e0b, #cc3600 - so the dial
+       disagreed with every other band surface, and with itself in dark,
+       since these were light values only. They are the band tokens now. */
+    case 80...: return ("auto", meadow)
+    case 70...: return ("ping", pingLabel)
+    case 55...: return ("unsure", emberDeep)
+    default: return ("near-miss", stone)
     }
 }
 
 /// The decorative fill for each band - dots and pill grounds only, never text.
 func bandFill(_ fit: Int) -> Color {
     switch fit {
-    case 80...: return Color(hex: 0x328A3B)
-    case 70...: return Color(hex: 0x4865FF)
-    case 55...: return Color(hex: 0xFF6D39)
-    default: return Color(hex: 0xDCE4FB)
+    case 80...: return autoFill
+    case 70...: return pingFill
+    case 55...: return unsureFill
+    default: return nearFill
     }
 }
 

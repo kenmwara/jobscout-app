@@ -363,7 +363,10 @@ class DemoVm(app: Application) : AndroidViewModel(app) {
     fun openApply(posting: Posting) {
         val profile = profileText().orEmpty()
         val fit = _ui.value.scores.firstOrNull { it.id == posting.id }?.fit ?: 0
-        Api.ev("apply_open", bandFor(fit).first, _ui.value.market)
+        /* bandName, not bandFor: this is a telemetry STRING and bandFor is
+           @Composable now that it reads the theme. The name never depended
+           on the colour anyway. */
+        Api.ev("apply_open", bandName(fit), _ui.value.market)
         _ui.update { u ->
             // A different resume invalidates every draft at once — they were all
             // written from the old one.

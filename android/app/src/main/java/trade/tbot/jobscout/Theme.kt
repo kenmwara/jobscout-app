@@ -38,20 +38,20 @@ val CanvasBg = Color(0xFFF8F3EB)
 val CardBg = Color.White
 val Info = Color(0xFFDCE4FB)
 val Lavender = Color(0xFFA2BAFF)
-val Meadow = Color(0xFF114E0B)
-val Forest = Color(0xFF328A3B)
-val EmberDeep = Color(0xFFCC3600)
-val Stone = Color(0xFF333333)
+/* Meadow, Forest, EmberDeep and Stone lived here holding #114e0b, #328a3b,
+   #cc3600 and #333333 - the pre-ramp palette, from before ember moved to
+   hue 63. Nothing read Meadow or Stone at all, and the other two reached
+   only PERSONA_HUES below, which nothing read either. Deleted rather than
+   updated: a colour no one asks for does not need a correct value, it
+   needs to stop being available to copy. The live band colours are in
+   Tokens.kt, per theme. */
 val Hairline = Color(0x1A080331)     // rgba(8,3,49,.10)
 val Hair2 = Color(0x2E080331)        // rgba(8,3,49,.18)
 private val WarmBrown = Color(0xFF4B4439)
 
-/** One hue per candidate (border + rose) and its card ground, same as the web. */
-val PERSONA_HUES = listOf(
-    Forest to Color(0xFFF2F7F1),
-    EmberDeep to Color(0xFFFDF3EE),
-    Indigo to Color(0xFFF1F3FD),
-)
+/* PERSONA_HUES went with them - three pre-ramp pairs, zero consumers. The
+   web's equivalent is the band ramp itself, which every client now reads
+   from its token set. */
 
 // CornerBasedShape, not Shape — Material's Shapes() will not take a plain Shape.
 val Pill = RoundedCornerShape(50)

@@ -94,18 +94,24 @@ fun BearingRose(fit: Int, modifier: Modifier = Modifier, diameter: Dp = 84.dp) {
  * fills (forest 3.93, ember 2.54) fail as text and are used only for dots and
  * pill grounds. (Lived in Dial.kt until the needle dial was retired.)
  */
-fun bandFor(fit: Int): Pair<String, Color> = when {
-    fit >= 80 -> "auto" to Color(0xFF114E0B)      // meadow
-    fit >= 70 -> "ping" to Color(0xFF1B1463)      // midnight violet
-    fit >= 55 -> "unsure" to Color(0xFFCC3600)    // ember deep
-    else -> "near-miss" to Color(0xFF333333)      // stone
+/* THE HEXES ARE GONE, not updated. These held #114e0b / #1b1463 / #cc3600
+   / #333333 - the pre-ember palette - so the dial beside a score disagreed
+   with the pill under it. They were also a duplicate of Tokens.band(fit),
+   which is theme-aware and right, while these were light-only: wrong on
+   hue AND wrong in dark. Pointing them at the tokens is what stops the two
+   drifting again, and it puts the dial inside the comparison check_palette
+   already runs against the web. */
+fun bandName(fit: Int): String = when {
+    fit >= 80 -> "auto"
+    fit >= 70 -> "ping"
+    fit >= FIT_FLOOR -> "unsure"
+    else -> "near-miss"
 }
 
+@Composable
+fun bandFor(fit: Int): Pair<String, Color> = bandName(fit) to T.band(fit).first
+
 /** The decorative fill for each band - dots and pill grounds only, never text. */
-fun bandFill(fit: Int): Color = when {
-    fit >= 80 -> Color(0xFF328A3B)
-    fit >= 70 -> Color(0xFF4865FF)
-    fit >= 55 -> Color(0xFFFF6D39)
-    else -> Color(0xFFDCE4FB)
-}
+@Composable
+fun bandFill(fit: Int): Color = T.band(fit).second
 

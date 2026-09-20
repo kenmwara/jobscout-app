@@ -18,6 +18,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.painterResource
@@ -305,17 +307,23 @@ fun MCount(text: String, modifier: Modifier = Modifier) {
  * itself. Nothing is truncated — a receipt you cannot read is not a receipt.
  */
 @Composable
-private fun MEvidence(label: String, text: String?, fg: Color, bg: Color) {
+private fun MEvidence(label: String, text: String?, fg: Color, rule: Color, body_: Color) {
     val body = text?.takeIf { it.isNotBlank() } ?: return
     Spacer(Modifier.height(7.dp))
     Column(
-        Modifier.fillMaxWidth().clip(EvShape).background(bg)
-            .padding(horizontal = 11.dp, vertical = 9.dp),
+        Modifier.fillMaxWidth().clip(EvShape).background(T.evidenceBg)
+            /* The band, as a rule down the left edge rather than across the
+               whole field. drawBehind rather than a border, because a
+               border would run round all four sides. */
+            .drawBehind {
+                drawRect(rule, size = androidx.compose.ui.geometry.Size(2.dp.toPx(), size.height))
+            }
+            .padding(start = 13.dp, end = 11.dp, top = 9.dp, bottom = 9.dp),
     ) {
         Text(label.uppercase(), fontSize = 9.5.sp, letterSpacing = 0.09.em,
             fontWeight = FontWeight.Medium, color = fg)
         Spacer(Modifier.height(4.dp))
-        Text(body, fontSize = 12.sp, lineHeight = 18.sp, color = T.text2)
+        Text(body, fontSize = 12.sp, lineHeight = 18.sp, color = body_)
     }
 }
 
@@ -527,8 +535,10 @@ fun MJob(
                     Spacer(Modifier.height(8.dp))
                     Text(it, fontSize = 12.5.sp, lineHeight = 19.sp, color = T.text2)
                 }
-                MEvidence("Strongest", strongest, T.bAuto, T.bAutoBg)
-                MEvidence("What to answer", weakest, T.bUnsure, T.bUnsureBg)
+                MEvidence("Strongest", strongest, T.bAuto,
+                          T.evidenceRuleStrongest, T.strongestBody)
+                MEvidence("What to answer", weakest, T.bUnsure,
+                          T.evidenceRuleAnswer, T.answerBody)
             } else {
                 Text(
                     policyLabel(policy),

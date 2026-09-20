@@ -55,6 +55,17 @@ data class Tokens(
     val bPing: Color, val bPingBg: Color,
     val bUnsure: Color, val bUnsureBg: Color,
     val bNear: Color, val bNearBg: Color,
+    /* SECTION 16, OPTION C. An evidence card is a neutral at the surface's
+       own hue and wears its band as a 2px rule; a tinted FILL is for pill
+       scale. The card measured 16,448px2 on the phone mockup, four times
+       the 4,000px2 the rule names, and at that size the tint stopped being
+       a hint. The body gets its own colour because it was painted with the
+       label's, which made the paragraph the label at a smaller size. */
+    val evidenceBg: Color,
+    val evidenceRuleStrongest: Color,
+    val evidenceRuleAnswer: Color,
+    val strongestBody: Color,
+    val answerBody: Color,
 ) {
     /** 140deg in CSS runs top-left to bottom-right, which is what Brush.linearGradient does by default. */
     val hero: Brush get() = Brush.linearGradient(listOf(heroFrom, heroMid, heroTo))
@@ -107,6 +118,12 @@ val LIGHT_TOKENS = Tokens(
     bPing = Color(0xFF394981), bPingBg = Color(0xFFEAF0FF),    // 270deg 7.53:1
     bUnsure = Color(0xFF713F00), bUnsureBg = Color(0xFFFBEDE1), //  63deg 7.58:1
     bNear = Color(0xFF4B4B5C), bNearBg = Color(0xFFEFF0F4),    // 285deg 7.50:1
+    // section 16 option C - the card is a neutral, the band is a rule
+    evidenceBg = Color(0xFFF1F1FA),
+    evidenceRuleStrongest = Color(0xFF3E954D),
+    evidenceRuleAnswer = Color(0xFFB86B03),
+    strongestBody = Color(0xFF495349),   // 7.15:1 on the neutral
+    answerBody = Color(0xFF584E45),      // 7.22:1 on the neutral
 )
 
 /** :root[data-theme="dark"] — derived from deep-ink #080331, not a neutral
@@ -143,6 +160,11 @@ val DARK_TOKENS = Tokens(
     bPing = Color(0xFFA4BBFF), bPingBg = Color(0xFF272E42),    // 270deg 7.15:1
     bUnsure = Color(0xFFECAF78), bUnsureBg = Color(0xFF3D2B1A), //  63deg 7.04:1
     bNear = Color(0xFFBBBCD0), bNearBg = Color(0xFF2E2E34),    // 285deg 7.21:1
+    evidenceBg = Color(0xFF2B284F),
+    evidenceRuleStrongest = Color(0xFF7AC683),
+    evidenceRuleAnswer = Color(0xFFE89F59),
+    strongestBody = Color(0xFFCCD6CD),   // 9.26:1 on the neutral
+    answerBody = Color(0xFFDBD1C8),      // 9.19:1 on the neutral
 )
 
 /* MARKET — two places, never a third. The hero is the first; the active flag
