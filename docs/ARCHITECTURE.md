@@ -141,21 +141,30 @@ flag chip already tells you, and every card in it reads as a success card.
 Binding dark to Kenya cost a second thing: nobody in Nairobi could have light,
 and nobody in Vancouver could have dark.
 
-**Theme resolution: three states, one attribute.** Absence of `data-theme`
-means *follow the OS*, and that is the default — `base.css` expresses it with
-`light-dark()` plus `color-scheme`, so the common case needs no JavaScript at
-all. `data-theme="light"` and `data-theme="dark"` force it. `data-market` is a
-separate attribute and must never set `data-theme`; all four combinations are
+**Theme resolution: three states, one attribute — and the absent state is
+LIGHT.** THEME.md's zip has absence mean "follow the OS"; the shipped
+contract inverts that, because light is the default on all four surfaces:
+**no attribute is light, `data-theme="system"` follows the device,
+`data-theme="dark"` is dark.** `base.css` carries the matching
+`:root[data-theme="system"]` block inside the `prefers-color-scheme: dark`
+query. Web, the phone mockup, Android (`ThemeChoice`) and iOS
+(`preferredColorScheme`) all agree. A harness written to the spec instead of
+the code reported two failures against a correct implementation. `data-market`
+is a separate attribute and must never set `data-theme`; all combinations are
 legal, and Kenya in light is not a bug.
 
 Every colour is therefore defined **once**, as `light-dark(light, dark)`.
 Only the non-colour differences — shadows, the halo opacity, the card border —
 are written out in all three states, because `light-dark()` cannot carry them.
 
-**The toggle is a three-state control** in the header — System / Light / Dark
-— because a two-state switch cannot express "follow the system", and that is
-the default, so a switch makes the default unreachable. It applies live; no
-reload.
+**The toggle is a three-state control** in the header — Light / Device /
+Dark — because a two-state switch cannot express "follow the device" at all.
+It applies live; no reload. Both native clients carry it too, as one word in
+the top bar that cycles the three states: both had the whole mechanism and
+no control, so Android was permanently light with no route to dark, and the
+Android sweep proves the control in **pixels** — a stored value nothing
+re-reads is the defect it guards (Compose does not observe
+SharedPreferences).
 
 ⚠ **A correction, because it is the kind of mistake that gets written down
 and believed.** An earlier version of this section claimed Chrome would not
@@ -189,10 +198,31 @@ different product: same surface, and the difference spent on the copy and the
 counts. One thing that breaks before the colour does: the segmented market
 pill stops working past three, and at four has to become a menu.
 
+**The halo is one fixed layer on `<html>`** — three blooms plus the dot
+texture, `background-attachment: fixed`, on every route. No page may paint
+its own body ground: `/saved` and `/privacy` once did, and measured 1.000 at
+every corner while `/browse` was on spec — the halo was underneath. The two
+themes use two different axes: **dark is brightness** (indigo blooms on
+ink, 1.258:1 at the corner, held within 12° of the canvas's 250° hue —
+amplitude alone tuned it into navy once) and **light is hue** (amber and
+peach at low alpha, ΔE 6.0), because white on cream caps at 1.105:1 and the
+spec's white bloom was ΔE 2.9 at its peak — on spec and invisible.
+`tools/check_halo.mjs` reads the pixels, dark on contrast, light on ΔE.
+
+**The evidence card is a neutral** (THEME.md §16, decided: option C).
+`--evidence-bg` at the surface's own hue, the band as a 2px left rule plus
+the label; colour intensity is a budget spent over area, and a tinted fill
+is for pill scale. The phone's evidence blocks measured 16,448px².
+
 The tokens live in `site/base.css` (the header comment carries the measured
-ratios) and `android/…/Tokens.kt`; `tools/check_palette.py` holds the two to
-each other. The artboards, and the theme CSS/JSON they were cut from, are in
-`docs/references/colour-2026-09-20/`.
+ratios), `android/…/Tokens.kt` and `ios/Sources/Theme.swift`;
+`tools/check_palette.py` holds the clients to the web, bans the nine retired
+pre-ember hexes from every shipped file, and refuses `--accent` as small
+text. The fit dial on both phones reads the token sets — it carried its own
+copy of the band colours and drifted. The artboards, the theme CSS/JSON, the
+rebuilt brand kit and `MEASURED.md` (what the reference files actually
+measure, including two `light-dark()` shorthands that drop the declaration)
+are in `docs/references/colour-2026-09-20/`.
 
 ### Run these before reading anything
 
@@ -204,7 +234,11 @@ this codebase actually has.
 |---|---|
 | `node tools/audit_site.mjs` | Static: dead links, orphaned ids, unreferenced assets. |
 | `node tools/audit_rendered.mjs` | The rendered DOM in both markets. Check 15: a class the stylesheet styles and the page never sets (this found 4.2KB of CSS painting a panel that had not existed for months). 16: a `setView` target with no view behind it. 17: a retry button whose label differs from the label it restores. |
-| `node tools/cycle3.mjs [--live]` | Playwright, both web markets, 46 behavioural assertions. Locally it rewrites `/apply` to `/apply.html`, because python's `http.server` has no clean URLs. |
+| `node tools/cycle3.mjs [--live] [--dark]` | Playwright, both web markets, 76 behavioural assertions, in either theme. Walks the cold route (save a job, open it from `/saved` with nothing in session, upload a file) and every landing control. A 429 from the hourly scoring guard makes board checks **skip**, counted and named — a run full of skips has verified nothing and says so. Locally it rewrites `/apply` to `/apply.html`, because python's `http.server` has no clean URLs. |
+| `node tools/sweep_mockup.mjs [--dark]` | Every control on the phone mockup, both markets: rail, upload, run, the fit floor (off a synthetic board, so it needs no API call), hearts, saved sweeps, tabs, drafts, the sheet's geometry, Copy. Unit-tests the letterhead extractor with no browser. A grounded refusal from the worker passes **when the reader is told why**. |
+| `node tools/check_halo.mjs [--live]` | The halo in pixels: six regions per route per theme, content hidden. Dark on luminance contrast and hue; light on ΔE. Its first run reported green while measuring a light page against the dark constant. |
+| `node tools/link_sweep.mjs [--live]` | Every link on every page fetched for real, both domains; a fragment counts as resolved when the destination routes it by script (`#browse`). |
+| `node tools/api_sweep.mjs` | The worker's endpoints for contract (a bad body must be refused, not 500) and the postings' own URLs. |
 | `python tools/cycle3_mobile.py` | The same pass over adb, both markets. It taps by **visible label from a fresh dump every time** — the box grows as it fills, so a coordinate captured one step earlier misses. |
 | `node tools/labels_audit.mjs` | Lists every control's text beside its element, for reading. "Watch this search" under a bell that emails nothing survived three audits because nothing ever printed the two together. |
 | `python tools/check_palette.py` | The colour law below, asserted against `site/base.css` **and** `Tokens.kt`: the market touching anything but the hero; a role under the contrast bar that applies to it; a band that fails on its own fill, duplicates another band, or takes a text colour; a primary button filled with the brand; the action wearing the auto hue; `--live` used as text; and either client drifting from the other. |
