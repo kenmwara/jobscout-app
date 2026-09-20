@@ -100,15 +100,30 @@ document.documentElement.setAttribute("data-market",
   @keyframes breathe{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(.78);opacity:.55}}
 
   /* The finished document, read properly. Inline it ran the page to five
-     screens and the three steps stopped reading as a set. */
-  .doc{border:0;padding:0;background:transparent;max-width:min(760px,calc(100vw - 32px));width:100%}
-  .doc::backdrop{background:var(--scrim)}
-  .doc .sheet{background:var(--surface);border:1px solid var(--hair);border-radius:var(--r-card);
+     screens and the three steps stopped reading as a set.
+
+     `.docwin`, not `.doc`: that one is the rendered resume above, and giving
+     the window the same class put `.doc{margin:0 0 6px}` up against the UA's
+     `margin:auto` — which is why it opened hard against the left edge — and
+     made `.dhead` mean two different things. Centring is spelled out here
+     rather than inherited, for the same reason. */
+  .docwin{border:0;padding:0;background:transparent;margin:auto;inset:0;
+    max-width:min(760px,calc(100% - 32px));width:100%}
+  .docwin::backdrop{background:var(--scrim)}
+  .docwin .sheet{background:var(--surface);border:1px solid var(--hair);border-radius:var(--r-card);
     box-shadow:var(--sh-hover);max-height:min(84vh,900px);display:flex;flex-direction:column}
-  .doc .dhead{display:flex;align-items:center;gap:12px;padding:16px 20px;border-bottom:1px solid var(--hair)}
-  .doc .dhead h3{margin:0;font:450 19px/1.2 var(--serif);color:var(--ink);flex:1 1 auto}
-  .doc .dbody{overflow:auto;padding:20px;flex:1 1 auto}
-  .doc .dfoot{display:flex;gap:10px;flex-wrap:wrap;padding:14px 20px;border-top:1px solid var(--hair)}
+  .docwin .whead{display:flex;align-items:center;gap:12px;padding:16px 20px;border-bottom:1px solid var(--hair)}
+  .docwin .whead h3{margin:0;font:450 19px/1.2 var(--serif);color:var(--ink);flex:1 1 auto}
+  .docwin .dbody{overflow:auto;padding:20px;flex:1 1 auto}
+  .docwin .dfoot{display:flex;gap:10px;flex-wrap:wrap;padding:14px 20px;border-top:1px solid var(--hair)}
+  /* Scale only. A `translateY` in here is a POSITION the element holds while
+     the animation is at frame zero — and an animation is paused at frame zero
+     in a hidden document, so the window rested 8px low and measured off-centre.
+     Second time this trap has bitten today; the rule is that an entrance may
+     never hold the element away from where it belongs. A 1.5% scale frozen is
+     invisible and does not move the box's centre. */
+  html.anim .docwin[open]{animation:winin .18s var(--ease)}
+  @keyframes winin{from{transform:scale(.985)}}
   .readmore{appearance:none;background:transparent;border:0;padding:6px 0 0;cursor:pointer;
     font:500 13.5px/1 var(--sans);color:var(--accent);text-decoration:underline;text-underline-offset:3px}
   .readmore:hover{color:var(--ink)}
@@ -147,9 +162,9 @@ document.documentElement.setAttribute("data-market",
   </header>
 </div>
 
-<dialog class="doc" id="docModal">
+<dialog class="docwin" id="docModal">
   <div class="sheet">
-    <div class="dhead"><h3 id="docTitle"></h3>
+    <div class="whead"><h3 id="docTitle"></h3>
       <button class="btn2" type="button" id="docClose">Close</button></div>
     <div class="dbody" id="docBody"></div>
     <div class="dfoot" id="docFoot"></div>
@@ -424,16 +439,27 @@ function waiting(id, what){
 /* A finished document, in a window of its own. <dialog> brings Esc, the
    backdrop and focus handling; the card keeps a preview so nothing is hidden
    behind a click. */
-function readable(id, title, plainFor){
+/* `now` opens it as soon as the document exists. Waiting for a second click
+   to read the thing you just paid eight seconds for is a step with no
+   purpose — but the questions list is a checklist you work through beside the
+   employer's form, so that one stays on the page where it is useful. */
+function readable(id, title, now){
   const out = $("#out-" + id);
-  if (out.scrollHeight <= 300) return;            // short enough to just read
-  out.classList.add("clipped");
+  /* Length decides whether the card's copy is CLIPPED. It used to decide
+     whether there was a window at all, which meant a short letter opened
+     nothing — "straight to the window" is not a thing that happens
+     sometimes. */
+  if (out.scrollHeight > 300) out.classList.add("clipped");
+
   const b = document.createElement("button");
   b.className = "readmore"; b.type = "button";
   b.textContent = "Read the whole thing \u2192";
   b.onclick = () => {
     $("#docTitle").textContent = title;
     $("#docBody").innerHTML = out.innerHTML;
+    /* The window carries the same actions the card does, driven by clicking
+       the originals — so Copy and Download keep their one implementation and
+       their "Copied" feedback, wherever they are pressed from. */
     const foot = $("#docFoot"); foot.innerHTML = "";
     for (const src of ["cp-" + id, "dl-" + id, "dt-" + id]) {
       const o = document.getElementById(src);
@@ -445,9 +471,20 @@ function readable(id, title, plainFor){
     }
     $("#docModal").showModal();
   };
+  // The way back in, always: a document you closed has to be findable.
   out.after(b);
+  if (now) b.onclick();
 }
 $("#docClose").onclick = () => $("#docModal").close();
+/* A click on the backdrop reports the DIALOG ITSELF as its target, because
+   the backdrop is the dialog's own pseudo-element and the sheet is a child —
+   so target identity tells "outside" from "inside" exactly, with no geometry.
+   (A rect test looked equivalent and is not: any click event without real
+   coordinates reads as 0,0 and closed the window from inside it.) <dialog>
+   does not do this natively; Escape it already handles. */
+$("#docModal").addEventListener("click", e => {
+  if (e.target === $("#docModal")) $("#docModal").close();
+});
 function download(blob, name){
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
@@ -596,7 +633,7 @@ $("#do-letter").onclick = async () => {
     $("#do-letter").hidden = true;
     $("#gr-letter").textContent = "Grounded only in the resume you gave.";
     offer("letter", d.letter, `cover-letter-${slug}.txt`);
-    readable("letter", "Cover letter");
+    readable("letter", "Cover letter", true);
   }catch(e){ failed("letter", "Letter API unreachable: " + e, "Write the letter"); }
 };
 
@@ -640,7 +677,7 @@ $("#do-tailor").onclick = async () => {
     const cp = $("#cp-tailor");
     cp.hidden = false;
     cp.onclick = () => copyInto(cp, plain, "tailor");
-    readable("tailor", "Your resume, rebuilt for this job");
+    readable("tailor", "Your resume, rebuilt for this job", true);
   }catch(e){ failed("tailor", "Resume API unreachable: " + e, "Rebuild my resume"); }
 };
 
