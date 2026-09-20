@@ -11,6 +11,12 @@
 import { chromium } from "playwright";
 
 const LIVE = process.argv.includes("--live");
+/* --dark runs the whole sweep with the reader's stored preference set to
+   dark. An init script runs before any page script on every navigation,
+   so the head stamp sees it and the first paint is already dark - the
+   same path a real reader who chose dark takes. The default sweep is
+   light, which is the default on every surface. */
+const DARK = process.argv.includes("--dark");
 const BASES = LIVE
   ? [["ca", "https://jobscout.page"], ["ke", "https://nairobi.jobscout.page"]]
   : [["ca", "http://localhost:8787"], ["ke", "http://localhost:8787?market=ke"]];
@@ -55,6 +61,10 @@ for (const [market, base] of BASES) {
     });
   }
 
+  if (DARK) await page.addInitScript(() => {
+    try { localStorage.setItem("jobscout.theme", "dark"); } catch (e) {}
+  });
+
   const errors = [];
   /* THE HOURLY GUARD IS NOT A BUG. Sweeping both markets means two scoring
      runs and a draft, which is enough to trip it - and when it trips, the
@@ -74,7 +84,7 @@ for (const [market, base] of BASES) {
     errors.push(m.text());
   });
 
-  console.log(`\n── ${market.toUpperCase()} ── ${base}`);
+  console.log(`\n── ${market.toUpperCase()}${DARK ? " · dark" : " · light"} ── ${base}`);
   await page.goto(base, { waitUntil: "networkidle" });
   await page.evaluate(() => { try { localStorage.clear(); sessionStorage.clear(); } catch (e) {} });
   await page.reload({ waitUntil: "networkidle" });

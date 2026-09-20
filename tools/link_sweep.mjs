@@ -80,7 +80,14 @@ for (const origin of ORIGINS) {
         if (!(typeof s === "number" && s >= 200 && s < 400)) { bad(`/${p} → ${abs} → ${s}`); continue; }
         if (base.startsWith(origin)) {
           const target = await (await fetch(base, { headers: UA })).text();
-          if (!idsOf(target).has(frag)) bad(`/${p} → ${abs} — ${base} has no id "${frag}"`);
+          /* A ROUTE, not an anchor. index.html reads location.hash on load
+             and opens the browse view for "#browse" - there is no element
+             with that id, and adding one would make the browser scroll-to-
+             anchor against the script. The link works (cycle3 presses it);
+             the question is whether the destination HANDLES the hash. */
+          const routed = target.includes(`"#${frag}"`) || target.includes(`'#${frag}'`);
+          if (!idsOf(target).has(frag) && !routed)
+            bad(`/${p} → ${abs} — ${base} has no id "${frag}" and does not route it`);
         }
         continue;
       }

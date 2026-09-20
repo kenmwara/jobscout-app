@@ -21,6 +21,7 @@ import { chromium } from "playwright";
 import { readFile } from "node:fs/promises";
 
 const KEEP = process.argv.includes("--keep");
+const DARK = process.argv.includes("--dark");
 /* NOT `URL`: a module-scope const by that name shadows the global URL
    constructor, and `new URL(...)` two functions below then throws. */
 const PAGE = "http://localhost:4174/mockups/mobile.html";
@@ -117,7 +118,7 @@ const run = async () => {
   page.on("response", (r) => { if (r.status() === 429) limited = true; });
 
   for (const market of ["ca", "ke"]) {
-    console.log(`\n── ${market.toUpperCase()} ──`);
+    console.log(`\n── ${market.toUpperCase()}${DARK ? " · dark" : " · light"} ──`);
     await page.goto(PAGE, { waitUntil: "networkidle" });
     await page.evaluate(() => { try { localStorage.clear(); } catch (e) {} });
     await page.reload({ waitUntil: "networkidle" });
@@ -152,7 +153,11 @@ const run = async () => {
       const got = await page.getAttribute("html", "data-theme");
       is(got === expect, `theme ${t}: data-theme is ${got === null ? "absent" : got}`);
     }
-    await page.click(`#segTheme button[data-t="light"]`);
+    /* The flows below run in the theme the sweep was asked for. */
+    await page.click(`#segTheme button[data-t="${DARK ? "dark" : "light"}"]`);
+    await page.waitForTimeout(250);
+    is(await page.getAttribute("html", "data-theme") === (DARK ? "dark" : null),
+       `the flows run in ${DARK ? "dark" : "light"}`);
 
     for (const p of ["ios", "android"]) {
       await page.click(`#segPlat button[data-p="${p}"]`);
