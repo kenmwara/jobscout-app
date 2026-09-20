@@ -174,6 +174,18 @@ p.sub{font:400 13.5px/1.5 var(--sans);color:var(--text2);margin:0 0 16px}
   background:var(--btn);color:var(--btn-ink);border-radius:var(--r-pill);
   font:500 14px/1 var(--sans);padding:13px}
 .cta.quiet{background:transparent;color:var(--ink);border:1px solid var(--hair2)}
+/* Save this SEARCH - the sweep, not a posting. A bookmark, because a bell
+   would promise mail that nothing sends. */
+.savesearch{
+  display:flex;align-items:center;gap:8px;width:100%;margin:0 0 14px;
+  appearance:none;cursor:pointer;background:var(--surface);
+  border:1px solid var(--hair);border-radius:var(--r-input);
+  padding:11px 13px;font:500 13px/1 var(--sans);color:var(--text2);text-align:left}
+.savesearch svg{width:16px;height:16px;flex:0 0 auto;fill:none;stroke:currentColor;
+  stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.savesearch[aria-pressed="true"]{color:var(--accent);border-color:var(--accent)}
+.savesearch[aria-pressed="true"] svg{fill:currentColor}
+.savesearch .n{margin-left:auto;color:var(--text2);font-weight:400}
 .heart{appearance:none;border:0;background:transparent;cursor:pointer;color:var(--text2);padding:4px}
 .heart svg{width:19px;height:19px;stroke:currentColor;fill:none;stroke-width:1.7}
 .heart[aria-pressed="true"]{color:var(--accent)}
@@ -257,6 +269,7 @@ const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c =>
 const D = document.documentElement;
 
 let FEED = null, market = "ca", screen = "home", saved = new Set(), current = null, ran = false;
+let savedSearch = false;
 
 /* A stable pseudo-score so the mockup shows the four bands without pretending
    Claude produced them. djb2 over the id, mapped 38..96. */
@@ -283,6 +296,9 @@ const cardHTML = (p, full) => {
       <span class="logo">${esc((p.company || "?").slice(0, 2).toUpperCase())}</span>
       <div class="t"><p class="r">${esc(p.title)}</p><p class="c">${esc(p.company)}</p></div>
       <span class="fit" style="color:var(${tok})">${p.fit}</span>
+      <button class="heart" type="button" data-heart="${esc(p.id)}"
+              aria-pressed="${saved.has(p.id)}"
+              aria-label="${saved.has(p.id) ? "Saved" : "Save"} ${esc(p.title)}">${HEART}</button>
     </div>
     <span class="band" style="color:var(${tok});background:var(${tok}-bg)">${word}</span>
     <span class="pill">${pol}</span>
@@ -350,6 +366,11 @@ const SCREENS = {
     <p class="sub">8 scored of ${postings().length} swept &middot; ${scoredReal
       ? "scored by Claude just now" : "example scores &mdash; paste a resume to score for real"}
       ${runErr ? `<br><span style="color:var(--b-unsure)">${esc(runErr)}</span>` : ""}</p>
+    <button class="savesearch" type="button" id="saveSearch" aria-pressed="${savedSearch}">
+      <svg viewBox="0 0 24 24"><path d="M6.5 3.5h11v17l-5.5-4-5.5 4z"/></svg>
+      ${savedSearch ? "Search saved" : "Save this search"}
+      <span class="n">${market === "ke" ? "Kenya" : "Canada"} &middot; today</span>
+    </button>
     ${scored().map(p => cardHTML(p)).join("")}`,
 
   apply: () => {
@@ -367,11 +388,18 @@ const SCREENS = {
 
   saved: () => {
     const rows = scored().filter(p => saved.has(p.id));
+    const n = rows.length + (savedSearch ? 1 : 0);
     return `${head()}
       <h2 class="big">Saved</h2>
-      <p class="sub">${rows.length} kept &middot; stays on this device</p>
+      <p class="sub">${n} kept &middot; stays on this device</p>
+      ${savedSearch ? `<button class="savesearch" type="button" id="saveSearch"
+          aria-pressed="true">
+        <svg viewBox="0 0 24 24"><path d="M6.5 3.5h11v17l-5.5-4-5.5 4z"/></svg>
+        ${market === "ke" ? "Kenya" : "Canada"} sweep
+        <span class="n">tap to unsave</span></button>` : ""}
       ${rows.length ? rows.map(p => cardHTML(p)).join("")
-        : `<p class="empty">Nothing saved yet.<br>Open a match and tap Save.</p>`}`;
+        : (savedSearch ? "" : `<p class="empty">Nothing saved yet.<br>
+            Tap the heart on a match, or save the whole search.</p>`)}`;
   },
 };
 
@@ -468,6 +496,13 @@ document.addEventListener("keydown", e => {
 
 document.addEventListener("click", e => {
   if (e.target.id === "runBtn") return runScore();
+  if (e.target.closest("#saveSearch")) { savedSearch = !savedSearch; return paint(); }
+  const h = e.target.closest("[data-heart]");
+  if (h) {
+    const id = h.dataset.heart;
+    saved.has(id) ? saved.delete(id) : saved.add(id);
+    return paint();
+  }
   const go = e.target.closest("[data-go]");
   if (go) {
     const to = go.dataset.go;
