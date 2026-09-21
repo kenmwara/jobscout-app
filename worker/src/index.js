@@ -133,13 +133,22 @@ async function scoreOne(env, profile, posting, m = "ca") {
     "the only subject.",
     m === "ke" ? RUBRIC_KE : "",
     'Reply ONLY with JSON: {"fit": <int>, "verdict": "<one sentence>",',
-    '"strongest": "<the single best alignment>",',
+    /* Both lines are gated at render by site/evidence.js (design system v3,
+       the honesty law as code): a STRONGEST line must point at the DOCUMENT
+       ("the profile shows...", "six years of..."), an answer line at the
+       POSTING ("the posting asks for..."), and either is ONE sentence under
+       200 characters or it is not shown at all. Measured 2026-09-21 before
+       this wording: 0/8 and 2/8 passed. */
+    '"strongest": "<the single best alignment: ONE sentence under 200 characters that names what the',
+    'PROFILE SHOWS, phrased about the document (e.g. "The profile shows six years of ..."), only what is',
+    'there, never a gap>",',
     /* `weakest` is read by a candidate who is deciding what to rewrite, so it is
        asked for as the thing to ADDRESS rather than as a list of what they are
        missing. Same information, and the difference between a to-do and a
        dressing-down is entirely in how it is phrased. */
-    '"weakest": "<the one thing this posting most wants to see that the profile',
-    'does not yet evidence, written as what the candidate should put in front of',
+    '"weakest": "<the one thing this POSTING most wants to see that the profile',
+    'does not yet evidence: ONE sentence under 200 characters that names what the posting asks for',
+    '(e.g. "The posting asks for ..."), written as what the candidate should put in front of',
     'it — never as a list of what they lack, and never a judgement of them>"}',
   ].join(" ");
   const user = `PROFILE:\n${profile}\n\nPOSTING:\n${posting.title} — ${posting.company}\n${posting.location} · ${posting.remote_policy}\n${posting.summary || ""}`;
@@ -443,7 +452,7 @@ export default {
     }
 
     if (url.pathname === "/api/letter" && request.method === "POST") {
-      const g = await guarded(request, env, "letter drafting resumes tomorrow");
+      const g = await guarded(request, env, "letter drafting returns tomorrow");
       if (g instanceof Response) return g;
       const { profile, p, stretch } = g;
       const common =
@@ -485,15 +494,15 @@ export default {
     // reorders and rewords; it never adds a skill. The gap list is the tailoring
     // the candidate does themselves, and only if it is true.
     if (url.pathname === "/api/tailor" && request.method === "POST") {
-      const g = await guarded(request, env, "resume tailoring resumes tomorrow");
+      const g = await guarded(request, env, "résumé tailoring returns tomorrow");
       if (g instanceof Response) return g;
       const { profile, p } = g;
       const d = await draft(env, 900,
-        "You tailor a candidate's resume toward one job posting using ONLY what the profile contains. " +
+        "You tailor a candidate's résumé toward one job posting using ONLY what the profile contains. " +
         "Return JSON only, no prose, no code fence: " +
         '{"summary": string, "bullets": [{"text": string, "from": string}], "gaps": [{"asks": string, "note": string}]}. ' +
         "summary: two sentences a recruiter reads first, built from the profile's own facts and aimed at this posting. " +
-        "bullets: 4-6 resume bullets, ordered by relevance to the posting. Each has `from`: a phrase copied VERBATIM from the profile, " +
+        "bullets: 4-6 résumé bullets, ordered by relevance to the posting. Each has `from`: a phrase copied VERBATIM from the profile, " +
         "and `text`: that phrase reworded toward the posting in at most 18 words, claiming nothing beyond `from` — no task, tool, " +
         "responsibility, employer, number or credential the phrase does not contain. If the profile names a skill without describing work, " +
         "the bullet names the skill and stops. " +
@@ -523,16 +532,16 @@ export default {
     // section of the original survives: nothing is dropped for being off-topic,
     // because a resume with a hole in its dates is worse than one that rambles.
     if (url.pathname === "/api/resume" && request.method === "POST") {
-      const g = await guarded(request, env, "resume rebuilding resumes tomorrow");
+      const g = await guarded(request, env, "résumé rebuilding returns tomorrow");
       if (g instanceof Response) return g;
       const { profile, p, exclude } = g;
       const SYS =
         (exclude.length ? "Do NOT use any of these, which the profile does not contain: " + exclude.join(", ") + ". " : "") +
-        "You rewrite a candidate's entire resume for one job posting. Return JSON only, no prose, no code fence: " +
+        "You rewrite a candidate's entire résumé for one job posting. Return JSON only, no prose, no code fence: " +
         '{"name": string, "contact": string, "headline": string, ' +
         '"sections": [{"heading": string, "items": [{"title": string, "meta": string, "bullets": [string]}]}], ' +
         '"gaps": [{"asks": string, "note": string}]}. ' +
-        "Reproduce the WHOLE resume, every role, school, certificate and skill the profile contains, in a sensible " +
+        "Reproduce the WHOLE résumé, every role, school, certificate and skill the profile contains, in a sensible " +
         "order with the most relevant first. name and contact come verbatim from the profile; contact is one line. " +
         "headline: one line naming what they are, aimed at this posting. " +
         "Each item: title (role, qualification or skill group), meta (employer, dates, place — exactly as the profile " +
@@ -540,7 +549,7 @@ export default {
         "An item with no bullets in the profile keeps an empty bullets array. " +
         "ABSOLUTE RULE: every employer, job title, date, number, percentage, tool, product, certificate and " +
         "qualification in your output must already appear in the profile. Rewording is the job; adding is not. " +
-        "If the posting asks for something the profile does not have, leave it out of the resume and put it in gaps: " +
+        "If the posting asks for something the profile does not have, leave it out of the résumé and put it in gaps: " +
         "asks = the requirement in the posting's words; note = one sentence on what the candidate could add here, " +
         "and only if it is true of them. Up to 5. These are the lines they add themselves before they send it.";
       const ASK = `PROFILE:\n${profile}\n\nPOSTING:\n${postingText(p)}`;
@@ -616,7 +625,7 @@ export default {
       }
 
       if (!out || !Array.isArray(out.sections))
-        return json(502, { error: "upstream", detail: "The model did not return a usable resume. Nothing was charged to you." });
+        return json(502, { error: "upstream", detail: "The model did not return a usable résumé. Nothing was charged to you." });
       if (invented.length)
         /* 422, NOT 502. The draft was understood and refused on purpose;
            502 says the upstream broke, which put a red line in the
@@ -624,7 +633,7 @@ export default {
            would read as an outage on any error-rate graph. The guard
            doing its job must not look like a fault. */
         return json(422, { error: "ungrounded", invented: invented.slice(0, 8),
-          detail: `The draft used ${invented.length} thing${invented.length > 1 ? "s" : ""} your resume does not contain (${invented.slice(0, 3).join(", ")}), twice. It was refused rather than shown to you.` });
+          detail: `The draft used ${invented.length} thing${invented.length > 1 ? "s" : ""} your résumé does not contain (${invented.slice(0, 3).join(", ")}), twice. It was refused rather than shown to you.` });
 
       await recordRun(env, g.key, spentIn, spentOut, cost);
       return json(200, {
@@ -652,7 +661,7 @@ export default {
     // The screening questions, read from the employer's own form and answered
     // from the profile alone. See the block comment above GH_URL.
     if (url.pathname === "/api/answers" && request.method === "POST") {
-      const g = await guarded(request, env, "answer drafting resumes tomorrow");
+      const g = await guarded(request, env, "answer drafting returns tomorrow");
       if (g instanceof Response) return g;
       const { profile, p } = g;
 

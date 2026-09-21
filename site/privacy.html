@@ -15,6 +15,7 @@
 <meta name="theme-color" content="#f8f3eb" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#0a0524" media="(prefers-color-scheme: dark)">
 <link rel="stylesheet" href="fonts-embedded.css">
+<link rel="stylesheet" href="tokens.css">
 <link rel="stylesheet" href="base.css">
 <script>/* Two independent attributes, stamped before first paint.
 
@@ -76,26 +77,29 @@
      in both themes while /browse measured on spec. The halo was never missing
      from this route; it was underneath. base.css carries the canvas, the three
      blooms and the same dot texture on <html>, once, for every page. */
-  body{margin:0;color:var(--text);font-family:var(--sans);font-size:16px;line-height:1.6;
+  body{margin:0;color:var(--text);font-family:var(--sans);font-size:var(--t3);line-height:1.6;
     -webkit-font-smoothing:antialiased}
-  .wrap{max-width:720px;margin:0 auto;padding:0 20px 80px}
-  header{padding:14px 0 0}
-  header .pill{display:flex;align-items:center;gap:12px;background:var(--surface);border-radius:1600px;box-shadow:var(--sh);padding:12px 18px 12px 18px}
-  .brand{font-family:var(--serif);font-weight:400;font-size:21px;letter-spacing:-.01em;color:var(--ink);text-decoration:none}
-  h1{font-family:var(--serif);font-weight:400;font-size:clamp(34px,6vw,46px);line-height:1.08;letter-spacing:-.02em;margin:18px 0 8px;text-wrap:balance}
-  .sub{color:var(--text2);font-size:17px;margin:0 0 34px}
-  h2{font-family:var(--serif);font-weight:400;font-size:27px;letter-spacing:-.015em;margin:40px 0 8px}
+  .wrap{max-width:720px;margin:0 auto;padding:0 var(--s5) var(--s13)}
+  header{padding:var(--s3) 0 0}
+  header .pill{display:flex;align-items:center;gap:var(--s3);background:var(--surface);border-radius:1600px;box-shadow:var(--sh);padding:var(--s3) var(--s4) var(--s3) var(--s4)}
+  .brand{font-family:var(--serif);font-weight:400;font-size:var(--t5);letter-spacing:-.01em;color:var(--ink);text-decoration:none}
+  h1{font-family:var(--serif);font-weight:400;font-size:clamp(var(--t7),6vw,46px);line-height:1.08;letter-spacing:-.02em;margin:var(--s4) 0 var(--s2);text-wrap:balance}
+  .sub{color:var(--text2);font-size:var(--t3);margin:0 0 var(--s7)}
+  h2{font-family:var(--serif);font-weight:400;font-size:var(--t6);letter-spacing:-.015em;margin:var(--s8) 0 var(--s2)}
   p,li{color:var(--text2)}
-  li{margin:6px 0}
+  li{margin:var(--s1) 0}
   b{color:var(--ink);font-weight:500}
   a{color:var(--midnight)}
-  .card{background:var(--surface);border-radius:16px;box-shadow:var(--sh);padding:22px 24px;margin:18px 0}
+  .card{background:var(--surface);border-radius:16px;box-shadow:var(--sh);padding:var(--s5) var(--s6);margin:var(--s4) 0}
   .card p{margin:0}
-  .never{display:flex;flex-wrap:wrap;gap:9px;margin:14px 0 0;padding:0;list-style:none}
-  .never li{margin:0;font-size:13px;font-weight:500;color:var(--midnight);background:var(--info);border-radius:1600px;padding:6px 14px}
-  .foot{margin-top:56px;padding-top:18px;border-top:1px solid var(--hair);font-size:13px;color:var(--text3)}
+  .never{display:flex;flex-wrap:wrap;gap:var(--s2);margin:var(--s3) 0 0;padding:0;list-style:none}
+  .never li{margin:0;font-size:var(--t2);font-weight:500;color:var(--midnight);background:var(--info);border-radius:1600px;padding:var(--s1) var(--s3)}
+  .foot{margin-top:var(--s10);padding-top:var(--s4);border-top:1px solid var(--hair);font-size:var(--t2);color:var(--text3)}
   /* the page mark (base.css) sits at z-index:-1 inside this stacking context */
   body{position:relative;z-index:0}
+/* the phone header (base.css) hides this row-level nav at 620px and under; an
+   inline style used to beat it and the nav wrapped under the brand */
+nav.main{margin-left:auto;display:flex;gap:var(--s2);align-items:center}
 </style>
 </head>
 <body>
@@ -128,7 +132,7 @@ if (!matchMedia("(prefers-reduced-motion: reduce)").matches) document.documentEl
         <svg viewBox="-3.5 -3.5 31 31" aria-hidden="true"><circle cx="12" cy="1" r="2.275"/><circle cx="19.7782" cy="4.2218" r="2.5694"/><circle cx="23" cy="12" r="2.8639"/><circle cx="19.7782" cy="19.7782" r="3.1583"/><circle cx="12" cy="23" r="3.4527"/><circle cx="4.2218" cy="19.7782" r="3.7471"/><circle cx="1" cy="12" r="4.0416"/><circle cx="4.2218" cy="4.2218" r="4.336"/></svg>
         JobScout
       </a>
-      <nav class="main" style="margin-left:auto;display:flex;gap:8px;align-items:center">
+      <nav class="main">
         <a href="./#browse">Browse</a>
         <a href="saved">Saved jobs</a>
       </nav>
@@ -142,9 +146,9 @@ if (!matchMedia("(prefers-reduced-motion: reduce)").matches) document.documentEl
   <p class="sub">This covers the web demo at jobscout.page and the JobScout Android and iOS apps. Same backend, same rules. Effective 18 September 2026.</p>
 
   <div class="card">
-    <p><b>The short version.</b> JobScout has no accounts, no ads, no third-party analytics and no tracking SDKs. The only network calls it makes are to its own API. Resume text you paste or upload is used for one scoring run and then discarded. Nothing you type is ever written to a database or a log. It does count which <i>steps</i> get used — thirteen named actions, listed below — with no personal data in the count and no way to tie one to you.</p>
+    <p><b>The short version.</b> JobScout has no accounts, no ads, no third-party analytics and no tracking SDKs. The only network calls it makes are to its own API. Résumé text you paste or upload is used for one scoring run and then discarded. Nothing you type is ever written to a database or a log. It does count which <i>steps</i> get used — thirteen named actions, listed below — with no personal data in the count and no way to tie one to you.</p>
     <ul class="never">
-      <li>no accounts</li><li>no ads</li><li>no third-party analytics</li><li>no tracking SDKs</li><li>no resume storage</li><li>no selling of anything</li>
+      <li>no accounts</li><li>no ads</li><li>no third-party analytics</li><li>no tracking SDKs</li><li>no résumé storage</li><li>no selling of anything</li>
     </ul>
   </div>
 
@@ -157,17 +161,17 @@ if (!matchMedia("(prefers-reduced-motion: reduce)").matches) document.documentEl
   <p>JobScout counts which steps people use, because a job tool that is redesigned on the maker's taste rather than on evidence wastes everyone's time. A counted event is one word from this fixed list — nothing else can be written, and the list is enforced in the code:</p>
   <ul>
     <li><b>open</b>, <b>sample</b>, <b>upload</b>, <b>paste</b>, <b>where</b>, <b>remote</b> — a tab opened, and which of the setup controls were touched.</li>
-    <li><b>run</b>, <b>scored</b>, <b>letter</b>, <b>tailor</b> — the pipeline ran, what band the best match landed in, and whether a cover letter or a tailored resume was asked for.</li>
+    <li><b>run</b>, <b>scored</b>, <b>letter</b>, <b>tailor</b> — the pipeline ran, what band the best match landed in, and whether a cover letter or a tailored résumé was asked for.</li>
     <li><b>apply</b>, <b>save</b>, <b>outcome</b> — a posting was opened at the employer's site, kept on the shortlist, or marked with what happened: applied, replied, interview, offer or declined.</li>
   </ul>
   <p>Each one is stored with the date, the market (Canada or Kenya), the surface (web, Android or iOS), and a random identifier that is minted per browser tab, dies when the tab closes, and exists only so the steps of a single visit can be read in order. On the saved-jobs page the identifier is per browser rather than per tab, because an outcome is marked days after the run that produced it.</p>
-  <p><b>What a counted event never contains:</b> your IP address, your resume or any part of it, a job title, a company, a link, a score, a name, an email, or anything that could distinguish you from anyone else using JobScout that day. It is not shared with anyone, it drives no advertising, and it follows you nowhere else on the web. The list above is the whole of it: if a field is not named there, it is not recorded, and the code that makes that true is public at <a href="https://github.com/kenmwara/jobscout-app">github.com/kenmwara/jobscout-app</a>.</p>
+  <p><b>What a counted event never contains:</b> your IP address, your résumé or any part of it, a job title, a company, a link, a score, a name, an email, or anything that could distinguish you from anyone else using JobScout that day. It is not shared with anyone, it drives no advertising, and it follows you nowhere else on the web. The list above is the whole of it: if a field is not named there, it is not recorded, and the code that makes that true is public at <a href="https://github.com/kenmwara/jobscout-app">github.com/kenmwara/jobscout-app</a>.</p>
   <p>If you would rather not be counted, browser settings that block <code>sendBeacon</code>, or any content blocker, stop it, and the page works exactly the same.</p>
 
   <h2>What the server records to keep the demo up</h2>
   <p>Two more things, both to keep a free public demo from being abused:</p>
   <ul>
-    <li><b>A salted SHA-256 hash of your IP address</b>, the time, and the token count and cost of each scoring run. The hash enforces a per-hour cap on runs and cannot be turned back into your address. No profile text, no resume text, no scores are stored with it. It is kept in a separate table from the counted events above, and the two are never joined.</li>
+    <li><b>A salted SHA-256 hash of your IP address</b>, the time, and the token count and cost of each scoring run. The hash enforces a per-hour cap on runs and cannot be turned back into your address. No profile text, no résumé text, no scores are stored with it. It is kept in a separate table from the counted events above, and the two are never joined.</li>
     <li><b>A running total of the day's spend</b>, so the demo can stop calling Claude when its daily budget is used up and serve a cached showcase run instead. The cached run is one the operator seeded, not anyone's live input.</li>
   </ul>
   <p>Cloudflare, which hosts the API and this site, keeps its own standard request logs under <a href="https://www.cloudflare.com/privacypolicy/" rel="noopener">its privacy policy</a>.</p>
@@ -176,14 +180,14 @@ if (!matchMedia("(prefers-reduced-motion: reduce)").matches) document.documentEl
   <p>The feed is public job postings gathered by JobScout's own pipeline from public job boards and company career pages. It contains no personal data about you. <b>View posting</b> opens the employer's own site in your browser; from there, their privacy policy applies. JobScout never submits an application on your behalf.</p>
 
   <h2>Permissions</h2>
-  <p>The Android app asks for one permission: <b>Internet</b>. Uploading a resume uses the system file picker, so the app never gets access to your files beyond the one you choose. It does not read contacts, location, the camera, or anything else.</p>
+  <p>The Android app asks for one permission: <b>Internet</b>. Uploading a résumé uses the system file picker, so the app never gets access to your files beyond the one you choose. It does not read contacts, location, the camera, or anything else.</p>
 
   <h2>Children</h2>
   <p>JobScout is a job-search tool for adults and is not directed at anyone under 16.</p>
 
   <h2>Your choices</h2>
   <ul>
-    <li>Use a built-in persona instead of your own resume, and nothing about you reaches the API at all.</li>
+    <li>Use a built-in persona instead of your own résumé, and nothing about you reaches the API at all.</li>
     <li>Leave the <b>what happened?</b> box alone on the saved page and no outcome is ever counted.</li>
     <li>Delete saved jobs at any time with <b>Clear all</b>, or by uninstalling.</li>
     <li>Questions or a deletion request: <a href="mailto:ken@tbot.trade">ken@tbot.trade</a>. Since no profile text is stored, there is nothing to delete server-side, but ask anyway and you'll get a straight answer.</li>
@@ -201,7 +205,7 @@ if (!matchMedia("(prefers-reduced-motion: reduce)").matches) document.documentEl
     <div class="fgrid">
       <div>
         <p class="fbrand"><a href="./">JobScout</a></p>
-        <p class="fnote">Reads your resume, drops what cannot fit, and tells you why about the rest.</p>
+        <p class="fnote">Reads your résumé, drops what cannot fit, and tells you why about the rest.</p>
       </div>
       <div>
         <h4>Find work</h4>

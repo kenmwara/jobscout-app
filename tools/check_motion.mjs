@@ -10,6 +10,8 @@ import { PNG } from "pngjs";
 
 const SITE = "http://localhost:8765/site", MOCK = "http://localhost:8765/mockups";
 const fails = [];
+/* --mutate <name>: break the thing on purpose; exit 0 = the check caught it, 2 = asleep */
+const MUTATE = process.argv.indexOf("--mutate") < 0 ? null : process.argv[process.argv.indexOf("--mutate") + 1];
 const ok = m => console.log("  ok    " + m);
 const bad = m => { fails.push(m); console.log("  FAIL  " + m); };
 const is = (c, m) => (c ? ok : bad)(m);
@@ -122,15 +124,29 @@ for (const theme of ["light", "dark"]) {
       return { height: row.offsetHeight, inside, visible: kids.map(el => el.className || el.tagName).join(" "), chip: document.querySelector(".hchip")?.textContent.trim() };
     });
     is(h.height <= 60 && h.inside, `${theme} ${w}px: the header is one row, ${h.height}px (${h.visible}; chip "${h.chip}")`);
+    if (MUTATE === "selected-as-action") await hp.addStyleTag({ content: ".hsheet [aria-pressed='true']{background:var(--action) !important}" });
     const reach = await hp.evaluate(() => {
       const before = [...document.querySelectorAll("nav.main a")].map(a => a.getAttribute("href"));
       window.__hsheet.open();
       const inSheet = [...document.querySelectorAll(".hsheet:not([hidden]) nav.main a")].map(a => a.getAttribute("href"));
       const thm = document.querySelectorAll(".hsheet:not([hidden]) .thm button").length;
       const mkt = document.querySelectorAll(".hsheet:not([hidden]) .mkt button").length;
+      /* v3 stage 6: rows are 56px targets with a chevron; SELECTED is not
+         PRIMARY (a state and an action never share a fill); the scrim paints;
+         navigation comes first */
+      const rows = [...document.querySelectorAll(".hsheet:not([hidden]) nav.main a")].map(a => ({ h: a.offsetHeight, chev: parseFloat(getComputedStyle(a, "::after").borderRightWidth) || 0 }));
+      const probe = document.createElement("i"); probe.style.cssText = "background:var(--action);position:absolute;visibility:hidden"; document.body.appendChild(probe);
+      const actionBg = getComputedStyle(probe).backgroundColor; probe.remove();
+      const pressed = [...document.querySelectorAll(".hsheet:not([hidden]) [aria-pressed='true']")].map(b => getComputedStyle(b).backgroundColor);
+      const scrim = getComputedStyle(document.querySelector(".hsheet:not([hidden]) .hs-scrim")).backgroundColor;
+      const order = [...document.querySelectorAll(".hsheet:not([hidden]) .hs-sec h3")].map(h => h.textContent.trim());
       window.__hsheet.close();
-      return { before, inSheet, thm, mkt, back: document.querySelectorAll("header.site .row .thm button").length };
+      return { before, inSheet, thm, mkt, rows, actionBg, pressed, scrim, order, back: document.querySelectorAll("header.site .row .thm button").length };
     });
+    is(reach.rows.length > 0 && reach.rows.every(r => r.h >= 56 && r.chev > 0), `${theme} ${w}px sheet: ${reach.rows.length} nav rows are 56px targets with a chevron (${reach.rows.map(r => r.h).join("/")})`);
+    is(reach.pressed.length >= 2 && reach.pressed.every(bg => bg !== reach.actionBg), `${theme} ${w}px sheet: selected is not primary (${reach.pressed.length} pressed controls, none painted --action ${reach.actionBg})`);
+    is(/^rgba?\(/.test(reach.scrim) && !/,\s*0\)$/.test(reach.scrim), `${theme} ${w}px sheet: the scrim paints (${reach.scrim})`);
+    is(reach.order[0] === "Go to", `${theme} ${w}px sheet: navigation first (${reach.order.join(" > ")})`);
     is(reach.before.length > 0 && reach.before.every(x => reach.inSheet.includes(x)) && reach.thm === 3 && reach.mkt >= 2 && reach.back === 3,
       `${theme} ${w}px: one tap of the ellipsis reaches ${reach.inSheet.length} nav items, the 3-state theme control and ${reach.mkt} markets, and they return`);
     if (w === 390) {
@@ -224,5 +240,9 @@ for (const theme of ["light", "dark"]) {
   await ctx.close();
 }
 await b.close();
+if (MUTATE) {
+  if (fails.length) { console.log(`\n  mutation "${MUTATE}" correctly broke ${fails.length} assertion(s) - check is awake`); process.exit(0); }
+  console.error(`\n  MUTATION "${MUTATE}" DID NOT FAIL. The check is asleep.`); process.exit(2);
+}
 console.log("\n" + (fails.length ? `${fails.length} FAILED` : "ALL GREEN"));
 process.exit(fails.length ? 1 : 0);

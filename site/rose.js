@@ -15,9 +15,11 @@
    like a 32. A posting nobody has scored gets the whole ring unlit and an
    en-dash: eight empty bearings say "there is a score to be had here". */
 (function () {
-  const LIT = { auto: 8, ping: 6, unsure: 5, "near-miss": 3 };
-  const TOK = { auto: "--b-auto", ping: "--b-ping", unsure: "--b-unsure", "near-miss": "--b-near" };
-  const band = f => f >= 80 ? "auto" : f >= 70 ? "ping" : f >= 55 ? "unsure" : "near-miss";
+  /* design system v3, stage 3: band.js is the ONE place score -> band lives
+     (lit table + the generated thresholds); a rose never re-derives it. The
+     lit bearings take the band SOLID (--auto), the numeral the label rung
+     (--auto-label): the site's own rule, which this glyph had drifted from. */
+  const LIT = JSBand.LIT, TOK = JSBand.TOKEN, band = JSBand.bandFor;
   const DOTS = Array.from({ length: 8 }, (_, i) => {
     const th = (-90 + 45 * i) * Math.PI / 180;
     return [12 + 11 * Math.cos(th), 12 + 11 * Math.sin(th), 2.275 + 0.2944 * i];
@@ -27,7 +29,11 @@
     const f = scored ? Math.max(0, Math.min(100, +fit || 0)) : null;
     const b = scored ? band(f) : null;
     const lit = scored ? LIT[b] : 0;
-    const col = scored ? `var(${TOK[b]})` : "var(--rose-empty)";
+    /* fail loudly rather than draw a plausible wrong number: a rose that lies
+       about the band is worse than no rose */
+    if (scored && lit === undefined) throw new Error(`roseSVG: unknown band "${b}" for fit ${f}`);
+    const col = scored ? `var(--${TOK[b]})` : "var(--rose-empty)";
+    const num = scored ? `var(--${TOK[b]}-label)` : "var(--rose-empty)";
     const dots = DOTS.map(([x, y, r], i) =>
       /* the band colour rides inline STYLE, not the fill attribute: base.css
          sets .rose .d{fill:var(--rose-empty)} and a stylesheet beats a
@@ -36,7 +42,7 @@
     const w = size ? ` width="${size}" height="${size}"` : "";
     return `<svg class="rose${scored ? "" : " unlit"}" viewBox="-4.2416 -3.0639 31.3054 31.3054"${w} role="img"` +
       ` aria-label="${scored ? `fit ${f} of 100` : "not scored yet"}"${scored ? ` data-band="${b}"` : ""}>` +
-      `${dots}<text class="fitnum" x="12" y="12"${scored ? ` style="fill:${col}"` : ""}>${scored ? f : "–"}</text></svg>`;
+      `${dots}<text class="fitnum" x="12" y="12"${scored ? ` style="fill:${num}"` : ""}>${scored ? f : "–"}</text></svg>`;
   }
   window.roseSVG = roseSVG;
   window.roseBand = band;

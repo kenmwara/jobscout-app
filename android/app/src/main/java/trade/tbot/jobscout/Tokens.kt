@@ -123,7 +123,7 @@ val LIGHT_TOKENS = Tokens(
        Ember is hue 63 now, not 39. Every pair lands 7.04-7.58:1. */
     bAuto = Color(0xFF225B2C), bAutoBg = Color(0xFFE7F4E8),    // 147deg 7.11:1
     bPing = Color(0xFF394981), bPingBg = Color(0xFFEAF0FF),    // 270deg 7.53:1
-    bUnsure = Color(0xFF713F00), bUnsureBg = Color(0xFFFBEDE1), //  63deg 7.58:1
+    bUnsure = Color(0xFF713F00), bUnsureBg = Color(0xFFFBEDE2), //  63deg 7.58:1
     bNear = Color(0xFF4B4B5C), bNearBg = Color(0xFFEFF0F4),    // 285deg 7.50:1
     // section 16 option C - the card is a neutral, the band is a rule
     evidenceBg = Color(0xFFF1F1FA),
@@ -168,7 +168,7 @@ val DARK_TOKENS = Tokens(
        not green) and unsure 283 (purple, where ember should be). */
     bAuto = Color(0xFF92D098), bAutoBg = Color(0xFF223424),    // 147deg 7.38:1
     bPing = Color(0xFFA4BBFF), bPingBg = Color(0xFF272E42),    // 270deg 7.15:1
-    bUnsure = Color(0xFFECAF78), bUnsureBg = Color(0xFF3D2B1A), //  63deg 7.04:1
+    bUnsure = Color(0xFFECB078), bUnsureBg = Color(0xFF3D2B1A), //  63deg 7.04:1
     bNear = Color(0xFFBBBCD0), bNearBg = Color(0xFF2E2E34),    // 285deg 7.21:1
     evidenceBg = Color(0xFF2B284F),
     evidenceRuleStrongest = Color(0xFF7AC683),

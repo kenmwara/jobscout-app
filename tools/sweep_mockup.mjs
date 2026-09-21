@@ -374,14 +374,16 @@ const run = async () => {
          422 with the sentence explaining which words. The contract is: no
          invented document, and no silent failure either - so a refusal
          passes only when the reader has been told why. */
+      /* the refusal card says "the resume does not say it" per invented claim
+         (motion v2 stage 9); the older wording was "does not contain" */
       const refusal = await page.evaluate(() =>
         (document.querySelector("#view")?.innerText || "")
-          .match(/does not contain[^.]*\./)?.[0] || null);
-      if (!built && refusal) ok(`the resume was refused, honestly: "${refusal.slice(0, 60)}"`);
+          .match(/does not (?:contain|say)[^.]*\./)?.[0] || null);
+      if (refusal) ok(`the resume was refused, honestly: "${refusal.slice(0, 60)}"`);
       else if (!built && limited) { skipped++; console.log("  skip  the resume (hourly rate limit)"); }
       else is(built, "the resume rebuilds");
 
-      if (built) {
+      if (built && !refusal) {
         /* Same as the letter: a finished rebuild opens its own sheet. */
         if (await page.locator("#sheet").getAttribute("hidden") !== null) {
           await page.click('[data-open="resume"]');

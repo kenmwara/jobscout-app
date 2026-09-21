@@ -10,7 +10,7 @@ import kotlin.math.ln
  */
 
 /** The "unsure" band. Below it nothing is recommended and nothing is drafted (the worker enforces it too). */
-const val FIT_FLOOR = 55
+const val FIT_FLOOR = trade.tbot.jobscout.design.Band.UNSURE   // generated: the unsure band's floor
 
 /* ── How senior is this, and how senior are you ──────────────────────────
    Added 2026-09-19 with the picker rewrite. Without it nothing knew what a
@@ -74,7 +74,7 @@ private val WORD = Regex("[a-z][a-z&-]{4,}")
    is 44 characters and is plainly a search. A resume is long, or has line
    breaks, or says one of the words a resume says. */
 private val RESUME_WORDS =
-    Regex("""\b(experience|education|skills|resume|résumé|curriculum vitae|references)\b""",
+    Regex("""\b(experience|education|skills|résumé|résumé|curriculum vitae|references)\b""",
           RegexOption.IGNORE_CASE)
 
 fun looksLikeResume(text: String): Boolean {
@@ -188,9 +188,9 @@ fun select(profile: String, feed: Feed, home: String = "", remoteOnly: Boolean =
 fun Selection.note() =
     "A fit from 0 to 100, a verdict in plain words, the strongest point and the weakest. " +
     "This profile reads as $label: $inSector of today's $eligible eligible postings are in that sector, and ${postings.size} go to Claude. " +
-    "A cover letter or a tailored resume is offered only when the top match scores $FIT_FLOOR or better."
+    "A cover letter or a tailored résumé is offered only when the top match scores $FIT_FLOOR or better."
 
 fun nofitNote(fit: Int, p: Posting?, id: String) =
     "Nothing in today's pool clears the bar for this profile. The nearest was $fit out of 100 — " +
     (p?.title?.ifEmpty { null } ?: id) + (p?.company?.takeIf { it.isNotEmpty() }?.let { " · $it" } ?: "") +
-    ". A cover letter or a tailored resume is only offered from $FIT_FLOOR up, so none is offered here. The verdicts below say why."
+    ". A cover letter or a tailored résumé is only offered from $FIT_FLOOR up, so none is offered here. The verdicts below say why."

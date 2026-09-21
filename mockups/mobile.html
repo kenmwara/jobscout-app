@@ -8,7 +8,10 @@
      because market, theme and every colour come from the shipped stylesheet.
      If a token changes there, this page changes with it. -->
 <link rel="stylesheet" href="../site/fonts-embedded.css">
+<link rel="stylesheet" href="../site/tokens.css">
 <link rel="stylesheet" href="../site/base.css">
+<script src="../site/band.js"></script>
+<script src="../site/evidence.js"></script>
 <script src="../site/rose.js"></script>
 <script src="card.js"></script>
 <script>/* The tokens must come from the REAL stylesheet, and this file gets
@@ -48,28 +51,28 @@ window.__tokens = new Promise(function (done) {
 <style>
 /* Its own ground: base.css arrives via a runtime <link> in the fallback
    case, and this page must not depend on which of the three sources won. */
-body{padding:0 0 60px;background:var(--canvas);color:var(--text);
-  font:400 16px/1.5 var(--sans)}
+body{padding:0 0 var(--s10);background:var(--canvas);color:var(--text);
+  font:400 var(--t3)/1.5 var(--sans)}
 .rail{
-  position:sticky;top:0;z-index:10;display:flex;gap:26px;flex-wrap:wrap;align-items:center;
-  padding:14px 22px;background:var(--surface);border-bottom:1px solid var(--hair)}
-.rail h1{font:400 19px/1 var(--serif);color:var(--ink);margin:0 auto 0 0;letter-spacing:-.02em}
-.rail .g{display:flex;align-items:center;gap:9px}
-.rail .g > b{font:500 10.5px/1 var(--sans);letter-spacing:.09em;text-transform:uppercase;color:var(--text2)}
-.seg{display:flex;background:var(--trough);border:1px solid var(--hair);border-radius:11px;padding:3px;gap:2px}
+  position:sticky;top:0;z-index:10;display:flex;gap:var(--s6);flex-wrap:wrap;align-items:center;
+  padding:var(--s3) var(--s5);background:var(--surface);border-bottom:1px solid var(--hair)}
+.rail h1{font:400 var(--t4)/1 var(--serif);color:var(--ink);margin:0 auto 0 0;letter-spacing:-.02em}
+.rail .g{display:flex;align-items:center;gap:var(--s2)}
+.rail .g > b{font:500 var(--t1)/1 var(--sans);letter-spacing:.09em;text-transform:uppercase;color:var(--text2)}
+.seg{display:flex;background:var(--trough);border:1px solid var(--hair);border-radius:11px;padding:var(--s0);gap:var(--s0)}
 .seg button{
   appearance:none;border:0;background:transparent;cursor:pointer;color:var(--text2);
-  font:500 13px/1 var(--sans);padding:7px 11px;border-radius:8px;display:flex;align-items:center;gap:6px}
+  font:500 var(--t2)/1 var(--sans);padding:var(--s2) var(--s3);border-radius:8px;display:flex;align-items:center;gap:var(--s1)}
 .seg button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:var(--sh-hover)}
 .seg button svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:1.7;
   stroke-linecap:round;stroke-linejoin:round}
-.note{max-width:760px;margin:26px auto 0;padding:0 22px;font:400 14px/1.6 var(--sans);color:var(--text2)}
+.note{max-width:760px;margin:var(--s6) auto 0;padding:0 var(--s5);font:400 var(--t2)/1.6 var(--sans);color:var(--text2)}
 .note b{color:var(--ink);font-weight:500}
 
 /* ── the phone ─────────────────────────────────────────────────────── */
-.stage{display:flex;justify-content:center;padding:30px 20px 0}
+.stage{display:flex;justify-content:center;padding:var(--s7) var(--s5) 0}
 .device{
-  width:390px;height:box;flex:0 0 auto;border-radius:44px;padding:11px;
+  width:390px;height:box;flex:0 0 auto;border-radius:44px;padding:var(--s3);
   background:var(--ink);box-shadow:0 30px 70px -18px rgba(8,3,49,.45);position:relative}
 .screen{
   width:368px;height:760px;border-radius:34px;overflow:hidden;background:var(--canvas);
@@ -92,9 +95,9 @@ body{padding:0 0 60px;background:var(--canvas);color:var(--text);
    screen. 180% of 368px is 662px - the discs at roughly the scale they have
    on a desktop, cropped by the screen's own corners. */
 .screen .heromark.pagemark{position:absolute;left:50%;top:50%;width:180%;z-index:auto}
-.stat{display:flex;align-items:center;justify-content:space-between;padding:10px 20px 4px;
-  font:600 12.5px/1 var(--sans);color:var(--ink);flex:0 0 auto}
-.stat .ic{display:flex;gap:4px;align-items:center}
+.stat{display:flex;align-items:center;justify-content:space-between;padding:var(--s2) var(--s5) var(--s1);
+  font:600 var(--t2)/1 var(--sans);color:var(--ink);flex:0 0 auto}
+.stat .ic{display:flex;gap:var(--s1);align-items:center}
 .stat .ic i{display:block;width:15px;height:9px;border:1.3px solid currentColor;border-radius:2px;opacity:.75}
 html[data-plat="ios"] .device{border-radius:52px}
 html[data-plat="ios"] .screen{border-radius:42px}
@@ -103,29 +106,29 @@ html[data-plat="ios"] .notch{position:absolute;top:11px;left:50%;transform:trans
 html[data-plat="android"] .notch{position:absolute;top:19px;left:50%;transform:translateX(-50%);
   width:9px;height:9px;background:var(--ink);border-radius:50%;z-index:5}
 
-.view{flex:1;overflow-y:auto;overscroll-behavior:contain;padding:0 16px 84px}
+.view{flex:1;overflow-y:auto;overscroll-behavior:contain;padding:0 var(--s4) var(--s13)}
 .view::-webkit-scrollbar{width:0}
 
 /* app chrome */
-.ahead{display:flex;align-items:center;gap:10px;padding:8px 0 14px;position:sticky;top:0;
+.ahead{display:flex;align-items:center;gap:var(--s2);padding:var(--s2) 0 var(--s3);position:sticky;top:0;
   background:var(--canvas);z-index:4}
 .ahead .bk{appearance:none;border:0;background:transparent;cursor:pointer;color:var(--ink);
-  font:500 15px/1 var(--sans);padding:6px 4px 6px 0;display:flex;align-items:center;gap:5px}
-.ahead .mk{display:flex;align-items:center;gap:7px;font:500 16px/1 var(--serif);color:var(--ink);
+  font:500 var(--t3)/1 var(--sans);padding:var(--s1) var(--s1) var(--s1) 0;display:flex;align-items:center;gap:var(--s1)}
+.ahead .mk{display:flex;align-items:center;gap:var(--s2);font:500 var(--t3)/1 var(--serif);color:var(--ink);
   appearance:none;border:0;background:transparent;padding:0;cursor:pointer}
 .ahead .mk svg{width:19px;height:19px;fill:var(--accent)}
-.ahead .hchip,.ahead .hmore{appearance:none;display:inline-flex;align-items:center;gap:5px;height:34px;min-width:34px;
-  padding:0 9px;border-radius:10px;border:1px solid var(--hair);background:var(--trough);color:var(--ink);
-  font:500 12px/1 var(--sans);cursor:pointer}
+.ahead .hchip,.ahead .hmore{appearance:none;display:inline-flex;align-items:center;gap:var(--s1);height:34px;min-width:34px;
+  padding:0 var(--s2);border-radius:10px;border:1px solid var(--hair);background:var(--trough);color:var(--ink);
+  font:500 var(--t1)/1 var(--sans);cursor:pointer}
 .ahead .hchip{margin-left:auto}
 .ahead .hchip .flag{width:16px;height:11px;border-radius:2px;display:block}
 /* the landing's slide tabs: the site's .mkt / .thm shape - a translucent
    trough, the selected half a lifted pill with the one soft shadow */
-.ahead--full{flex-wrap:wrap;row-gap:8px}
-.ahead .hseg{display:flex;background:var(--trough);border-radius:12px;padding:3px;gap:2px;border:1px solid var(--hair)}
+.ahead--full{flex-wrap:wrap;row-gap:var(--s2)}
+.ahead .hseg{display:flex;background:var(--trough);border-radius:12px;padding:var(--s0);gap:var(--s0);border:1px solid var(--hair)}
 .ahead .hseg--mkt{margin-left:auto}
 .ahead .hseg button{appearance:none;border:0;background:transparent;cursor:pointer;color:var(--text2);
-  min-width:38px;height:30px;padding:0 8px;border-radius:9px;display:grid;place-items:center;
+  min-width:38px;height:30px;padding:0 var(--s2);border-radius:9px;display:grid;place-items:center;
   transition:background var(--t-snap) var(--spring-snap),color var(--t-snap) var(--spring-snap),transform var(--t-snap) var(--spring-snap)}
 .ahead .hseg button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:var(--sh-hover)}
 .ahead .hseg button:active{transform:scale(.94);transition-duration:var(--t-exit)}
@@ -133,62 +136,65 @@ html[data-plat="android"] .notch{position:absolute;top:19px;left:50%;transform:t
 .ahead .hseg--thm button svg{width:15px;height:15px;display:block;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
 .ahead .hmore{width:34px;padding:0;display:grid;place-items:center}
 .ahead .hmore svg{display:block;fill:currentColor}
-.menu .lb{font:500 10px/1 var(--sans);letter-spacing:.09em;text-transform:uppercase;color:var(--text3);margin:18px 0 10px}
-.menu .lb:first-child{margin-top:4px}
+.menu .lb{font:500 var(--t0)/1 var(--sans);letter-spacing:.09em;text-transform:uppercase;color:var(--text3);margin:var(--s4) 0 var(--s2)}
+.menu .lb:first-child{margin-top:var(--s1)}
 /* the sheet's slide tabs are the header's, at full width with their labels */
-.menu .hseg{display:flex;background:var(--trough);border-radius:12px;padding:3px;gap:2px;border:1px solid var(--hair)}
+.menu .hseg{display:flex;background:var(--trough);border-radius:12px;padding:var(--s0);gap:var(--s0);border:1px solid var(--hair)}
 .menu .hseg button{flex:1;appearance:none;border:0;background:transparent;cursor:pointer;color:var(--text2);
-  height:40px;padding:0 10px;border-radius:9px;display:inline-flex;align-items:center;justify-content:center;gap:7px;
-  font:500 13.5px/1 var(--sans);transition:background var(--t-snap) var(--spring-snap),color var(--t-snap) var(--spring-snap)}
+  height:40px;padding:0 var(--s2);border-radius:9px;display:inline-flex;align-items:center;justify-content:center;gap:var(--s2);
+  font:500 var(--t2)/1 var(--sans);transition:background var(--t-snap) var(--spring-snap),color var(--t-snap) var(--spring-snap)}
 .menu .hseg button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:var(--sh-hover)}
 .menu .hseg .flag{width:18px;height:12px;border-radius:2px;display:block}
 .menu .hseg--thm button svg{width:15px;height:15px;display:block;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
-.menu .mnav{margin:0 0 6px}
+.menu .mnav{margin:0 0 var(--s1)}
 .menu .mnav button{display:flex;align-items:center;justify-content:space-between;width:100%;appearance:none;background:transparent;border:0;
-  border-bottom:1px solid var(--hair);padding:13px 2px;font:400 17px/1.2 var(--serif);color:var(--ink);cursor:pointer;letter-spacing:-.005em}
-.menu .mnav button small{font:500 12px/1 var(--mono);color:var(--text3);font-variant-numeric:tabular-nums}
+  border-bottom:1px solid var(--hair);padding:var(--s3) var(--s0);font:400 var(--t3)/1.2 var(--serif);color:var(--ink);cursor:pointer;letter-spacing:-.005em;min-height:56px;border-bottom:1px solid var(--hair);padding:0 var(--s1);transition:background var(--t-snap) var(--spring-snap)}
+.menu .mnav button:last-child{border-bottom:0}
+.menu .mnav button::after{content:"";width:8px;height:8px;margin-left:var(--s2);border-right:1.8px solid var(--text2);border-bottom:1.8px solid var(--text2);transform:rotate(-45deg)}
+.menu .mnav button:hover{background:var(--sunken)}
+.menu .mnav button small{font:500 var(--t1)/1 var(--mono);color:var(--text3);font-variant-numeric:tabular-nums}
 .menu .mnav button:active{color:var(--text2)}
 /* the drafting footer is not the menu's */
 .sheet[data-which="menu"] .wfoot{display:none}
-.emptyst{text-align:center;padding:34px 12px 8px}
-.emptyst .rose{width:84px;height:84px;margin:0 auto 14px}
-.emptyst h3{font:400 20px/1.2 var(--serif);margin:0 0 6px;color:var(--ink)}
-.emptyst p{color:var(--text2);font-size:13.5px;margin:0 0 16px}
-.emptyst .cta{margin-top:8px}
-.state{background:var(--surface);border:1px solid var(--hair);border-radius:var(--r-card);padding:14px;margin:0 0 14px}
-.state .lb{font:500 10px/1 var(--sans);letter-spacing:.09em;text-transform:uppercase;color:var(--text3);margin:0 0 6px}
-.state h3{font:400 18px/1.25 var(--serif);margin:0 0 8px;color:var(--ink)}
-.state p{color:var(--text2);font-size:13.5px;margin:0 0 8px}
-.state .next{background:var(--evidence-bg);border-left:2px solid var(--evidence-rule-strongest);border-radius:10px;padding:9px 12px;display:flex;align-items:baseline;gap:8px}
+.emptyst{text-align:center;padding:var(--s7) var(--s3) var(--s2)}
+.emptyst .rose{width:84px;height:84px;margin:0 auto var(--s3)}
+.emptyst h3{font:400 var(--t4)/1.2 var(--serif);margin:0 0 var(--s1);color:var(--ink)}
+.emptyst p{color:var(--text2);font-size:var(--t2);margin:0 0 var(--s4)}
+.emptyst .cta{margin-top:var(--s2)}
+.state{background:var(--surface);border:1px solid var(--hair);border-radius:var(--r-card);padding:var(--s3);margin:0 0 var(--s3)}
+.state .lb{font:500 var(--t0)/1 var(--sans);letter-spacing:.09em;text-transform:uppercase;color:var(--text3);margin:0 0 var(--s1)}
+.state h3{font:400 var(--t4)/1.25 var(--serif);margin:0 0 var(--s2);color:var(--ink)}
+.state p{color:var(--text2);font-size:var(--t2);margin:0 0 var(--s2)}
+.state .next{background:var(--evidence-bg);border-left:2px solid var(--evidence-rule-strongest);border-radius:10px;padding:var(--s2) var(--s3);display:flex;align-items:baseline;gap:var(--s2)}
 .state .next .lb{margin:0}
-.state .mono{font:500 15px/1 var(--mono);font-variant-numeric:tabular-nums;color:var(--ink)}
-.ahead .fl{margin-left:auto;font-size:15px}
-h2.big{font:400 27px/1.15 var(--serif);color:var(--ink);letter-spacing:-.02em;margin:4px 0 6px}
+.state .mono{font:500 var(--t3)/1 var(--mono);font-variant-numeric:tabular-nums;color:var(--ink)}
+.ahead .fl{margin-left:auto;font-size:var(--t3)}
+h2.big{font:400 var(--t6)/1.15 var(--serif);color:var(--ink);letter-spacing:-.02em;margin:var(--s1) 0 var(--s1)}
 h2.big .dot{color:var(--accent)}
-h2.big.dt{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;font-size:24px;line-height:1.2}
+h2.big.dt{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;font-size:var(--t5);line-height:1.2}
 /* s5: the detail screen is the card expanded - no shell, no stretched link */
-#view .jcard--detail,#view .jcard--detail:hover,#view .jcard--detail:focus-within{background:transparent;border:0;box-shadow:none;padding:0;margin:14px 0 0;transform:none}
+#view .jcard--detail,#view .jcard--detail:hover,#view .jcard--detail:focus-within{background:transparent;border:0;box-shadow:none;padding:0;margin:var(--s3) 0 0;transform:none}
 .jcard--detail .jcard__head{align-items:center}
 .jcard--detail .jcard__meta{margin-top:0}
 /* one primary once, the heart beside it, the employer link a quiet row under */
-.jcard--detail .jcard__actions{display:grid;grid-template-columns:1fr auto;align-items:center;column-gap:10px;row-gap:10px}
+.jcard--detail .jcard__actions{display:grid;grid-template-columns:1fr auto;align-items:center;column-gap:var(--s2);row-gap:var(--s2)}
 .jcard--detail .jcard__actions .jcard__btn--primary{justify-self:start}
 .jcard--detail .jcard__actions .jcard__btn:not(.jcard__btn--primary){grid-column:1/-1;justify-self:start}
 .jcard--detail .jcard__actions .jcard__heart{grid-row:1;grid-column:2;margin-left:0}
-p.sub{font:400 13.5px/1.5 var(--sans);color:var(--text2);margin:0 0 16px}
+p.sub{font:400 var(--t2)/1.5 var(--sans);color:var(--text2);margin:0 0 var(--s4)}
 
-.mhero{border-radius:var(--r-card);background:var(--hero);padding:26px 18px 20px;margin:0 0 18px;
+.mhero{border-radius:var(--r-card);background:var(--hero);padding:var(--s6) var(--s4) var(--s5);margin:0 0 var(--s4);
   position:relative;overflow:hidden}
-.mhero h2{font:400 25px/1.2 var(--serif);color:#f8f3eb;margin:0 0 14px;letter-spacing:-.02em}
+.mhero h2{font:400 var(--t6)/1.2 var(--serif);color:#f8f3eb;margin:0 0 var(--s3);letter-spacing:-.02em}
 .mhero .dot{color:var(--accent)}
 .mbox{
-  display:flex;align-items:center;gap:10px;background:var(--surface);
-  border-radius:var(--r-input);padding:8px 8px 8px 16px;
+  display:flex;align-items:center;gap:var(--s2);background:var(--surface);
+  border-radius:var(--r-input);padding:var(--s2) var(--s2) var(--s2) var(--s4);
   box-shadow:var(--sh-hover);text-align:left}
 .mbox .sep{flex:0 0 auto;width:1px;height:26px;background:var(--hair)}
 .mbox textarea{
   flex:1;min-width:0;border:0;background:none;resize:none;outline:none;
-  font:400 14px/1.45 var(--sans);color:var(--text);height:20px;max-height:104px;
+  font:400 var(--t2)/1.45 var(--sans);color:var(--text);height:20px;max-height:104px;
   padding:0;scrollbar-width:thin}
 .mbox textarea::placeholder{color:var(--text2)}
 /* Once it holds a resume the controls go to the bottom edge, so the text
@@ -211,7 +217,7 @@ p.sub{font:400 13.5px/1.5 var(--sans);color:var(--text2);margin:0 0 16px}
 /* This note lives INSIDE the hero, which is a dark block in both themes, so
    it takes cream - not --text-2, which is a dark grey and would have been
    unreadable on it. THEME.md section 3: the hero's text is always cream. */
-.mfile{font:400 11.5px/1.35 var(--sans);color:rgba(248,243,235,.76);margin:9px 0 0}
+.mfile{font:400 var(--t1)/1.35 var(--sans);color:rgba(248,243,235,.76);margin:var(--s2) 0 0}
 .mfile b{color:#f8f3eb;font-weight:500}
 /* While CLAUDE scores, Claude's own mark breathes in the arrow's place - the
    same device site/index.html uses, not a pulsing glyph. Dead silence after
@@ -231,9 +237,9 @@ p.sub{font:400 13.5px/1.5 var(--sans);color:var(--text2);margin:0 0 16px}
   @keyframes breathe{50%{transform:scale(.82);opacity:.6}}
 }
 .mbox b{width:36px;height:36px;border-radius:50%;background:var(--btn);color:var(--btn-ink);
-  display:grid;place-items:center;font-size:15px}
-.chips{display:flex;gap:6px;flex-wrap:wrap;margin:13px 0 0}
-.chips i{font:500 12px/1 var(--sans);font-style:normal;padding:8px 12px;border-radius:var(--r-pill);
+  display:grid;place-items:center;font-size:var(--t3)}
+.chips{display:flex;gap:var(--s1);flex-wrap:wrap;margin:var(--s3) 0 0}
+.chips i{font:500 var(--t1)/1 var(--sans);font-style:normal;padding:var(--s2) var(--s3);border-radius:var(--r-pill);
   background:rgba(248,243,235,.14);color:#f8f3eb}
 
 /* The panel is a CARD, on --surface, because it is the most important thing
@@ -241,40 +247,40 @@ p.sub{font:400 13.5px/1.5 var(--sans);color:var(--text2);margin:0 0 16px}
    above pill scale a surface is neutral and the band colour moves to the
    label. The asks keep the unsure rung, which is what they are. */
 .nofit{background:var(--surface);border:1px solid var(--hair);border-radius:var(--r-card);
-  padding:15px 16px;margin:0 0 12px;box-shadow:var(--sh-card,none)}
-.nofit .lead{font:400 13px/1.6 var(--sans);color:var(--text);margin:0 0 11px}
+  padding:var(--s4) var(--s4);margin:0 0 var(--s3);box-shadow:var(--sh-card,none)}
+.nofit .lead{font:400 var(--t2)/1.6 var(--sans);color:var(--text);margin:0 0 var(--s3)}
 .nofit .lead b{font-weight:600;color:var(--ink)}
-.nofit .k{font:500 10.5px/1 var(--sans);letter-spacing:.09em;text-transform:uppercase;
-  color:var(--b-unsure);margin:0 0 8px}
-.nofit .asks{list-style:none;margin:0 0 12px;padding:0;display:grid;gap:7px}
-.nofit .asks li{padding:10px 12px 10px 14px;border-radius:var(--r-input);
+.nofit .k{font:500 var(--t1)/1 var(--sans);letter-spacing:.09em;text-transform:uppercase;
+  color:var(--b-unsure);margin:0 0 var(--s2)}
+.nofit .asks{list-style:none;margin:0 0 var(--s3);padding:0;display:grid;gap:var(--s2)}
+.nofit .asks li{padding:var(--s2) var(--s3) var(--s2) var(--s3);border-radius:var(--r-input);
   background:var(--evidence-bg);border-left:2px solid var(--evidence-rule-answer);
-  font:400 12px/1.5 var(--sans);color:var(--answer-body)}
-.nofit .asks em{display:block;font:500 10px/1.3 var(--sans);letter-spacing:.08em;
-  text-transform:uppercase;color:var(--b-unsure);font-style:normal;margin:0 0 4px}
+  font:400 var(--t1)/1.5 var(--sans);color:var(--answer-body)}
+.nofit .asks em{display:block;font:500 var(--t0)/1.3 var(--sans);letter-spacing:.08em;
+  text-transform:uppercase;color:var(--b-unsure);font-style:normal;margin:0 0 var(--s1)}
 
 /* The kept sweep, as a row rather than a single destructive button. */
-.sweep{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin:0 0 10px;
-  padding:12px 13px;background:var(--surface);border:1px solid var(--hair);
+.sweep{display:flex;align-items:center;flex-wrap:wrap;gap:var(--s2);margin:0 0 var(--s2);
+  padding:var(--s3) var(--s3);background:var(--surface);border:1px solid var(--hair);
   border-radius:var(--r-card)}
-.sweep .mk{display:flex;align-items:center;gap:7px;flex:1 1 100%;
-  font:500 13px/1.3 var(--sans);color:var(--ink)}
+.sweep .mk{display:flex;align-items:center;gap:var(--s2);flex:1 1 100%;
+  font:500 var(--t2)/1.3 var(--sans);color:var(--ink)}
 .sweep .mk svg{width:15px;height:15px;fill:var(--accent);flex:0 0 auto}
 .sweep .rm{appearance:none;background:transparent;border:0;cursor:pointer;
-  font:400 12px/1 var(--sans);color:var(--text2);padding:8px 6px}
+  font:400 var(--t1)/1 var(--sans);color:var(--text2);padding:var(--s2) var(--s1)}
 .sweep .rm:hover{color:var(--ink)}
 
 .card{background:var(--surface);border:1px solid var(--hair);border-radius:var(--r-card);
-  padding:14px;margin:0 0 11px;cursor:pointer}
-.card .row1{display:flex;gap:11px;align-items:flex-start}
+  padding:var(--s3);margin:0 0 var(--s3);cursor:pointer}
+.card .row1{display:flex;gap:var(--s3);align-items:flex-start}
 .card .logo{width:34px;height:34px;border-radius:9px;background:var(--canvas-2);color:var(--text2);
-  display:grid;place-items:center;font:600 11.5px/1 var(--sans);flex:0 0 auto}
+  display:grid;place-items:center;font:600 var(--t1)/1 var(--sans);flex:0 0 auto}
 .card .t{flex:1;min-width:0}
 .card .t p{margin:0}
 /* the title is the serif (law 13): 16px, weight 400 - the phone shipped sans-bold */
-.card .r{font:400 16px/1.25 var(--serif);letter-spacing:-.005em;color:var(--ink)}
-.card .c{font:400 12.5px/1.4 var(--sans);color:var(--text2);margin-top:2px!important}
-.card .fit{font:500 15px/1 var(--sans);flex:0 0 auto}
+.card .r{font:400 var(--t3)/1.25 var(--serif);letter-spacing:-.005em;color:var(--ink)}
+.card .c{font:400 var(--t2)/1.4 var(--sans);color:var(--text2);margin-top:var(--s0)!important}
+.card .fit{font:500 var(--t3)/1 var(--sans);flex:0 0 auto}
 /* THE ROSE IN THE LIST (motion v1). The score was a bare numeral here while
    web and Android carried the mark; the device the brand is built from was
    missing from the densest screen. Same 104-box geometry as index.html, 44px
@@ -287,19 +293,19 @@ p.sub{font:400 13.5px/1.5 var(--sans);color:var(--text2);margin:0 0 16px}
   --radius-card:var(--r-card);--radius-inner:12px;--radius-pill:var(--r-pill);--rose-empty-alpha:.14}
 /* stage 2 on top of stage 1: the lit dots arrive one --stagger-dot apart */
 .jcard__rose .dot{transition-delay:calc(var(--dot-i, 0) * var(--stagger-dot))}
-.card.jcard{padding:13px 14px 12px}
-.jcard__btn--primary{display:inline-flex;align-items:center;gap:6px}
+.card.jcard{padding:var(--s3) var(--s3) var(--s3)}
+.jcard__btn--primary{display:inline-flex;align-items:center;gap:var(--s1)}
 html.anim .card.settled .jcard__rose .dot.is-lit{animation:rosebreathe var(--t-breathe) ease-in-out infinite;
   animation-delay:calc(var(--ci, 0) * 260ms + var(--dot-i, 0) * 120ms)}
 html.anim .card.settled[data-band="auto"] .jcard__band{animation:autopulse 420ms var(--spring-arrive) 1}
 /* the card's anatomy (motion v2 stage 1): rose first, then identity, then
    three tiers - the verdict filled, the fact sunken, the date bare */
 .card .t{flex:1;min-width:0}
-.card .c .sep{opacity:.5;margin:0 4px}
-.card .c-meta{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:8px 0 0}
+.card .c .sep{opacity:.5;margin:0 var(--s1)}
+.card .c-meta{display:flex;align-items:center;gap:var(--s1);flex-wrap:wrap;margin:var(--s2) 0 0}
 .card .c-meta .band,.card .c-meta .pill{margin:0}
-.card .ago{font:400 11px/1 var(--sans);color:var(--text2)}
-.card .c-act{display:flex;align-items:center;gap:8px;margin:10px 0 0}
+.card .ago{font:400 var(--t1)/1 var(--sans);color:var(--text2)}
+.card .c-act{display:flex;align-items:center;gap:var(--s2);margin:var(--s2) 0 0}
 .card .c-act .heart{margin-left:auto}
 /* three states: rest / hover / press, the press on exit timing */
 .card{transition:transform var(--t-settle) var(--spring-settle),box-shadow var(--t-settle) var(--spring-settle),border-color var(--t-settle) var(--spring-settle)}
@@ -307,44 +313,44 @@ html.anim .card.settled[data-band="auto"] .jcard__band{animation:autopulse 420ms
 .card:active{transform:scale(var(--press-scale));box-shadow:var(--sh-press);transition-duration:var(--t-exit);transition-timing-function:var(--spring-exit)}
 .cta:active,.heart:active,.chips i:active,.tabbar button:active,.seg button:active{transform:scale(.96);transition:transform var(--t-exit) var(--spring-exit)}
 .heart:active{transform:scale(.88)}
-.band{display:inline-block;font:500 10.5px/1 var(--sans);letter-spacing:.07em;text-transform:uppercase;
-  padding:5px 8px;border-radius:6px;margin:10px 8px 0 0}
-.pill{display:inline-block;font:500 11px/1 var(--sans);padding:5px 9px;border-radius:var(--r-pill);
-  background:var(--sunken);border:0;color:var(--text2);margin-top:10px}   /* a fact: sunken, no hue */
+.band{display:inline-block;font:500 var(--t1)/1 var(--sans);letter-spacing:.07em;text-transform:uppercase;
+  padding:var(--s1) var(--s2);border-radius:6px;margin:var(--s2) var(--s2) 0 0}
+.pill{display:inline-block;font:500 var(--t1)/1 var(--sans);padding:var(--s1) var(--s2);border-radius:var(--r-pill);
+  background:var(--sunken);border:0;color:var(--text2);margin-top:var(--s2)}   /* a fact: sunken, no hue */
 /* SECTION 16, OPTION C. Measured at 16,448px2 each - four times the
    4,000px2 the rule names - and carrying the band's own tint over all of
    it. Both now sit on the neutral and wear the band as a 2px rule and a
    label. The BODY had the label's colour too, so the paragraph was the
    label at a smaller size; it gets its own token, which is the pair
    section 16's table quotes. */
-.ev{margin:11px 0 0;padding:10px 11px 10px 13px;border-radius:var(--r-inner,12px);
+.ev{margin:var(--s3) 0 0;padding:var(--s2) var(--s3) var(--s2) var(--s3);border-radius:var(--r-inner,12px);
   background:var(--evidence-bg)}
 .ev p{margin:0}
-.ev .lb{font:500 10px/1 var(--sans);letter-spacing:.08em;text-transform:uppercase;margin-bottom:5px!important}
-.ev .bd{font:400 12.5px/1.5 var(--sans)}
+.ev .lb{font:500 var(--t0)/1 var(--sans);letter-spacing:.08em;text-transform:uppercase;margin-bottom:var(--s1)!important}
+.ev .bd{font:400 var(--t2)/1.5 var(--sans)}
 .ev-strongest{border-left:2px solid var(--evidence-rule-strongest)}
 .ev-strongest .lb{color:var(--b-auto)}
 .ev-strongest .bd{color:var(--strongest-body)}
 .ev-answer{border-left:2px solid var(--evidence-rule-answer)}
 .ev-answer .lb{color:var(--b-unsure)}
 .ev-answer .bd{color:var(--answer-body)}
-.cta{display:block;width:100%;appearance:none;border:0;cursor:pointer;margin:13px 0 0;
+.cta{display:block;width:100%;appearance:none;border:0;cursor:pointer;margin:var(--s3) 0 0;
   background:var(--btn);color:var(--btn-ink);border-radius:var(--r-pill);
-  font:500 14px/1 var(--sans);padding:13px}
+  font:500 var(--t2)/1 var(--sans);padding:var(--s3)}
 .cta.quiet{background:transparent;color:var(--ink);border:1px solid var(--hair2)}
 /* Save this SEARCH - the sweep, not a posting. A bookmark, because a bell
    would promise mail that nothing sends. */
 .savesearch{
-  display:flex;align-items:center;gap:8px;width:100%;margin:0 0 14px;
+  display:flex;align-items:center;gap:var(--s2);width:100%;margin:0 0 var(--s3);
   appearance:none;cursor:pointer;background:var(--surface);
   border:1px solid var(--hair);border-radius:var(--r-input);
-  padding:11px 13px;font:500 13px/1 var(--sans);color:var(--text2);text-align:left}
+  padding:var(--s3) var(--s3);font:500 var(--t2)/1 var(--sans);color:var(--text2);text-align:left}
 .savesearch svg{width:16px;height:16px;flex:0 0 auto;fill:none;stroke:currentColor;
   stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
 .savesearch[aria-pressed="true"]{color:var(--accent);border-color:var(--accent)}
 .savesearch[aria-pressed="true"] svg{fill:currentColor}
 .savesearch .n{margin-left:auto;color:var(--text2);font-weight:400}
-.heart{appearance:none;border:0;background:transparent;cursor:pointer;color:var(--text2);padding:4px}
+.heart{appearance:none;border:0;background:transparent;cursor:pointer;color:var(--text2);padding:var(--s1)}
 .heart svg{width:19px;height:19px;stroke:currentColor;fill:none;stroke-width:1.7}
 .heart[aria-pressed="true"]{color:var(--accent)}
 .heart[aria-pressed="true"] svg{fill:currentColor}
@@ -366,20 +372,20 @@ html.anim .card.settled[data-band="auto"] .jcard__band{animation:autopulse 420ms
   box-shadow:var(--shadow-sheet);overflow:hidden}
 /* The affordance that says this scrolls and can be dragged away. */
 .sheet .grab{width:34px;height:4px;border-radius:2px;background:var(--hair2);
-  margin:9px auto 0;flex:0 0 auto}
-.sheet .wtop{display:flex;align-items:center;gap:10px;padding:11px 16px 12px;
+  margin:var(--s2) auto 0;flex:0 0 auto}
+.sheet .wtop{display:flex;align-items:center;gap:var(--s2);padding:var(--s3) var(--s4) var(--s3);
   border-bottom:1px solid var(--hair)}
 /* Newsreader. A sheet header is a title, and titles are the serif. */
-.sheet .wtop h4{margin:0;font:400 20px/1.2 var(--serif);color:var(--ink);flex:1;
+.sheet .wtop h4{margin:0;font:400 var(--t4)/1.2 var(--serif);color:var(--ink);flex:1;
   letter-spacing:-.01em}
 /* Close is an ICON, not a wide pill competing with the title. */
 .sheet .xclose{
   flex:0 0 auto;width:30px;height:30px;border:0;border-radius:50%;cursor:pointer;
   background:var(--sunken);color:var(--text2);display:grid;place-items:center;
-  font:400 15px/1 var(--sans)}
+  font:400 var(--t3)/1 var(--sans)}
 .sheet .xclose:hover{color:var(--ink)}
-.sheet .wbody{padding:15px 16px 18px;overflow:auto;
-  font:400 13.5px/1.65 var(--sans);color:var(--text-long,var(--text));
+.sheet .wbody{padding:var(--s4) var(--s4) var(--s4);overflow:auto;
+  font:400 var(--t2)/1.65 var(--sans);color:var(--text-long,var(--text));
   scrollbar-width:thin;scrollbar-color:var(--hair2) transparent}
 /* The raw OS scrollbar was a #8b8b8b track with arrow buttons, clipping the
    sheet's rounded corner. */
@@ -388,80 +394,80 @@ html.anim .card.settled[data-band="auto"] .jcard__band{animation:autopulse 420ms
 .sheet .wbody::-webkit-scrollbar-thumb{background:var(--hair2);border-radius:2px}
 /* The letterhead: a name is not body text. Same inverted hierarchy as the
    date on the browse card. */
-.sheet .lhead{margin:0 0 12px;padding:0 0 12px;border-bottom:1px solid var(--hair)}
-.sheet .lhead .nm{display:block;font:500 14px/1.3 var(--sans);color:var(--ink)}
-.sheet .lhead .ct{display:block;font:400 11px/1.5 var(--sans);color:var(--text2);
-  margin-top:3px}
-.sheet .wbody p{margin:0 0 11px}
+.sheet .lhead{margin:0 0 var(--s3);padding:0 0 var(--s3);border-bottom:1px solid var(--hair)}
+.sheet .lhead .nm{display:block;font:500 var(--t2)/1.3 var(--sans);color:var(--ink)}
+.sheet .lhead .ct{display:block;font:400 var(--t1)/1.5 var(--sans);color:var(--text2);
+  margin-top:var(--s0)}
+.sheet .wbody p{margin:0 0 var(--s3)}
 /* The rebuilt resume is a DOCUMENT, so it gets document structure rather
    than a wall of paragraphs: an italic headline, small-caps section rules,
    a bolded role over its dates, and real bullets. */
-.sheet .dhead{font:400 italic 14.5px/1.5 var(--serif);color:var(--text);margin:0 0 14px}
-.sheet .dsec{margin:0 0 15px}
-.sheet .dsec h5{margin:0 0 8px;padding:0 0 5px;border-bottom:1px solid var(--hair);
-  font:500 10.5px/1 var(--sans);letter-spacing:.1em;text-transform:uppercase;color:var(--text2)}
-.sheet .ditem{margin:0 0 11px}
+.sheet .dhead{font:400 italic var(--t3)/1.5 var(--serif);color:var(--text);margin:0 0 var(--s3)}
+.sheet .dsec{margin:0 0 var(--s4)}
+.sheet .dsec h5{margin:0 0 var(--s2);padding:0 0 var(--s1);border-bottom:1px solid var(--hair);
+  font:500 var(--t1)/1 var(--sans);letter-spacing:.1em;text-transform:uppercase;color:var(--text2)}
+.sheet .ditem{margin:0 0 var(--s3)}
 .sheet .ditem:last-child{margin-bottom:0}
-.sheet .dtitle{margin:0;font:500 13px/1.4 var(--sans);color:var(--ink)}
-.sheet .dmeta{margin:1px 0 0;font:400 11.5px/1.4 var(--sans);color:var(--text2)}
-.sheet .ditem ul{margin:5px 0 0;padding:0 0 0 17px}
-.sheet .ditem li{font:400 12.5px/1.55 var(--sans);color:var(--text);margin:0 0 3px}
-.sheet .wbody .q{margin:0 0 16px;padding:0 0 14px;border-bottom:1px solid var(--hair)}
+.sheet .dtitle{margin:0;font:500 var(--t2)/1.4 var(--sans);color:var(--ink)}
+.sheet .dmeta{margin:var(--s0) 0 0;font:400 var(--t1)/1.4 var(--sans);color:var(--text2)}
+.sheet .ditem ul{margin:var(--s1) 0 0;padding:0 0 0 var(--s4)}
+.sheet .ditem li{font:400 var(--t2)/1.55 var(--sans);color:var(--text);margin:0 0 var(--s0)}
+.sheet .wbody .q{margin:0 0 var(--s4);padding:0 0 var(--s3);border-bottom:1px solid var(--hair)}
 .sheet .wbody .q:last-child{border-bottom:0;padding-bottom:0}
-.sheet .qtop{display:flex;align-items:flex-start;gap:10px;margin:0 0 5px}
-.sheet .qtop .lbl{flex:1;font:500 13px/1.45 var(--sans);color:var(--ink);margin:0}
+.sheet .qtop{display:flex;align-items:flex-start;gap:var(--s2);margin:0 0 var(--s1)}
+.sheet .qtop .lbl{flex:1;font:500 var(--t2)/1.45 var(--sans);color:var(--ink);margin:0}
 .sheet .qtop .lbl i{font-style:normal;font-weight:500;color:var(--b-unsure);
-  font-size:11px;letter-spacing:.04em;text-transform:uppercase}
+  font-size:var(--t1);letter-spacing:.04em;text-transform:uppercase}
 .sheet .qcopy{
-  flex:0 0 auto;appearance:none;cursor:pointer;display:flex;align-items:center;gap:5px;
+  flex:0 0 auto;appearance:none;cursor:pointer;display:flex;align-items:center;gap:var(--s1);
   background:transparent;border:1px solid var(--hair2);border-radius:var(--r-pill);
-  padding:5px 9px;font:500 11.5px/1 var(--sans);color:var(--text2)}
+  padding:var(--s1) var(--s2);font:500 var(--t1)/1 var(--sans);color:var(--text2)}
 .sheet .qcopy:hover{color:var(--ink);border-color:var(--ink)}
 .sheet .qcopy svg{width:12px;height:12px;fill:none;stroke:currentColor;stroke-width:1.8}
-.sheet .wbody .ans{font:400 13px/1.6 var(--sans);color:var(--text);margin:0}
-.sheet .wbody .yours{font:400 13px/1.6 var(--sans);color:var(--text2);margin:0;font-style:italic}
-.sheet .wbody .cite{font:400 11.5px/1.5 var(--sans);color:var(--text2);margin:5px 0 0}
-.sheet .wbody .note{font:400 13px/1.6 var(--sans);color:var(--text2);margin:0}
+.sheet .wbody .ans{font:400 var(--t2)/1.6 var(--sans);color:var(--text);margin:0}
+.sheet .wbody .yours{font:400 var(--t2)/1.6 var(--sans);color:var(--text2);margin:0;font-style:italic}
+.sheet .wbody .cite{font:400 var(--t1)/1.5 var(--sans);color:var(--text2);margin:var(--s1) 0 0}
+.sheet .wbody .note{font:400 var(--t2)/1.6 var(--sans);color:var(--text2);margin:0}
 /* Copy is the ACTION, so it is full width in a footer with a rule above it.
    It was a small pill in the corner while Close took a wide outlined pill. */
 .sheet .wfoot{padding:11px 16px calc(13px + env(safe-area-inset-bottom,0px));
   border-top:1px solid var(--hair)}
-.sheet .wfoot .mini-cta{display:block;width:100%;padding:13px;font-size:13.5px}
+.sheet .wfoot .mini-cta{display:block;width:100%;padding:var(--s3);font-size:var(--t2)}
 
 /* The drafting screen: three sections, each one endpoint. */
 .draft{background:var(--surface);border:1px solid var(--hair);
-  border-radius:var(--r-card);padding:14px;margin:0 0 11px}
-.draft h3{font:500 14px/1.3 var(--sans);color:var(--ink);margin:0 0 3px}
-.draft .lede{font:400 12.5px/1.5 var(--sans);color:var(--text2);margin:0 0 11px}
-.draft .out{font:400 13px/1.62 var(--sans);color:var(--text);margin:11px 0 0;
+  border-radius:var(--r-card);padding:var(--s3);margin:0 0 var(--s3)}
+.draft h3{font:500 var(--t2)/1.3 var(--sans);color:var(--ink);margin:0 0 var(--s0)}
+.draft .lede{font:400 var(--t2)/1.5 var(--sans);color:var(--text2);margin:0 0 var(--s3)}
+.draft .out{font:400 var(--t2)/1.62 var(--sans);color:var(--text);margin:var(--s3) 0 0;
   white-space:pre-wrap;max-height:230px;overflow:auto}
-.draft .out p{margin:0 0 10px}
-.draft .q{margin:0 0 12px}
-.draft .q .ask{font:500 12.5px/1.45 var(--sans);color:var(--ink);margin:0 0 4px}
-.draft .q .ans{font:400 12.5px/1.55 var(--sans);color:var(--text2);margin:0}
-.draft .err{font:400 12.5px/1.5 var(--sans);color:var(--b-unsure);margin:11px 0 0}
-.draft .bar{display:flex;gap:8px;align-items:center;margin:11px 0 0}
+.draft .out p{margin:0 0 var(--s2)}
+.draft .q{margin:0 0 var(--s3)}
+.draft .q .ask{font:500 var(--t2)/1.45 var(--sans);color:var(--ink);margin:0 0 var(--s1)}
+.draft .q .ans{font:400 var(--t2)/1.55 var(--sans);color:var(--text2);margin:0}
+.draft .err{font:400 var(--t2)/1.5 var(--sans);color:var(--b-unsure);margin:var(--s3) 0 0}
+.draft .bar{display:flex;gap:var(--s2);align-items:center;margin:var(--s3) 0 0}
 .draft .bar .cmark{width:18px;height:18px}
-.draft .bar .lbl{font:400 12px/1 var(--sans);color:var(--text2)}
+.draft .bar .lbl{font:400 var(--t1)/1 var(--sans);color:var(--text2)}
 .mini-cta{appearance:none;border:1px solid var(--hair2);background:transparent;
-  cursor:pointer;border-radius:var(--r-pill);padding:9px 14px;
-  font:500 12.5px/1 var(--sans);color:var(--ink)}
+  cursor:pointer;border-radius:var(--r-pill);padding:var(--s2) var(--s3);
+  font:500 var(--t2)/1 var(--sans);color:var(--ink)}
 .mini-cta.solid{background:var(--btn);color:var(--btn-ink);border-color:transparent}
 .mini-cta[disabled]{opacity:.5;cursor:default}
 .tabbar{position:absolute;left:0;right:0;bottom:0;display:flex;background:var(--surface);
   border-top:1px solid var(--hair);padding:9px 0 calc(9px + env(safe-area-inset-bottom,0px));z-index:6}
 .tabbar button{flex:1;appearance:none;border:0;background:transparent;cursor:pointer;
-  display:grid;justify-items:center;gap:4px;color:var(--text2);
-  font:500 10.5px/1 var(--sans);padding:4px 0}
+  display:grid;justify-items:center;gap:var(--s1);color:var(--text2);
+  font:500 var(--t1)/1 var(--sans);padding:var(--s1) 0}
 .tabbar button svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.7;
   stroke-linecap:round;stroke-linejoin:round}
 .tabbar button[aria-pressed="true"]{color:var(--accent)}
 .hide{display:none!important}
-.empty{text-align:center;color:var(--text2);font:400 13.5px/1.6 var(--sans);padding:50px 20px}
-.refusal h3{font:400 18px/1.25 var(--serif);margin:0 0 8px;color:var(--ink)}
-.refusal p{margin:0 0 8px;color:var(--text2);font-size:13.5px}
-.refusal .lb{font:500 10px/1 var(--sans);letter-spacing:.09em;text-transform:uppercase;color:var(--b-unsure);margin:12px 0 6px}
-.refusal ol{margin:0;padding-left:18px;font-size:13.5px}
+.empty{text-align:center;color:var(--text2);font:400 var(--t2)/1.6 var(--sans);padding:var(--s9) var(--s5)}
+.refusal h3{font:400 var(--t4)/1.25 var(--serif);margin:0 0 var(--s2);color:var(--ink)}
+.refusal p{margin:0 0 var(--s2);color:var(--text2);font-size:var(--t2)}
+.refusal .lb{font:500 var(--t0)/1 var(--sans);letter-spacing:.09em;text-transform:uppercase;color:var(--b-unsure);margin:var(--s3) 0 var(--s1)}
+.refusal ol{margin:0;padding-left:var(--s4);font-size:var(--t2)}
 </style>
 <link rel="stylesheet" href="card.css">
 </head>
@@ -538,7 +544,7 @@ html.anim .card.settled[data-band="auto"] .jcard__band{animation:autopulse 420ms
 </div>
 
 <p class="note">
-  <b>This is a mockup of the native screens, driven for real.</b> Paste a resume
+  <b>This is a mockup of the native screens, driven for real.</b> Paste a résumé
   <i>or upload one</i> &mdash; the clip posts the file to the app's own
   <code>/api/extract</code>, which reads PDF, DOCX, TXT and MD &mdash; then tap
   the arrow: it posts to the same <code>/api/score</code> the apps use,
@@ -648,7 +654,7 @@ const DRAFT = {
       return `<p class="lhead"><span class="nm">${esc(head.nm)}</span>
         ${head.ct ? `<span class="ct">${esc(head.ct)}</span>` : ""}</p>` + body;
     } },
-  resume: { verb: "rebuilding your resume", path: "/api/resume",
+  resume: { verb: "rebuilding your résumé", path: "/api/resume",
     /* The same document apply.html builds, from the same payload:
        sections[].heading and items[].{title,meta,bullets}. Empty sections are
        dropped - the model returns the full skeleton whether or not it had
@@ -673,7 +679,7 @@ const DRAFT = {
       if (d.unsupported) return `<p class="note">${esc(d.host || "This employer")}
         keeps its application form behind a login, so the questions cannot be read
         ahead of time by anyone &mdash; not us, and not you. Open the posting when
-        you are ready and answer them there: the letter and the rebuilt resume are
+        you are ready and answer them there: the letter and the rebuilt résumé are
         what most of those boxes ask for anyway.</p>`;
       if (!Array.isArray(d.questions) || !d.questions.length) return null;
       return d.questions.map((q, i) => `<div class="q">
@@ -691,7 +697,7 @@ const DRAFT = {
 
 const COPYICON = `<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8.5" y="8.5" width="11" height="11" rx="2"/><path d="M5.5 15.5h-1a2 2 0 0 1-2-2v-9a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>`;
 
-const SHEET_TITLE = { letter: "Cover letter", resume: "Your resume, aimed at it",
+const SHEET_TITLE = { letter: "Cover letter", resume: "Your résumé, aimed at it",
                       answers: "Their screening questions" };
 
 function openSheet(id) {
@@ -733,11 +739,11 @@ async function runDraft(id, exclude) {
        with its reason and the claims quoted, never as a number */
     const refusal = d => `<div class="refusal">
       <h3>The ${id === "letter" ? "letter" : "document"} was written, then checked.</h3>
-      <p>${d.invented.length === 1 ? "One of its claims is" : `${d.invented.length} of its claims are`} not in your resume, so it is not being shown as yours. Nothing here is a judgement about you &mdash; only about what the document says.</p>
-      <p class="lb">Not in the resume</p>
+      <p>${d.invented.length === 1 ? "One of its claims is" : `${d.invented.length} of its claims are`} not in your résumé, so it is not being shown as yours. Nothing here is a judgement about you &mdash; only about what the document says.</p>
+      <p class="lb">Not in the résumé</p>
       <ol>${d.invented.map(q => `<li>&ldquo;${esc(q)}&rdquo; &mdash; the resume does not say it.</li>`).join("")}</ol>
       <button class="cta" type="button" data-rewrite="${id}" data-exclude="${esc(d.invented.slice(0, 12).join("\u001f"))}">Rewrite without ${d.invented.length === 1 ? "that one" : d.invented.length === 2 ? "those two" : "those " + d.invented.length} &rarr;</button>
-      <button class="cta quiet" type="button" data-go="home">Add them to the resume and re-run &rarr;</button></div>`;
+      <button class="cta quiet" type="button" data-go="home">Add them to the résumé and re-run &rarr;</button></div>`;
     const html = r.ok ? spec.render(d) : (Array.isArray(d.invented) && d.invented.length ? refusal(d) : null);
     draftState[id] = html
       ? { html, text: d }
@@ -757,8 +763,8 @@ async function runDraft(id, exclude) {
    Claude produced them. djb2 over the id, mapped 38..96. */
 const fitOf = id => { let h = 5381; for (const c of id) h = ((h << 5) + h + c.charCodeAt(0)) >>> 0;
   return 38 + (h % 59); };
-const bandOf = f => f >= 80 ? ["auto", "--b-auto"] : f >= 70 ? ["ping", "--b-ping"]
-  : f >= 55 ? ["unsure", "--b-unsure"] : ["near-miss", "--b-near"];
+/* design system v3, stage 3: band.js is the one place score -> band lives */
+const bandOf = f => { const b = JSBand.bandFor(f) || "near-miss"; return [b, `--b-${b === "near-miss" ? "near" : b}`]; };
 const postings = () => (FEED?.[market]?.postings) || [];
 /* THE SAME FLOOR THE WEB HOLDS (index.html: FIT_FLOOR = 55, the foot of the
    unsure band). Below it nothing is recommended and nothing is offered as a
@@ -861,15 +867,15 @@ function nofitHTML() {
   const asks = [...xs].sort((a, b) => b.fit - a.fit).slice(0, 3)
     .filter(x => (x.weakest || "").trim());
   return `<div class="nofit">
-    <p class="lead"><b>Today&rsquo;s postings are a stretch for this resume as written.</b>
+    <p class="lead"><b>Today&rsquo;s postings are a stretch for this résumé as written.</b>
       The nearest was ${near} out of 100 &mdash; the distance between what these postings
-      ask for and what the resume currently says, not what you are capable of.</p>
+      ask for and what the résumé currently says, not what you are capable of.</p>
     ${asks.length ? `<p class="k">What they are asking for</p><ul class="asks">` + asks.map(x =>
       `<li><em>${esc(x.title || x.id)}</em>${esc(x.weakest)}</li>`).join("") + `</ul>` : ""}
     <p class="lead">Put whatever is genuinely true of you against those points and run it
       again. And if you would rather back yourself on one of these today, do &mdash; the
       letter leads with your strongest real evidence.</p>
-    <button class="cta quiet" type="button" data-go="home">Rework your resume &rarr;</button>
+    <button class="cta quiet" type="button" data-go="home">Rework your résumé &rarr;</button>
   </div>`;
 }
 
@@ -923,7 +929,7 @@ const cardHTML = (p, full) => {
       <div class="jcard__id">
         <p class="jcard__org">${esc(p.company)}${p.location ? ` <span class="sep">&middot;</span> ${esc(p.location)}` : ""}</p>
         <h3 class="jcard__title"><a class="jcard__link" href="#" data-open-card="${esc(p.id)}">${esc(p.title)}</a></h3>
-        <div class="jcard__meta"><span class="jcard__band">${word.toUpperCase()}</span><span class="jcard__chip">${pol}</span>${whenOf(p) ? `<span class="jcard__when">${whenOf(p)}</span>` : ""}</div>
+        <div class="jcard__meta meta"><span class="jcard__band tier1">${word.toUpperCase()}</span><span class="jcard__chip tier2">${pol}</span>${whenOf(p) ? `<span class="jcard__when tier3">${whenOf(p)}</span>` : ""}</div>
       </div>
     </div>
     ${strongest ? `<div class="jcard__evidence"><p class="jcard__evidence-k">STRONGEST</p><p>${esc(strongest)}</p></div>` : ""}
@@ -931,7 +937,7 @@ const cardHTML = (p, full) => {
       <div class="ev ev-answer">
         <p class="lb">&#8595; What to answer</p>
         <p class="bd">${esc(p.weakest
-          || "Say how recently you did this, and name the tools the posting lists that your resume does not.")}</p></div>` : ""}
+          || "Say how recently you did this, and name the tools the posting lists that your résumé does not.")}</p></div>` : ""}
     <div class="jcard__actions">
       <button class="jcard__btn jcard__btn--primary" type="button" data-open-card="${esc(p.id)}">Prepare application <span class="jcard__arrow">&rarr;</span></button>
       <button class="jcard__heart heart" type="button" data-heart="${esc(p.id)}"
@@ -973,17 +979,17 @@ const SCREENS = {
     <div class="mhero">
       <h2>Find the work<br>made for you<span class="dot">.</span></h2>
       <div class="mbox" id="mbox">
-        <textarea id="resume" rows="1" placeholder="Paste your resume&hellip;"
-                  aria-label="Paste your resume"></textarea>
+        <textarea id="resume" rows="1" placeholder="Paste your résumé&hellip;"
+                  aria-label="Paste your résumé"></textarea>
         <span class="sep" aria-hidden="true"></span>
         <button class="clip" id="clipBtn" type="button"
-                aria-label="Upload your resume as a PDF, Word file or text">
+                aria-label="Upload your résumé as a PDF, Word file or text">
           <svg viewBox="0 0 24 24"><path d="M20 11.5 12.4 19a4.6 4.6 0 0 1-6.5-6.5l7.8-7.8a3 3 0 0 1 4.3 4.3l-7.7 7.7a1.5 1.5 0 0 1-2.1-2.1l7-7"/></svg>
         </button>
         <input type="file" id="resumeFile" accept=".pdf,.doc,.docx,.txt,.md,text/plain"
                style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none">
         <b id="runBtn" role="button" tabindex="0"
-           aria-label="Score these postings against your resume">&#8594;</b></div>
+           aria-label="Score these postings against your résumé">&#8594;</b></div>
       <p class="mfile" id="mfile" hidden></p>
       <div class="chips"><i>Remote</i><i>Hybrid</i><i>On site</i><i>Any of those</i></div>
     </div>
@@ -994,7 +1000,7 @@ const SCREENS = {
     ${limitedAt ? limitedHTML() : ""}
     <h2 class="big">Your matches</h2>
     <p class="sub">${scored().length} scored of ${postings().length} swept &middot; ${scoredReal
-      ? "scored by Claude just now" : "example scores &mdash; paste a resume to score for real"}
+      ? "scored by Claude just now" : "example scores &mdash; paste a résumé to score for real"}
       ${runErr ? `<br><span style="color:var(--b-unsure)">${esc(runErr)}</span>` : ""}</p>
     <button class="savesearch" type="button" id="saveSearch" aria-pressed="${isSearchSaved()}">
       <svg viewBox="0 0 24 24"><path d="M6.5 3.5h11v17l-5.5-4-5.5 4z"/></svg>
@@ -1017,12 +1023,12 @@ const SCREENS = {
       <article class="jcard jcard--detail" data-band="${JBAND[word]}" data-score="${p.fit}">
         <div class="jcard__head">
           <div class="jcard__score">${roseMarkup(44)}<span class="jcard__num num" role="img" aria-label="Score ${p.fit} out of 100, ${word}">${p.fit}</span></div>
-          <div class="jcard__meta"><span class="jcard__band">${word.toUpperCase()}</span><span class="jcard__chip">${pol}</span>${whenOf(p) ? `<span class="jcard__when">${whenOf(p)}</span>` : ""}</div>
+          <div class="jcard__meta meta"><span class="jcard__band tier1">${word.toUpperCase()}</span><span class="jcard__chip tier2">${pol}</span>${whenOf(p) ? `<span class="jcard__when tier3">${whenOf(p)}</span>` : ""}</div>
         </div>
         <div class="jcard__evidence"><p class="jcard__evidence-k">STRONGEST</p><p>${esc(p.strongest
           || `Direct overlap with ${p.sector} work, and the location rule passes.`)}</p></div>
         <div class="ev ev-answer"><p class="lb">&#8595; What to answer</p><p class="bd">${esc(p.weakest
-          || "Say how recently you did this, and name the tools the posting lists that your resume does not.")}</p></div>
+          || "Say how recently you did this, and name the tools the posting lists that your résumé does not.")}</p></div>
         <div class="jcard__actions">
           <button class="jcard__btn jcard__btn--primary" type="button" data-go="draft">${p.fit < FIT_FLOOR
             ? "Apply anyway" : "Prepare application"} <span class="jcard__arrow">&rarr;</span></button>
@@ -1057,11 +1063,11 @@ const SCREENS = {
       <h2 class="big">${esc(p.title)}</h2>
       <p class="sub">${esc(p.company)} &middot; fit ${p.fit}</p>
       ${sec("letter", "Cover letter",
-            "A short letter for this posting, grounded in your resume.", "Write the letter")}
-      ${sec("resume", "Your resume, aimed at it",
-            "The same experience, reworded toward what this posting asks for.", "Rebuild my resume")}
+            "A short letter for this posting, grounded in your résumé.", "Write the letter")}
+      ${sec("resume", "Your résumé, aimed at it",
+            "The same experience, reworded toward what this posting asks for.", "Rebuild my résumé")}
       ${sec("answers", "Their screening questions",
-            "The questions on the employer's own form, answered from your resume.",
+            "The questions on the employer's own form, answered from your résumé.",
             "Get their questions")}`;
   },
 
@@ -1126,7 +1132,7 @@ async function runScore() {
   catch (err) { runErr = "Could not score: " + err.message + ". Showing example scores."; }
   if (btn) {
     btn.classList.remove("busy");
-    btn.setAttribute("aria-label", "Score these postings against your resume");
+    btn.setAttribute("aria-label", "Score these postings against your résumé");
     btn.innerHTML = "→";
   }
   ran = true; screen = "matches"; paint();

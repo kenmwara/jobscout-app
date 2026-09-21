@@ -23,7 +23,7 @@ struct Step<T> {
 
 /**
  One application, being prepared. Mirrors site/apply.html and Apply.kt: a cover
- letter, the candidate's own resume rebuilt for this job, and the employer's
+ letter, the candidate's own résumé rebuilt for this job, and the employer's
  screening questions answered from the profile — each asked for separately,
  because each costs a call and not everyone wants all three.
  */
@@ -80,7 +80,7 @@ final class DemoVM: ObservableObject {
         return own.count > 40 ? own : nil
     }
     /// Run with no resume. Same words as the web page.
-    static let noResume = "Add your resume above — upload a file, or paste the text."
+    static let noResume = "Add your résumé above — upload a file, or paste the text."
 
 
     func load() async {
@@ -243,7 +243,7 @@ final class DemoVM: ObservableObject {
         var scores: [Score] = []
     }
 
-    /// The same djb2 the web uses, so the two agree on what "a different resume" means.
+    /// The same djb2 the web uses, so the two agree on what "a different résumé" means.
     private func fingerprint(_ text: String) -> String {
         var h: Int32 = 5381
         for u in text.unicodeScalars { h = (h &<< 5) &+ h &+ Int32(truncatingIfNeeded: u.value) }
@@ -435,7 +435,7 @@ struct ContentView: View {
     @State private var sector: String? = nil
     /// The sweep is long; show a screenful until asked for the rest.
     @State private var sweepOpen = false
-    /* One scrolling page, so "home" and "back to the resume box" are anchors
+    /* One scrolling page, so "home" and "back to the résumé box" are anchors
        rather than screens. Held as a closure because the panel and the header
        are both nested inside the reader. */
     @State private var scrollTo: ((String) -> Void)?
@@ -457,7 +457,7 @@ struct ContentView: View {
 
                 hero
 
-                StageHeading(bearing: "000", label: "THE CANDIDATE", title: "Start with your resume.",
+                StageHeading(bearing: "000", label: "THE CANDIDATE", title: "Start with your résumé.",
                              note: "Upload a file, or paste the text.")
                 HStack(spacing: 8) {
                     ForEach(markets, id: \.0) { id, label in
@@ -677,11 +677,11 @@ struct ContentView: View {
 
     private var ownResumeBox: some View {
         VStack(alignment: .leading, spacing: 8) {
-            LinkText(text: ownOpen ? "Hide the resume box" : "Add your resume") { ownOpen.toggle() }
+            LinkText(text: ownOpen ? "Hide the résumé box" : "Add your résumé") { ownOpen.toggle() }
             if ownOpen {
                 HStack(spacing: 10) {
                     if vm.uploading { ProgressView().tint(indigo) }
-                    PillButton(text: vm.uploading ? "Extracting…" : "Upload resume (PDF, DOCX, TXT)",
+                    PillButton(text: vm.uploading ? "Extracting…" : "Upload résumé (PDF, DOCX, TXT)",
                                enabled: !vm.uploading) { importing = true }
                 }
                 if let st = vm.uploadStatus {
@@ -689,7 +689,7 @@ struct ContentView: View {
                 }
                 ZStack(alignment: .topLeading) {
                     if vm.resume.isEmpty {
-                        Text("Paste plain resume text (max 6,000 chars)…").font(sans(15)).foregroundColor(text3)
+                        Text("Paste plain résumé text (max 6,000 chars)…").font(sans(15)).foregroundColor(text3)
                             .padding(.horizontal, 14).padding(.vertical, 12)
                     }
                     TextEditor(text: $vm.resume)
@@ -703,7 +703,7 @@ struct ContentView: View {
                 .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
                 .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous)
                     .stroke(vm.usingOwn ? indigo : hair2, lineWidth: vm.usingOwn ? 2 : 1))
-                Text((vm.usingOwn ? "Using your own resume for this run. " : "") + "Processed in memory for this run only. Never stored, never logged.")
+                Text((vm.usingOwn ? "Using your own résumé for this run. " : "") + "Processed in memory for this run only. Never stored, never logged.")
                     .font(sans(12)).foregroundColor(text3)
             }
         }
@@ -867,7 +867,7 @@ struct ContentView: View {
                 .padding(.top, 12)
 
             HStack(spacing: 9) {
-                PillButton(text: "Rework your resume", filled: true) {
+                PillButton(text: "Rework your résumé", filled: true) {
                     withAnimation { scrollTo?("resumebox") }
                 }
                 // One way: whoever pressed this wanted it. It resets with the next run.

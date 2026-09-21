@@ -394,7 +394,7 @@ hue, and light and dark are the same hue seen from opposite ends.
 |---|---|---|---|---|---|---|---|
 | AUTO | 147° | `#e7f4e8` | `#225b2c` | 7.11 | `#223424` | `#92d098` | 7.38 |
 | PING | 270° | `#eaf0ff` | `#394981` | 7.53 | `#272e42` | `#a4bbff` | 7.15 |
-| UNSURE | 63° | `#fbede1` | `#713f00` | 7.58 | `#3d2b1a` | `#ecaf78` | 7.04 |
+| UNSURE | 63° | `#fbede2` | `#713f00` | 7.58 | `#3d2b1a` | `#ecb078` | 7.04 |
 | NEAR-MISS | 285° | `#eff0f4` | `#4b4b5c` | 7.50 | `#2e2e34` | `#bbbcd0` | 7.21 |
 
 Everything lands between 7.04 and 7.58:1. **That evenness is the point.** The
@@ -490,7 +490,7 @@ job-card grid, both themes, every pill matches §11 to two decimals:
 | | light | dark |
 |---|---|---|
 | strongest | `#e7f4e8` / `#225b2c` · **7.11** | `#223424` / `#92d098` · **7.38** |
-| what to answer | `#fbede1` / `#713f00` · **7.58** | `#3d2b1a` / `#ecaf78` · **7.04** |
+| what to answer | `#fbede2` / `#713f00` · **7.58** | `#3d2b1a` / `#ecb078` · **7.04** |
 | near-miss | `#eff0f4` / `#4b4b5c` · **7.50** | `#2e2e34` / `#bbbcd0` · **7.21** |
 | ground / card | `#f8f3eb` / `#ffffff` | `#0a0524` / `#1c1544` |
 
@@ -506,9 +506,9 @@ what-to-answer cards under it — is still on the old values in **both** themes:
 |---|---|---|
 | dark ground | `#0f0a2a` | `#0a0524` |
 | dark panel | `#100b2f` | `#1c1544` |
-| dark answer card | `#100b2f`, grey text | `#3d2b1a` / `#ecaf78` |
+| dark answer card | `#100b2f`, grey text | `#3d2b1a` / `#ecb078` |
 | light panel | `#ffffff` ✓ | ✓ |
-| light answer card | `#fffdf9`, `#6e6973` · 5.26 | `#fbede1` / `#713f00` · 7.58 |
+| light answer card | `#fffdf9`, `#6e6973` · 5.26 | `#fbede2` / `#713f00` · 7.58 |
 
 Dark page→panel there measures **1.05:1** with zero hue difference — which is
 exactly §10's flatness, on the one block where it was first noticed. It is a
@@ -753,7 +753,7 @@ the field.
 
 | | dark card | light card | chroma | the band colour lives in |
 |---|---|---|---|---|
-| **A** *(was shipping)* | `#3d2b1a` | `#fbede1` | .038 / .022 | the fill |
+| **A** *(was shipping)* | `#3d2b1a` | `#fbede2` | .038 / .022 | the fill |
 | **B** | `#332c27` | `#f6f1ec` | .014 / .009 | a trace in the fill |
 | **C** *(shipping)* | `#2b284f` | `#f1f1fa` | at the **surface's** hue | a 2px rule + the label |
 
@@ -775,7 +775,7 @@ is why light survives the same mistake.
 
 | | label | AA | body | AA |
 |---|---|---|---|---|
-| answer · dark | `#ecaf78` | 7.22 | `#dbd1c8` | 9.19 |
+| answer · dark | `#ecb078` | 7.22 | `#dbd1c8` | 9.19 |
 | strongest · dark | `#92d098` | 7.70 | `#ccd6cd` | 9.26 |
 | answer · light | `#713f00` | 7.75 | `#584e45` | 7.22 |
 | strongest · light | `#225b2c` | 7.19 | `#495349` | 7.15 |
@@ -812,3 +812,77 @@ overshooting; and reduced motion means no motion, not less information.
 ## 17. One-line summary to keep in your head
 
 > **Market is the hero. Theme is everything else. They never touch.**
+
+
+## 19. The generator — design system v3 (2026-09-21)
+
+Three of the six subsystems were already generative and had never been
+written down (colour: 14 numbers rebuild all 24 band colours, 22/24 byte-exact;
+motion: every curve is a spring step response; the rose: `r = 2.275 + 0.2944·i`),
+and three had drifted (type: 47 distinct sizes on the site; space: 17+ values;
+elevation: no constant rung). v3 writes the generator down and brings the other
+three up to it. **Ruled by Ken, D1–D5, 2026-09-21.**
+
+**One source.** `tokens/tokens.json` → `node tokens/generate.mjs` →
+`site/tokens.css` (loaded ahead of `base.css`, whose legacy names are now
+`var()` aliases onto it), `android/…/design/Tokens.kt`, `ios/Sources/Tokens.swift`.
+`--check` fails the deploy if any output was hand-edited. Never type a colour,
+a size, a duration or a radius: it belongs in `tokens.json` or the rule is wrong.
+
+**Type.** `size(n) = 9 × 1.195ⁿ`, rounded to 0.5px: `--t0`…`--t7` = 9 · 11 · 13 ·
+15.5 · 18.5 · 22 · 26 · 31.5 (the pack's eight, a phone never needs more) and
+`--t8`…`--t12` = 37.5 · 45 · 53.5 · 64 · 76.5, the SAME series continued for the
+desktop site's display sizes. Serif 400 for `t4` and up only; sans for the rest;
+mono tabular for every numeral that is data. 878 hand values were snapped on
+2026-09-21; the largest move on a phone route was 2px.
+
+**Space.** A 4px grid: `--s0`…`--s15` = 2 · 4 · 8 · 12 · 16 · 20 · 24 · 32 · 40 · 48 ·
+56 · 64 · 72 · 80 · 96 · 128 (the pack's eight rungs plus the desktop section
+rhythm). `check_scale` reads padding-top/left, margin-top and gaps off every
+rendered element. Form elements inherit nothing, so `button{padding:0}` is
+global - the UA's 1px/6px was the first thing the check caught.
+
+**Radius.** One constant, one step: card 16, step 6 → chip 4 · inner 10 · card
+16 · sheet 22 · pill. (The card was 20.)
+
+**Elevation.** Light carries it in shadow alone (`--surface` is `#ffffff`, the
+ceiling: hover measures 1.000:1 and that is the rule, not a bug); dark has no
+shadow and carries it in the lift and the edge. The dark hover ring is gone.
+
+**The band contract.** The scorer emits `fit` only; every client derives the
+band. The thresholds live in `tokens.json` (`auto ≥ 80 · ping ≥ 70 · unsure ≥ 55`)
+and generate into `--threshold-*`, `Band` (Kotlin) and `JSBand` (Swift).
+`site/band.js` reads the custom properties at runtime and is the ONE place on the
+web (`bandFor`, `actionFor`, `leadStep`, `whenOf`); `rose.js` takes its lit table
+from it and throws on an unknown band rather than drawing a plausible wrong
+number. The lit bearings take the band SOLID (`--auto`), the numeral the label
+rung (`--auto-label`) - the glyph had drifted onto the label for both.
+`check_palette` rules 8 and 9 hold the springs, the lit table and the thresholds
+to `tokens.json` on all three clients.
+
+**The three tiers** (§ in `base.css`): tier 1 the verdict, filled band pair,
+PILL, 22px tall, 12px padding; tier 2 a fact, `--sunken`, 4px radius, 19px, 8px;
+tier 3 context, no container. Geometry carries the hierarchy because fill cannot.
+`check_tiers` measures the boxes on browse, apply and saved.
+
+**The honesty layer.** `site/evidence.js`: `validate(kind, text)` (20–240 chars,
+no persuasion, no claim about the reader, STRONGEST anchored in the document,
+WHAT TO ANSWER anchored in the posting), `allowedOn(kind, surface)` (browse:
+STRONGEST only; saved: nothing; the apply page, which is detail + prepare in
+one: both), `validateLede` for screen copy (never leads with a lack). A line
+that fails is NOT rendered. Measured on 2026-09-21 against real scorer output:
+0/8 STRONGEST and 2/8 answers passed as written, so the worker's prompt now asks
+for one sentence under 200 characters anchored in "the profile shows…" / "the
+posting asks for…"; re-measured 8/8 and 8/8 through this validator.
+
+**The prepare screen.** ONE filled button at a time, always the next move
+(`promoteNext()`); the lead step comes from `band.js leadStep` (D4: below PING the
+résumé leads); the lede compares two moves and claims nothing. **Saved rows**
+carry the band as the rose, never a pill; APPLIED is the only state word.
+**The sheet** puts navigation first, rows are 56px targets with a chevron, and a
+selected control never wears `--action` (`check_motion`, mutation
+`selected-as-action`).
+
+**Spelling.** The document is the *résumé* everywhere a reader sees the word,
+so the noun never reads as the verb (Ken, 2026-09-21). Identifiers, keys, ids
+and paths keep `resume`.

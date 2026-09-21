@@ -19,7 +19,7 @@ name: deploy site
 on:
   push:
     branches: [main]
-    paths: ['site/**', 'worker/**', '.github/workflows/deploy.yml']
+    paths: ['site/**', 'worker/**', 'tokens/**', '.github/workflows/deploy.yml']
   workflow_dispatch:
 
 concurrency:
@@ -33,6 +33,12 @@ jobs:
       contents: read
     steps:
       - uses: actions/checkout@v4
+
+      # Design system v3: tokens.json is the single source of truth and
+      # site/tokens.css + the two native token files are generated from it.
+      # A hand-edited output fails here and nothing deploys.
+      - name: The generated tokens match tokens.json
+        run: node tokens/generate.mjs --check
 
       - name: Deploy site/ to Cloudflare Pages
         env:
@@ -57,15 +63,17 @@ jobs:
           # A content hash makes the URL change whenever the file does, so no
           # cache policy anywhere can pair new markup with an old palette. The
           # checkout is fresh, so this never touches the repo.
-          CSSHASH=$(md5sum site/base.css | cut -c1-10)
-          sed -i "s|href=\"base.css\"|href=\"base.css?v=$CSSHASH\"|g" site/*.html
-          echo "stylesheet pinned to $CSSHASH"
-          grep -ho 'href="base.css[^"]*"' site/*.html | sort -u
+          for css in tokens.css base.css; do
+            H=$(md5sum "site/$css" | cut -c1-10)
+            sed -i "s|href=\"$css\"|href=\"$css?v=$H\"|g" site/*.html
+            echo "$css pinned to $H"
+          done
+          grep -ho 'href="[a-z]*\.css[^"]*"' site/*.html | sort -u
           # The same for the shared scripts (motion v2): rose.js builds the
           # rose on every page and hsheet.js is the phone header. Pages
           # caches a .js for four hours, so a reader got new HTML with the
           # OLD rose builder - "it is still loading a stale version".
-          for js in rose.js hsheet.js; do
+          for js in band.js evidence.js rose.js hsheet.js; do
             H=$(md5sum "site/$js" | cut -c1-10)
             sed -i "s|src=\"$js\"|src=\"$js?v=$H\"|g" site/*.html
             echo "$js pinned to $H"

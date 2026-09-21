@@ -153,12 +153,16 @@ fun Modifier.warmShadow(elevation: Dp, shape: Shape): Modifier =
  * drift on the clock, the failure check_palette exists to prevent for colour.
  * tools/check_palette.py holds these to base.css within 1ms / 0.01.
  */
+/* GENERATED numbers (design system v3): tokens/tokens.json -> design/Tokens.kt.
+   stiffness = (2*PI/T)^2 solved by the generator, never eyeballed, so this
+   clock cannot drift from the web's. The names below are the app's; the
+   values live in one place. */
 object Motion {
-    val snap: FiniteAnimationSpec<Float> = spring(dampingRatio = 0.72f, stiffness = 1218f)    // 180ms
-    val settle: FiniteAnimationSpec<Float> = spring(dampingRatio = 1.00f, stiffness = 342f)   // 340ms
-    val arrive: FiniteAnimationSpec<Float> = spring(dampingRatio = 0.62f, stiffness = 146f)   // 520ms, 8.3% over
-    val exit: FiniteAnimationSpec<Float> = tween(160, easing = CubicBezierEasing(0.4f, 0f, 1f, 1f))
-    const val STAGGER_DOT = 46L   // ms between bearings
+    val snap: FiniteAnimationSpec<Float> = trade.tbot.jobscout.design.Motion.snap        // 180ms, zeta .72
+    val settle: FiniteAnimationSpec<Float> = trade.tbot.jobscout.design.Motion.settle    // 340ms, critically damped
+    val arrive: FiniteAnimationSpec<Float> = trade.tbot.jobscout.design.Motion.arrive    // 520ms, 8.3% over
+    val exit: FiniteAnimationSpec<Float> = trade.tbot.jobscout.design.Motion.exit        // 160ms, never overshoots
+    const val STAGGER_DOT = 46L   // ms between bearings (tokens.json motion.stagger.dot)
     const val ARRIVE_MS = 520     // the dot spring's period, for the numeral's clock
 }
 

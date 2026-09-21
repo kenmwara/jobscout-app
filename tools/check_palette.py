@@ -60,7 +60,7 @@ except Exception:
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
 AA = 4.5
 AA_LARGE = 3.0
-MARKET_MAY_SET = {"hero", "mkt-wash"}
+MARKET_MAY_SET = {"hero-a", "hero-b", "hero", "mkt-wash"}
 
 fails = []
 def bad(m): fails.append(m); print("  FAIL  %s" % m)
@@ -95,7 +95,11 @@ def over(fg, bg, a=0.14):
     return "#%02X%02X%02X" % tuple(round(f[i] * a + b[i] * (1 - a)) for i in range(3))
 
 
-CSS = io.open(os.path.join(ROOT, "site", "base.css"), encoding="utf-8").read()
+# Design system v3: site/tokens.css is GENERATED from tokens/tokens.json and
+# loaded ahead of base.css, whose legacy names are var() aliases onto it. The
+# two are read as one sheet so an alias resolves to the generated hex.
+CSS = (io.open(os.path.join(ROOT, "site", "tokens.css"), encoding="utf-8").read() + "\n"
+       + io.open(os.path.join(ROOT, "site", "base.css"), encoding="utf-8").read())
 RULES = re.findall(r"([^{}]+)\{([^{}]*)\}", CSS)
 
 
@@ -407,26 +411,16 @@ if found:
 else:
     ok("no retired band colour survives in any shipped file")
 
-# 7. index.html carries its own copy of the band tokens, in the same
-#    light-dark() form. Both sides are RESOLVED before comparing, so the two
-#    files are held to the same values rather than to the same spelling.
-IDX = io.open(os.path.join(ROOT, "site", "index.html"), encoding="utf-8").read()
-idx_raw = {}
-for sel, body in re.findall(r"([^{}\n]+)\{([^{}]*)\}", IDX):
-    if sel.strip() == ":root":
-        idx_raw.update({n: v.strip() for n, v in
-                        re.findall(r"--(b-[\w-]+)\s*:\s*([^;]+)", body)})
-if not idx_raw:
-    bad("index.html has no `:root` band block - this check cannot fire")
-else:
-    for label, side, T in (("light", 0, LIGHT), ("dark", 1, DARK)):
-        got = resolve(idx_raw, side)
-        drift = ["%s: css %s / index %s" % (k, T.get(k), v)
-                 for k, v in got.items() if T.get(k) != v]
-        if drift:
-            bad("index.html disagrees with base.css on %s - %s" % (label, "; ".join(drift)))
-        else:
-            ok("index.html's %d band tokens match base.css on %s" % (len(got), label))
+# 7. NO page carries its own copy of the band tokens any more (design system
+#    v3): tokens.css is generated and loaded first, so a hex in a page's
+#    :root is a second place for a colour to drift from.
+for page in ("index.html", "saved.html", "apply.html", "privacy.html"):
+    P = io.open(os.path.join(ROOT, "site", page), encoding="utf-8").read()
+    strays = re.findall(r"--b-[\w-]+\s*:\s*light-dark\(#", P)
+    if strays:
+        bad("%s carries %d inline band hexes - the generator is the one place" % (page, len(strays)))
+    else:
+        ok("%s carries no inline band copy" % page)
 
 # ── 8. Android agrees with the web ──────────────────────────────────────
 print("\n-- the clients --")
@@ -455,40 +449,50 @@ for tag, T in (("LIGHT_TOKENS", LIGHT), ("DARK_TOKENS", DARK)):
         ok("%s matches the web on every shared token (%d compared)" % (tag, len(got)))
 
 print("")
-# 8. TIME drifts like colour. The web's springs live in base.css as durations
-#    and damping ratios; Android solves stiffness from the same period
-#    (k = (2pi/T)^2). Hold the two within 1ms and 0.01, so a "close enough"
-#    Compose constant cannot quietly put the phone on a different clock.
-import math
-CSS = io.open(os.path.join(ROOT, "site", "base.css"), encoding="utf-8").read()
+# 8. TIME drifts like colour. Design system v3: tokens/tokens.json is the one
+#    source; the generator solves Compose's stiffness from the same period
+#    (k = (2pi/T)^2) into design/Tokens.kt and SwiftUI's response into
+#    Tokens.swift. Hold all three to tokens.json within 1ms and 0.01, so a
+#    hand edit on any platform cannot quietly put it on a different clock.
+import json, math
+TOK = json.load(io.open(os.path.join(ROOT, "tokens", "tokens.json"), encoding="utf-8"))
 KT = io.open(os.path.join(ROOT, "android", "app", "src", "main", "java",
-                          "trade", "tbot", "jobscout", "Theme.kt"), encoding="utf-8").read()
+                          "trade", "tbot", "jobscout", "design", "Tokens.kt"), encoding="utf-8").read()
+SW = io.open(os.path.join(ROOT, "ios", "Sources", "Tokens.swift"), encoding="utf-8").read()
+CSS = io.open(os.path.join(ROOT, "site", "tokens.css"), encoding="utf-8").read()
 tdrift = []
 for name in ("snap", "settle", "arrive"):
+    sp = TOK["motion"]["springs"][name]; t_j, z_j = float(sp["durationMs"]), float(sp["zeta"])
     mt = re.search(r"--t-%s:\s*([\d.]+)ms" % name, CSS)
-    mz = re.search(r"--zeta-%s:\s*([\d.]+)" % name, CSS)
-    mk = re.search(r"val %s[^=]*=\s*spring\(dampingRatio = ([\d.]+)f, stiffness = ([\d.]+)f\)" % name, KT)
-    if not (mt and mz and mk):
+    mk = re.search(r"val %s = spring<Float>\(dampingRatio = ([\d.]+)f, stiffness = ([\d.]+)f\)" % name, KT)
+    ms = re.search(r"static let %s = Animation\.spring\(response: ([\d.]+), dampingFraction: ([\d.]+)\)" % name, SW)
+    if not (mt and mk and ms):
         tdrift.append("%s: missing on one side" % name); continue
-    t_css, z_css = float(mt.group(1)), float(mz.group(1))
-    z_kt, k_kt = float(mk.group(1)), float(mk.group(2))
-    t_kt = 2 * math.pi / math.sqrt(k_kt) * 1000
-    if abs(t_kt - t_css) > 1.0 or abs(z_kt - z_css) > 0.01:
-        tdrift.append("%s: css %gms z=%g / kotlin %.1fms z=%g" % (name, t_css, z_css, t_kt, z_kt))
-mx = re.search(r"--t-exit:\s*([\d.]+)ms", CSS); mk = re.search(r"val exit[^=]*=\s*tween\((\d+)", KT)
-if not (mx and mk) or abs(float(mx.group(1)) - float(mk.group(1))) > 1.0:
-    tdrift.append("exit: css %s / kotlin %s" % (mx and mx.group(1), mk and mk.group(1)))
+    t_css = float(mt.group(1))
+    z_kt, k_kt = float(mk.group(1)), float(mk.group(2)); t_kt = 2 * math.pi / math.sqrt(k_kt) * 1000
+    t_sw, z_sw = float(ms.group(1)) * 1000, float(ms.group(2))
+    for tag, t, z in (("css", t_css, z_j), ("kotlin", t_kt, z_kt), ("swift", t_sw, z_sw)):
+        if abs(t - t_j) > 1.0 or abs(z - z_j) > 0.01:
+            tdrift.append("%s/%s: %.1fms z=%g vs tokens.json %gms z=%g" % (name, tag, t, z, t_j, z_j))
+ex = float(TOK["motion"]["springs"]["exit"]["durationMs"])
+mx = re.search(r"--t-exit:\s*([\d.]+)ms", CSS); mk = re.search(r"val exit = tween<Float>\((\d+)", KT); ms = re.search(r"static let exit = Animation\.easeIn\(duration: ([\d.]+)\)", SW)
+for tag, v in (("css", mx and float(mx.group(1))), ("kotlin", mk and float(mk.group(1))), ("swift", ms and float(ms.group(1)) * 1000)):
+    if v is None or abs(v - ex) > 1.0:
+        tdrift.append("exit/%s: %s vs tokens.json %g" % (tag, v, ex))
 if tdrift:
-    bad("Android's springs drift from base.css: " + "; ".join(tdrift))
+    bad("the springs drift from tokens.json: " + "; ".join(tdrift))
 else:
-    ok("Android's four springs match base.css within 1ms / 0.01 damping")
+    ok("the four springs match tokens.json on web, Android and iOS within 1ms / 0.01 damping")
 
 
 
-# 9. THE ROSE'S LIT TABLE is one table on three clients. rose.js is the
-#    reference (AUTO 8, PING 6, UNSURE 5, NEAR-MISS 3); Rose.kt's litFor() and
-#    RoseView.swift's litFor() must carry the same four numbers in the same
-#    order, or a 79 lights six bearings on the web and seven on the phone.
+# 9. THE ROSE'S LIT TABLE and the BAND THRESHOLDS are one table on three
+#    clients, generated from tokens.json. band.js carries the web's (AUTO 8,
+#    PING 6, UNSURE 5, NEAR-MISS 3 at 80/70/55); design/Tokens.kt and
+#    Tokens.swift are generated; Rose.kt and RoseView.swift must READ them
+#    rather than carry a copy.
+LITJ = [TOK["rose"]["litByBand"][k] for k in ("auto", "ping", "unsure", "nearmiss")]
+THJ = [TOK["band"]["threshold"][k] for k in ("auto", "ping", "unsure")]
 def _lit(path, pat):
     try:
         src = _decomment(io.open(os.path.join(ROOT, *path), encoding="utf-8").read())
@@ -496,16 +500,23 @@ def _lit(path, pat):
         return None
     m = re.search(pat, src, re.S)
     return [int(x) for x in m.groups()] if m else None
-_web = _lit(("site", "rose.js"), r"auto:\s*(\d+),\s*ping:\s*(\d+),\s*unsure:\s*(\d+),\s*\"near-miss\":\s*(\d+)")
-_kt = _lit(("android", "app", "src", "main", "java", "trade", "tbot", "jobscout", "Rose.kt"),
-           r"fun litFor\(fit: Int\): Int = when \{\s*fit >= 80 -> (\d+)\s*fit >= 70 -> (\d+)\s*fit >= FIT_FLOOR -> (\d+)\s*else -> (\d+)")
-_sw = _lit(("ios", "Sources", "RoseView.swift"), r"func litFor\(_ f: Int\) -> Int \{ f >= 80 \? (\d+) : f >= 70 \? (\d+) : f >= 55 \? (\d+) : (\d+) \}")
-if not (_web and _kt and _sw):
-    bad("the rose's lit table is missing on a client (web %s / kotlin %s / swift %s)" % (_web, _kt, _sw))
-elif not (_web == _kt == _sw):
-    bad("the rose's lit table drifts: web %s / kotlin %s / swift %s" % (_web, _kt, _sw))
+DKT = ("android", "app", "src", "main", "java", "trade", "tbot", "jobscout", "design", "Tokens.kt")
+_web = _lit(("site", "band.js"), r"auto:\s*(\d+),\s*ping:\s*(\d+),\s*unsure:\s*(\d+),\s*\"near-miss\":\s*(\d+)")
+_webt = _lit(("site", "band.js"), r"FALLBACK = Object\.freeze\(\{\s*auto:\s*(\d+),\s*ping:\s*(\d+),\s*unsure:\s*(\d+)")
+_kt = _lit(DKT, r"litByBand = mapOf\(\"auto\" to (\d+), \"ping\" to (\d+), \"unsure\" to (\d+), \"nearmiss\" to (\d+)\)")
+_ktt = _lit(DKT, r"const val AUTO = (\d+)\s*const val PING = (\d+)\s*const val UNSURE = (\d+)")
+_sw = _lit(("ios", "Sources", "Tokens.swift"), r"litByBand: \[String: Int\] = \[\"auto\": (\d+), \"ping\": (\d+), \"unsure\": (\d+), \"nearmiss\": (\d+)\]")
+_swt = _lit(("ios", "Sources", "Tokens.swift"), r"static let auto = (\d+)\s*static let ping = (\d+)\s*static let unsure = (\d+)")
+_reads_kt = "design.Bands.litByBand" in io.open(os.path.join(ROOT, "android", "app", "src", "main", "java", "trade", "tbot", "jobscout", "Rose.kt"), encoding="utf-8").read()
+_reads_sw = "JSBands.litByBand" in io.open(os.path.join(ROOT, "ios", "Sources", "RoseView.swift"), encoding="utf-8").read()
+if not (_web and _kt and _sw and _webt and _ktt and _swt):
+    bad("the lit table / thresholds are missing on a client (web %s %s / kotlin %s %s / swift %s %s)" % (_web, _webt, _kt, _ktt, _sw, _swt))
+elif not (_web == _kt == _sw == LITJ and _webt == _ktt == _swt == THJ):
+    bad("the lit table or thresholds drift: tokens %s %s / web %s %s / kotlin %s %s / swift %s %s" % (LITJ, THJ, _web, _webt, _kt, _ktt, _sw, _swt))
+elif not (_reads_kt and _reads_sw):
+    bad("a client carries its own lit table instead of reading the generated one (Rose.kt %s, RoseView.swift %s)" % (_reads_kt, _reads_sw))
 else:
-    ok("the rose lights the same bearings per band on web, Android and iOS %s" % _web)
+    ok("the rose lights the same bearings per band at the same thresholds on web, Android and iOS %s @ %s" % (LITJ, THJ))
 
 print("%d FAILED" % len(fails) if fails else "ALL GREEN")
 sys.exit(1 if fails else 0)

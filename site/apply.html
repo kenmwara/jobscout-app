@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="build" content="dev">
 <title>Application — JobScout</title>
-<meta name="description" content="One posting, everything you need to apply: a cover letter, your resume aimed at it, and the employer's own screening questions answered from your profile.">
+<meta name="description" content="One posting, everything you need to apply: a cover letter, your résumé aimed at it, and the employer's own screening questions answered from your profile.">
 <meta name="robots" content="noindex">
 <link rel="icon" href="/icons/favicon.svg" type="image/svg+xml">
 <link rel="icon" href="/icons/favicon-32.png" sizes="32x32" type="image/png">
@@ -15,6 +15,7 @@
 <meta name="theme-color" content="#f8f3eb" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#0a0524" media="(prefers-color-scheme: dark)">
 <link rel="stylesheet" href="fonts-embedded.css">
+<link rel="stylesheet" href="tokens.css">
 <link rel="stylesheet" href="base.css">
 <script>/* Two independent attributes, stamped before first paint.
 
@@ -72,74 +73,75 @@
      Three things to take with you and one link out. Each step says what it
      is, what it is grounded in, and whether it is done — so the page can be
      read as a checklist rather than a pile of generated text. */
-  main{padding:8px 0 40px}
-  .head{display:flex;gap:26px;align-items:flex-start;flex-wrap:wrap;
-    padding:26px 0 30px;border-bottom:1px solid var(--hair);margin-bottom:34px}
+  main{padding:var(--s2) 0 var(--s8)}
+  .head{display:flex;gap:var(--s6);align-items:flex-start;flex-wrap:wrap;
+    padding:var(--s6) 0 var(--s7);border-bottom:1px solid var(--hair);margin-bottom:var(--s7)}
   .head .who{flex:1 1 320px;min-width:0}
-  .head h1{font:450 clamp(28px,4.2vw,44px)/1.1 var(--serif);letter-spacing:-.025em;
-    color:var(--ink);margin:0 0 12px}
-  .head .meta{display:flex;align-items:center;gap:12px;flex-wrap:wrap;
-    font:400 14px/1 var(--sans);color:var(--text2)}
-  .head .fit{display:flex;align-items:center;gap:14px;flex:0 0 auto}
-  .head .go{display:flex;gap:10px;flex-wrap:wrap;margin-top:20px}
+  .head h1{font:400 clamp(var(--t6),4.2vw,var(--t9))/1.1 var(--serif);letter-spacing:-.025em;
+    color:var(--ink);margin:0 0 var(--s3)}
+  .head .meta{display:flex;align-items:center;gap:var(--s3);flex-wrap:wrap;margin:var(--s3) 0 0;
+    font:400 var(--t2)/1 var(--sans);color:var(--text2)}
+  .head .fit{display:flex;align-items:center;gap:var(--s3);flex:0 0 auto}
+  .head .go{display:flex;gap:var(--s2);flex-wrap:wrap;margin-top:var(--s5)}
 
-  .step{margin:0 0 20px}
-  .step .bar{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin:0 0 4px}
-  .step h2{font:450 23px/1.2 var(--serif);letter-spacing:-.015em;color:var(--ink);margin:0}
-  .step .state{font:500 11.5px/1 var(--sans);letter-spacing:.08em;text-transform:uppercase;
-    padding:6px 11px;border-radius:var(--r-pill);background:var(--chip);color:var(--text3);
+  .step{margin:0 0 var(--s5)}
+  .step .bar{display:flex;align-items:center;gap:var(--s3);flex-wrap:wrap;margin:0 0 var(--s1)}
+  .step h2{font:400 var(--t5)/1.2 var(--serif);letter-spacing:-.015em;color:var(--ink);margin:0}
+  .step .state{font:500 var(--t1)/1 var(--sans);letter-spacing:.08em;text-transform:uppercase;
+    padding:var(--s1) var(--s3);border-radius:var(--r-pill);background:var(--chip);color:var(--text3);
     border:1px solid var(--hair)}
   .step .state.done{background:var(--b-auto-bg);color:var(--b-auto);border-color:transparent}
   .step .state.part{background:var(--b-unsure-bg);color:var(--b-unsure);border-color:transparent}
-  .step .lede{font:400 15px/1.6 var(--sans);color:var(--text2);margin:0 0 16px;max-width:64ch}
-  .step .acts{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px;align-items:center}
-  .step .grounded{font:400 12.5px/1.5 var(--sans);color:var(--text3);margin:0;max-width:40ch}
+  .prep__lede{margin:var(--s3) 0 0;font:400 var(--t2)/1.45 var(--sans);color:var(--text2);max-width:64ch}
+  .step .lede{font:400 var(--t3)/1.6 var(--sans);color:var(--text2);margin:0 0 var(--s4);max-width:64ch}
+  .step .acts{display:flex;gap:var(--s2);flex-wrap:wrap;margin-top:var(--s4);align-items:center}
+  .step .grounded{font:400 var(--t2)/1.5 var(--sans);color:var(--text3);margin:0;max-width:40ch}
 
-  .out{margin-top:6px}
-  .out p{margin:0 0 14px;font:400 16px/1.68 var(--sans);color:var(--text)}
-  .out h4{font:600 11.5px/1 var(--sans);letter-spacing:.08em;text-transform:uppercase;
-    color:var(--text3);margin:22px 0 11px}
+  .out{margin-top:var(--s1)}
+  .out p{margin:0 0 var(--s3);font:400 var(--t3)/1.68 var(--sans);color:var(--text)}
+  .out h4{font:600 var(--t1)/1 var(--sans);letter-spacing:.08em;text-transform:uppercase;
+    color:var(--text3);margin:var(--s5) 0 var(--s3)}
   .out h4:first-child{margin-top:0}
-  .out ul{margin:0 0 14px;padding-left:20px}
-  .out li{font:400 15.5px/1.62 var(--sans);color:var(--text);margin:0 0 9px}
+  .out ul{margin:0 0 var(--s3);padding-left:var(--s5)}
+  .out li{font:400 var(--t3)/1.62 var(--sans);color:var(--text);margin:0 0 var(--s2)}
   .out .gaps li b{color:var(--ink);font-weight:600}
 
   /* the rebuilt resume, shown as the page of paper it will be */
   .doc{background:var(--canvas-2);border:1px solid var(--hair);border-radius:12px;
-    padding:30px 32px;margin:0 0 6px}
-  .doc .dname{font:600 21px/1.2 var(--sans);color:var(--ink);margin:0 0 4px;letter-spacing:-.01em}
-  .doc .dcontact{font:400 13.5px/1.5 var(--sans);color:var(--text3);margin:0 0 10px}
-  .doc .dhead{font:400 15px/1.5 var(--sans);color:var(--text2);font-style:italic;margin:0 0 6px}
-  .doc .dsec{margin-top:22px}
-  .doc .dsec h5{font:600 11px/1 var(--sans);letter-spacing:.11em;text-transform:uppercase;
-    color:var(--text3);margin:0 0 12px;padding-bottom:7px;border-bottom:1px solid var(--hair)}
-  .doc .ditem{margin:0 0 15px}
-  .doc .dtitle{font:600 15px/1.35 var(--sans);color:var(--ink);margin:0}
-  .doc .dmeta{font:400 13px/1.4 var(--sans);color:var(--text3);margin:2px 0 0}
-  .doc .ditem ul{margin:7px 0 0;padding-left:18px}
-  .doc .ditem li{font:400 14.5px/1.55 var(--sans);color:var(--text);margin:0 0 5px}
-  @media(max-width:620px){ .doc{padding:20px 18px} }
+    padding:var(--s7) var(--s7);margin:0 0 var(--s1)}
+  .doc .dname{font:600 var(--t5)/1.2 var(--sans);color:var(--ink);margin:0 0 var(--s1);letter-spacing:-.01em}
+  .doc .dcontact{font:400 var(--t2)/1.5 var(--sans);color:var(--text3);margin:0 0 var(--s2)}
+  .doc .dhead{font:400 var(--t3)/1.5 var(--sans);color:var(--text2);font-style:italic;margin:0 0 var(--s1)}
+  .doc .dsec{margin-top:var(--s5)}
+  .doc .dsec h5{font:600 var(--t1)/1 var(--sans);letter-spacing:.11em;text-transform:uppercase;
+    color:var(--text3);margin:0 0 var(--s3);padding-bottom:var(--s2);border-bottom:1px solid var(--hair)}
+  .doc .ditem{margin:0 0 var(--s4)}
+  .doc .dtitle{font:600 var(--t3)/1.35 var(--sans);color:var(--ink);margin:0}
+  .doc .dmeta{font:400 var(--t2)/1.4 var(--sans);color:var(--text3);margin:var(--s0) 0 0}
+  .doc .ditem ul{margin:var(--s2) 0 0;padding-left:var(--s4)}
+  .doc .ditem li{font:400 var(--t3)/1.55 var(--sans);color:var(--text);margin:0 0 var(--s1)}
+  @media(max-width:620px){ .doc{padding:var(--s5) var(--s4)} }
 
   /* the screening questions: the employer's own wording, then the answer */
-  .q{padding:16px 0;border-top:1px solid var(--hair)}
-  .q:first-child{border-top:0;padding-top:4px}
-  .q .lbl{font:500 14.5px/1.5 var(--sans);color:var(--ink);margin:0 0 3px}
-.q .qtop{display:flex;align-items:flex-start;gap:12px;justify-content:space-between}
+  .q{padding:var(--s4) 0;border-top:1px solid var(--hair)}
+  .q:first-child{border-top:0;padding-top:var(--s1)}
+  .q .lbl{font:500 var(--t3)/1.5 var(--sans);color:var(--ink);margin:0 0 var(--s0)}
+.q .qtop{display:flex;align-items:flex-start;gap:var(--s3);justify-content:space-between}
 .q .qtop .lbl{flex:1 1 auto;margin-right:0}
-.qcopy{flex:0 0 auto;display:inline-flex;align-items:center;gap:5px;cursor:pointer;
-  font:500 11.5px/1 var(--sans);color:var(--ink-2);background:var(--chip);
-  border:1px solid var(--hair);border-radius:999px;padding:5px 9px;white-space:nowrap}
+.qcopy{flex:0 0 auto;display:inline-flex;align-items:center;gap:var(--s1);cursor:pointer;
+  font:500 var(--t1)/1 var(--sans);color:var(--ink-2);background:var(--chip);
+  border:1px solid var(--hair);border-radius:999px;padding:var(--s1) var(--s2);white-space:nowrap}
 .qcopy:hover{background:var(--canvas-2);color:var(--ink)}
 .qcopy:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .qcopy.ok{color:var(--b-auto);border-color:var(--b-auto)}
   .q .lbl i{font-style:normal;color:var(--b-unsure);font-weight:500}
-  .q .ans{font:400 15.5px/1.6 var(--sans);color:var(--text);margin:8px 0 0;
-    background:var(--canvas-2);border-left:2px solid var(--b-auto);padding:11px 14px;border-radius:0 8px 8px 0}
-  .q .yours{font:400 14px/1.5 var(--sans);color:var(--b-unsure);margin:6px 0 0}
-  .q .cite{font:400 12.5px/1.5 var(--sans);color:var(--text3);margin:7px 0 0}
+  .q .ans{font:400 var(--t3)/1.6 var(--sans);color:var(--text);margin:var(--s2) 0 0;
+    background:var(--canvas-2);border-left:2px solid var(--b-auto);padding:var(--s3) var(--s3);border-radius:0 8px 8px 0}
+  .q .yours{font:400 var(--t2)/1.5 var(--sans);color:var(--b-unsure);margin:var(--s1) 0 0}
+  .q .cite{font:400 var(--t2)/1.5 var(--sans);color:var(--text3);margin:var(--s2) 0 0}
 
-  .waiting{display:flex;align-items:center;gap:12px;font:400 15px/1.5 var(--sans);color:var(--text2);padding:6px 0 4px}
-  .waiting small{display:block;color:var(--text3);font-size:13px;margin-top:3px}
+  .waiting{display:flex;align-items:center;gap:var(--s3);font:400 var(--t3)/1.5 var(--sans);color:var(--text2);padding:var(--s1) 0 var(--s1)}
+  .waiting small{display:block;color:var(--text3);font-size:var(--t2);margin-top:var(--s0)}
   .cmark{display:block;flex:0 0 auto;border-radius:4px}
   /* A 3px drift every 2.6s does not read as "working" — the resume step takes
      long enough that the page looked frozen. Scale and fade as well, faster. */
@@ -150,7 +152,7 @@
      screens and the three steps stopped reading as a set.
 
      `.docwin`, not `.doc`: that one is the rendered resume above, and giving
-     the window the same class put `.doc{margin:0 0 6px}` up against the UA's
+     the window the same class put `.doc{margin:0 0 var(--s1)}` up against the UA's
      `margin:auto` — which is why it opened hard against the left edge — and
      made `.dhead` mean two different things. Centring is spelled out here
      rather than inherited, for the same reason. */
@@ -159,10 +161,10 @@
   .docwin::backdrop{background:var(--scrim)}
   .docwin .sheet{background:var(--surface);border:1px solid var(--hair);border-radius:var(--r-card);
     box-shadow:var(--sh-hover);max-height:min(84vh,900px);display:flex;flex-direction:column}
-  .docwin .whead{display:flex;align-items:center;gap:12px;padding:16px 20px;border-bottom:1px solid var(--hair)}
-  .docwin .whead h3{margin:0;font:450 19px/1.2 var(--serif);color:var(--ink);flex:1 1 auto}
-  .docwin .dbody{overflow:auto;padding:20px;flex:1 1 auto}
-  .docwin .dfoot{display:flex;gap:10px;flex-wrap:wrap;padding:14px 20px;border-top:1px solid var(--hair)}
+  .docwin .whead{display:flex;align-items:center;gap:var(--s3);padding:var(--s4) var(--s5);border-bottom:1px solid var(--hair)}
+  .docwin .whead h3{margin:0;font:450 var(--t4)/1.2 var(--serif);color:var(--ink);flex:1 1 auto}
+  .docwin .dbody{overflow:auto;padding:var(--s5);flex:1 1 auto}
+  .docwin .dfoot{display:flex;gap:var(--s2);flex-wrap:wrap;padding:var(--s3) var(--s5);border-top:1px solid var(--hair)}
   /* Scale only. A `translateY` in here is a POSITION the element holds while
      the animation is at frame zero — and an animation is paused at frame zero
      in a hidden document, so the window rested 8px low and measured off-centre.
@@ -171,37 +173,37 @@
      invisible and does not move the box's centre. */
   html.anim .docwin[open]{animation:winin .18s var(--ease)}
   @keyframes winin{from{transform:scale(.985)}}
-  .readmore{appearance:none;background:transparent;border:0;padding:6px 0 0;cursor:pointer;
-    font:500 13.5px/1 var(--sans);color:var(--link);text-decoration:underline;text-underline-offset:3px}
+  .readmore{appearance:none;background:transparent;border:0;padding:var(--s1) 0 0;cursor:pointer;
+    font:500 var(--t2)/1 var(--sans);color:var(--link);text-decoration:underline;text-underline-offset:3px}
   .readmore:hover{color:var(--ink)}
   .out.clipped{max-height:270px;overflow:hidden;
     -webkit-mask-image:linear-gradient(#000 72%,transparent);mask-image:linear-gradient(#000 72%,transparent)}
 
-  .note{font:400 14px/1.6 var(--sans);color:var(--text2);margin:0 0 18px}
-  .warn{background:var(--b-unsure-bg);color:var(--b-unsure);border-radius:12px;padding:13px 16px;
-    font:400 14.5px/1.55 var(--sans);margin:0 0 18px}
+  .note{font:400 var(--t2)/1.6 var(--sans);color:var(--text2);margin:0 0 var(--s4)}
+  .warn{background:var(--b-unsure-bg);color:var(--b-unsure);border-radius:12px;padding:var(--s3) var(--s4);
+    font:400 var(--t3)/1.55 var(--sans);margin:0 0 var(--s4)}
   #profileBox{width:100%;min-height:150px;resize:vertical;border:1px solid var(--hair2);
-    border-radius:12px;padding:14px;font:400 15px/1.6 var(--sans);color:var(--ink);
+    border-radius:12px;padding:var(--s3);font:400 var(--t3)/1.6 var(--sans);color:var(--ink);
     background:var(--surface);outline:none}
   #profileBox:focus{border-color:var(--accent)}
   /* The same control the landing page and the phone use, so a file behaves
      the same way wherever a resume is asked for. A label wrapping a hidden
      input is the only way to style a file picker; the input stays in the
      accessibility tree and keyboard-focusable, so it is not a fake button. */
-  .up{display:inline-flex;align-items:center;gap:8px;cursor:pointer;
-    padding:11px 18px;border-radius:var(--r-pill);border:1px solid var(--hair2);
-    font:500 14px/1 var(--sans);color:var(--text)}
+  .up{display:inline-flex;align-items:center;gap:var(--s2);cursor:pointer;
+    padding:var(--s3) var(--s4);border-radius:var(--r-pill);border:1px solid var(--hair2);
+    font:500 var(--t2)/1 var(--sans);color:var(--text)}
   .up:hover{border-color:var(--ink)}
   .up:focus-within{outline:2px solid var(--link);outline-offset:2px}
   .up .clip{width:17px;height:17px;flex:0 0 auto}
   .up input{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
   .up.busy{opacity:.6;pointer-events:none}
-  .empty{text-align:center;padding:80px 0}
-  .empty p{font:400 21px/1.4 var(--serif);color:var(--ink);margin:0 0 8px}
+  .empty{text-align:center;padding:var(--s13) 0}
+  .empty p{font:400 var(--t5)/1.4 var(--serif);color:var(--ink);margin:0 0 var(--s2)}
   /* The handle exists only on a phone, where this is a sheet. */
   .docwin .grab{display:none}
   @media(max-width:620px){
-    .head{gap:18px;padding:18px 0 24px}
+    .head{gap:var(--s4);padding:var(--s4) 0 var(--s6)}
     .head .fit{order:-1}
 
     /* SECTION 15. A DESKTOP DIALOG DROPPED ONTO A PHONE.
@@ -237,18 +239,18 @@
       border:1px solid var(--sheet-edge);border-bottom:0;
       box-shadow:var(--shadow-sheet)}
     .docwin .grab{display:block;width:34px;height:4px;border-radius:2px;
-      background:var(--hair2);margin:9px auto 0;flex:0 0 auto}
-    .docwin .whead{padding:11px 16px 12px}
+      background:var(--hair2);margin:var(--s2) auto 0;flex:0 0 auto}
+    .docwin .whead{padding:var(--s3) var(--s4) var(--s3)}
     /* Close is an icon at this width, not a pill competing with the title.
        The label stays in the DOM for assistive tech; only its box collapses. */
     .docwin .whead #docClose{
       flex:0 0 auto;width:30px;height:30px;padding:0;border:0;border-radius:50%;
       background:var(--sunken);color:var(--text2);font-size:0;
       display:grid;place-items:center}
-    .docwin .whead #docClose::after{content:"\00d7";font:400 15px/1 var(--sans)}
+    .docwin .whead #docClose::after{content:"\00d7";font:400 var(--t3)/1 var(--sans)}
     /* The raw OS scrollbar is a grey track with arrow buttons, and it clips
        the sheet's rounded corner. */
-    .docwin .dbody{padding:15px 16px 18px;
+    .docwin .dbody{padding:var(--s4) var(--s4) var(--s4);
       scrollbar-width:thin;scrollbar-color:var(--hair2) transparent}
     .docwin .dbody::-webkit-scrollbar{width:4px}
     .docwin .dbody::-webkit-scrollbar-track{background:transparent}
@@ -258,16 +260,21 @@
       padding:11px 16px calc(13px + env(safe-area-inset-bottom,0px))}
     .docwin .dfoot button,.docwin .dfoot a{width:100%;text-align:center}
   }
-.refusal{background:var(--surface);border:1px solid var(--hair);border-left:2px solid var(--evidence-rule-answer);border-radius:14px;padding:18px 20px}
-.refusal h3{font:400 20px/1.25 var(--serif);margin:0 0 8px;color:var(--ink)}
-.refusal p{margin:0 0 8px;color:var(--text2)}
-.refusal .c-ev-k{font:500 10px/1 var(--sans);letter-spacing:.09em;text-transform:uppercase;color:var(--b-unsure);margin:14px 0 6px}
-.refusal ol{margin:0;padding-left:20px;color:var(--text)}
-.refusal li{margin:4px 0}
-.refusal .act{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+.refusal{background:var(--surface);border:1px solid var(--hair);border-left:2px solid var(--evidence-rule-answer);border-radius:14px;padding:var(--s4) var(--s5)}
+.refusal h3{font:400 var(--t4)/1.25 var(--serif);margin:0 0 var(--s2);color:var(--ink)}
+.refusal p{margin:0 0 var(--s2);color:var(--text2)}
+.refusal .c-ev-k{font:500 var(--t0)/1 var(--sans);letter-spacing:.09em;text-transform:uppercase;color:var(--b-unsure);margin:var(--s3) 0 var(--s1)}
+.refusal ol{margin:0;padding-left:var(--s5);color:var(--text)}
+.refusal li{margin:var(--s1) 0}
+.refusal .act{display:flex;gap:var(--s2);flex-wrap:wrap;margin-top:var(--s3)}
   /* the page mark (base.css) sits at z-index:-1 inside this stacking context */
   body{position:relative;z-index:0}
+/* the phone header (base.css) hides this row-level nav at 620px and under; an
+   inline style used to beat it and the nav wrapped under the brand */
+nav.main{margin-left:auto;display:flex;gap:var(--s2);align-items:center}
 </style>
+<script src="band.js"></script>
+<script src="evidence.js"></script>
 <script src="rose.js"></script>
 </head>
 <body id="top">
@@ -295,7 +302,7 @@
         <svg viewBox="-3.5 -3.5 31 31" aria-hidden="true"><circle cx="12" cy="1" r="2.275"/><circle cx="19.7782" cy="4.2218" r="2.5694"/><circle cx="23" cy="12" r="2.8639"/><circle cx="19.7782" cy="19.7782" r="3.1583"/><circle cx="12" cy="23" r="3.4527"/><circle cx="4.2218" cy="19.7782" r="3.7471"/><circle cx="1" cy="12" r="4.0416"/><circle cx="4.2218" cy="4.2218" r="4.336"/></svg>
         JobScout
       </a>
-      <nav class="main" style="margin-left:auto;display:flex;gap:8px;align-items:center">
+      <nav class="main">
         <a href="#" id="backLink">&#8592; Back to your matches</a>
         <a href="saved">Saved jobs</a>
       </nav>
@@ -316,7 +323,7 @@
 <main class="wrap" id="main">
   <div class="empty" id="empty" hidden>
     <p>No application open.</p>
-    <p class="note">Score your resume against today&rsquo;s sweep, then choose <b>Prepare application</b> on a match &mdash; or pick one from your saved jobs.</p>
+    <p class="note">Score your résumé against today&rsquo;s sweep, then choose <b>Prepare application</b> on a match &mdash; or pick one from your saved jobs.</p>
     <a class="btn" href="./">Find my matches</a>
   </div>
 
@@ -333,31 +340,33 @@
       </div>
       <div class="fit" id="fit"></div>
     </div>
+    <p class="prep__lede" id="lede" hidden></p>
+    <div id="evid"></div>
 
     <div id="needProfile" hidden>
-      <div class="panel" style="margin-bottom:28px">
+      <div class="panel" style="margin-bottom:var(--s6)">
         <p class="eyebrow">First</p>
-        <h2 style="font:450 23px/1.2 var(--serif);margin:0 0 10px;color:var(--ink)">Paste your resume</h2>
-        <p class="note">You came here from your saved jobs, so this page does not have your resume &mdash; nothing about you is
+        <h2 style="font:450 var(--t5)/1.2 var(--serif);margin:0 0 var(--s2);color:var(--ink)">Paste your résumé</h2>
+        <p class="note">You came here from your saved jobs, so this page does not have your résumé &mdash; nothing about you is
           kept between visits. Paste it once and the three steps below can be drafted. It is read in the browser and
           sent only to score this one posting.</p>
-        <textarea id="profileBox" placeholder="Paste your resume&hellip;"></textarea>
-        <div class="acts" style="margin-top:14px">
-          <button class="btn" type="button" id="useProfile">Use this resume</button>
+        <textarea id="profileBox" placeholder="Paste your résumé&hellip;"></textarea>
+        <div class="acts" style="margin-top:var(--s3)">
+          <button class="btn" type="button" id="useProfile">Use this résumé</button>
           <label class="up" id="upLabel">
             <svg class="clip" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true"><path d="M21.4 11.05 12.25 20.2a5.5 5.5 0 0 1-7.78-7.78l9.19-9.19a3.67 3.67 0 1 1 5.18 5.19l-9.2 9.19a1.83 1.83 0 1 1-2.59-2.6l8.49-8.48"/></svg>
             <span>Upload a file</span>
             <input type="file" id="applyFile" accept=".pdf,.docx,.txt,.md,application/pdf">
           </label>
         </div>
-        <p id="uplStatus" class="fnote" style="margin:9px 0 0" role="status" aria-live="polite"></p>
+        <p id="uplStatus" class="fnote" style="margin:var(--s2) 0 0" role="status" aria-live="polite"></p>
       </div>
     </div>
 
     <div id="steps" hidden>
       <section class="step panel" id="s-letter">
         <div class="bar"><h2>Cover letter</h2><span class="state" id="st-letter">not drafted</span></div>
-        <p class="lede">A short letter for this posting, built from your resume alone &mdash; no invented experience, no credentials you did not list.</p>
+        <p class="lede">A short letter for this posting, built from your résumé alone &mdash; no invented experience, no credentials you did not list.</p>
         <div class="out" id="out-letter"></div>
         <div class="acts">
           <button class="btn" type="button" id="do-letter">Write the letter</button>
@@ -368,13 +377,13 @@
       </section>
 
       <section class="step panel" id="s-tailor">
-        <div class="bar"><h2>Your resume, rebuilt for this job</h2><span class="state" id="st-tailor">not built</span></div>
-        <p class="lede">Your whole resume &mdash; every role, school and certificate &mdash; reordered and reworded toward this
+        <div class="bar"><h2>Your résumé, rebuilt for this job</h2><span class="state" id="st-tailor">not built</span></div>
+        <p class="lede">Your whole résumé &mdash; every role, school and certificate &mdash; reordered and reworded toward this
           posting, as a document to attach. Nothing is added: whatever the posting wants that you have not done is
           listed underneath for you to add yourself, and only if it is true.</p>
         <div class="out" id="out-tailor"></div>
         <div class="acts">
-          <button class="btn" type="button" id="do-tailor">Rebuild my resume</button>
+          <button class="btn" type="button" id="do-tailor">Rebuild my résumé</button>
           <button class="btn2" type="button" id="dl-tailor" hidden>Download .docx</button>
           <button class="btn2" type="button" id="dt-tailor" hidden>Download .txt</button>
           <button class="btn2" type="button" id="cp-tailor" hidden>Copy</button>
@@ -384,7 +393,7 @@
 
       <section class="step panel" id="s-answers">
         <div class="bar"><h2>Their screening questions</h2><span class="state" id="st-answers">not read</span></div>
-        <p class="lede">The questions on the employer's own form, read before you open it, with the ones your resume settles already answered.</p>
+        <p class="lede">The questions on the employer's own form, read before you open it, with the ones your résumé settles already answered.</p>
         <div class="out" id="out-answers"></div>
         <div class="acts">
           <button class="btn" type="button" id="do-answers">Get their questions</button>
@@ -464,10 +473,8 @@ const COPYICON = `<svg viewBox="0 0 24 24" width="13" height="13" fill="none" st
   <rect x="9" y="9" width="11" height="11" rx="2"/>
   <path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>`;
 
-const BAND = f => f >= 80 ? ["auto","var(--b-auto)","var(--b-auto-bg)"]
-              : f >= 70 ? ["ping","var(--b-ping)","var(--b-ping-bg)"]
-              : f >= 55 ? ["unsure","var(--b-unsure)","var(--b-unsure-bg)"]
-                        : ["near-miss","var(--b-near)","var(--b-near-bg)"];
+/* design system v3, stage 3: band.js is the one place score -> band lives */
+const BAND = f => { const b = JSBand.bandFor(f) || "near-miss", t = JSBand.TOKEN[b]; return [b, `var(--${t}-label)`, `var(--${t}-fill)`]; };
 /* The rose is rose.js's - the fourth copy of the builder lived here, on the
    old 104-box geometry, and base.css's numeral rule (sized for the display
    cut) made its number tiny. One glyph, every page. */
@@ -481,12 +488,38 @@ function ago(iso){
     : d < 60 ? plural(Math.round(d / 7), "week") : plural(Math.round(d / 30), "month");
 }
 
+/* Stage 5: one filled button on the screen at a time, and it is always the
+   next move. PREP_ORDER puts the lead step first (band.js leadStep). */
+let PREP_ORDER = ["do-letter", "do-tailor", "do-answers"];
+function promoteNext(){
+  const open = PREP_ORDER.filter(id => $("#" + id) && !$("#" + id).hidden);
+  PREP_ORDER.forEach(id => { const b = $("#" + id); if (b) b.className = id === open[0] ? "btn" : "btn2"; });
+}
 function render(){
   $("#co").textContent = p.company || "";
   $("#role").textContent = p.title || p.id;
-  const bits = [ago(p.posted_at), p.location, p.remote_policy === "remote" ? "Remote"
+  /* design system v3, stage 2: the three tiers - the verdict (band pill),
+     the facts (location, policy) sunken, the date bare. */
+  const sc0 = S.fit !== null && S.fit !== undefined && S.fit !== "" && Number.isFinite(+S.fit);
+  const pill = sc0 ? (([r, c, g]) => `<span class="route tier1" style="color:${c};background:${g}">${r}</span>`)(BAND(+S.fit)) : "";
+  const facts = [p.location, p.remote_policy === "remote" ? "Remote"
     : p.remote_policy === "hybrid" ? "Hybrid" : p.remote_policy ? "On site" : ""].filter(Boolean);
-  $("#meta").innerHTML = bits.map(b => `<span>${esc(b)}</span>`).join('<span style="opacity:.4">&middot;</span>');
+  const when = JSBand.whenOf(p.posted_at);
+  $("#meta").innerHTML = pill + facts.map(b => `<span class="tier2">${esc(b)}</span>`).join("")
+    + (when ? `<span class="tier3">${esc(when)}</span>` : "");
+  /* D4: which prepare step leads. Below PING aiming the resume is the higher-
+     value move; the three steps keep a FIXED order, only the filled button moves. */
+  const lead = sc0 ? JSBand.leadStep(BAND(+S.fit)[0]) : "letter";
+  PREP_ORDER = lead === "resume" ? ["do-tailor", "do-letter", "do-answers"] : ["do-letter", "do-tailor", "do-answers"];
+  $("#lede").hidden = !sc0;
+  $("#lede").textContent = lead === "resume"
+    ? "Aiming the r\u00e9sum\u00e9 first is worth more here than the letter."
+    : "The letter leads here; the r\u00e9sum\u00e9 already reads close to what this posting asks for.";
+  promoteNext();
+  /* stage 4: the detail is the card expanded - STRONGEST and WHAT TO ANSWER,
+     each gated by evidence.js (an invalid line is not shown) */
+  $("#evid").innerHTML = JSEvidence.render("strongest", S.strongest || "", "detail")
+    + JSEvidence.render("answer", S.weakest || "", "detail");
   /* `+null` is 0 and Number.isFinite(0) is true, so a job saved straight from
      Browse — never scored, fit null — came through here as a hard 0 and the
      page told the user "This one scored 0 out of 100" and stamped it NEAR-MISS.
@@ -494,7 +527,7 @@ function render(){
   const isScored = S.fit !== null && S.fit !== undefined && S.fit !== "" && Number.isFinite(+S.fit);
   if (isScored){
     const [route, col, bg] = BAND(+S.fit);
-    $("#fit").innerHTML = roseSVG(+S.fit) + `<span class="route" style="color:${col};background:${bg}">${route}</span>`;
+    $("#fit").innerHTML = roseSVG(+S.fit);   /* the pill lives in #meta with the other tiers */
   }
   const link = $("#openLink");
   if (p.url) link.href = p.url; else { link.hidden = true; }
@@ -508,9 +541,9 @@ function render(){
     $("#steps").hidden = true; $("#needProfile").hidden = true;
     $("#main").insertAdjacentHTML("beforeend",
       `<div class="panel" id="floor"><p class="eyebrow">A stretch on paper</p>
-       <h2 style="font:450 23px/1.2 var(--serif);margin:0 0 10px;color:var(--ink)">This one scored ${+S.fit} out of 100</h2>
-       <p class="note">That is the distance between what the posting asks for and what your resume currently says —
-       not a measure of what you can do. Nine times in ten the faster move is to rewrite the resume so it answers
+       <h2 style="font:450 var(--t5)/1.2 var(--serif);margin:0 0 var(--s2);color:var(--ink)">This one scored ${+S.fit} out of 100</h2>
+       <p class="note">That is the distance between what the posting asks for and what your résumé currently says —
+       not a measure of what you can do. Nine times in ten the faster move is to rewrite the résumé so it answers
        this posting directly and run it again, which is why that is what JobScout suggests first.</p>
        <p class="note">Plenty of people get hired on a stretch, though, and this is your call. The letter will lead
        with your strongest real evidence and make the case for it; it will not claim anything you have not done, and
@@ -530,7 +563,7 @@ function render(){
   if (S.stretch && !$("#stretchnote")) $("#steps").insertAdjacentHTML("afterbegin",
     `<div class="warn" id="stretchnote">A stretch on paper, at ${isScored ? +S.fit : "under 55"} out of 100 — so
      everything below argues your case from what you have actually done, and claims nothing you have not. Where a
-     step lists something the posting asks for and your resume does not cover, that is a line to add if it is true
+     step lists something the posting asks for and your résumé does not cover, that is a line to add if it is true
      of you, and a good use of ten minutes before you send.</div>`);
   if (S.profile) $("#steps").hidden = false;
   else $("#needProfile").hidden = false;
@@ -833,10 +866,10 @@ function failed(id, msg, label, d){
     const n = d.invented.length;
     $("#out-" + id).innerHTML = `<div class="refusal">
       <h3>The ${what} was written, then checked.</h3>
-      <p>${n === 1 ? "One of its claims is" : `${n} of its claims are`} not in your resume, so it is not being shown as yours. Nothing here is a judgement about you — only about what the document says.</p>
-      <p class="c-ev-k">Not in the resume</p>
+      <p>${n === 1 ? "One of its claims is" : `${n} of its claims are`} not in your résumé, so it is not being shown as yours. Nothing here is a judgement about you — only about what the document says.</p>
+      <p class="c-ev-k">Not in the résumé</p>
       <ol>${d.invented.map(q => `<li>“${esc(q)}” — the resume does not say it.</li>`).join("")}</ol>
-      <div class="act"><button class="applybtn" type="button" data-rewrite="${id}">Rewrite without ${n === 1 ? "that one" : n === 2 ? "those two" : "those " + n} →</button><button class="applybtn quiet" type="button" data-fix="${id}">Add them to the resume and re-run →</button></div></div>`;
+      <div class="act"><button class="applybtn" type="button" data-rewrite="${id}">Rewrite without ${n === 1 ? "that one" : n === 2 ? "those two" : "those " + n} →</button><button class="applybtn quiet" type="button" data-fix="${id}">Add them to the résumé and re-run →</button></div></div>`;
     /* "Rewrite without those": the same call with the flagged claims sent as
        `exclude`, which the worker folds into the instruction. */
     $("#out-" + id).querySelector("[data-rewrite]").onclick = () => { S.exclude = d.invented.slice(0, 12); $("#do-" + id).click(); };
@@ -864,19 +897,19 @@ $("#do-letter").onclick = async () => {
     if (!d.letter) return failed("letter", d.detail || d.error || "Letter drafting is unavailable right now.", "Write the letter", d);
     $("#out-letter").innerHTML = asProse(d.letter);
     $("#st-letter").textContent = "drafted"; $("#st-letter").className = "state done";
-    $("#do-letter").hidden = true;
-    $("#gr-letter").textContent = "Grounded only in the resume you gave.";
+    $("#do-letter").hidden = true; promoteNext();
+    $("#gr-letter").textContent = "Grounded only in the résumé you gave.";
     offer("letter", d.letter, `cover-letter-${slug}.txt`);
     readable("letter", "Cover letter", true);
   }catch(e){ failed("letter", "Letter API unreachable: " + e, "Write the letter"); }
 };
 
 $("#do-tailor").onclick = async () => {
-  waiting("tailor", "rebuilding your resume for this job");
+  waiting("tailor", "rebuilding your résumé for this job");
   try{
     const { r, d } = await post("/api/resume");
     if (!Array.isArray(d.sections))
-      return failed("tailor", d.detail || d.error || "The resume could not be built right now.", "Rebuild my resume", d);
+      return failed("tailor", d.detail || d.error || "The résumé could not be built right now.", "Rebuild my résumé", d);
 
     // the document, then — separately, never inside it — what it does not say
     $("#out-tailor").innerHTML =
@@ -894,13 +927,13 @@ $("#do-tailor").onclick = async () => {
       (d.gaps?.length
         ? `<h4>Not in the document &mdash; add these yourself, only if true</h4><ul class="gaps">${
             d.gaps.map(g => `<li><b>${esc(g.asks)}</b> &mdash; ${esc(g.note)}</li>`).join("")}</ul>`
-        : `<h4>Gaps</h4><p>Nothing the posting asks for is missing from your resume.</p>`);
+        : `<h4>Gaps</h4><p>Nothing the posting asks for is missing from your résumé.</p>`);
 
     $("#st-tailor").textContent = d.gaps?.length
       ? `built · ${d.gaps.length} to add yourself` : "built";
     $("#st-tailor").className = "state " + (d.gaps?.length ? "part" : "done");
-    $("#do-tailor").hidden = true;
-    $("#gr-tailor").textContent = "Your own resume, reordered and reworded. Every employer, date and number in it came from the copy you gave.";
+    $("#do-tailor").hidden = true; promoteNext();
+    $("#gr-tailor").textContent = "Your own résumé, reordered and reworded. Every employer, date and number in it came from the copy you gave.";
 
     const plain = resumeText(d);
     $("#dl-tailor").hidden = false;
@@ -911,8 +944,8 @@ $("#do-tailor").onclick = async () => {
     const cp = $("#cp-tailor");
     cp.hidden = false;
     cp.onclick = () => copyInto(cp, plain, "tailor");
-    readable("tailor", "Your resume, rebuilt for this job", true);
-  }catch(e){ failed("tailor", "Resume API unreachable: " + e, "Rebuild my resume"); }
+    readable("tailor", "Your résumé, rebuilt for this job", true);
+  }catch(e){ failed("tailor", "Résumé API unreachable: " + e, "Rebuild my résumé"); }
 };
 
 /* Last, so everything render() reaches for is already defined. */
@@ -931,9 +964,9 @@ $("#do-answers").onclick = async () => {
       $("#out-answers").innerHTML = `<p class="note" style="margin:0">`
         + `${esc(d.host || "This employer")} keeps its application form behind a login, so the questions cannot be `
         + `read ahead of time by anyone — not us, and not you. Open the posting when you are ready and answer `
-        + `them there: the letter and the rebuilt resume above are what most of those boxes ask for anyway.</p>`;
+        + `them there: the letter and the rebuilt résumé above are what most of those boxes ask for anyway.</p>`;
       $("#st-answers").textContent = "their form is private"; $("#st-answers").className = "state";
-      $("#do-answers").hidden = true;
+      $("#do-answers").hidden = true; promoteNext();
       $("#gr-answers").textContent = "";
       return;
     }
@@ -973,7 +1006,7 @@ $("#do-answers").onclick = async () => {
     const left = qs.filter(q => !q.answer).length;
     $("#st-answers").textContent = left ? `${qs.length - left} of ${qs.length} answered` : `all ${qs.length} answered`;
     $("#st-answers").className = "state " + (left ? "part" : "done");
-    $("#do-answers").hidden = true;
+    $("#do-answers").hidden = true; promoteNext();
     /* Whose questions these are is not a detail. Presenting the standard set
        as the employer's own form would be the kind of quiet lie this product
        exists not to tell, so the badge, the lede and the footnote all say it. */
@@ -981,12 +1014,12 @@ $("#do-answers").onclick = async () => {
       $("#st-answers").textContent += " \u00b7 the usual ones";
       $("#s-answers .lede").textContent =
         `${d.source || "This employer"} keeps its form behind a login, so nobody can read it ahead of time. `
-        + `These are the questions almost every application asks, answered from your resume with the same `
-        + `rules: nothing invented, and anything your resume does not settle left for you.`;
+        + `These are the questions almost every application asks, answered from your résumé with the same `
+        + `rules: nothing invented, and anything your résumé does not settle left for you.`;
       $("#gr-answers").textContent = "The usual questions, not this employer's — check them "
         + "against the real form when you open it. Some of these will not be there, and it may ask something else.";
     } else {
-      $("#gr-answers").textContent = "Read from the employer's own form. Anything your resume does not settle is left for you.";
+      $("#gr-answers").textContent = "Read from the employer's own form. Anything your résumé does not settle is left for you.";
     }
     offer("answers", qs.map(q => `${q.label}${q.required ? " [required]" : ""}\n${q.answer || "— " + (q.why || "yours to answer")}`).join("\n\n"), null);
     readable("answers", "Their screening questions", true);

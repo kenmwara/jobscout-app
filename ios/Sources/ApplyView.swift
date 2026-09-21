@@ -28,14 +28,14 @@ struct ApplyView: View {
                 VStack(alignment: .leading, spacing: 12) {
                     header
                     posting(a)
-                    Text("Three things, each drafted from your resume alone and each one call. "
+                    Text("Three things, each drafted from your résumé alone and each one call. "
                          + "JobScout never submits anything \u{2014} you open the employer's form with "
                          + "the answers already written.")
                         .font(sans(14)).foregroundColor(muted).lineSpacing(4)
 
                     StepPanel(
                         title: "Cover letter",
-                        idle: "Written from your resume and this posting, in your register. Nothing it cannot point at in your own words.",
+                        idle: "Written from your résumé and this posting, in your register. Nothing it cannot point at in your own words.",
                         busy: "Drafting from the profile only \u{2014} it cannot invent experience\u{2026}",
                         action: "Write the letter",
                         step: a.letter,
@@ -43,10 +43,10 @@ struct ApplyView: View {
                     ) { LongText(text: $0) }
 
                     StepPanel(
-                        title: "Your resume, rebuilt for this job",
+                        title: "Your résumé, rebuilt for this job",
                         idle: "Every role, school and certificate you already have \u{2014} reordered and reworded for this posting. A different document for every application.",
-                        busy: "Rewriting the whole resume, then checking every name and number against your own\u{2026}",
-                        action: "Rebuild my resume",
+                        busy: "Rewriting the whole résumé, then checking every name and number against your own\u{2026}",
+                        action: "Rebuild my résumé",
                         step: a.resume,
                         onRun: { Task { await vm.buildResume() } }
                     ) { RebuiltResume(r: $0) }
@@ -170,7 +170,7 @@ struct LongText: View {
         VStack(alignment: .leading, spacing: 12) {
             Text(text).font(sans(15)).foregroundColor(ink).lineSpacing(6).textSelection(.enabled)
             /* SHARE IS THE PHONE'S DOWNLOAD. The web offers Copy AND
-               Download on every draft - "a resume has to be attachable" -
+               Download on every draft - "a résumé has to be attachable" -
                and both native clients offered Copy alone, so the document
                this whole flow builds toward could be read and copied but
                never sent anywhere. */
@@ -224,7 +224,7 @@ struct RebuiltResume: View {
 
             if !r.gaps.isEmpty {
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("WHAT THIS POSTING ASKS FOR THAT YOUR RESUME DOES NOT SAY")
+                    Text("WHAT THIS POSTING ASKS FOR THAT YOUR RÉSUMÉ DOES NOT SAY")
                         .font(sans(11, .medium)).foregroundColor(midnightViolet).tracking(0.8)
                     ForEach(Array(r.gaps.enumerated()), id: \.offset) { _, g in
                         VStack(alignment: .leading, spacing: 2) {
@@ -246,7 +246,7 @@ struct RebuiltResume: View {
             }
 
             HStack(spacing: 8) {
-                PillButton(text: "Copy the resume") { UIPasteboard.general.string = resumeText(r) }
+                PillButton(text: "Copy the résumé") { UIPasteboard.general.string = resumeText(r) }
                 ShareLink(item: resumeText(r)) { PillLabel(text: "Share") }
             }
             .padding(.top, 12)
@@ -284,12 +284,12 @@ struct Answers: View {
     var body: some View {
         if r.unsupported {
             // A fact about the employer, and it ends with what to do instead.
-            Text("This employer keeps its application form behind a login, so the questions cannot be read ahead of time by anyone \u{2014} not us, and not you. Open the posting when you are ready and answer them there: the letter and the rebuilt resume above are what most of those boxes ask for anyway.")
+            Text("This employer keeps its application form behind a login, so the questions cannot be read ahead of time by anyone \u{2014} not us, and not you. Open the posting when you are ready and answer them there: the letter and the rebuilt résumé above are what most of those boxes ask for anyway.")
                 .font(sans(14)).foregroundColor(muted).lineSpacing(4)
         } else {
             VStack(alignment: .leading, spacing: 14) {
                 Text("\(r.questions.count) question\(r.questions.count == 1 ? "" : "s") on "
-                     + "\(r.source.isEmpty ? "the form" : r.source) \u{2014} \(r.drafted) answered from your resume.")
+                     + "\(r.source.isEmpty ? "the form" : r.source) \u{2014} \(r.drafted) answered from your résumé.")
                     .font(sans(13)).foregroundColor(text3).lineSpacing(3)
                 ForEach(Array(r.questions.enumerated()), id: \.offset) { _, q in
                     VStack(alignment: .leading, spacing: 4) {

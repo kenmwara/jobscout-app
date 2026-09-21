@@ -78,7 +78,7 @@ const val GATE_STREAM = 6
 const val SAVED_SHOWN = 4
 
 /** Run with no resume. Same words as the web page. */
-const val NO_RESUME = "Add your resume above — upload a file, or paste the text."
+const val NO_RESUME = "Add your résumé above — upload a file, or paste the text."
 
 
 /** One of the three drafts: not asked for, running, arrived, or refused. */
@@ -86,7 +86,7 @@ data class Step<T>(val busy: Boolean = false, val data: T? = null, val error: St
 
 /**
  * One application, being prepared. Mirrors site/apply.html: a cover letter, the
- * candidate's own resume rebuilt for this job, and the employer's screening
+ * candidate's own résumé rebuilt for this job, and the employer's screening
  * questions answered from the profile — each asked for separately, because each
  * costs a call and not everyone wants all three.
  */
@@ -400,10 +400,10 @@ class DemoVm(app: Application) : AndroidViewModel(app) {
            the box on the landing screen. Clear that box and this used to `return`
            in silence: three buttons still sitting there, each doing nothing when
            pressed, with no way to find out why. Say it instead. The web has
-           always shown "Paste your resume" in this case. */
+           always shown "Paste your résumé" in this case. */
         val profile = profileText() ?: run {
             patch(_ui.value.apply?.posting?.id ?: return) {
-                put(it, Step(error = "Your resume is not in the box any more — paste it back on the " +
+                put(it, Step(error = "Your résumé is not in the box any more — paste it back on the " +
                     "first screen and this can be written from it."))
             }
             return
@@ -1048,7 +1048,7 @@ private fun InfoSheet(page: String, onClose: () -> Unit) {
             if (how) {
                 items(
                     listOf(
-                        "Your resume, not a form" to
+                        "Your résumé, not a form" to
                             "Upload or paste it. It is read for one run, scored, and never stored " +
                             "\u2014 no account, no profile to keep current.",
                         "A gate before the model" to
@@ -1058,7 +1058,7 @@ private fun InfoSheet(page: String, onClose: () -> Unit) {
                         "A number and a reason" to
                             "Every survivor gets a fit from 0 to 100, a verdict in plain words, the " +
                             "strongest point and the thing to answer next. From 55 up you can have a " +
-                            "cover letter, your resume rebuilt for the posting, and the screening " +
+                            "cover letter, your résumé rebuilt for the posting, and the screening " +
                             "questions answered from what you wrote.",
                         "You apply, never us" to
                             "JobScout does not submit anything and cannot. It opens the employer's " +
@@ -1077,12 +1077,12 @@ private fun InfoSheet(page: String, onClose: () -> Unit) {
             } else {
                 items(
                     listOf(
-                        "Your resume never leaves the device it is read on" to
+                        "Your résumé never leaves the device it is read on" to
                             "It is sent to the scoring API for the length of one run and is not " +
                             "written to any database, any log or any file. Close the app and it is gone.",
                         "No account, and nothing that identifies you" to
                             "There is no sign-in. What is counted is which step happened and when " +
-                            "\u2014 never your IP, never your resume or any part of it, never a job " +
+                            "\u2014 never your IP, never your résumé or any part of it, never a job " +
                             "title, a company, a score, a name or an email.",
                         "Saved jobs stay on this phone" to
                             "The list, the stages and your saved searches are in this app's own " +
@@ -1132,7 +1132,7 @@ private fun Stage(bearing: String, label: String, title: String, note: String? =
 
 /**
  * The below-floor panel. Not a refusal with a full stop — the recommendation
- * is still "rewrite the resume", and it is still first, but the two other
+ * is still "rewrite the résumé", and it is still first, but the two other
  * things a candidate might reasonably want to do are now here instead of
  * nowhere.
  *
@@ -1154,12 +1154,12 @@ private fun NoFit(
         Modifier.fillMaxWidth().clip(Card).background(T.surface)
             .border(1.dp, T.hair, Card).padding(16.dp),
     ) {
-        Text("Today's postings are a stretch for this resume as written.",
+        Text("Today's postings are a stretch for this résumé as written.",
             fontSize = 14.sp, lineHeight = 21.sp, fontWeight = FontWeight.Medium, color = T.ink)
         Spacer(Modifier.height(6.dp))
         Text("The nearest was $near out of 100 \u2014 which measures the distance between what these " +
-             "postings ask for and what the resume currently says, not what you are capable of. The " +
-             "quickest way to move it is to make the resume answer them, and they have been unusually " +
+             "postings ask for and what the résumé currently says, not what you are capable of. The " +
+             "quickest way to move it is to make the résumé answer them, and they have been unusually " +
              "clear about what they are asking:",
             fontSize = 13.sp, lineHeight = 20.sp, color = T.text2)
 
@@ -1184,7 +1184,7 @@ private fun NoFit(
 
         Spacer(Modifier.height(14.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(9.dp)) {
-            PillButton("Rework your resume", filled = true, onClick = onRework)
+            PillButton("Rework your résumé", filled = true, onClick = onRework)
             // One way: whoever pressed this wanted it. It resets with the next run.
             if (!stretch) PillButton("Apply to these anyway", onClick = onStretch)
         }

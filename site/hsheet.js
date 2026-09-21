@@ -16,7 +16,9 @@
   const row = document.querySelector("header.site .row");
   if (!row) return;
   const mkt = row.querySelector(".mkt"), thm = row.querySelector(".thm"), nav = row.querySelector("nav.main");
-  const sections = [["Market", mkt], ["Theme", thm], ["Go to", nav]].filter(([, el]) => el);
+  /* navigation FIRST (v3 stage 6): a menu is opened to go somewhere; the
+     settings follow */
+  const sections = [["Go to", nav], ["Market", mkt], ["Theme", thm]].filter(([, el]) => el);
   if (!sections.length) return;
   const homes = new Map(sections.map(([, el]) => [el, { parent: el.parentNode, next: el.nextSibling }]));
 

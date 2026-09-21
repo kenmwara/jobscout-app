@@ -56,3 +56,28 @@ Chat's reply to the D3 finding. Replaced the pack in place (17 files changed + `
 
 Still open: **D5 only** (type 20 → 8, space → 4px grid, ≤2px moves on every route) — Ken's look-and-decide.
 Implementation (Stages 1–8) remains not started pending D5 and the go.
+
+
+---
+
+# Implemented (D5 = YES, Ken 2026-09-21)
+
+All nine stages, on the site, the mockup and both apps, in the local commits of 2026-09-21:
+
+| stage | done | where |
+|---|---|---|
+| 0 generator | `tokens/` in the repo; outputs into `site/`, `android/.../design/`, `ios/Sources/`; `--check` is the first deploy step | `tokens/`, `.github/workflows/deploy.yml` |
+| 1 tokens into the web | `tokens.css` loads ahead of `base.css` on every page; base.css keeps only aliases; 878 values snapped (type 47 → 13 steps incl. five desktop display steps, space → the 4px grid with 16 rungs); `check_scale` green on 12 cells + 4 mutations | `site/*.html`, `site/base.css`, `mockups/*` |
+| 2 tiers | `.meta .tier1/2/3` in base.css (one rule set for site AND mockup); `check_tiers` green + 3 mutations | `site/base.css`, card templates |
+| 3 band contract | `site/band.js` (reads `--threshold-*`), `rose.js` takes its table from it and throws on an unknown band; lit dots on the band SOLID; `check_rose` + `wrong-band` / `cropped-viewbox` | `site/band.js`, `site/rose.js`, the three pages, the mockup |
+| 4 honesty | `site/evidence.js`; STRONGEST gated at render on the browse card, both lines on the apply page; the worker prompt anchors + caps (0/8 → 8/8 measured); `check_honesty` + 4 mutations | `site/evidence.js`, `worker/src/index.js` (deployed) |
+| 5 screens | apply = the rose alone, the three tiers, one filled button, lead step, lede, the two evidence lines; saved rows = rose + APPLIED, no pill; the swept line copy unchanged (count only) | `site/apply.html`, `site/saved.html` |
+| 6 sheet | navigation first, 56px rows with a chevron, selected ≠ primary; `check_motion` asserts it + `selected-as-action` | `site/hsheet.js`, `site/base.css`, `tools/check_motion.mjs` |
+| 7 Android | `design/Tokens.kt` generated; `Motion`, `litFor`, `bandName`, `FIT_FLOOR` forward to it; `check_palette` 8/9 read tokens.json | **build-unproven here** (no local toolchain; Codemagic on the next push) |
+| 8 iOS | `Tokens.swift` generated; `Motion`, `litFor`, `fitFloor` forward to it | **build-unproven here** |
+
+Deviations from the pack, for Chat: the type series and the space grid are EXTENDED (same formulas, more
+steps) for the desktop site; the product's band key stays `near-miss` (`JSBand.TOKEN` maps it to the
+generated `nearmiss`); the apply page is detail + prepare in one so it takes surface `detail`; the
+evidence anchors gained `profile|certif|degree|years` because the scorer says "the profile shows".
+Résumé spelling swept across reader-facing strings the same day (Ken).

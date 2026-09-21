@@ -102,7 +102,7 @@ fun ApplyScreen(vm: DemoVm, a: Apply, onClose: () -> Unit) {
                     Text(
                         "A stretch on paper, at ${a.fit} out of 100 \u2014 so everything below argues your case " +
                             "from what you have actually done, and claims nothing you have not. Where a step names " +
-                            "something the posting asks for and your resume does not cover, that is a line to add " +
+                            "something the posting asks for and your résumé does not cover, that is a line to add " +
                             "if it is true of you, and a good use of ten minutes before you send.",
                         color = T.text2, fontSize = 13.sp, lineHeight = 20.sp,
                     )
@@ -111,7 +111,7 @@ fun ApplyScreen(vm: DemoVm, a: Apply, onClose: () -> Unit) {
 
             item {
                 Text(
-                    "Three things, each drafted from your resume alone and each one call. " +
+                    "Three things, each drafted from your résumé alone and each one call. " +
                         "JobScout never submits anything — you open the employer's form with the answers already written.",
                     color = T.text2, fontSize = 14.sp, lineHeight = 21.sp,
                 )
@@ -120,7 +120,7 @@ fun ApplyScreen(vm: DemoVm, a: Apply, onClose: () -> Unit) {
             item {
                 StepPanel(
                     title = "Cover letter",
-                    idle = "Written from your resume and this posting, in your register. Nothing it cannot point at in your own words.",
+                    idle = "Written from your résumé and this posting, in your register. Nothing it cannot point at in your own words.",
                     busy = "Drafting from the profile only — it cannot invent experience…",
                     step = a.letter, action = "Write the letter", onRun = vm::draftLetter,
                 ) { LongText(it) }
@@ -128,11 +128,11 @@ fun ApplyScreen(vm: DemoVm, a: Apply, onClose: () -> Unit) {
 
             item {
                 StepPanel(
-                    title = "Your resume, rebuilt for this job",
+                    title = "Your résumé, rebuilt for this job",
                     idle = "Every role, school and certificate you already have — reordered and reworded for this posting. " +
                         "A different document for every application.",
-                    busy = "Rewriting the whole resume, then checking every name and number against your own…",
-                    step = a.resume, action = "Rebuild my resume", onRun = vm::buildResume,
+                    busy = "Rewriting the whole résumé, then checking every name and number against your own…",
+                    step = a.resume, action = "Rebuild my résumé", onRun = vm::buildResume,
                 ) { RebuiltResume(it) }
             }
 
@@ -271,7 +271,7 @@ private fun RebuiltResume(r: ResumeResponse) {
         if (r.gaps.isNotEmpty()) Column(
             Modifier.padding(top = 8.dp).background(T.chip, Card).padding(14.dp)
         ) {
-            Text("WHAT THIS POSTING ASKS FOR THAT YOUR RESUME DOES NOT SAY",
+            Text("WHAT THIS POSTING ASKS FOR THAT YOUR RÉSUMÉ DOES NOT SAY",
                 color = T.ink, fontSize = 11.sp, fontWeight = FontWeight.Medium, letterSpacing = 0.08.em)
             Spacer(Modifier.height(8.dp))
             r.gaps.forEach {
@@ -284,7 +284,7 @@ private fun RebuiltResume(r: ResumeResponse) {
         }
         Spacer(Modifier.height(12.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            PillButton("Copy the resume") { clip.setText(AnnotatedString(plain)) }
+            PillButton("Copy the résumé") { clip.setText(AnnotatedString(plain)) }
             ShareButton("Share", "Resume", plain)
         }
     }
@@ -341,7 +341,7 @@ private fun Answers(r: AnswersResponse) {
     if (r.unsupported) {
         // A fact about the employer, and it ends with what to do instead.
         Text(
-            "This employer keeps its application form behind a login, so the questions cannot be read ahead of time by anyone \u2014 not us, and not you. Open the posting when you are ready and answer them there: the letter and the rebuilt resume above are what most of those boxes ask for anyway.",
+            "This employer keeps its application form behind a login, so the questions cannot be read ahead of time by anyone \u2014 not us, and not you. Open the posting when you are ready and answer them there: the letter and the rebuilt résumé above are what most of those boxes ask for anyway.",
             color = T.text2, fontSize = 14.sp, lineHeight = 21.sp,
         )
         return
@@ -349,7 +349,7 @@ private fun Answers(r: AnswersResponse) {
     Column {
         Text(
             "${r.questions.size} question${if (r.questions.size == 1) "" else "s"} on ${r.source.ifEmpty { "the form" }}" +
-                " — ${r.drafted} answered from your resume.",
+                " — ${r.drafted} answered from your résumé.",
             color = T.text3, fontSize = 13.sp, lineHeight = 20.sp,
         )
         Spacer(Modifier.height(12.dp))

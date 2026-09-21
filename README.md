@@ -256,3 +256,24 @@ publisher) · vanilla JS, one self-contained page · Kotlin/Jetpack Compose
 
 ---
 *Author: Ken Kariuki — [tbot.trade/portfolio](https://tbot.trade/portfolio) · ken@tbot.trade*
+
+
+## Design system v3 — the generator
+
+`tokens/tokens.json` is the single source of every constant. After ANY change to it:
+
+```
+node tokens/generate.mjs           # writes site/tokens.css, android/.../design/Tokens.kt, ios/Sources/Tokens.swift
+node tokens/generate.mjs --check   # exit 1 if a generated file was hand-edited (the deploy runs this first)
+```
+
+The v3 checks, all against the repo root served on :8765:
+
+```
+node tools/check_scale.mjs      # type on the scale, space on the grid, hue membership on large surfaces
+node tools/check_tiers.mjs      # the three metadata tiers as geometry
+node tools/check_honesty.mjs    # law 12 through site/evidence.js
+```
+
+Each takes `--mutate <name>` (names in the file header) and must report "correctly broke";
+exit 2 means the check is asleep. See docs/THEME.md §19.

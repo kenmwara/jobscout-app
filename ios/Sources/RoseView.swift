@@ -32,7 +32,8 @@ func roseDot(_ i: Int, side: CGFloat) -> CGPoint {
 func roseRadius(_ i: Int, side: CGFloat) -> CGFloat { (2.275 + 0.2944 * CGFloat(i)) * side / roseVB }
 
 /// The lit count IS the band: AUTO 8, PING 6, UNSURE 5, NEAR-MISS 3.
-func litFor(_ f: Int) -> Int { f >= 80 ? 8 : f >= 70 ? 6 : f >= 55 ? 5 : 3 }
+/// GENERATED thresholds and lit table (Tokens.swift): one table on three clients.
+func litFor(_ f: Int) -> Int { JSBands.litByBand[JSBand.of(f)] ?? 3 }
 
 struct BearingRose: View {
     let fit: Int

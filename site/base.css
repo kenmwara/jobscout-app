@@ -84,7 +84,7 @@
      background, and body was painting opaque cream over it.
      Specificity, not order. Moving both up to <html> puts the halo between
      the ground and the content, which is where it belongs. */
-  body{margin:0;color:var(--text);font-family:var(--sans);font-size:16.5px;line-height:1.6;-webkit-font-smoothing:antialiased}
+  body{margin:0;color:var(--text);font-family:var(--sans);font-size:var(--t3);line-height:1.6;-webkit-font-smoothing:antialiased}
   /* THE HALO AND THE TEXTURE ARE HTML'S OWN FIXED LAYERS, not a pseudo-
      element. body::before at z-index:-1 painted - its background-image was
      correct - and was never visible, because body carries overflow-x:clip
@@ -101,11 +101,11 @@
       radial-gradient(rgba(8,3,49,.07) 1px,transparent 1px);
     background-size:auto,auto,auto,24px 24px;
     background-attachment:fixed,fixed,fixed,fixed}
-  .wrap{max-width:1200px;margin:0 auto;padding:0 24px}
+  .wrap{max-width:1200px;margin:0 auto;padding:0 var(--s6)}
   main.wrap{max-width:1040px}
   a{color:var(--midnight);text-decoration:none}
   a:hover{text-decoration:underline;text-underline-offset:3px}
-  button{font:inherit;cursor:pointer}
+  button{font:inherit;cursor:pointer;padding:0}   /* the UA's 1px/6px leaks through the grid otherwise (v3) */
   ::selection{background:var(--accent)}
   @media (prefers-reduced-motion:reduce){ html{scroll-behavior:auto} }
 
@@ -164,31 +164,24 @@
   color-scheme: light;
 
   /* ── surfaces ── */
-  --canvas:   light-dark(#f8f3eb, #0a0524);
   --canvas-2: light-dark(#fffdf9, #100b2f);   /* alternating band */
-  --surface:  light-dark(#ffffff, #1c1544);   /* lifted from #16103a: 1.17:1
-     on canvas, the same canvas->surface step light uses. Luminance alone
-     never separates on dark; the hairline does the rest. */
   /* segmented tracks, rails, and the fact chips (v2 tier 2). Dark was #1a1240,
      1.03:1 against --surface - a sunken container on ink had nothing to read
      against and the location chip vanished (Chat's stage-1 pass measured it).
      s10: dark separates by lifting, so the dark rung is the evidence surface,
      1.225:1 over --surface and 1.43:1 over the canvas. */
-  --sunken:   light-dark(#ece5d8, #2b284f);
-  --hair:     light-dark(rgba(8,3,49,.13), rgba(248,243,235,.13));
+  --hair:     var(--hairline);
   --hair2:    light-dark(rgba(8,3,49,.22), rgba(248,243,235,.24));
   /* A SCRIM IS MEANT TO FAIL CONTRAST. At .55 the page behind still read
      4.08:1 - passing AA - so it looked like a rendering fault rather than
      something deliberately pushed back. .66 puts it at 2.78:1 on light and
      2.68:1 on dark: one value, both near 2.7. */
-  --scrim: light-dark(rgba(8,3,49,.66), rgba(0,0,0,.66));
 
   /* A sheet is the one surface that casts UPWARD. NOT light-dark(): this
      value has a top-level comma, so light-dark() would see three arguments
      and drop the whole declaration silently. Multi-part values need a real
      override, which the dark blocks below give it. */
-  --shadow-sheet: 0 -2px 8px rgba(75,68,57,.06),
-                  0 -18px 48px rgba(75,68,57,.16);
+  --shadow-sheet: var(--sh-sheet);
   /* A COLOUR, not a border shorthand. light-dark() is defined to return a
      <color>; `light-dark(1px solid X, 1px solid Y)` parses as a function with
      the wrong argument type, so `border:var(--sheet-edge)` is invalid at
@@ -196,18 +189,14 @@
      In dark, where --shadow-sheet is none, that left the sheet with no edge
      at all against the scrim. Same trap --shadow-sheet was called out for. */
   --sheet-edge: light-dark(transparent, rgba(248,243,235,.13));
-  --radius-sheet: 22px;   /* top corners only - a sheet has no bottom edge */
+  --radius-sheet: var(--r-sheet);   /* top corners only - a sheet has no bottom edge */
 
   /* ── text ── the kit measures exactly two tones ── */
-  --ink:   light-dark(#080331, #f8f3eb);   /* 17.81 / 17.93 on canvas */
-  --text:  var(--ink);
-  --text2: light-dark(#5a5560, #b9b3c4);   /*  6.55 /  9.72 — replaces the
-                                              #878789 family, which failed AA */
+  --ink:   var(--text);   /* 17.81 / 17.93 on canvas */
   --text3: var(--text2);                   /* an alias. There is no third. */
   /* Runs of PROSE - paragraphs, not labels or single lines. On dark,
      --text at 17.9:1 halates once a paragraph gets long; this is 14.33:1,
      still far above AA. On light there is no halation, so it is --ink. */
-  --text-long: light-dark(#080331, #ded9e8);
 
   /* ── the action: maximum contrast, inverted per theme ──
      Deep-ink on cream, then cream on deep-ink. 17.44 and 17.93. Indigo
@@ -216,7 +205,6 @@
   --btn-ink: var(--canvas);
 
   /* ── indigo: brand, links and selection — never a primary fill ── */
-  --accent:       light-dark(#4865ff, #a2baff);
 
   /* A LINK IS READ AT LENGTH, so it takes more contrast than the brand mark
      does. --accent measured 4.15:1 on cream at 13.5px - under AA - while the
@@ -265,17 +253,20 @@
      light one - that is what dragged every dark hue back to the surface's
      purple. If a band needs to be more visible that is a size, a weight or a
      border, because brightening one band is what breaks the set. */
-  --b-auto:   light-dark(#225b2c, #92d098);  --b-auto-bg:   light-dark(#e7f4e8, #223424);  /* 147deg · 7.11 / 7.38 */
-  --b-ping:   light-dark(#394981, #a4bbff);  --b-ping-bg:   light-dark(#eaf0ff, #272e42);  /* 270deg · 7.53 / 7.15 */
-  --b-unsure: light-dark(#713f00, #ecaf78);  --b-unsure-bg: light-dark(#fbede1, #3d2b1a);  /*  63deg · 7.58 / 7.04 */
-  --b-near:   light-dark(#4b4b5c, #bbbcd0);  --b-near-bg:   light-dark(#eff0f4, #2e2e34);  /* 285deg · 7.50 / 7.21 */
+  /* GENERATED (design system v3): tokens/tokens.json holds the four hues and
+     the three L/C pairs; tokens.css carries the 24 hexes. These are the
+     site's legacy names for the same rungs. */
+  --b-auto:   var(--auto-label);    --b-auto-bg:   var(--auto-fill);      /* 147deg · 7.11 / 7.38 */
+  --b-ping:   var(--ping-label);    --b-ping-bg:   var(--ping-fill);      /* 270deg · 7.53 / 7.15 */
+  --b-unsure: var(--unsure-label);  --b-unsure-bg: var(--unsure-fill);    /*  63deg · 7.58 / 7.04 */
+  --b-near:   var(--nearmiss-label);--b-near-bg:   var(--nearmiss-fill);  /* 285deg · 7.50 / 7.21 */
 
   /* The band SOLIDS - the mark's lit bearings and 1-2px marks only, never
      text: 3.4-3.7:1 on cream and 8.9-9.7:1 on ink, by design. */
-  --b-auto-solid:   light-dark(#3e954d, #7ac683);
-  --b-ping-solid:   light-dark(#617ad1, #93adff);
-  --b-unsure-solid: light-dark(#b86b03, #e89f59);
-  --b-near-solid:   light-dark(#7d7d97, #aeafc7);
+  --b-auto-solid:   var(--auto);
+  --b-ping-solid:   var(--ping);
+  --b-unsure-solid: var(--unsure);
+  --b-near-solid:   var(--nearmiss);
 
   /* The progress bar and the lit unsure bearings. It IS the unsure solid, so
      it can never be text - words wearing it would claim a band. */
@@ -284,8 +275,6 @@
   /* SELECTION is the ping rung. Aliased, not repeated: a selected control and
      a PING band are the same indigo doing the same job, and a second copy of
      those four hexes is a second thing to keep in step. */
-  --selected-bg: var(--b-ping-bg);
-  --selected-fg: var(--b-ping);
 
   /* THE HALO - three blooms on one fixed layer behind the whole site.
      Every bloom is LIGHTER than the canvas and in the canvas's own hue
@@ -340,9 +329,9 @@
      Above roughly 4,000px2 a surface is neutral. Badges, toggles and
      selection keep their fills - that exception is why a wide button,
      which also crosses the number, is left alone. */
-  --evidence-bg:             light-dark(#f1f1fa, #2b284f);
-  --evidence-rule-strongest: light-dark(#3e954d, #7ac683);   /* = --auto   */
-  --evidence-rule-answer:    light-dark(#b86b03, #e89f59);   /* = --unsure */
+  --evidence-bg:             var(--evidence);
+  --evidence-rule-strongest: var(--auto);
+  --evidence-rule-answer:    var(--unsure);
   --strongest-body: light-dark(#495349, #ccd6cd);   /* 7.15 / 9.26 on the neutral */
   --answer-body:    light-dark(#584e45, #dbd1c8);   /* 7.22 / 9.19 on the neutral */
 }
@@ -351,13 +340,9 @@
    lift is a light-theme device and reads as dirt on a dark ground, where the
    hairline carries the separation instead. These are the ONLY declarations
    that need the three states written out. */
-:root{
-  --sh-hover:0 6px 27px rgba(75,68,57,.09), 0 1.8px 8px rgba(75,68,57,.05), 0 .75px 3.4px rgba(75,68,57,.04);
-}
-@media (prefers-color-scheme: dark){
-  :root[data-theme="system"]{ --sh-hover:0 0 0 1px var(--hair); --shadow-sheet:none; }
-}
-:root[data-theme="dark"]{ --sh-hover:0 0 0 1px var(--hair); --shadow-sheet:none; }
+/* --sh-rest / --sh-hover / --sh-press / --sh-sheet are GENERATED (tokens.css),
+   and dark sets all four to none there: dark carries elevation in the lift
+   and the edge, never a shadow. */
 
 /* The three states. Absence is light, which is also what `light` forces;
    `system` is the only one that hands the decision to the device. */
@@ -366,10 +351,9 @@
 :root[data-theme="dark"]{ color-scheme: dark; }
 
 :root{
-  --serif:"Newsreader",Georgia,"Times New Roman",serif;
-  --sans:"Inter",-apple-system,system-ui,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-  --mono:"JetBrains Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;   /* data: the rose's numeral */
-  --r-card:20px; --r-input:14px; --r-btn:10px; --r-pill:9999px;
+  --serif: var(--font-serif); --sans: var(--font-sans); --mono: var(--font-mono);   /* generated */
+  /* radius: ONE constant and ONE step (card 16, step 6) - generated */
+  --r-input: var(--r-inner); --r-btn: var(--r-inner);
   --max:1200px;
   /* motion, measured off the reference's own stylesheet */
   --ease:cubic-bezier(.22,1,.36,1);        /* easeOutQuint — their workhorse */
@@ -383,30 +367,11 @@
    duration, a curve, a distance or an edge. docs/references/motion-2026-09-20.
    THE ASYMMETRY LAW: entries 340-520ms, exits 160ms and never overshooting. */
 :root{
-  --spring-snap:  linear(0,.0236,.0841,.1686,.2664,.3695,.4717,.5687,.6577,.7370,.8057,.8637,.9115,.9498,.9795,1.0018,1.0178,1.0284,1.0348,1.0378,1.0383,1.0370,1.0343,1.0309,1.0271,1.0231,1);
-  --t-snap:180ms;     /* controls, chips, the theme switch · overshoot 3.8% */
-  --spring-settle:linear(0,.0249,.0852,.1645,.2520,.3404,.4253,.5041,.5756,.6393,.6952,.7437,.7854,.8210,.8512,.8767,.8981,.9160,.9309,.9433,.9536,.9620,.9690,.9747,.9794,.9833,1);
-  --t-settle:340ms;   /* cards, panels, anything with area · critically damped */
-  --spring-arrive:linear(0,.0264,.0948,.1910,.3029,.4208,.5373,.6468,.7458,.8318,.9041,.9624,1.0075,1.0406,1.0631,1.0766,1.0827,1.0831,1.0792,1.0724,1.0637,1.0540,1.0441,1.0346,1.0258,1.0180,1);
-  --t-arrive:520ms;   /* the rose and its numeral · overshoot 8.3% */
-  --spring-exit:cubic-bezier(.4,0,1,1);
-  --t-exit:160ms;     /* anything leaving; also the press */
-  /* the damping ratios the linear() curves were sampled from; Android and iOS
-     solve their springs from these and check_palette holds the two in step */
-  --zeta-snap:.72; --zeta-settle:1; --zeta-arrive:.62;
-  --stagger-row:28ms; --stagger-tile:22ms; --stagger-dot:46ms;
-  --travel-row:10px; --travel-tile:8px; --travel-head:12px;
-  --lift-hover:-2px; --press-scale:.988;   /* cards; controls .96, the heart .88 */
-  /* the elevation ladder's two missing rungs (--sh-hover is above, three-state) */
-  --sh-rest:0 1px 2px rgba(75,68,57,.05), 0 6px 14px rgba(75,68,57,.06);
-  --sh-press:0 1px 2px rgba(75,68,57,.08);
-  --edge-rest: light-dark(rgba(8,3,49,.08), rgba(248,243,235,.13));
-  --edge-hover:light-dark(rgba(8,3,49,.12), rgba(248,243,235,.26));
-  --surface-hover:light-dark(#ffffff, #221a52);   /* --surface lifted one rung, 1.10:1 */
+  /* the springs, durations, staggers, travel, press scales, the elevation
+     ladder and the rose's empty track are GENERATED into tokens.css from
+     tokens/tokens.json (design system v3). These are the site's aliases. */
+  --lift-hover: var(--travel-liftHover); --press-scale: var(--press-card);
   --tile-fill:light-dark(rgba(72,101,255,.085), rgba(162,186,255,.10)); /* a quantity, not a signal (s16) */
-  --t-breathe:4200ms; --breathe-floor:.90; --t-seek:5600ms;
-  /* the unlit bearing: the ink at 14% (via opacity), never a band colour */
-  --rose-empty:light-dark(#080331, #f8f3eb);
 }
 
 /* ── THE ROSE, one glyph on every surface (site/rose.js builds it) ────────
@@ -419,7 +384,7 @@
   transition:transform var(--t-arrive) var(--spring-arrive),opacity var(--t-arrive) var(--ease);
   transition-delay:calc(var(--i) * var(--stagger-dot))}
 .rose .d.lit{opacity:1;transform:scale(1)}
-.rose .fitnum{font:500 8.6px/1 var(--mono);text-anchor:middle;dominant-baseline:central;
+.rose .fitnum{font:500 var(--t0)/1 var(--mono);text-anchor:middle;dominant-baseline:central;
   font-variant-numeric:tabular-nums;fill:var(--text)}
 .rose.unlit .fitnum{fill:var(--text3)}
 /* the tell: hovering a scored card lights the NEXT bearing at 55% - the
@@ -434,21 +399,17 @@
 @keyframes seek{0%,100%{opacity:.14;transform:scale(.72)}22%{opacity:.8;transform:scale(1)}44%{opacity:.14;transform:scale(.72)}}
 html.anim .rose.seek .d{animation:seek var(--t-seek) ease-in-out infinite;animation-delay:calc(var(--i) * 220ms)}
 @media (prefers-reduced-motion:reduce){ .rose .d{transition-duration:1ms;transition-delay:0ms} }
-@media (prefers-color-scheme: dark){
-  :root[data-theme="system"]{ --sh-rest:none; --sh-press:none; }
-}
-:root[data-theme="dark"]{ --sh-rest:none; --sh-press:none; }
 *{box-sizing:border-box}
 html,body{margin:0}
 /* The ground, the halo and the dot texture are all html's, as fixed layers. */
 html{background-color:var(--canvas)}
 body{
   background:transparent; color:var(--text);
-  font:400 16px/1.5 var(--sans); letter-spacing:-.011em;
+  font:400 var(--t3)/1.5 var(--sans); letter-spacing:-.011em;
   -webkit-font-smoothing:antialiased;
   transition:background .45s var(--ease), color .45s var(--ease);
 }
-.wrap{max-width:var(--max);margin:0 auto;padding:0 24px}
+.wrap{max-width:var(--max);margin:0 auto;padding:0 var(--s6)}
 a{color:inherit}
 
 /* ── THE PAGE MARK — the second thing in the ground, and it is one layer ──
@@ -542,14 +503,14 @@ html[data-market="ke"]{
 :root[data-theme="dark"]{--sh:none}
 
 /* ── site header ────────────────────────────────────────────────────── */
-header.site{padding:22px 0}
-header.site .row{display:flex;align-items:center;gap:20px;position:relative}
-.brand{display:flex;align-items:center;gap:10px;font:500 20px/1 var(--serif);color:var(--ink);letter-spacing:-.02em}
+header.site{padding:var(--s5) 0}
+header.site .row{display:flex;align-items:center;gap:var(--s5);position:relative}
+.brand{display:flex;align-items:center;gap:var(--s2);font:500 var(--t4)/1 var(--serif);color:var(--ink);letter-spacing:-.02em}
 .brand svg{width:26px;height:26px;display:block;fill:var(--accent)}
-nav.main{margin-left:auto;display:flex;align-items:center;gap:8px}
+nav.main{margin-left:auto;display:flex;align-items:center;gap:var(--s2)}
 nav.main a{
-  font:500 14px/1 var(--sans);color:var(--text2);text-decoration:none;
-  padding:9px 12px;border-radius:var(--r-btn)
+  font:500 var(--t2)/1 var(--sans);color:var(--text2);text-decoration:none;
+  padding:var(--s2) var(--s3);border-radius:var(--r-btn)
 }
 nav.main a:hover{color:var(--ink)}
 
@@ -558,13 +519,13 @@ nav.main a:hover{color:var(--ink)}
    one soft shadow. Theirs is 12px radius, not a full pill. */
 .mkt{
   position:absolute;left:50%;transform:translateX(-50%);
-  display:flex;background:var(--trough);border-radius:14px;padding:4px;gap:2px;
+  display:flex;background:var(--trough);border-radius:14px;padding:var(--s1);gap:var(--s0);
   backdrop-filter:blur(8px);border:1px solid var(--hair)
 }
 .mkt button{
   appearance:none;border:0;background:transparent;cursor:pointer;
-  font:500 14px/1 var(--sans);color:var(--text2);padding:10px 20px;border-radius:11px;
-  display:flex;align-items:center;gap:8px;transition:all .3s var(--ease)
+  font:500 var(--t2)/1 var(--sans);color:var(--text2);padding:var(--s2) var(--s5);border-radius:11px;
+  display:flex;align-items:center;gap:var(--s2);transition:all .3s var(--ease)
 }
 /* The market does NOT colour its own chip. It reads as SELECTED, and
    selection is a theme token - the ping rung - exactly like every other
@@ -574,43 +535,43 @@ nav.main a:hover{color:var(--ink)}
 }
 @media(max-width:860px){
   .mkt{position:static;transform:none;margin-left:auto}
-  .mkt button{padding:9px 13px}
+  .mkt button{padding:var(--s2) var(--s3)}
 }
 .mkt .flag{width:16px;height:11px;border-radius:2px;display:block}
 
 /* ── footer ────────────────────────────────────────── */
-footer.site{padding:70px 0 40px;border-top:1px solid var(--hair);margin-top:70px}
+footer.site{padding:var(--s12) 0 var(--s8);border-top:1px solid var(--hair);margin-top:var(--s12)}
 /* Five fixed columns, and only index.html has five groups. Every other page
    has four, so the four were laid out in tracks sized for five and the fifth
    sat empty — which is why the privacy footer squashed "Browse today's sweep"
    over three lines while the home page's looked fine. Flex instead: the brand
    keeps its width, the link groups share what is left however many there are,
    and the wrap replaces the two column-count media queries below. */
-.fgrid{display:flex;flex-wrap:wrap;gap:28px 40px}
+.fgrid{display:flex;flex-wrap:wrap;gap:var(--s6) var(--s8)}
 .fgrid>*{flex:1 1 140px;min-width:0}
 .fgrid>:first-child{flex:2 1 240px}
-.fgrid h4{font:600 11.5px/1 var(--sans);letter-spacing:.08em;text-transform:uppercase;color:var(--text3);margin:0 0 16px}
-.fgrid a{display:block;font:400 14.5px/1 var(--sans);color:var(--text2);text-decoration:none;margin:0 0 12px}
+.fgrid h4{font:600 var(--t1)/1 var(--sans);letter-spacing:.08em;text-transform:uppercase;color:var(--text3);margin:0 0 var(--s4)}
+.fgrid a{display:block;font:400 var(--t3)/1 var(--sans);color:var(--text2);text-decoration:none;margin:0 0 var(--s3)}
 .fgrid a:hover{color:var(--ink)}
-.fbrand{font:400 26px/1 var(--serif);color:var(--ink);letter-spacing:-.02em;margin:0 0 10px}
+.fbrand{font:400 var(--t6)/1 var(--serif);color:var(--ink);letter-spacing:-.02em;margin:0 0 var(--s2)}
 .fbrand a{color:inherit;text-decoration:none}
 .fbrand a:hover{text-decoration:underline;text-underline-offset:4px}
-.fnote{font:400 13.5px/1.6 var(--sans);color:var(--text3);max-width:270px;margin:0}
-.sources{margin-top:44px;padding-top:26px;border-top:1px solid var(--hair);
-         font:400 13px/1.7 var(--sans);color:var(--text3)}
+.fnote{font:400 var(--t2)/1.6 var(--sans);color:var(--text3);max-width:270px;margin:0}
+.sources{margin-top:var(--s8);padding-top:var(--s6);border-top:1px solid var(--hair);
+         font:400 var(--t2)/1.7 var(--sans);color:var(--text3)}
 .sources b{font-weight:500;color:var(--text2)}
 
 /* ── components every page shares ────────────────────────────────────────
    Copied out of index.html so a saved score, an application and the demo
    all draw the same rose and the same band pill. */
 .rose{width:64px;height:64px;flex:0 0 auto;display:block}
-.route{font:500 10px/1 var(--sans);letter-spacing:.09em;text-transform:uppercase;
-  border-radius:var(--r-pill);padding:5px 9px;display:inline-block;white-space:nowrap}
-.verdict{font:500 13px/1.35 var(--sans);color:var(--text2)}
-.age{color:var(--text3);font:400 13px/1 var(--sans)}
+.route{font:500 var(--t0)/1 var(--sans);letter-spacing:.09em;text-transform:uppercase;
+  border-radius:var(--r-pill);padding:var(--s1) var(--s2);display:inline-block;white-space:nowrap}
+.verdict{font:500 var(--t2)/1.35 var(--sans);color:var(--text2)}
+.age{color:var(--text3);font:400 var(--t2)/1 var(--sans)}
 .age.new{color:var(--b-unsure);font-weight:500}  /* not --live: that is a FILL colour and reads 2.48:1 as text on cream */
-.btn,.btn2{display:inline-flex;align-items:center;gap:8px;text-decoration:none;white-space:nowrap;
-  font:500 14.5px/1 var(--sans);padding:13px 22px;border-radius:var(--r-btn);cursor:pointer;
+.btn,.btn2{display:inline-flex;align-items:center;gap:var(--s2);text-decoration:none;white-space:nowrap;
+  font:500 var(--t3)/1 var(--sans);padding:var(--s3) var(--s5);border-radius:var(--r-btn);cursor:pointer;
   border:1px solid transparent;transition:all var(--t-micro) var(--ease)}
 .btn{background:var(--ink);color:var(--canvas)}
 .btn:hover{background:var(--accent);color:var(--accent-ink)}
@@ -620,11 +581,11 @@ footer.site{padding:70px 0 40px;border-top:1px solid var(--hair);margin-top:70px
 /* a class that sets display beats the hidden attribute, and Copy/Download
    were showing on a step that had not run yet */
 [hidden]{display:none !important}
-.panel{background:var(--surface);border:1px solid var(--hair);border-radius:var(--r-card);padding:26px 28px}
-.eyebrow{font:500 12px/1 var(--sans);letter-spacing:.09em;text-transform:uppercase;color:var(--text3);margin:0 0 10px}
+.panel{background:var(--surface);border:1px solid var(--hair);border-radius:var(--r-card);padding:var(--s6) var(--s6)}
+.eyebrow{font:500 var(--t1)/1 var(--sans);letter-spacing:.09em;text-transform:uppercase;color:var(--text3);margin:0 0 var(--s2)}
 h1.display,h2.sec{text-wrap:balance}
 @media(max-width:620px){
-  .panel{padding:20px 18px}
+  .panel{padding:var(--s5) var(--s4)}
 }
 
 /* THE BACKDROP HALO IS GONE (2026-09-20). It was --accent at 6%, masked to
@@ -644,19 +605,19 @@ h1.display,h2.sec{text-wrap:balance}
    theme control and the nav MOVE into the sheet while it is open. */
 .hchip,.hmore{display:none}
 @media (max-width:620px){
-  header.site{padding:6px 0}
-  header.site .row{flex-wrap:nowrap;height:56px;gap:10px;align-items:center}
+  header.site{padding:var(--s1) 0}
+  header.site .row{flex-wrap:nowrap;height:56px;gap:var(--s2);align-items:center}
   header.site .row>.mkt,header.site .row>.thm,header.site .row>nav.main{display:none}
   /* the landing keeps its slide tabs (as built), wrapping under the brand */
-  html.hdr-full header.site .row{flex-wrap:wrap;height:auto;row-gap:8px}
+  html.hdr-full header.site .row{flex-wrap:wrap;height:auto;row-gap:var(--s2)}
   html.hdr-full header.site .row>.mkt,html.hdr-full header.site .row>.thm{display:flex}
   html.hdr-full header.site .row>.mkt{margin-left:auto}
-  html.hdr-full .mkt button span,html.hdr-full .mkt button{font-size:0;gap:0;padding:8px 10px}
+  html.hdr-full .mkt button span,html.hdr-full .mkt button{font-size:0;gap:0;padding:var(--s2) var(--s2)}
   html.hdr-full .mkt button .flag{width:18px;height:12px}
   html.hdr-full .hchip,html.hdr-full .hmore{display:none}
-  .hchip,.hmore{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:44px;min-width:44px;
-    padding:0 10px;border-radius:12px;border:1px solid var(--hair);background:var(--trough);color:var(--ink);
-    font:500 13px/1 var(--sans);cursor:pointer;appearance:none;
+  .hchip,.hmore{display:inline-flex;align-items:center;justify-content:center;gap:var(--s1);height:44px;min-width:44px;
+    padding:0 var(--s2);border-radius:12px;border:1px solid var(--hair);background:var(--trough);color:var(--ink);
+    font:500 var(--t2)/1 var(--sans);cursor:pointer;appearance:none;
     transition:transform var(--t-snap) var(--spring-snap),background var(--t-snap) var(--spring-snap)}
   .hchip{margin-left:auto}
   .hchip .flag{width:16px;height:11px;border-radius:2px;display:block}
@@ -666,28 +627,62 @@ h1.display,h2.sec{text-wrap:balance}
 }
 /* past three markets: the chip and the sheet at every width */
 html.mkt-many header.site .row>.mkt{display:none}
-html.mkt-many .hchip,html.mkt-many .hmore{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:36px;min-width:36px;
-  padding:0 10px;border-radius:12px;border:1px solid var(--hair);background:var(--trough);color:var(--ink);font:500 13px/1 var(--sans);cursor:pointer;appearance:none}
+html.mkt-many .hchip,html.mkt-many .hmore{display:inline-flex;align-items:center;justify-content:center;gap:var(--s1);height:28px;min-width:28px;
+  padding:0 var(--s2);border-radius:12px;border:1px solid var(--hair);background:var(--trough);color:var(--ink);font:500 var(--t2)/1 var(--sans);cursor:pointer;appearance:none}
 html.mkt-many .hchip{margin-left:auto}
 html.mkt-many .hchip .flag{width:16px;height:11px;border-radius:2px;display:block}
 html.mkt-many .hmore{width:36px;padding:0;display:inline-grid;place-items:center}
 html.mkt-many .hmore svg{display:block;fill:currentColor}
-html.mkt-many nav.main{margin-left:12px}
+html.mkt-many nav.main{margin-left:var(--s3)}
 .hsheet{position:fixed;inset:0;z-index:60}
 .hsheet[hidden]{display:none}
 .hs-scrim{position:absolute;inset:0;background:var(--scrim)}
 .hs-pane{position:absolute;left:0;right:0;bottom:0;max-height:90dvh;overflow:auto;background:var(--surface);
   border-radius:22px 22px 0 0;border-top:1px solid var(--sheet-edge);box-shadow:var(--shadow-sheet);
-  padding:10px 18px calc(28px + env(safe-area-inset-bottom, 0px))}
-.hs-grab{width:38px;height:4px;border-radius:2px;background:var(--hair2);margin:4px auto 10px}
+  padding:var(--s2) var(--s4) calc(var(--s7) + env(safe-area-inset-bottom, 0px))}
+.hs-grab{width:38px;height:4px;border-radius:2px;background:var(--hair2);margin:var(--s1) auto var(--s2)}
 .hs-close{position:absolute;right:14px;top:12px;width:30px;height:30px;border-radius:50%;border:1px solid var(--hair);
-  background:transparent;color:var(--text2);font:400 18px/1 var(--sans);cursor:pointer;appearance:none}
-.hs-sec h3{font:400 15px/1 var(--serif);color:var(--text2);margin:16px 0 10px}
+  background:transparent;color:var(--text2);font:400 var(--t4)/1 var(--sans);cursor:pointer;appearance:none}
+.hs-sec h3{font:400 var(--t3)/1 var(--serif);color:var(--text2);margin:var(--s4) 0 var(--s2)}
 .hs-sec .mkt,.hs-sec .thm{position:static;transform:none;margin:0;display:inline-flex}
 .hs-sec .thm button{min-width:44px;min-height:44px;padding:0}
 .hs-sec nav.main{display:flex;flex-direction:column;gap:0;margin:0}
-.hs-sec nav.main a{display:block;width:100%;padding:13px 0;font-size:16px;border-bottom:1px solid var(--hair);border-radius:0}
+.hs-sec nav.main a{display:flex;align-items:center;width:100%;min-height:56px;padding:0 var(--s1);
+  font:400 var(--t3)/1.25 var(--serif);color:var(--text);border-bottom:1px solid var(--hair);border-radius:0;
+  transition:background var(--t-snap) var(--spring-snap)}
+.hs-sec nav.main a::after{content:"";width:8px;height:8px;margin-left:auto;border-right:1.8px solid var(--text2);border-bottom:1.8px solid var(--text2);transform:rotate(-45deg)}
+.hs-sec nav.main a:hover,.hs-sec nav.main a:focus-visible{background:var(--sunken);text-decoration:none}
+.hs-sec nav.main a:active{background:var(--sunken);transition-duration:var(--t-exit)}
 html.anim .hsheet:not([hidden]) .hs-pane{animation:sheetup var(--t-settle) var(--spring-settle)}
 @keyframes sheetup{from{transform:translateY(24px);opacity:0}}
 @media (prefers-reduced-motion:reduce){ .hsheet .hs-pane{animation:none} }
 
+
+/* ── DESIGN SYSTEM v3 (2026-09-21) ─────────────────────────────────────────
+   THE THREE METADATA TIERS. Container weight IS importance, carried by
+   GEOMETRY, not fill (on light the fact's fill is heavier than the verdict's,
+   so fill never could). tools/check_tiers.mjs measures the boxes.
+     tier 1  the verdict   filled band pair · PILL · the tallest, widest
+     tier 2  a fact        sunken, no hue · small radius · shorter, tighter
+     tier 3  context       no container at all */
+.meta{display:flex;align-items:center;gap:var(--s2);flex-wrap:wrap}
+.meta .tier1{display:inline-flex;align-items:center;height:22px;padding:0 var(--s3);border-radius:var(--r-pill);
+  font:500 var(--t0)/1 var(--sans);letter-spacing:.14em;text-transform:uppercase;transform-origin:center}
+.meta .tier2{display:inline-flex;align-items:center;height:19px;padding:0 var(--s2);border-radius:var(--r-chip);
+  background:var(--sunken);color:var(--text2);font:400 var(--t1)/1 var(--sans);border:0}
+.meta .tier3,.meta .tier3.new,.meta .tier3.stale{display:inline-flex;align-items:center;height:auto;padding:0;background:none;border:0;
+  color:var(--text2);font:400 var(--t1)/1 var(--sans);text-decoration:none}
+/* EVIDENCE (s16 option C): a neutral surface and a 2px rule that carries the
+   meaning. STRONGEST = what the resume HAS (green). WHAT TO ANSWER = the
+   reader's next move (ember). THEY ARE ASKING FOR = their demand, quoted -
+   NOT the reader's move, so the hairline; a rule that means two opposite
+   things means neither. site/evidence.js is the only thing that writes these. */
+.ev.ev--strongest,.ev.ev--answer,.ev.ev--quoted{display:block;margin:var(--s3) 0 0;background:var(--evidence);
+  border-left:2px solid var(--ev-rule);border-radius:var(--r-inner);padding:var(--s3)}
+.ev--strongest{--ev-rule:var(--auto);--ev-key:var(--auto-label)}
+.ev--answer{--ev-rule:var(--unsure);--ev-key:var(--unsure-label)}
+.ev--quoted{--ev-rule:var(--hairline);--ev-key:var(--text2)}
+.ev__k{margin:0;font:500 var(--t0)/1 var(--sans);letter-spacing:.16em;text-transform:uppercase;color:var(--ev-key)}
+.ev__b{margin:var(--s1) 0 0;font:400 var(--t1)/1.5 var(--sans);color:var(--text-long)}
+/* a saved row carries the band as the ROSE; APPLIED is the only state word */
+.saved__state{font:500 var(--t0)/1 var(--sans);letter-spacing:.14em;text-transform:uppercase;color:var(--auto-label);margin-right:var(--s2)}

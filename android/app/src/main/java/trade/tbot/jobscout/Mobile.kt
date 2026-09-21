@@ -237,7 +237,7 @@ private fun MBox(
             cursorBrush = SolidColor(T.accent),
             decorationBox = { inner ->
                 if (resume.isEmpty()) {
-                    Text("Paste your resume, or a job title…", fontSize = 12.5.sp, color = T.text3)
+                    Text("Paste your résumé, or a job title…", fontSize = 12.5.sp, color = T.text3)
                 }
                 inner()
             },
@@ -412,7 +412,7 @@ fun MRunning(scoring: Boolean, swept: Int, going: Int) {
 fun MFoot(onPage: (String) -> Unit) {
     Column(Modifier.fillMaxWidth().padding(top = 26.dp, bottom = 8.dp)) {
         Text(
-            "Reads your resume, drops what cannot fit, and tells you why about the rest.",
+            "Reads your résumé, drops what cannot fit, and tells you why about the rest.",
             fontSize = 11.5.sp, lineHeight = 17.sp, color = T.text3,
         )
         Spacer(Modifier.height(12.dp))

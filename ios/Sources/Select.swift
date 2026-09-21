@@ -6,7 +6,7 @@ import Foundation
 // the same lexicon classifies the profile here.
 
 /// The "unsure" band. Below it nothing is recommended and nothing is drafted (the worker enforces it too).
-let fitFloor = 55
+let fitFloor = JSBand.unsure   // generated: the unsure band's floor
 private let scored = 8
 private let stop: Set<String> = ["experience","looking","remote","years","strong","skills","working","across","within","roles","based","including","ability","seeking","professional","currently","business","company","canada","canadian","kenya","kenyan"]
 
@@ -90,7 +90,7 @@ struct Selection {
     var note: String {
         "A fit from 0 to 100, a verdict in plain words, the strongest point and the weakest. " +
         "This profile reads as \(label): \(inSector) of today's \(eligible) eligible postings are in that sector, and \(postings.count) go to Claude. " +
-        "A cover letter or a tailored resume is offered only when the top match scores \(fitFloor) or better."
+        "A cover letter or a tailored résumé is offered only when the top match scores \(fitFloor) or better."
     }
 }
 
@@ -185,9 +185,9 @@ func select(profile: String, feed: Feed, home: String = "", remoteOnly: Bool = f
    Written forward for the same reason the letter is: the product exists to get
    someone hired, not to tell them they are not good enough. */
 func nofitNote(fit: Int, posting p: Posting?, id: String) -> String {
-    return "Today\u{2019}s postings are a stretch for this resume as written. The nearest was \(fit) out of 100 "
-        + "\u{2014} which measures the distance between what these postings ask for and what the resume "
-        + "currently says, not what you are capable of. The quickest way to move it is to make the resume "
+    return "Today\u{2019}s postings are a stretch for this résumé as written. The nearest was \(fit) out of 100 "
+        + "\u{2014} which measures the distance between what these postings ask for and what the résumé "
+        + "currently says, not what you are capable of. The quickest way to move it is to make the résumé "
         + "answer them, and they have been unusually clear about what they are asking:"
 }
 

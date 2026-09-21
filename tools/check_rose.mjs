@@ -14,6 +14,8 @@ import { chromium } from "playwright";
 
 const SITE = "http://localhost:8765/site", MOCK = "http://localhost:8765/mockups";
 const fails = [];
+/* --mutate <name>: break the thing on purpose; exit 0 = the check caught it, 2 = asleep */
+const MUTATE = process.argv.indexOf("--mutate") < 0 ? null : process.argv[process.argv.indexOf("--mutate") + 1];
 const ok = m => console.log("  ok    " + m);
 const bad = m => { fails.push(m); console.log("  FAIL  " + m); };
 const is = (c, m) => (c ? ok : bad)(m);
@@ -52,7 +54,9 @@ const ROSES = () => [...document.querySelectorAll("svg.rose[aria-label^='fit '],
 const TIERS = () => [...document.querySelectorAll(".job:not(.swept), #view .card, .rows .row")].slice(0, 6).map(card => {
   const g = sel => { const el = card.querySelector(sel); return el ? getComputedStyle(el).backgroundColor : null; };
   const title = card.querySelector("h3.role, p.r, .row > .t, .jcard__title");
-  return { pill: g(".route, .band, .jcard__band"), chip: g(".pill, .jcard__chip"), date: g(".age, .ago, .m, .jcard__when"),
+  /* v3 stage 5: a SAVED ROW carries the band as the rose, not a pill - two
+     verdict-shaped things would compete - so a row has no tier 1 by design */
+  return { row: card.matches(".rows .row"), pill: g(".route, .band, .jcard__band"), chip: g(".pill, .jcard__chip"), date: g(".age, .ago, .m, .jcard__when"),
            titleFont: title ? getComputedStyle(title).fontFamily : "" };
 });
 
@@ -69,9 +73,11 @@ function judge(label, roses, tiers) {
     is(tiers.length > 0 && tiers.every(t => /Newsreader/i.test(t.titleFont)), `${label}: every card title is Newsreader`);
     /* the verdict pill is filled, the date is bare, and where a fact chip
        exists it is a third, sunken treatment (a saved row carries no chip) */
-    const three = t => t.pill && t.pill !== "rgba(0, 0, 0, 0)" && (!t.date || t.date === "rgba(0, 0, 0, 0)")
-                       && (!t.chip || (t.chip !== "rgba(0, 0, 0, 0)" && t.chip !== t.pill));
-    is(tiers.every(three), `${label}: three metadata tiers, three treatments (pill filled, chip sunken, date bare)`);
+    const three = t => t.row
+      ? (!t.pill && (!t.date || t.date === "rgba(0, 0, 0, 0)"))
+      : (t.pill && t.pill !== "rgba(0, 0, 0, 0)" && (!t.date || t.date === "rgba(0, 0, 0, 0)")
+         && (!t.chip || (t.chip !== "rgba(0, 0, 0, 0)" && t.chip !== t.pill)));
+    is(tiers.every(three), `${label}: three metadata tiers, three treatments (pill filled, chip sunken, date bare; a saved row carries the band as the rose)`);
   }
 }
 
@@ -90,6 +96,9 @@ for (const theme of ["light", "dark"]) {
     await p.goto(SITE + "/saved.html", { waitUntil: "networkidle" });
     await p.evaluate(t => document.documentElement.setAttribute("data-theme", t), theme);
     await p.waitForTimeout(600);
+    /* stage 3 mutations: a rose that lies about the band, a viewBox that clips */
+    if (MUTATE === "wrong-band") await p.evaluate(() => { const d = document.querySelector("svg.rose[aria-label^='fit '] circle.d:not(.lit)"); if (d) d.classList.add("lit"); });
+    if (MUTATE === "cropped-viewbox") await p.evaluate(() => document.querySelectorAll("svg.rose").forEach(s => s.setAttribute("viewBox", "0 0 24 24")));
     judge(`saved ${tag}`, await p.evaluate(ROSES), await p.evaluate(TIERS));
     await p.close();
 
@@ -148,5 +157,9 @@ for (const theme of ["light", "dark"]) {
   }
 }
 await b.close();
+if (MUTATE) {
+  if (fails.length) { console.log(`\n  mutation "${MUTATE}" correctly broke ${fails.length} assertion(s) - check is awake`); process.exit(0); }
+  console.error(`\n  MUTATION "${MUTATE}" DID NOT FAIL. The check is asleep.`); process.exit(2);
+}
 console.log("\n" + (fails.length ? `${fails.length} FAILED` : "ALL GREEN"));
 process.exit(fails.length ? 1 : 0);

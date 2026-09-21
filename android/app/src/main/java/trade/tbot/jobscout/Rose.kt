@@ -55,12 +55,9 @@ private fun dotCentre(i: Int, side: Float): Offset {
 private fun dotRadius(i: Int, side: Float): Float = (2.275f + 0.2944f * i) * side / VB
 
 /** The lit count IS the band: AUTO 8, PING 6, UNSURE 5, NEAR-MISS 3 (rose.js's table). */
-fun litFor(fit: Int): Int = when {
-    fit >= 80 -> 8
-    fit >= 70 -> 6
-    fit >= FIT_FLOOR -> 5
-    else -> 3
-}
+/* GENERATED thresholds and lit table (design/Tokens.kt): the scorer emits
+   `fit` only, every client derives the band, and this is the one table. */
+fun litFor(fit: Int): Int = trade.tbot.jobscout.design.Bands.litByBand[trade.tbot.jobscout.design.Band.of(fit)] ?: 3
 
 @Composable
 fun BearingRose(fit: Int, modifier: Modifier = Modifier, diameter: Dp = 84.dp) {
@@ -140,12 +137,8 @@ fun EmptyRose(modifier: Modifier = Modifier, diameter: Dp = 38.dp) {
    hue AND wrong in dark. Pointing them at the tokens is what stops the two
    drifting again, and it puts the dial inside the comparison check_palette
    already runs against the web. */
-fun bandName(fit: Int): String = when {
-    fit >= 80 -> "auto"
-    fit >= 70 -> "ping"
-    fit >= FIT_FLOOR -> "unsure"
-    else -> "near-miss"
-}
+/* The app's band key is "near-miss" (the tokens spell it "nearmiss"). */
+fun bandName(fit: Int): String = trade.tbot.jobscout.design.Band.of(fit).let { if (it == "nearmiss") "near-miss" else it }
 
 @Composable
 fun bandFor(fit: Int): Pair<String, Color> = bandName(fit) to T.band(fit).first

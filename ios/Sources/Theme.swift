@@ -70,7 +70,7 @@ let lavenderInk = Color(hex: 0x080331)
    and turns to mud when darkened. docs/THEME.md section 11 has the table. */
 let meadow = dyn(0x225B2C, 0x92D098)      // auto label,  147deg 7.11 / 7.38
 let forest = dyn(0x3E954D, 0x7AC683)      // auto solid, lit bearings only
-let emberDeep = dyn(0x713F00, 0xECAF78)   // unsure label, 63deg 7.58 / 7.04
+let emberDeep = dyn(0x713F00, 0xECB078)   // unsure label, 63deg 7.58 / 7.04
 let stone = dyn(0x4B4B5C, 0xBBBCD0)       // near-miss label, 285deg 7.50 / 7.21
 let hairline = dynAlpha(0x080331, 0.13, 0xF8F3EB, 0.13)
 let hair2 = dynAlpha(0x080331, 0.22, 0xF8F3EB, 0.24)
@@ -86,7 +86,7 @@ private func warmShadowColor(_ a: CGFloat) -> Color {
    and as hexes inside the rose, which is how the rose kept the pre-ember
    palette while everything else moved. Named once, read everywhere. */
 let autoFill = dyn(0xE7F4E8, 0x223424)
-let unsureFill = dyn(0xFBEDE1, 0x3D2B1A)
+let unsureFill = dyn(0xFBEDE2, 0x3D2B1A)
 let pingFill = dyn(0xEAF0FF, 0x272E42)
 let nearFill = dyn(0xEFF0F4, 0x2E2E34)
 /* The ping LABEL. iOS carried the fill and borrowed --link for the text,
@@ -212,12 +212,14 @@ struct Chip: View {
 /// base.css. SwiftUI's `response` IS the natural period, so it equals the CSS
 /// duration directly; the damping fractions are the ones the linear() curves
 /// were sampled from. Do not eyeball an equivalent - the two clients drift.
+/// GENERATED numbers (design system v3): tokens/tokens.json -> Tokens.swift.
+/// SwiftUI's `response` IS the natural period, so it equals the CSS duration.
 enum Motion {
-    static let snap = Animation.spring(response: 0.180, dampingFraction: 0.72)
-    static let settle = Animation.spring(response: 0.340, dampingFraction: 1.00)
-    static let arrive = Animation.spring(response: 0.520, dampingFraction: 0.62)
-    static let exit = Animation.easeIn(duration: 0.16)
-    static let staggerDot = 0.046
+    static let snap = JSMotion.snap        // 180ms, zeta .72
+    static let settle = JSMotion.settle    // 340ms, critically damped
+    static let arrive = JSMotion.arrive    // 520ms, 8.3% over
+    static let exit = JSMotion.exit        // 160ms, never overshoots
+    static let staggerDot = 0.046          // tokens.json motion.stagger.dot
 }
 
 /// Every actionable surface has three states; the press is the one that was
