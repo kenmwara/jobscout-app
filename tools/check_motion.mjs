@@ -152,6 +152,21 @@ for (const theme of ["light", "dark"]) {
     await hp.close();
   }
 
+  // past three markets, the desktop header hands over to the chip + sheet too
+  {
+    const dp = await ctx.newPage(); await dp.setViewportSize({ width: 1280, height: 900 });
+    await dp.goto(SITE + "/index.html", { waitUntil: "networkidle" });
+    const r = await dp.evaluate(() => {
+      const mkt = document.querySelector(".mkt"), row = document.querySelector("header.site .row"), h0 = row.offsetHeight;
+      const before = getComputedStyle(document.querySelector(".hchip")).display;
+      for (const [code, name] of [["us", "United States"], ["uk", "United Kingdom"]]) { const b = document.createElement("button"); b.type = "button"; b.dataset.mkt = code; b.setAttribute("aria-pressed", "false"); b.textContent = name; mkt.appendChild(b); }
+      return new Promise(res => setTimeout(() => res({ before, chip: getComputedStyle(document.querySelector(".hchip")).display, pill: getComputedStyle(mkt).display, h0, h1: row.offsetHeight, many: document.documentElement.classList.contains("mkt-many") }), 100));
+    });
+    is(r.before === "none" && r.chip !== "none" && r.pill === "none" && r.many && r.h1 <= r.h0 + 4,
+      `${theme} 1280px: with four markets the desktop header hands over to the chip + sheet (${r.h0}px -> ${r.h1}px)`);
+    await dp.close();
+  }
+
   // the mockup card, three states
   p = await ctx.newPage();
   await p.goto(MOCK + "/mobile.html", { waitUntil: "networkidle" });

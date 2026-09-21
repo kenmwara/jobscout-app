@@ -68,6 +68,12 @@
   body.addEventListener("click", e => { if (e.target.closest("nav.main a")) close(); });
 
   row.appendChild(chip); row.appendChild(more); paintChip();
+  /* PAST THREE MARKETS the pill of flags breaks at any width (US and UK are
+     on the roadmap), so the chip + sheet take over on desktop too. Counted
+     from the switch itself, so adding a market is one button and no CSS. */
+  const many = () => document.documentElement.classList.toggle("mkt-many", !!mkt && mkt.querySelectorAll("button").length > 3);
+  many();
+  if (mkt) new MutationObserver(many).observe(mkt, { childList: true });
   if (mkt) new MutationObserver(paintChip).observe(mkt, { attributes: true, subtree: true, attributeFilter: ["aria-pressed"] });
   window.__hsheet = { open, close };   // the harness opens it without a tap
 })();

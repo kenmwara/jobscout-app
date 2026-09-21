@@ -169,7 +169,12 @@
   --surface:  light-dark(#ffffff, #1c1544);   /* lifted from #16103a: 1.17:1
      on canvas, the same canvas->surface step light uses. Luminance alone
      never separates on dark; the hairline does the rest. */
-  --sunken:   light-dark(#ece5d8, #1a1240);   /* segmented tracks, rails */
+  /* segmented tracks, rails, and the fact chips (v2 tier 2). Dark was #1a1240,
+     1.03:1 against --surface - a sunken container on ink had nothing to read
+     against and the location chip vanished (Chat's stage-1 pass measured it).
+     s10: dark separates by lifting, so the dark rung is the evidence surface,
+     1.225:1 over --surface and 1.43:1 over the canvas. */
+  --sunken:   light-dark(#ece5d8, #2b284f);
   --hair:     light-dark(rgba(8,3,49,.13), rgba(248,243,235,.13));
   --hair2:    light-dark(rgba(8,3,49,.22), rgba(248,243,235,.24));
   /* A SCRIM IS MEANT TO FAIL CONTRAST. At .55 the page behind still read
@@ -651,6 +656,14 @@ h1.display,h2.sec{text-wrap:balance}
   .hmore{width:44px;padding:0;font-size:18px;line-height:1}
   html .hchip:active,html .hmore:active{transform:scale(.94);transition-duration:var(--t-exit)}
 }
+/* past three markets: the chip and the sheet at every width */
+html.mkt-many header.site .row>.mkt{display:none}
+html.mkt-many .hchip,html.mkt-many .hmore{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:36px;min-width:36px;
+  padding:0 10px;border-radius:12px;border:1px solid var(--hair);background:var(--trough);color:var(--ink);font:500 13px/1 var(--sans);cursor:pointer;appearance:none}
+html.mkt-many .hchip{margin-left:auto}
+html.mkt-many .hchip .flag{width:16px;height:11px;border-radius:2px;display:block}
+html.mkt-many .hmore{width:36px;padding:0;font-size:17px}
+html.mkt-many nav.main{margin-left:12px}
 .hsheet{position:fixed;inset:0;z-index:60}
 .hsheet[hidden]{display:none}
 .hs-scrim{position:absolute;inset:0;background:var(--scrim)}
