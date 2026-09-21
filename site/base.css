@@ -469,7 +469,12 @@ a{color:inherit}
    (rgba(255,228,176) is --halo-3's colour) - --accent at 6% over cream
    composited to a cool grey, hue 348 at an overlap: the retired blob, back
    as geometry. Dark keeps the accent at a whisper. */
-.heromark.pagemark .ring circle{fill:light-dark(rgba(255,228,176,.42), var(--accent));opacity:light-dark(1, .06)}
+/* opacity cannot ride light-dark() (colours only) - the first cut's
+   `opacity:light-dark(1,.06)` was dropped and the hero's .16 won, and the
+   amber at that alpha landed a hair DARKER than the cream (L .961 vs .966,
+   measured live). A warm white lighter than the canvas in every channel is
+   what adds light; the alpha rides the colour. Dark sets its own opacity. */
+.heromark.pagemark .ring circle{fill:light-dark(rgba(255,252,244,.55), var(--accent));opacity:1}
 @media (prefers-color-scheme: dark){
   :root[data-theme="system"] .heromark.pagemark .ring circle{fill:var(--accent);opacity:.055}}
 :root[data-theme="dark"] .heromark.pagemark .ring circle{fill:var(--accent);opacity:.055}

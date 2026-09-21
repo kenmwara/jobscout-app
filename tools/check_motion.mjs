@@ -174,6 +174,17 @@ for (const theme of ["light", "dark"]) {
       if (C < ref.C * 0.6 || dh > 20) off.push(`(${x},${y}) C=${C.toFixed(3)} dh=${dh.toFixed(0)} L=${L.toFixed(3)}`);
     }
     is(!off.length, `light: 12 ground samples stay in the cream's hue family with its chroma (ref C=${ref.C.toFixed(3)} h=${ref.h.toFixed(0)})` + (off.length ? ` - ${off.join("; ")}` : ""));
+    /* and the discs ADD light: the biggest disc's centre is lighter than the
+       plain canvas (measured live 09-21 at L .961 vs .966 before the fix -
+       amber at the hero's .16 opacity, because opacity cannot ride light-dark) */
+    const disc = await p.evaluate(() => { const m = document.querySelector(".heromark.pagemark"); if (!m) return null;
+      const big = [...m.querySelectorAll(".ring circle")].map(c => c.getBoundingClientRect()).sort((a, b) => b.width - a.width)[0];
+      return { x: Math.min(innerWidth - 1, Math.max(0, Math.round(big.left + big.width / 2))), y: Math.min(innerHeight - 1, Math.max(0, Math.round(big.top + big.height / 2))) }; });
+    if (disc) {
+      const i = (disc.y * png.width + disc.x) * 4, j = (890 * png.width + 20) * 4;
+      const inL = oklch([png.data[i], png.data[i + 1], png.data[i + 2]]).L, outL = oklch([png.data[j], png.data[j + 1], png.data[j + 2]]).L;
+      is(inL > outL, `light: the discs add light (inside a disc L=${inL.toFixed(3)} vs canvas L=${outL.toFixed(3)})`);
+    }
     await p.close();
   }
   await ctx.close();
