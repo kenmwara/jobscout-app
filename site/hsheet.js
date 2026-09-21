@@ -68,6 +68,15 @@
   body.addEventListener("click", e => { if (e.target.closest("nav.main a")) close(); });
 
   row.appendChild(chip); row.appendChild(more); paintChip();
+  /* THE HEADER RULE (Ken, 09-21): the LANDING keeps the two slide tabs -
+     market and the three-state theme - at every width; every other view and
+     route gets the chip + menu at phone width. index.html's landing is a
+     view, so this watches it; the other routes have no landing and stay in
+     chip mode. */
+  const landing = document.getElementById("v-landing");
+  const full = () => document.documentElement.classList.toggle("hdr-full", !!landing && !landing.classList.contains("hide") && (!mkt || mkt.querySelectorAll("button").length <= 3));
+  full();
+  if (landing) new MutationObserver(full).observe(landing, { attributes: true, attributeFilter: ["class"] });
   /* PAST THREE MARKETS the pill of flags breaks at any width (US and UK are
      on the roadmap), so the chip + sheet take over on desktop too. Counted
      from the switch itself, so adding a market is one button and no CSS. */

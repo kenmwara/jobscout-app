@@ -108,6 +108,10 @@ for (const theme of ["light", "dark"]) {
     await hp.goto(SITE + "/index.html", { waitUntil: "networkidle" });
     await hp.evaluate(t => document.documentElement.setAttribute("data-theme", t), theme);
     await hp.waitForTimeout(400);
+    /* the landing keeps the two slide tabs (Ken's header rule) */
+    const land = await hp.evaluate(() => ({ full: document.documentElement.classList.contains("hdr-full"), mkt: getComputedStyle(document.querySelector(".mkt")).display !== "none", thm: getComputedStyle(document.querySelector(".thm")).display !== "none", chip: getComputedStyle(document.querySelector(".hchip")).display }));
+    is(land.full && land.mkt && land.thm && land.chip === "none", `${theme} ${w}px landing: the two slide tabs, no chip`);
+    await hp.evaluate(() => setView("browse")); await hp.waitForTimeout(500);
     const h = await hp.evaluate(() => {
       const row = document.querySelector("header.site .row");
       const kids = [...row.children].filter(el => getComputedStyle(el).display !== "none");

@@ -118,6 +118,19 @@ html[data-plat="android"] .notch{position:absolute;top:19px;left:50%;transform:t
   padding:0 9px;border-radius:10px;border:1px solid var(--hair);background:var(--trough);color:var(--ink);
   font:500 12px/1 var(--sans);cursor:pointer}
 .ahead .hchip{margin-left:auto}
+.ahead .hchip .flag{width:16px;height:11px;border-radius:2px;display:block}
+/* the landing's slide tabs: the site's .mkt / .thm shape - a translucent
+   trough, the selected half a lifted pill with the one soft shadow */
+.ahead--full{flex-wrap:wrap;row-gap:8px}
+.ahead .hseg{display:flex;background:var(--trough);border-radius:12px;padding:3px;gap:2px;border:1px solid var(--hair)}
+.ahead .hseg--mkt{margin-left:auto}
+.ahead .hseg button{appearance:none;border:0;background:transparent;cursor:pointer;color:var(--text2);
+  min-width:38px;height:30px;padding:0 8px;border-radius:9px;display:grid;place-items:center;
+  transition:background var(--t-snap) var(--spring-snap),color var(--t-snap) var(--spring-snap),transform var(--t-snap) var(--spring-snap)}
+.ahead .hseg button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:var(--sh-hover)}
+.ahead .hseg button:active{transform:scale(.94);transition-duration:var(--t-exit)}
+.ahead .hseg .flag{width:18px;height:12px;border-radius:2px;display:block}
+.ahead .hseg--thm button svg{width:15px;height:15px;display:block;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
 .ahead .hmore{width:34px;padding:0;font-size:16px}
 .menu .lb{font:500 10px/1 var(--sans);letter-spacing:.09em;text-transform:uppercase;color:var(--text3);margin:14px 0 8px}
 .menu .mrow{display:flex;gap:6px;flex-wrap:wrap}
@@ -739,11 +752,33 @@ const HEART = `<svg viewBox="0 0 24 24"><path d="M12 20s-7.5-4.7-7.5-9.8A4.2 4.2
    code) and an ellipsis that opens a sheet holding the market switch, the
    three-state theme control and every destination - the same header the
    web wears at 620px and under. */
-const head = (back) => `<div class="ahead">${back
-  ? `<button class="bk" data-go="${esc(back)}">&#8592; Back</button>`
-  : `<button class="mk" type="button" data-go="home" aria-label="JobScout — home">${MARK} JobScout</button>`}
-  <button class="hchip" type="button" data-menu aria-label="Market">${market === "ke" ? "🇰🇪 <span>KE</span>" : "🇨🇦 <span>CA</span>"}</button>
-  <button class="hmore" type="button" data-menu aria-label="Menu" aria-expanded="false">&#8943;</button></div>`;
+/* The flags are SVG (the site's own): Windows draws an emoji flag as two
+   letters, which is how the chip read "KE KE". */
+const FLAG = {
+  ca: `<svg class="flag" viewBox="0 0 24 16" aria-hidden="true"><rect width="24" height="16" fill="#fff"/><rect width="6" height="16" fill="#d52b1e"/><rect x="18" width="6" height="16" fill="#d52b1e"/><path d="M12 4l1.1 2.6 2.4-1-1 2.4 1.4.6-2.2 1.3.3 1.5-1.6-.7-.4 1.9-.4-1.9-1.6.7.3-1.5L8.1 8.6l1.4-.6-1-2.4 2.4 1z" fill="#d52b1e"/></svg>`,
+  ke: `<svg class="flag" viewBox="0 0 24 16" aria-hidden="true"><rect width="24" height="16" fill="#fff"/><rect width="24" height="4.6" fill="#000"/><rect y="5.6" width="24" height="4.8" fill="#be0027"/><rect y="11.4" width="24" height="4.6" fill="#009a49"/><ellipse cx="12" cy="8" rx="2.3" ry="5" fill="#be0027" stroke="#fff" stroke-width=".7"/></svg>`,
+};
+const THEME_ICON = {
+  system: `<svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="12" rx="2"/><path d="M8 20h8"/></svg>`,
+  light:  `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M4.2 4.2l1.6 1.6M18.2 18.2l1.6 1.6M2.5 12h2.2M19.3 12h2.2M4.2 19.8l1.6-1.6M18.2 5.8l1.6-1.6"/></svg>`,
+  dark:   `<svg viewBox="0 0 24 24"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5z"/></svg>`,
+};
+const themeNow = () => document.documentElement.dataset.theme || "light";
+/* THE HEADER RULE: on the landing, the two slide tabs (market, theme) as
+   built; on every other screen the flag+code chip and the ... menu. */
+const head = (back) => {
+  const brand = back
+    ? `<button class="bk" data-go="${esc(back)}">&#8592; Back</button>`
+    : `<button class="mk" type="button" data-go="home" aria-label="JobScout — home">${MARK} JobScout</button>`;
+  if (screen === "home" && !back) return `<div class="ahead ahead--full">${brand}
+    <div class="hseg hseg--mkt" role="group" aria-label="Market">${["ca", "ke"].map(m =>
+      `<button type="button" data-menu-market="${m}" aria-pressed="${market === m}" aria-label="${m === "ke" ? "Kenya" : "Canada"}">${FLAG[m]}</button>`).join("")}</div>
+    <div class="hseg hseg--thm" role="group" aria-label="Theme">${[["system", "Match your device"], ["light", "Light"], ["dark", "Dark"]].map(([v, l]) =>
+      `<button type="button" data-menu-theme="${v}" aria-pressed="${themeNow() === v}" aria-label="${l}">${THEME_ICON[v]}</button>`).join("")}</div></div>`;
+  return `<div class="ahead">${brand}
+    <button class="hchip" type="button" data-menu aria-label="Market">${FLAG[market]}<span>${market.toUpperCase()}</span></button>
+    <button class="hmore" type="button" data-menu aria-label="Menu" aria-expanded="false">&#8943;</button></div>`;
+};
 
 /* The menu sheet reuses the drafting sheet's window. The market and theme
    rows press the rail's own buttons, so there is one wiring, not two. */
@@ -1169,7 +1204,7 @@ document.addEventListener("click", e => {
   const mm = e.target.closest("[data-menu-market]");
   if (mm) { document.querySelector(`#segMarket [data-m="${mm.dataset.menuMarket}"]`)?.click(); closeSheet(); return; }
   const mt = e.target.closest("[data-menu-theme]");
-  if (mt) { document.querySelector(`#segTheme [data-t="${mt.dataset.menuTheme}"]`)?.click(); openMenu(); return; }
+  if (mt) { document.querySelector(`#segTheme [data-t="${mt.dataset.menuTheme}"]`)?.click(); if (!$("#sheet").hidden) openMenu(); else paint(); return; }
   const rw = e.target.closest("[data-rewrite]");
   if (rw) { closeSheet(); runDraft(rw.dataset.rewrite, rw.dataset.exclude.split("\u001f")); return; }
   const go = e.target.closest("[data-go]");

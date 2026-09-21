@@ -647,6 +647,13 @@ h1.display,h2.sec{text-wrap:balance}
   header.site{padding:6px 0}
   header.site .row{flex-wrap:nowrap;height:56px;gap:10px;align-items:center}
   header.site .row>.mkt,header.site .row>.thm,header.site .row>nav.main{display:none}
+  /* the landing keeps its slide tabs (as built), wrapping under the brand */
+  html.hdr-full header.site .row{flex-wrap:wrap;height:auto;row-gap:8px}
+  html.hdr-full header.site .row>.mkt,html.hdr-full header.site .row>.thm{display:flex}
+  html.hdr-full header.site .row>.mkt{margin-left:auto}
+  html.hdr-full .mkt button span,html.hdr-full .mkt button{font-size:0;gap:0;padding:8px 10px}
+  html.hdr-full .mkt button .flag{width:18px;height:12px}
+  html.hdr-full .hchip,html.hdr-full .hmore{display:none}
   .hchip,.hmore{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:44px;min-width:44px;
     padding:0 10px;border-radius:12px;border:1px solid var(--hair);background:var(--trough);color:var(--ink);
     font:500 13px/1 var(--sans);cursor:pointer;appearance:none;
