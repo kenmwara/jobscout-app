@@ -131,11 +131,25 @@ html[data-plat="android"] .notch{position:absolute;top:19px;left:50%;transform:t
 .ahead .hseg button:active{transform:scale(.94);transition-duration:var(--t-exit)}
 .ahead .hseg .flag{width:18px;height:12px;border-radius:2px;display:block}
 .ahead .hseg--thm button svg{width:15px;height:15px;display:block;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
-.ahead .hmore{width:34px;padding:0;font-size:16px}
-.menu .lb{font:500 10px/1 var(--sans);letter-spacing:.09em;text-transform:uppercase;color:var(--text3);margin:14px 0 8px}
-.menu .mrow{display:flex;gap:6px;flex-wrap:wrap}
-.menu .mnav button{display:block;width:100%;text-align:left;appearance:none;background:transparent;border:0;border-bottom:1px solid var(--hair);
-  padding:12px 0;font:400 15px/1 var(--sans);color:var(--ink);cursor:pointer}
+.ahead .hmore{width:34px;padding:0;display:grid;place-items:center}
+.ahead .hmore svg{display:block;fill:currentColor}
+.menu .lb{font:500 10px/1 var(--sans);letter-spacing:.09em;text-transform:uppercase;color:var(--text3);margin:18px 0 10px}
+.menu .lb:first-child{margin-top:4px}
+/* the sheet's slide tabs are the header's, at full width with their labels */
+.menu .hseg{display:flex;background:var(--trough);border-radius:12px;padding:3px;gap:2px;border:1px solid var(--hair)}
+.menu .hseg button{flex:1;appearance:none;border:0;background:transparent;cursor:pointer;color:var(--text2);
+  height:40px;padding:0 10px;border-radius:9px;display:inline-flex;align-items:center;justify-content:center;gap:7px;
+  font:500 13.5px/1 var(--sans);transition:background var(--t-snap) var(--spring-snap),color var(--t-snap) var(--spring-snap)}
+.menu .hseg button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:var(--sh-hover)}
+.menu .hseg .flag{width:18px;height:12px;border-radius:2px;display:block}
+.menu .hseg--thm button svg{width:15px;height:15px;display:block;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.menu .mnav{margin:0 0 6px}
+.menu .mnav button{display:flex;align-items:center;justify-content:space-between;width:100%;appearance:none;background:transparent;border:0;
+  border-bottom:1px solid var(--hair);padding:13px 2px;font:400 17px/1.2 var(--serif);color:var(--ink);cursor:pointer;letter-spacing:-.005em}
+.menu .mnav button small{font:500 12px/1 var(--mono);color:var(--text3);font-variant-numeric:tabular-nums}
+.menu .mnav button:active{color:var(--text2)}
+/* the drafting footer is not the menu's */
+.sheet[data-which="menu"] .wfoot{display:none}
 .emptyst{text-align:center;padding:34px 12px 8px}
 .emptyst .rose{width:84px;height:84px;margin:0 auto 14px}
 .emptyst h3{font:400 20px/1.2 var(--serif);margin:0 0 6px;color:var(--ink)}
@@ -151,6 +165,16 @@ html[data-plat="android"] .notch{position:absolute;top:19px;left:50%;transform:t
 .ahead .fl{margin-left:auto;font-size:15px}
 h2.big{font:400 27px/1.15 var(--serif);color:var(--ink);letter-spacing:-.02em;margin:4px 0 6px}
 h2.big .dot{color:var(--accent)}
+h2.big.dt{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;font-size:24px;line-height:1.2}
+/* s5: the detail screen is the card expanded - no shell, no stretched link */
+#view .jcard--detail,#view .jcard--detail:hover,#view .jcard--detail:focus-within{background:transparent;border:0;box-shadow:none;padding:0;margin:14px 0 0;transform:none}
+.jcard--detail .jcard__head{align-items:center}
+.jcard--detail .jcard__meta{margin-top:0}
+/* one primary once, the heart beside it, the employer link a quiet row under */
+.jcard--detail .jcard__actions{display:grid;grid-template-columns:1fr auto;align-items:center;column-gap:10px;row-gap:10px}
+.jcard--detail .jcard__actions .jcard__btn--primary{justify-self:start}
+.jcard--detail .jcard__actions .jcard__btn:not(.jcard__btn--primary){grid-column:1/-1;justify-self:start}
+.jcard--detail .jcard__actions .jcard__heart{grid-row:1;grid-column:2;margin-left:0}
 p.sub{font:400 13.5px/1.5 var(--sans);color:var(--text2);margin:0 0 16px}
 
 .mhero{border-radius:var(--r-card);background:var(--hero);padding:26px 18px 20px;margin:0 0 18px;
@@ -777,7 +801,7 @@ const head = (back) => {
       `<button type="button" data-menu-theme="${v}" aria-pressed="${themeNow() === v}" aria-label="${l}">${THEME_ICON[v]}</button>`).join("")}</div></div>`;
   return `<div class="ahead">${brand}
     <button class="hchip" type="button" data-menu aria-label="Market">${FLAG[market]}<span>${market.toUpperCase()}</span></button>
-    <button class="hmore" type="button" data-menu aria-label="Menu" aria-expanded="false">&#8943;</button></div>`;
+    <button class="hmore" type="button" data-menu aria-label="Menu" aria-expanded="false"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg></button></div>`;
 };
 
 /* The menu sheet reuses the drafting sheet's window. The market and theme
@@ -788,11 +812,13 @@ function openMenu() {
   $("#sheetBody").innerHTML = `
     <div class="menu">
       <p class="lb">Market</p>
-      <div class="mrow">${["ca", "ke"].map(m => `<button class="mini-cta${market === m ? " solid" : ""}" type="button" data-menu-market="${m}">${m === "ke" ? "🇰🇪 Kenya" : "🇨🇦 Canada"}</button>`).join("")}</div>
+      <div class="hseg hseg--wide" role="group" aria-label="Market">${["ca", "ke"].map(m =>
+        `<button type="button" data-menu-market="${m}" aria-pressed="${market === m}">${FLAG[m]}<span>${m === "ke" ? "Kenya" : "Canada"}</span></button>`).join("")}</div>
       <p class="lb">Theme</p>
-      <div class="mrow">${[["light", "Light"], ["system", "Device"], ["dark", "Dark"]].map(([v, l]) => `<button class="mini-cta${t === v ? " solid" : ""}" type="button" data-menu-theme="${v}">${l}</button>`).join("")}</div>
+      <div class="hseg hseg--wide hseg--thm" role="group" aria-label="Theme">${[["system", "Device"], ["light", "Light"], ["dark", "Dark"]].map(([v, l]) =>
+        `<button type="button" data-menu-theme="${v}" aria-pressed="${t === v}">${THEME_ICON[v]}<span>${l}</span></button>`).join("")}</div>
       <p class="lb">Go to</p>
-      <div class="mnav">${TABS.map(([id, label]) => `<button type="button" data-go="${id}">${label}${id === "saved" ? ` (${scored().filter(p => saved.has(p.id)).length + savedSearches.size})` : ""}</button>`).join("")}</div>
+      <div class="mnav">${TABS.map(([id, label]) => `<button type="button" data-go="${id}"><span>${label}</span>${id === "saved" ? `<small>${scored().filter(p => saved.has(p.id)).length + savedSearches.size}</small>` : ""}</button>`).join("")}</div>
     </div>`;
   $("#sheetBody").scrollTop = 0;
   $("#sheet").hidden = false;
@@ -853,7 +879,7 @@ function nofitHTML() {
    breathes and a real AUTO's pill pulses once. Instant under reduced motion. */
 function roseArrive(root){
   const anim = document.documentElement.classList.contains("anim");
-  root.querySelectorAll(".card.jcard").forEach((card, ci) => {
+  root.querySelectorAll(".card.jcard, .jcard--detail").forEach((card, ci) => {
     card.style.setProperty("--ci", ci);
     const num = card.querySelector(".jcard__num");
     const fit = +card.dataset.score || 0;
@@ -877,6 +903,15 @@ function roseArrive(root){
   });
 }
 const JBAND = { auto: "auto", ping: "ping", unsure: "unsure", "near-miss": "near" };
+/* tier 3 (s3): the posted date, no container. Same ladder as the web's
+   ageOf; absent when the source publishes none. */
+const TODAY = new Date().toISOString().slice(0, 10);
+const whenOf = p => {
+  if (!p || !p.posted_at) return "";
+  const d = Math.round((Date.parse(TODAY) - Date.parse(p.posted_at)) / 864e5);
+  return d <= 0 ? "today" : d === 1 ? "yesterday" : d < 7 ? `${d} days ago`
+    : d < 14 ? "last week" : d < 60 ? `${Math.round(d / 7)} weeks ago` : "months ago";
+};
 const cardHTML = (p, full) => {
   const [word] = bandOf(p.fit);
   const band = JBAND[word];
@@ -888,7 +923,7 @@ const cardHTML = (p, full) => {
       <div class="jcard__id">
         <p class="jcard__org">${esc(p.company)}${p.location ? ` <span class="sep">&middot;</span> ${esc(p.location)}` : ""}</p>
         <h3 class="jcard__title"><a class="jcard__link" href="#" data-open-card="${esc(p.id)}">${esc(p.title)}</a></h3>
-        <div class="jcard__meta"><span class="jcard__band">${word.toUpperCase()}</span><span class="jcard__chip">${pol}</span>${p.posted ? `<span class="jcard__when">${esc(p.posted)}</span>` : ""}</div>
+        <div class="jcard__meta"><span class="jcard__band">${word.toUpperCase()}</span><span class="jcard__chip">${pol}</span>${whenOf(p) ? `<span class="jcard__when">${whenOf(p)}</span>` : ""}</div>
       </div>
     </div>
     ${strongest ? `<div class="jcard__evidence"><p class="jcard__evidence-k">STRONGEST</p><p>${esc(strongest)}</p></div>` : ""}
@@ -952,7 +987,7 @@ const SCREENS = {
       <p class="mfile" id="mfile" hidden></p>
       <div class="chips"><i>Remote</i><i>Hybrid</i><i>On site</i><i>Any of those</i></div>
     </div>
-    <p class="sub">${postings().length} swept this morning &middot; tap the arrow to score them</p>
+    <p class="sub">${postings().length} swept this morning</p>
     ${postings().slice(0, 4).map(p => cardHTML({ ...p, fit: fitOf(p.id) })).join("")}`,
 
   matches: () => `${head()}
@@ -972,18 +1007,30 @@ const SCREENS = {
   apply: () => {
     const p = current;
     if (!p) return `${head("matches")}<p class="empty">No posting chosen.</p>`;
+    const [word] = bandOf(p.fit);
+    const pol = p.remote_policy === "remote" ? "Remote" : p.remote_policy === "hybrid" ? "Hybrid" : "On site";
+    /* EVERY match can be applied to. Below the floor the button says so
+       plainly rather than disappearing: the reader decides, not the score. */
     return `${head("matches")}
-      <h2 class="big">${esc(p.title)}</h2>
+      <h2 class="big dt">${esc(p.title)}</h2>
       <p class="sub">${esc(p.company)} &middot; ${esc(p.location || "—")}</p>
-      ${cardHTML(p, true)}
-      <!-- EVERY match can be applied to. Below the floor the button says so
-           plainly rather than disappearing: the reader decides, not the
-           score. Same wording as the web's below-floor card. -->
-      <button class="cta" data-go="draft">${current && current.fit < FIT_FLOOR
-        ? "Apply anyway &#8594;" : "Prepare application &#8594;"}</button>
-      <button class="cta quiet">Open the employer&rsquo;s posting &#8599;</button>
-      <button class="cta quiet" data-save="${esc(p.id)}">
-        ${saved.has(p.id) ? "Saved" : "Save this match"}</button>`;
+      <article class="jcard jcard--detail" data-band="${JBAND[word]}" data-score="${p.fit}">
+        <div class="jcard__head">
+          <div class="jcard__score">${roseMarkup(44)}<span class="jcard__num num" role="img" aria-label="Score ${p.fit} out of 100, ${word}">${p.fit}</span></div>
+          <div class="jcard__meta"><span class="jcard__band">${word.toUpperCase()}</span><span class="jcard__chip">${pol}</span>${whenOf(p) ? `<span class="jcard__when">${whenOf(p)}</span>` : ""}</div>
+        </div>
+        <div class="jcard__evidence"><p class="jcard__evidence-k">STRONGEST</p><p>${esc(p.strongest
+          || `Direct overlap with ${p.sector} work, and the location rule passes.`)}</p></div>
+        <div class="ev ev-answer"><p class="lb">&#8595; What to answer</p><p class="bd">${esc(p.weakest
+          || "Say how recently you did this, and name the tools the posting lists that your resume does not.")}</p></div>
+        <div class="jcard__actions">
+          <button class="jcard__btn jcard__btn--primary" type="button" data-go="draft">${p.fit < FIT_FLOOR
+            ? "Apply anyway" : "Prepare application"} <span class="jcard__arrow">&rarr;</span></button>
+          <button class="jcard__btn" type="button">Open the posting <span class="jcard__arrow">&#8599;</span></button>
+          <button class="jcard__heart heart" type="button" data-heart="${esc(p.id)}"
+                  aria-pressed="${saved.has(p.id)}" aria-label="${saved.has(p.id) ? "Saved" : "Save"} ${esc(p.title)}">${HEART}</button>
+        </div>
+      </article>`;
   },
 
   /* Each section calls the endpoint site/apply.html calls, with the same

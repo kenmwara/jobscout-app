@@ -24,7 +24,10 @@
   chip.type = "button"; chip.className = "hchip"; chip.setAttribute("aria-label", "Market");
   const more = document.createElement("button");
   more.type = "button"; more.className = "hmore"; more.setAttribute("aria-label", "Menu");
-  more.setAttribute("aria-expanded", "false"); more.innerHTML = "&#8943;";
+  more.setAttribute("aria-expanded", "false");
+  /* three drawn dots, not the U+22EF glyph: a glyph centres on its baseline
+     and sat high in the button; geometry centres */
+  more.innerHTML = '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>';
   const sheet = document.createElement("div");
   sheet.className = "hsheet"; sheet.hidden = true;
   sheet.innerHTML = `<div class="hs-scrim"></div><div class="hs-pane" role="dialog" aria-label="Menu">` +

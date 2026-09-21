@@ -219,10 +219,11 @@
 }
 .jcard__chip {                                   /* tier 2 — a fact, no hue */
   font-size: 10.5px;
+  line-height: 1;
   color: var(--text-2);
   background: var(--jc-chip-bg);
-  padding: 5px 10px;
-  border-radius: var(--radius-pill, 1600px);
+  padding: 4px 7px;
+  border-radius: 5px;                 /* s2: a quieter container, not a matching pill */
 }
 .jcard__when {                                   /* tier 3 — no container */
   font-size: 10.5px;
