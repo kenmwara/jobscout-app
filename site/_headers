@@ -19,6 +19,12 @@
 /base.css
   Cache-Control: public, max-age=0, must-revalidate
 
+/rose.js
+  Cache-Control: public, max-age=0, must-revalidate
+
+/hsheet.js
+  Cache-Control: public, max-age=0, must-revalidate
+
 /apply.html
   Cache-Control: public, max-age=0, must-revalidate
 

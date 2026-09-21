@@ -61,6 +61,16 @@ jobs:
           sed -i "s|href=\"base.css\"|href=\"base.css?v=$CSSHASH\"|g" site/*.html
           echo "stylesheet pinned to $CSSHASH"
           grep -ho 'href="base.css[^"]*"' site/*.html | sort -u
+          # The same for the shared scripts (motion v2): rose.js builds the
+          # rose on every page and hsheet.js is the phone header. Pages
+          # caches a .js for four hours, so a reader got new HTML with the
+          # OLD rose builder - "it is still loading a stale version".
+          for js in rose.js hsheet.js; do
+            H=$(md5sum "site/$js" | cut -c1-10)
+            sed -i "s|src=\"$js\"|src=\"$js?v=$H\"|g" site/*.html
+            echo "$js pinned to $H"
+          done
+          grep -ho 'src="[a-z]*\.js[^"]*"' site/*.html | sort -u
 
           npx --yes wrangler@4.95.0 pages deploy site \
             --project-name jobscout-app \

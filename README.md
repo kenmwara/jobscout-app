@@ -207,6 +207,12 @@ caption anyway.
 > the whole push, so a site commit beneath it never deploys — push site
 > commits on their own, or `gh workflow run deploy.yml --ref main`.
 >
+> **Assets are content-stamped at deploy.** Pages caches anything that is
+> not HTML for four hours, so `base.css`, `rose.js` and `hsheet.js` get
+> `?v=<md5>` written into every page by the deploy step (and `_headers`
+> sets them to `max-age=0` besides). A new shared file must be added to
+> that loop or readers will run stale code against new HTML.
+>
 > **2026-09-20: the queue stopped dispatching altogether** — nothing started
 > after 06:32Z, webhook- or API-triggered, on an Active pay-as-you-go account
 > with minutes accruing and the status page green (the only visible change:
