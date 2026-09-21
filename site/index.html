@@ -1146,7 +1146,7 @@ nav.main{margin-left:var(--s4)}
       <div class="grid3">
         <div class="card">
           <div class="mini">Résumé · read in the browser<span class="badge">read</span></div>
-          <div><h3>Your résumé, not a form</h3><p>Upload or paste it. It is read in the browser, scored, and never stored — no account, no profile to keep current.</p></div>
+          <div><h3>Your résumé, not a form</h3><p>Upload or paste it. It is read in the browser and scored; the text itself is not kept. Your scores stay on this device until you press forget — no account, no profile to keep current.</p></div>
         </div>
         <div class="card">
           <div class="mini"><span id="gateMini">the day, narrowed</span><span class="badge" id="gateCut">before a paid call</span></div>
@@ -2315,11 +2315,13 @@ function browse(){
       ? `${scored.length} scored of ${all} swept \u2014 ${esc(scoredNote)}`
       : `${rows.length} of your ${scored.length} matches`);
     $("#browseCount").insertAdjacentHTML("beforeend",
-      ` <button class="allsweep" type="button">show the whole sweep instead</button>`);
+      ` <button class="allsweep" type="button">show the whole sweep instead</button>` +
+      ` <button class="allsweep forget" type="button">forget my r\u00e9sum\u00e9 and these matches</button>`);
     /* A run kept from another day is still useful — the reader decides. It is
        never passed off as today's. */
     if (runStale) $("#browseCount").insertAdjacentHTML("beforeend",
       `<span class="stalerun">${esc(runStale)} Run it again for today’s.</span>`);
+    $("#browseCount").querySelector(".forget").onclick = forgetRun;
     $("#browseCount").querySelector(".allsweep").onclick = () => {
       // Hide them, never discard them. The run stays in sessionStorage.
       sweepOverride = true;
@@ -2478,8 +2480,13 @@ function fingerprint(text){
 function keepRun(){
   try{
     if (!scored) { localStorage.removeItem(RUNKEY); return; }
+    /* THE TEXT IS NEVER WRITTEN TO DISK (2026-09-21). It used to ride along
+       here so a reload could rework it, and a hard reset does not clear
+       localStorage - "the site remembers my résumé and I cannot clear it".
+       The scores stay until the reader presses Forget; the text lives in
+       memory for this tab only. */
     localStorage.setItem(RUNKEY, JSON.stringify({
-      v: 1, scored, profile: scoredProfile, note: scoredNote,
+      v: 2, scored, note: scoredNote,
       day: feed?.day || TODAY, market: MARKET,
       fp: fingerprint(scoredProfile || ""),
     }));
@@ -2506,8 +2513,20 @@ function recallRun(){
       // Kept, not discarded: the reader decides whether yesterday still helps.
       runStale = `These matches were scored against ${r.day}\u2019s sweep, not today\u2019s.`;
     }
-    scored = r.scored; scoredProfile = r.profile || ""; scoredNote = r.note || "";
+    scored = r.scored; scoredNote = r.note || "";
+    scoredProfile = "";   /* the text is not kept across a reload; the apply page asks again */
+    if ("profile" in r) { delete r.profile; r.v = 2; localStorage.setItem(RUNKEY, JSON.stringify(r)); }   /* scrub a pre-09-21 record */
   }catch(e){}
+}
+
+/* The control the reader asked for: one press forgets the résumé and the
+   matches on this device - the run, the apply payload, the text in the box. */
+function forgetRun(){
+  try{ localStorage.removeItem(RUNKEY); sessionStorage.removeItem("jobscout.apply"); }catch(e){}
+  scored = null; scoredProfile = ""; scoredNote = ""; runStale = null;
+  const el = $("#ownText"); if (el) el.value = "";
+  ev("forget");
+  browse();
 }
 
 /* Enough to put a view back the way it was found. */

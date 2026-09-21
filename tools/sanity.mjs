@@ -36,7 +36,7 @@ const CHECKS = [
   { id: "parallax",  file: "tools/check_parallax.mjs", mutations: ["flat", "ignore-motion", "shrink-link", "bury-actions"], guards: "tilt tracks, reduced motion is flat, the stretched link covers the card" },
   { id: "ground",    file: "tools/check_halo_ext.mjs", mutations: ["section-bg", "grey-blob", "kill-halo"], guards: "one ground, warm on light, the halo reaches every route" },
   { id: "contrast",  file: "tools/check_contrast.mjs", mutations: ["hero-ink"], guards: "every text/background pair clears AA, gradients sampled" },
-  { id: "gaps",      file: "tools/check_gaps.mjs", mutations: ["split-title", "repeat-org", "double-code", "push-below", "tiny-target", "no-focus"], guards: "headings are prefixes, nothing said twice, one code on the chip, the list above the fold, 44px targets with visible focus" },
+  { id: "gaps",      file: "tools/check_gaps.mjs", mutations: ["split-title", "repeat-org", "double-code", "push-below", "tiny-target", "no-focus", "keep-resume"], guards: "headings are prefixes, nothing said twice, one code on the chip, the list above the fold, 44px targets with visible focus" },
   { id: "theme",     file: "tools/check_theme.mjs", guards: "the three-state theme truth table" },
   { id: "palette",   file: "tools/check_palette.py", py: true, guards: "the colour law, and the three clients held to tokens.json" },
 ];

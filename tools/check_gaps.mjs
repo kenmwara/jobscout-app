@@ -20,6 +20,9 @@
  *             focus-visible style that differs from rest
  *             mutation: tiny-target | no-focus
  *
+ *   privacy   the résumé text is never written to storage; the forget control
+ *             clears the run          mutation: keep-resume
+ *
  *   node tools/check_gaps.mjs [--only heading,pill] [--mutate <name>]
  */
 import { chromium } from "playwright";
@@ -117,6 +120,27 @@ if (want("fold")) {
     else if (r.top > r.h * 0.6) fails.push(`fold/${route}: the first member begins ${r.top}px down — below 60% of ${r.h}px`);
     await ctx.close();
   }
+}
+
+/* ---- privacy: the résumé text is never written to storage; forget clears the run ---- */
+if (want("privacy")) {
+  const { page, ctx } = await openRoute(b, "browse", "light");
+  if (MUTATE === "keep-resume") await page.evaluate(() => { keepRun = function () { localStorage.setItem("jobscout.run", JSON.stringify({ v: 1, scored, profile: scoredProfile, note: scoredNote })); }; });
+  const r = await page.evaluate(() => {
+    const SECRET = "SECRET RESUME TEXT 4471";
+    scored = [{ id: "chk", fit: 72, p: { id: "chk", title: "Analyst", company: "Chk" }, strongest: "", weakest: "", verdict: "" }];
+    scoredProfile = SECRET; scoredNote = "example"; keepRun();
+    const leaked = [localStorage, sessionStorage].some(st => Object.keys(st).some(k => (st.getItem(k) || "").includes(SECRET)));
+    browse();
+    const btn = document.querySelector("#browseCount .forget");
+    if (btn) btn.click();
+    return { leaked, hadButton: !!btn, runAfter: localStorage.getItem("jobscout.run"), scoredAfter: scored, textAfter: scoredProfile };
+  });
+  n++;
+  if (r.leaked) fails.push("privacy/browse: the résumé text was written to browser storage by keepRun");
+  if (!r.hadButton) fails.push("privacy/browse: no forget control under the results");
+  else if (r.runAfter !== null || r.scoredAfter !== null || r.textAfter) fails.push(`privacy/browse: forget did not clear the run (${r.runAfter ? "stored" : "cleared"}, scored ${r.scoredAfter ? "kept" : "null"}, text ${r.textAfter ? "kept" : "empty"})`);
+  await ctx.close();
 }
 
 /* ---- targets: 44×44 and a visible focus ---- */
