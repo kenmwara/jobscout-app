@@ -524,6 +524,14 @@ fun DemoScreen(vm: DemoVm = viewModel()) {
        durable copy and the right answer. Saving it twice would only add a
        second thing to keep in step. */
     var themeChoice by remember { mutableStateOf(ThemeChoice.stored(ctx)) }
+    /* HARNESS HOOK, debug builds only: `am start ... --es resume "<text>"` pre-fills the
+       bar, because an emulator whose keyboard will not start cannot be typed into
+       (2026-09-21: every injected key ANR'd the foreground app with "no focused
+       window"). A release build ignores the extra. */
+    LaunchedEffect(Unit) {
+        if (BuildConfig.DEBUG) (ctx as? android.app.Activity)?.intent?.getStringExtra("resume")
+            ?.takeIf { it.isNotBlank() }?.let(vm::setResume)
+    }
     val tokens = tokensFor(ui.market, ThemeChoice.isDark(themeChoice, isSystemInDarkTheme()))
     val uriHandler = LocalUriHandler.current
 
