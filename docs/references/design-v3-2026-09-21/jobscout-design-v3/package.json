@@ -1,0 +1,10 @@
+{ "name": "jobscout-design-v3", "version": "3.0.0", "type": "module", "private": true,
+  "scripts": {
+    "tokens": "node tokens/generate.mjs",
+    "check:tokens": "node tokens/generate.mjs --check",
+    "serve": "python3 -m http.server 8761",
+    "check:scale": "node tools/check_scale.mjs --url http://localhost:8761/markup/browse.html",
+    "check:tiers": "node tools/check_tiers.mjs --url http://localhost:8761/markup/browse.html",
+    "check:honesty": "node tools/check_honesty.mjs --url http://localhost:8761/markup/browse.html"
+  },
+  "devDependencies": { "playwright": "^1.40.0" } }

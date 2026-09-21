@@ -1,0 +1,24 @@
+<!doctype html><html lang="en" data-market="ke"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1"><title>JobScout — sheet</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400&family=Inter:opsz,wght@14..32,400;14..32,500&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="../tokens/tokens.css"><link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/components.css"><link rel="stylesheet" href="../css/screens.css">
+</head><body>
+<header class="phdr"><span class="u-t3" style="font-family:var(--font-sans);font-weight:500">JobScout</span><span class="phdr__right"><button class="chip-btn" aria-label="Market: Kenya"><svg class="chip-btn__flag" viewBox="0 0 24 16" aria-hidden="true"><rect width="24" height="16" fill="#fff"/><rect width="24" height="4.6" fill="#000"/><rect y="5.4" width="24" height="5.2" fill="#c8102e"/><rect y="11.4" width="24" height="4.6" fill="#060"/><ellipse cx="12" cy="8" rx="2.2" ry="4.4" fill="#c8102e" stroke="#000" stroke-width=".6"/></svg>Kenya</button><button class="chip-btn" aria-label="Menu"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><circle cx="5" cy="12" r="1.9" fill="currentColor"/><circle cx="12" cy="12" r="1.9" fill="currentColor"/><circle cx="19" cy="12" r="1.9" fill="currentColor"/></svg></button></span></header>
+<section class="hero"><h1 class="hero__h1">Find the work<br>made for you<span class="hero__stop">.</span></h1>
+<div class="hero__field"><input class="hero__input" placeholder="Paste your resume…"><button class="hero__go">→</button></div></section>
+<div class="scrim"></div>
+<div class="sheet" role="dialog" aria-label="Menu">
+  <div class="sheet__bar"><span class="sheet__grab"></span><button class="sheet__x" aria-label="Close">×</button></div>
+  <nav><a class="row" href="#"><span class="row__name">Home</span><svg class="row__chev" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg></a>
+  <a class="row" href="#"><span class="row__name">Matches</span><span class="row__count">12</span><svg class="row__chev" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg></a>
+  <a class="row" href="#"><span class="row__name">Saved</span><span class="row__count row__count--empty">None yet</span><svg class="row__chev" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg></a></nav>
+  <div class="sheet__set"><p class="sheet__lab">Market</p>
+    <div class="seg"><button class="seg__b" aria-pressed="false"><svg class="chip-btn__flag" viewBox="0 0 24 16" aria-hidden="true"><rect width="24" height="16" fill="#fff"/><rect width="6" height="16" fill="#d52b1e"/><rect x="18" width="6" height="16" fill="#d52b1e"/><path d="M12 4l1 2.2 2-.6-.7 2 1.7 1-1.7 1 .7 2-2-.6L12 13l-1-2.2-2 .6.7-2L8 8.6l1.7-1-.7-2 2 .6z" fill="#d52b1e"/></svg> Canada</button><button class="seg__b" aria-pressed="true"><svg class="chip-btn__flag" viewBox="0 0 24 16" aria-hidden="true"><rect width="24" height="16" fill="#fff"/><rect width="24" height="4.6" fill="#000"/><rect y="5.4" width="24" height="5.2" fill="#c8102e"/><rect y="11.4" width="24" height="4.6" fill="#060"/><ellipse cx="12" cy="8" rx="2.2" ry="4.4" fill="#c8102e" stroke="#000" stroke-width=".6"/></svg> Kenya</button></div>
+    <p class="sheet__hint">Changes which country’s postings are swept.</p></div>
+  <div class="sheet__set"><p class="sheet__lab">Appearance</p>
+    <div class="seg seg--sm"><button class="seg__b" aria-pressed="true">Light</button><button class="seg__b" aria-pressed="false">Device</button><button class="seg__b" aria-pressed="false">Dark</button></div></div>
+  <button class="btn btn--ghost" style="width:100%;margin-top:var(--s4)">Copy all links</button>
+</div>
+<script type="module">import {hydrate} from '../js/rose.js'; hydrate();</script>
+</body></html>

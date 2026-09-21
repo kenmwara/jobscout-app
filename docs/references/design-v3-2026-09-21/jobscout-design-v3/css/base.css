@@ -1,0 +1,254 @@
+/* ===========================================================================
+   JobScout v3 — base: the ground, the type, the primitives.
+   Load order:  tokens/tokens.css → css/base.css → css/components.css
+                → css/screens.css
+
+   NOTHING in this file is a literal colour, size, duration or radius. Every
+   value is a generated token. If you find yourself typing a number, either
+   it belongs in tokens.json or the rule is wrong.
+   =========================================================================== */
+
+*, *::before, *::after { box-sizing: border-box; }
+
+/* Form elements inherit nothing by default, so the UA's 13.333px font and its
+   1px/6px padding leak straight through the scale. check_scale.mjs caught
+   exactly this on .hero__go, .heart and .sheet__x. */
+button, input, select, textarea { font: inherit; color: inherit; }
+button { padding: 0; border: 0; background: none; }
+
+/* ---------------------------------------------------------------------------
+   LAW 7 — ONE GROUND, AND ONLY <html> PAINTS IT.
+   Not body, not a section, not a wrapper. A container that paints its own
+   background creates a second ground and a hard seam at its edge; the
+   measured failure was a 1.126:1 step where the halo's whole permitted range
+   on light is 1.105:1.
+
+   The hero panel is the ONE exception, and it is an exception because it is
+   inset and contained rather than a ground — see screens.css.
+   --------------------------------------------------------------------------- */
+html {
+  background: var(--canvas);
+  min-height: 100%;
+  -webkit-text-size-adjust: 100%;
+}
+body {
+  margin: 0;
+  background: transparent;             /* never paint here */
+  color: var(--text);
+  font: 400 var(--t2)/1.5 var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* The halo. Three blooms, fixed, behind everything, pointer-transparent.
+   On LIGHT its axis is HUE — it must stay warm; a bloom that is lighter but
+   cool turns the cream grey, which is the retired --blob failure returning as
+   geometry. On DARK its axis is BRIGHTNESS. */
+body::before {
+  content: "";
+  position: fixed; inset: 0; z-index: -2; pointer-events: none;
+  background:
+    radial-gradient(52% 44% at 18% 10%, var(--halo-1) 0, transparent 68%),
+    radial-gradient(46% 40% at 82% 28%, var(--halo-2) 0, transparent 70%),
+    radial-gradient(58% 48% at 50% 94%, var(--halo-3) 0, transparent 72%);
+}
+:root {
+  --halo-1: light-dark(rgba(255,252,242,.92), rgba(43,57,108,.50));
+  --halo-2: light-dark(rgba(255,250,240,.80), rgba(58,42,96,.42));
+  --halo-3: light-dark(rgba(255,253,246,.85), rgba(36,52,100,.38));
+}
+
+/* ---------------------------------------------------------------------------
+   TYPE — law 13, enforced by role rather than by hope.
+   serif 400 for titles only · sans for everything else · mono tabular for
+   every numeral that is data.
+   --------------------------------------------------------------------------- */
+.u-t0, .u-caps {
+  font: 500 var(--t0)/1 var(--font-sans);
+  letter-spacing: .14em; text-transform: uppercase;
+}
+.u-t1 { font: 400 var(--t1)/1.35 var(--font-sans); }
+.u-t2 { font: 400 var(--t2)/1.5  var(--font-sans); }
+.u-t3 { font: 400 var(--t3)/1.35 var(--font-sans); }
+
+/* Newsreader ships at 400 here. A synthesised bold is the sans-bold bug
+   wearing the right family name, so weight is pinned. */
+.u-t4, .u-t5, .u-t6, .u-t7 { font-family: var(--font-serif); font-weight: 400; color: var(--text); }
+.u-t4 { font-size: var(--t4); line-height: 1.2;  letter-spacing: -.005em; }
+.u-t5 { font-size: var(--t5); line-height: 1.18; letter-spacing: -.008em; }
+.u-t6 { font-size: var(--t6); line-height: 1.15; letter-spacing: -.01em; }
+.u-t7 { font-size: var(--t7); line-height: 1.12; letter-spacing: -.015em; }
+
+/* Every numeral that is DATA. Tabular so two rows' numbers line up. */
+.u-num {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -.02em;
+}
+.u-dim  { color: var(--text-2); }
+.u-long { color: var(--text-long); }
+
+h1, h2, h3, h4, p { margin: 0; }
+
+/* ---------------------------------------------------------------------------
+   THE MATERIAL LADDER — three states, everywhere, no exceptions.
+
+   Any element a pointer can act on gets rest / hover / press, and the press
+   is an EXIT: faster, and it never overshoots. A hover with no press state is
+   the single most common reason an interface feels like a picture of an
+   interface; a press that eases in is not a give.
+
+   On light, --surface is #ffffff — the ceiling — so hover cannot lift and
+   elevation is carried by shadow alone. On dark there is no shadow, so it is
+   carried entirely by the lift and the edge. The asymmetry is the rule.
+   --------------------------------------------------------------------------- */
+.u-surface {
+  background: var(--surface);
+  border: 1px solid var(--edge-rest);
+  border-radius: var(--r-card);
+  box-shadow: var(--sh-rest);
+  transition:
+    transform    var(--t-settle) var(--spring-settle),
+    box-shadow   var(--t-settle) var(--spring-settle),
+    border-color var(--t-settle) var(--spring-settle),
+    background   var(--t-settle) var(--spring-settle);
+}
+.u-surface:hover,
+.u-surface:focus-within {
+  transform: translateY(var(--travel-liftHover));
+  box-shadow: var(--sh-hover);
+  border-color: var(--edge-hover);
+  background: var(--surface-hover);
+}
+.u-surface:active {
+  transform: scale(var(--press-card));
+  box-shadow: var(--sh-press);
+  transition-duration: var(--t-exit);
+  transition-timing-function: var(--spring-exit);
+}
+
+/* ---------------------------------------------------------------------------
+   PRIMITIVES — buttons.
+   One primary per screen. If a screen shows two filled buttons, one of them
+   is wrong.
+   --------------------------------------------------------------------------- */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: var(--s0);
+  border: 1px solid transparent;
+  border-radius: var(--r-pill);
+  font: 500 var(--t2)/1 var(--font-sans);
+  padding: var(--s3) var(--s4);
+  min-height: 44px;                    /* touch target, every platform */
+  cursor: pointer;
+  text-decoration: none;
+  transition: transform  var(--t-snap) var(--spring-snap),
+              box-shadow var(--t-snap) var(--spring-snap),
+              background var(--t-snap) var(--spring-snap);
+}
+.btn:hover  { transform: translateY(-1px); box-shadow: var(--sh-hover); }
+.btn:active { transform: scale(var(--press-control)); box-shadow: var(--sh-press);
+              transition-duration: var(--t-exit);
+              transition-timing-function: var(--spring-exit); }
+.btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+
+/* ACTION is deep ink, never indigo, never a band. Colour law v2.3. */
+.btn--primary   { background: var(--action); color: var(--action-on); box-shadow: var(--sh-rest); }
+.btn--secondary { background: none; color: var(--text); border-color: var(--edge-rest); }
+.btn--ghost     { background: none; color: var(--text-2); border-color: var(--edge-rest);
+                  font-weight: 400; }
+.btn--ghost:hover { color: var(--text); border-color: var(--edge-hover); }
+
+.btn__arrow { display: inline-block; transition: transform var(--t-snap) var(--spring-snap); }
+.btn:hover .btn__arrow { transform: translateX(3px); }
+
+/* ---------------------------------------------------------------------------
+   PRIMITIVES — the three metadata tiers. CONTAINER WEIGHT IS IMPORTANCE.
+
+   tier 1  the verdict   filled, band pair, PILL radius, the TALLEST
+   tier 2  a fact        sunken, no hue, SMALL radius, shorter
+   tier 3  context       no container at all
+
+   The hierarchy is carried by GEOMETRY, not by fill. Fill cannot do it: on
+   light the verdict fill sits 1.141:1 off the card and the fact fill 1.253:1,
+   so by fill alone the fact wins. Never raise tier 1 to win the contest —
+   §16 forbids it, and geometry settles it permanently in both themes.
+   --------------------------------------------------------------------------- */
+.tier1 {
+  display: inline-flex; align-items: center;
+  font: 500 var(--t0)/1 var(--font-sans);
+  letter-spacing: .14em;
+  padding: 0 var(--s3);                /* wider AND taller than tier 2 */
+  height: 22px;
+  border-radius: var(--r-pill);
+  transform-origin: center;            /* the AUTO pulse needs this origin */
+}
+.tier2 {
+  display: inline-flex; align-items: center;
+  font: 400 var(--t1)/1 var(--font-sans);
+  color: var(--text-2);
+  background: var(--sunken);
+  padding: 0 var(--s2);                /* narrower */
+  height: 19px;                        /* and 3px shorter — two measurable steps */
+  border-radius: var(--r-chip);        /* NOT a pill: a different shape */
+}
+.tier3 {
+  font: 400 var(--t1)/1 var(--font-sans);
+  color: var(--text-2);
+  background: none;                    /* no container at all */
+}
+.meta { display: flex; align-items: center; gap: var(--s2); flex-wrap: wrap; }
+
+/* The band pair. Four rules, declared on the host, inherited by the pill AND
+   the rose, so a dot and a pill can never disagree about the band. */
+[data-band="auto"]     { --band: var(--auto);     --band-l: var(--auto-label);     --band-bg: var(--auto-fill); }
+[data-band="ping"]     { --band: var(--ping);     --band-l: var(--ping-label);     --band-bg: var(--ping-fill); }
+[data-band="unsure"]   { --band: var(--unsure);   --band-l: var(--unsure-label);   --band-bg: var(--unsure-fill); }
+[data-band="nearmiss"] { --band: var(--nearmiss); --band-l: var(--nearmiss-label); --band-bg: var(--nearmiss-fill); }
+.tier1 { background: var(--band-bg); color: var(--band-l); }
+
+/* ---------------------------------------------------------------------------
+   PRIMITIVES — selected is not primary.
+   A STATE and an ACTION must never share a fill. The shipped menu painted
+   "Kenya is selected" and "Copy all" both in --action; these three tokens
+   exist for exactly this and were unused.
+   --------------------------------------------------------------------------- */
+.seg { display: flex; gap: var(--s1); }
+.seg__b {
+  flex: 1;
+  border: 1px solid var(--edge-rest);
+  background: var(--surface);
+  color: var(--text);
+  border-radius: var(--r-inner);
+  padding: var(--s3) var(--s2);
+  min-height: 44px;
+  font: 500 var(--t2)/1 var(--font-sans);
+  cursor: pointer;
+  transition: transform    var(--t-snap) var(--spring-snap),
+              background   var(--t-snap) var(--spring-snap),
+              border-color var(--t-snap) var(--spring-snap);
+}
+.seg__b:hover  { transform: translateY(-1px); border-color: var(--edge-hover); }
+.seg__b:active { transform: scale(var(--press-control)); transition-duration: var(--t-exit);
+                 transition-timing-function: var(--spring-exit); }
+.seg__b[aria-pressed="true"] {
+  background: var(--selected-bg);
+  border-color: var(--selected-edge);
+  color: var(--selected-fg);
+}
+.seg--sm .seg__b { font: 400 var(--t1)/1 var(--font-sans); color: var(--text-2);
+                   padding: var(--s2); min-height: 36px; }
+.seg--sm .seg__b[aria-pressed="true"] { font-weight: 500; color: var(--selected-fg); }
+
+/* ---------------------------------------------------------------------------
+   REDUCED MOTION — not "less motion". NO motion, same information.
+   Every state still resolves; it resolves instantly. The rose still shows its
+   lit count, the tier still reads, the card still answers a press.
+   --------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+    transition-delay: 0ms !important;
+    scroll-behavior: auto !important;
+  }
+}
