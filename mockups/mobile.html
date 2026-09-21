@@ -10,6 +10,7 @@
 <link rel="stylesheet" href="../site/fonts-embedded.css">
 <link rel="stylesheet" href="../site/base.css">
 <script src="../site/rose.js"></script>
+<script src="card.js"></script>
 <script>/* The tokens must come from the REAL stylesheet, and this file gets
    opened three ways: served from the repo root, served from mockups/ (where
    ../site escapes the root and 404s), and double-clicked off disk. So: check
@@ -110,7 +111,8 @@ html[data-plat="android"] .notch{position:absolute;top:19px;left:50%;transform:t
   background:var(--canvas);z-index:4}
 .ahead .bk{appearance:none;border:0;background:transparent;cursor:pointer;color:var(--ink);
   font:500 15px/1 var(--sans);padding:6px 4px 6px 0;display:flex;align-items:center;gap:5px}
-.ahead .mk{display:flex;align-items:center;gap:7px;font:500 16px/1 var(--serif);color:var(--ink)}
+.ahead .mk{display:flex;align-items:center;gap:7px;font:500 16px/1 var(--serif);color:var(--ink);
+  appearance:none;border:0;background:transparent;padding:0;cursor:pointer}
 .ahead .mk svg{width:19px;height:19px;fill:var(--accent)}
 .ahead .hchip,.ahead .hmore{appearance:none;display:inline-flex;align-items:center;gap:5px;height:34px;min-width:34px;
   padding:0 9px;border-radius:10px;border:1px solid var(--hair);background:var(--trough);color:var(--ink);
@@ -241,10 +243,18 @@ p.sub{font:400 13.5px/1.5 var(--sans);color:var(--text2);margin:0 0 16px}
    missing from the densest screen. Same 104-box geometry as index.html, 44px
    in a row, the numeral inside on tabular digits. */
 .card .rose{width:44px;height:44px}
-html.anim .card:not(.arrive) .rose .d.lit{opacity:.14;transform:scale(.55)}
-html.anim .card.settled .rose .lit{animation:rosebreathe var(--t-breathe) ease-in-out infinite;
-  animation-delay:calc(var(--ci, 0) * 260ms + var(--i) * 120ms)}
-html.anim .card.settled[data-band="auto"] .band{animation:autopulse 420ms var(--spring-arrive) 1}
+/* THE TOKEN BRIDGE for card.css (stage-1 pack): base.css spells --text2
+   without the hyphen, has no --action/--radius-* names, and carries the
+   rose's empty alpha as a literal. Aliases only - no new colour. */
+.jcard{--text-2:var(--text2);--text-long:var(--text);--action:var(--btn, var(--ink));--action-on:var(--btn-ink, var(--canvas));
+  --radius-card:var(--r-card);--radius-inner:12px;--radius-pill:var(--r-pill);--rose-empty-alpha:.14}
+/* stage 2 on top of stage 1: the lit dots arrive one --stagger-dot apart */
+.jcard__rose .dot{transition-delay:calc(var(--dot-i, 0) * var(--stagger-dot))}
+.card.jcard{padding:13px 14px 12px}
+.jcard__btn--primary{display:inline-flex;align-items:center;gap:6px}
+html.anim .card.settled .jcard__rose .dot.is-lit{animation:rosebreathe var(--t-breathe) ease-in-out infinite;
+  animation-delay:calc(var(--ci, 0) * 260ms + var(--dot-i, 0) * 120ms)}
+html.anim .card.settled[data-band="auto"] .jcard__band{animation:autopulse 420ms var(--spring-arrive) 1}
 /* the card's anatomy (motion v2 stage 1): rose first, then identity, then
    three tiers - the verdict filled, the fact sunken, the date bare */
 .card .t{flex:1;min-width:0}
@@ -402,7 +412,7 @@ html.anim .card.settled[data-band="auto"] .band{animation:autopulse 420ms var(--
 .mini-cta.solid{background:var(--btn);color:var(--btn-ink);border-color:transparent}
 .mini-cta[disabled]{opacity:.5;cursor:default}
 .tabbar{position:absolute;left:0;right:0;bottom:0;display:flex;background:var(--surface);
-  border-top:1px solid var(--hair);padding:9px 0 calc(9px + env(safe-area-inset-bottom,0px))}
+  border-top:1px solid var(--hair);padding:9px 0 calc(9px + env(safe-area-inset-bottom,0px));z-index:6}
 .tabbar button{flex:1;appearance:none;border:0;background:transparent;cursor:pointer;
   display:grid;justify-items:center;gap:4px;color:var(--text2);
   font:500 10.5px/1 var(--sans);padding:4px 0}
@@ -416,6 +426,7 @@ html.anim .card.settled[data-band="auto"] .band{animation:autopulse 420ms var(--
 .refusal .lb{font:500 10px/1 var(--sans);letter-spacing:.09em;text-transform:uppercase;color:var(--b-unsure);margin:12px 0 6px}
 .refusal ol{margin:0;padding-left:18px;font-size:13.5px}
 </style>
+<link rel="stylesheet" href="card.css">
 </head>
 <body>
 
@@ -730,7 +741,7 @@ const HEART = `<svg viewBox="0 0 24 24"><path d="M12 20s-7.5-4.7-7.5-9.8A4.2 4.2
    web wears at 620px and under. */
 const head = (back) => `<div class="ahead">${back
   ? `<button class="bk" data-go="${esc(back)}">&#8592; Back</button>`
-  : `<span class="mk">${MARK} JobScout</span>`}
+  : `<button class="mk" type="button" data-go="home" aria-label="JobScout — home">${MARK} JobScout</button>`}
   <button class="hchip" type="button" data-menu aria-label="Market">${market === "ke" ? "🇰🇪 <span>KE</span>" : "🇨🇦 <span>CA</span>"}</button>
   <button class="hmore" type="button" data-menu aria-label="Menu" aria-expanded="false">&#8943;</button></div>`;
 
@@ -807,13 +818,14 @@ function nofitHTML() {
    breathes and a real AUTO's pill pulses once. Instant under reduced motion. */
 function roseArrive(root){
   const anim = document.documentElement.classList.contains("anim");
-  root.querySelectorAll(".card").forEach((card, ci) => {
+  root.querySelectorAll(".card.jcard").forEach((card, ci) => {
     card.style.setProperty("--ci", ci);
-    const num = card.querySelector(".fitnum");
-    const fit = num ? +num.textContent : 0;
-    const lit = ROSE_LIT[roseBand(fit)];
-    card.dataset.band = bandOf(fit)[0];
+    const num = card.querySelector(".jcard__num");
+    const fit = +card.dataset.score || 0;
+    const band = card.dataset.band;
+    const lit = BAND_DOTS[band] || 0;
     const go = () => {
+      lightRose(card, { band });                 // stage 1: the dots light to the band
       card.classList.add("arrive");
       const dur = anim ? (lit - 1) * 46 + 520 : 0;
       if (!dur || !num){ card.classList.add("settled"); return; }
@@ -824,35 +836,39 @@ function roseArrive(root){
         if (p < 1) requestAnimationFrame(tick); else card.classList.add("settled");
       })(t0);
     };
+    // the dots start unlit so the fill IS the score forming
+    card.querySelectorAll(".dot").forEach(d => d.classList.remove("is-lit"));
     anim ? setTimeout(go, ci * 28) : go();
   });
 }
+const JBAND = { auto: "auto", ping: "ping", unsure: "unsure", "near-miss": "near" };
 const cardHTML = (p, full) => {
-  const [word, tok] = bandOf(p.fit);
+  const [word] = bandOf(p.fit);
+  const band = JBAND[word];
   const pol = p.remote_policy === "remote" ? "Remote" : p.remote_policy === "hybrid" ? "Hybrid" : "On site";
   const strongest = p.strongest || (full ? `Direct overlap with ${p.sector} work, and the location rule passes.` : "");
-  return `<div class="card" data-id="${esc(p.id)}">
-    <div class="row1">
-      ${roseSVG(p.fit, 44)}
-      <div class="t"><p class="r">${esc(p.title)}</p><p class="c">${esc(p.company)}${p.location ? `<span class="sep">&middot;</span>${esc(p.location)}` : ""}</p>
-        <p class="c-meta"><span class="band" style="color:var(${tok});background:var(${tok}-bg)">${word}</span><span class="pill">${pol}</span>${p.posted ? `<span class="ago">${esc(p.posted)}</span>` : ""}</p>
+  return `<article class="card jcard jcard--sm" data-id="${esc(p.id)}" data-band="${band}" data-score="${p.fit}">
+    <div class="jcard__head">
+      <div class="jcard__score">${roseMarkup(44)}<span class="jcard__num num" role="img" aria-label="Score ${p.fit} out of 100, ${word}">${p.fit}</span></div>
+      <div class="jcard__id">
+        <p class="jcard__org">${esc(p.company)}${p.location ? ` <span class="sep">&middot;</span> ${esc(p.location)}` : ""}</p>
+        <h3 class="jcard__title"><a class="jcard__link" href="#" data-open-card="${esc(p.id)}">${esc(p.title)}</a></h3>
+        <div class="jcard__meta"><span class="jcard__band">${word.toUpperCase()}</span><span class="jcard__chip">${pol}</span>${p.posted ? `<span class="jcard__when">${esc(p.posted)}</span>` : ""}</div>
       </div>
     </div>
-    ${strongest ? `
-      <div class="ev ev-strongest">
-        <p class="lb">&#8593; Strongest</p>
-        <p class="bd">${esc(strongest)}</p></div>` : ""}
+    ${strongest ? `<div class="jcard__evidence"><p class="jcard__evidence-k">STRONGEST</p><p>${esc(strongest)}</p></div>` : ""}
     ${full ? `
       <div class="ev ev-answer">
         <p class="lb">&#8595; What to answer</p>
         <p class="bd">${esc(p.weakest
           || "Say how recently you did this, and name the tools the posting lists that your resume does not.")}</p></div>` : ""}
-    <div class="c-act">
-      <button class="heart" type="button" data-heart="${esc(p.id)}"
+    <div class="jcard__actions">
+      <button class="jcard__btn jcard__btn--primary" type="button" data-open-card="${esc(p.id)}">Prepare application <span class="jcard__arrow">&rarr;</span></button>
+      <button class="jcard__heart heart" type="button" data-heart="${esc(p.id)}"
               aria-pressed="${saved.has(p.id)}"
               aria-label="${saved.has(p.id) ? "Saved" : "Save"} ${esc(p.title)}">${HEART}</button>
     </div>
-  </div>`;
+  </article>`;
 };
 
 const API = "https://jobscout-app-api.kenmwara.workers.dev";
@@ -1146,6 +1162,8 @@ document.addEventListener("click", e => {
     saved.has(id) ? saved.delete(id) : saved.add(id);
     return paint();
   }
+  const oc = e.target.closest("[data-open-card]");
+  if (oc) { e.preventDefault(); }
   const menu = e.target.closest("[data-menu]");
   if (menu) { openMenu(); return; }
   const mm = e.target.closest("[data-menu-market]");

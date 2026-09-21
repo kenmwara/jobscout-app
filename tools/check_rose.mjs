@@ -28,27 +28,31 @@ const SEED = {
 
 const LIT = { auto: 8, ping: 6, unsure: 5, "near-miss": 3 };
 const bandOf = f => f >= 80 ? "auto" : f >= 70 ? "ping" : f >= 55 ? "unsure" : "near-miss";
-const ROSES = () => [...document.querySelectorAll("svg.rose[aria-label^='fit ']")].map(svg => {
-  const fit = +svg.getAttribute("aria-label").match(/fit (\d+)/)[1];
-  const dots = [...svg.querySelectorAll("circle.d")];
-  const lit = dots.filter(d => d.classList.contains("lit")).length;
-  const litFill = lit ? getComputedStyle(dots.find(d => d.classList.contains("lit"))).fill : null;
-  const unlit = dots.find(d => !d.classList.contains("lit"));
+/* two shapes: rose.js's svg (aria-label "fit N of 100", .d/.lit, .fitnum) and
+   the stage-1 pack's .jcard__score (aria-hidden svg + .jcard__num, .dot/.is-lit) */
+const ROSES = () => [...document.querySelectorAll("svg.rose[aria-label^='fit '], .jcard__score")].map(el => {
+  const svg = el.tagName === "svg" ? el : el.querySelector("svg.rose");
+  const fit = el.tagName === "svg" ? +el.getAttribute("aria-label").match(/fit (\d+)/)[1] : +el.querySelector(".jcard__num").textContent;
+  const dots = [...svg.querySelectorAll("circle.d, circle.dot")];
+  const isLit = d => d.classList.contains("lit") || d.classList.contains("is-lit");
+  const lit = dots.filter(isLit).length;
+  const litFill = lit ? getComputedStyle(dots.find(isLit)).fill : null;
+  const unlit = dots.find(d => !isLit(d));
   const unlitFill = unlit ? getComputedStyle(unlit).fill : null;
   const box = svg.getBoundingClientRect();
   const inside = dots.every(c => {
     const r = c.getBoundingClientRect();
     return r.left >= box.left - 0.5 && r.right <= box.right + 0.5 && r.top >= box.top - 0.5 && r.bottom <= box.bottom + 0.5;
   });
-  const num = svg.querySelector(".fitnum");
+  const num = el.tagName === "svg" ? svg.querySelector(".fitnum") : el.querySelector(".jcard__num");
   return { fit, lit, litFill, unlitFill, viewBox: svg.getAttribute("viewBox"), inside,
            numFont: num ? getComputedStyle(num).fontFamily : "", numVar: num ? getComputedStyle(num).fontVariantNumeric : "" };
 });
 /* a card's three tiers: the band pill filled, the fact chip sunken, the date bare */
 const TIERS = () => [...document.querySelectorAll(".job:not(.swept), #view .card, .rows .row")].slice(0, 6).map(card => {
   const g = sel => { const el = card.querySelector(sel); return el ? getComputedStyle(el).backgroundColor : null; };
-  const title = card.querySelector("h3.role, p.r, .row > .t");
-  return { pill: g(".route, .band"), chip: g(".pill"), date: g(".age, .ago, .m"),
+  const title = card.querySelector("h3.role, p.r, .row > .t, .jcard__title");
+  return { pill: g(".route, .band, .jcard__band"), chip: g(".pill, .jcard__chip"), date: g(".age, .ago, .m, .jcard__when"),
            titleFont: title ? getComputedStyle(title).fontFamily : "" };
 });
 
@@ -119,9 +123,10 @@ for (const theme of ["light", "dark"]) {
       const dyn = await p.evaluate(() => {
         const cards = [...document.querySelectorAll("#view .card")];
         const settled = cards.filter(c => c.classList.contains("settled")).length;
-        const seated = cards.every(c => +c.querySelector(".fitnum").textContent === +c.querySelector("svg.rose").getAttribute("aria-label").match(/fit (\d+)/)[1]);
-        const delays = cards.map(c => { const d = c.querySelector(".rose .lit"); return d ? getComputedStyle(d).animationDelay : "-"; });
-        const pulse = cards.map(c => [c.dataset.band, getComputedStyle(c.querySelector(".band")).animationName]);
+        const numOf = c => c.querySelector(".fitnum, .jcard__num"), fitOf = c => c.dataset.score ? +c.dataset.score : +c.querySelector("svg.rose").getAttribute("aria-label").match(/fit (\d+)/)[1];
+        const seated = cards.every(c => +numOf(c).textContent === fitOf(c));
+        const delays = cards.map(c => { const d = c.querySelector(".rose .lit, .rose .is-lit"); return d ? getComputedStyle(d).animationDelay : "-"; });
+        const pulse = cards.map(c => [c.dataset.band, getComputedStyle(c.querySelector(".band, .jcard__band")).animationName]);
         /* CSSAnimation only: a theme press leaves 1ms transitions in flight for
            a moment, and a transition is a state resolving, not motion. */
         return { n: cards.length, settled, seated, delays, pulse, running: document.getAnimations().filter(a => a instanceof CSSAnimation).length };

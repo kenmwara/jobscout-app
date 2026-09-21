@@ -1,0 +1,346 @@
+/* ===========================================================================
+   JobScout — the card.  Stage 1 of docs/BUILD-ORDER.md.
+   Append to site/base.css, BELOW the colour tokens and css/motion.css.
+
+   No colour is declared here. If you find yourself adding a hex, the change
+   is wrong — the only literals in this file are durations, distances, type
+   sizes, and the font stacks in the bridge below.
+
+   ---------------------------------------------------------------------------
+   THE TOKEN BRIDGE — read this before changing anything.
+
+   Two files disagree about what the bands are called, and both ship:
+
+     theme-resolution.css   --auto   --auto-label   --auto-fill   --nearmiss
+     site/base.css          --b-auto --b-auto-l     --b-auto-bg   --b-near
+
+   They are the same four colours under two spellings, and a card that names
+   one spelling renders unstyled against the other — silently, because an
+   undefined custom property is not an error. So every band colour is read
+   ONCE here through a fallback chain and re-exported under a local name.
+   Everything below uses the local name and never touches a band token
+   directly. When the two files are reconciled, this block is the only thing
+   that has to change.
+
+   The same applies to the mono stack: neither file declares one, and law 13
+   assigns JetBrains Mono to data. It is stated here with a fallback chain so
+   a real token takes over the moment one exists.
+
+   Other tokens consumed, all of which do exist:
+     surface   --surface --sunken --edge-rest --edge-hover --surface-hover
+     text      --text --text-2 --text-long
+     rose      --rose-empty --rose-empty-alpha
+     evidence  --evidence-bg --evidence-rule-strongest
+     action    --action --action-on
+     motion    --t-{snap,settle,arrive,exit} --spring-{snap,settle,arrive,exit}
+               --lift-hover --press-scale --stagger-dot
+     shape     --radius-card --radius-inner --radius-pill
+   =========================================================================== */
+
+.jcard {
+  --jc-serif: var(--font-serif, var(--serif, Newsreader, Georgia, serif));
+  --jc-sans:  var(--font-sans,  var(--sans,  Inter, system-ui, sans-serif));
+  --jc-mono:  var(--font-mono,  var(--mono,  "JetBrains Mono", ui-monospace, monospace));
+
+  /* Defaults for a card with no band — the swept card. --jc-band is never
+     read by an unlit dot, but leaving it undefined would make a stray
+     `is-lit` render as `fill: ;` and inherit black. */
+  --jc-band:    var(--b-near,    var(--nearmiss));
+  --jc-band-l:  var(--b-near-l,  var(--nearmiss-label));
+  --jc-band-bg: var(--b-near-bg, var(--nearmiss-fill));
+
+  --jc-ping:   var(--b-ping,   var(--ping));
+  --jc-unsure: var(--b-unsure, var(--unsure));
+  --jc-auto-l: var(--b-auto-l, var(--auto-label));
+
+  /* TIER 2'S CONTAINER, and the one place this file overrides a token choice.
+     Measured against --surface:
+       light  --sunken #ece5d8   1.253:1   a container you can see
+       dark   --sunken #1a1240   1.030:1   invisible — it sinks BELOW the card
+       dark   --evidence-bg      1.225:1   the same step light gets
+     §10 already says dark separates by LIFTING, not sinking: there is no
+     shadow to sit in, so a sunken container on ink has nothing to read
+     against. This picks the value that gives the same step in each theme; no
+     new colour is introduced, it chooses between two tokens that exist.
+
+     This is a symptom, not the disease. --sunken is 1.03:1 from --surface on
+     dark for EVERY sunken container in the product, not just this chip. The
+     real fix belongs in the token file. */
+  --jc-chip-bg: light-dark(var(--sunken), var(--evidence-bg));
+}
+
+/* The band is declared ONCE, on the card, and inherits to the rose and the
+   pill alike. Four rules, not eight — the dot's fill and the pill's fill can
+   no longer drift apart, because they read the same variable. */
+.jcard[data-band="auto"] {
+  --jc-band:    var(--b-auto,    var(--auto));
+  --jc-band-l:  var(--b-auto-l,  var(--auto-label));
+  --jc-band-bg: var(--b-auto-bg, var(--auto-fill));
+}
+.jcard[data-band="ping"] {
+  --jc-band:    var(--b-ping,    var(--ping));
+  --jc-band-l:  var(--b-ping-l,  var(--ping-label));
+  --jc-band-bg: var(--b-ping-bg, var(--ping-fill));
+}
+.jcard[data-band="unsure"] {
+  --jc-band:    var(--b-unsure,    var(--unsure));
+  --jc-band-l:  var(--b-unsure-l,  var(--unsure-label));
+  --jc-band-bg: var(--b-unsure-bg, var(--unsure-fill));
+}
+.jcard[data-band="near"] {
+  --jc-band:    var(--b-near,    var(--nearmiss));
+  --jc-band-l:  var(--b-near-l,  var(--nearmiss-label));
+  --jc-band-bg: var(--b-near-bg, var(--nearmiss-fill));
+}
+
+/* ---------------------------------------------------------------------------
+   THE SHELL — one skeleton for both card types.
+   The whole card is clickable via a stretched link on the title (see
+   card.html), so the card element itself is NOT interactive and needs no
+   tabindex and no role.
+   --------------------------------------------------------------------------- */
+.jcard {
+  position: relative;                 /* anchors .jcard__link::after */
+  background: var(--surface);
+  border: 1px solid var(--edge-rest);
+  border-radius: var(--radius-card, 16px);
+  padding: 15px 16px 14px;
+  box-shadow: var(--sh-rest);
+  transition:
+    transform     var(--t-settle) var(--spring-settle),
+    box-shadow    var(--t-settle) var(--spring-settle),
+    border-color  var(--t-settle) var(--spring-settle),
+    background    var(--t-settle) var(--spring-settle);
+}
+/* :focus-within so a keyboard gets the same affordance as a pointer. */
+.jcard:hover,
+.jcard:focus-within {
+  transform: translateY(var(--lift-hover, -2px));
+  box-shadow: var(--sh-hover);
+  border-color: var(--edge-hover);
+  background: var(--surface-hover);
+}
+/* THE ASYMMETRY LAW. The press is an exit: faster, and it never overshoots.
+   A press that eases in is not a give. check_motion.mjs asserts both. */
+.jcard:active {
+  transform: scale(var(--press-scale, .988));
+  box-shadow: var(--sh-press);
+  transition-duration: var(--t-exit);
+  transition-timing-function: var(--spring-exit);
+}
+
+/* ---------------------------------------------------------------------------
+   1.2  THE SCORE LEADS — first in reading order, left, numeral centred in it.
+        It shipped as a bare numeral parked top-right at body-text weight.
+   --------------------------------------------------------------------------- */
+.jcard__head { display: flex; gap: 14px; align-items: flex-start; }
+
+.jcard__score {
+  position: relative;
+  width: 52px; height: 52px;          /* law 9's display-cut floor is 48 */
+  flex: none;
+}
+.jcard__rose { display: block; width: 100%; height: 100%; }
+
+/* Unlit is --rose-empty, NEVER a band colour: NEAR-MISS's band IS the
+   neutral, so a band-coloured track leaves lit and unlit identical but for
+   opacity. check_rose.mjs caught exactly this in the first build. */
+.jcard__rose .dot {
+  fill: var(--rose-empty);
+  opacity: var(--rose-empty-alpha, .14);
+  transform: scale(.55);              /* a 32 must LOOK like a 32 */
+  transform-box: fill-box;
+  transform-origin: center;
+  transition:
+    opacity   var(--t-arrive) var(--spring-arrive),
+    transform var(--t-arrive) var(--spring-arrive);
+}
+/* The lit fill reads the card's band. One rule. */
+.jcard__rose .dot.is-lit {
+  fill: var(--jc-band);
+  opacity: 1;
+  transform: scale(1);
+}
+
+.jcard__num {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  font: 500 17px/1 var(--jc-mono);
+  font-variant-numeric: tabular-nums;   /* law 13 — mono is for data */
+  letter-spacing: -.02em;
+  color: var(--text);
+}
+/* An en-dash, not a zero. A zero is a verdict; a swept card has none yet. */
+.jcard__num--empty { color: var(--text-2); opacity: .5; font-size: 15px; }
+
+/* ---------------------------------------------------------------------------
+   1.3  THE TITLE IS NEWSREADER — the phone shipped it in sans-bold, so the
+        densest surface in the product was the one breaking law 13.
+   --------------------------------------------------------------------------- */
+.jcard__id  { flex: 1; min-width: 0; }
+.jcard__org { margin: 0; font-family: var(--jc-sans); font-size: 11px; color: var(--text-2); }
+.jcard__org .sep { opacity: .45; }
+
+.jcard__title {
+  margin: 2px 0 0;
+  font-family: var(--jc-serif);
+  font-weight: 400;                   /* law 13: Newsreader at 400 only */
+  font-size: 18px;
+  line-height: 1.22;
+  letter-spacing: -.005em;
+  color: var(--text);
+}
+.jcard__link { color: inherit; text-decoration: none; }
+/* The stretched link makes the whole card a target without nesting
+   interactive elements inside one another. Everything that must stay
+   reachable (heart, buttons) is raised above it further down. */
+.jcard__link::after { content: ""; position: absolute; inset: 0; z-index: 1; }
+.jcard__link:focus-visible { outline: none; }
+.jcard:focus-within { outline: 2px solid var(--jc-ping); outline-offset: 3px; }
+
+/* ---------------------------------------------------------------------------
+   1.4  THREE TIERS — container weight IS importance.
+        verdict: filled · fact: sunken, no hue · context: no container.
+        A verdict and a fact currently render identically. They must not.
+   --------------------------------------------------------------------------- */
+.jcard__meta {
+  margin-top: 9px;
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  font-family: var(--jc-sans);
+}
+.jcard__band {                                   /* tier 1 — the verdict */
+  font: 500 8.5px/1 var(--jc-sans);
+  letter-spacing: .14em;
+  padding: 6px 10px;
+  border-radius: var(--radius-pill, 1600px);
+  background: var(--jc-band-bg);
+  color: var(--jc-band-l);
+  transform-origin: center;                      /* Stage 2's pulse needs this */
+}
+.jcard__chip {                                   /* tier 2 — a fact, no hue */
+  font-size: 10.5px;
+  color: var(--text-2);
+  background: var(--jc-chip-bg);
+  padding: 5px 10px;
+  border-radius: var(--radius-pill, 1600px);
+}
+.jcard__when {                                   /* tier 3 — no container */
+  font-size: 10.5px;
+  color: var(--text-2);
+}
+
+/* ---------------------------------------------------------------------------
+   1.6  ONE EVIDENCE LINE, AND IT IS STRONGEST.
+        What-to-answer stays behind the tap — a card that leads with a gap is
+        leading with what the reader LACKS, which law 12 forbids.
+        §16 option C: a neutral surface, band colour demoted to a 2px rule,
+        because above ~4,000px² a tinted fill stops signalling and starts
+        decorating.
+   --------------------------------------------------------------------------- */
+.jcard__evidence {
+  margin-top: 12px;
+  background: var(--evidence-bg);
+  border-left: 2px solid var(--evidence-rule-strongest);
+  border-radius: var(--radius-inner, 12px);
+  padding: 10px 12px;
+}
+.jcard__evidence-k {
+  margin: 0;
+  font: 500 8px/1 var(--jc-sans);
+  letter-spacing: .16em;
+  color: var(--jc-auto-l);
+}
+.jcard__evidence p {
+  margin: 6px 0 0;
+  font-family: var(--jc-sans);
+  font-size: 11.5px; line-height: 1.5;
+  color: var(--text-long);
+}
+
+/* ---------------------------------------------------------------------------
+   1.5  THE HEART LEAVES THE SCORE'S CORNER for the action row, so saving
+        stops competing with the verdict.
+   --------------------------------------------------------------------------- */
+.jcard__actions {
+  position: relative; z-index: 2;      /* above the stretched link */
+  margin-top: 12px;
+  display: flex; align-items: center; gap: 9px;
+}
+.jcard__btn {
+  border: 0;
+  border-radius: var(--radius-pill, 1600px);
+  font: 500 11.5px/1 var(--jc-sans);
+  padding: 11px 15px;
+  cursor: pointer;
+  transition:
+    transform  var(--t-snap) var(--spring-snap),
+    box-shadow var(--t-snap) var(--spring-snap);
+}
+.jcard__btn--primary   { background: var(--action); color: var(--action-on); box-shadow: var(--sh-rest); }
+.jcard__btn--secondary { background: transparent; color: var(--text); border: 1px solid var(--edge-rest); }
+.jcard__btn:hover      { transform: translateY(-1px); box-shadow: var(--sh-hover); }
+.jcard__btn:active     { transform: scale(.96); box-shadow: var(--sh-press);
+                         transition-duration: var(--t-exit);
+                         transition-timing-function: var(--spring-exit); }
+.jcard__arrow          { display: inline-block; transition: transform var(--t-snap) var(--spring-snap); }
+.jcard__btn:hover .jcard__arrow { transform: translateX(3px); }
+
+.jcard__heart {
+  margin-left: auto;
+  border: 0; background: transparent;
+  color: var(--text-2);
+  cursor: pointer;
+  padding: 7px;
+  border-radius: var(--radius-pill, 1600px);
+  display: flex;
+  min-width: 44px; min-height: 44px;   /* touch target */
+  align-items: center; justify-content: center;
+  transition: color var(--t-snap) linear,
+              transform var(--t-snap) var(--spring-snap);
+}
+/* motion.css's one rule: anything a pointer can act on gets all three
+   states, and hover must DISPLACE. A colour-only hover is not a material,
+   it is a highlight — check_motion.mjs fails it. */
+.jcard__heart:hover  { color: var(--text); transform: scale(1.06); }
+.jcard__heart:active { transform: scale(.88);
+                       transition-duration: var(--t-exit);
+                       transition-timing-function: var(--spring-exit); }
+.jcard__heart[aria-pressed="true"]     { color: var(--jc-unsure); }
+.jcard__heart[aria-pressed="true"] svg { fill: currentColor; }
+
+/* ---------------------------------------------------------------------------
+   1.1  THE SWEPT CARD — the same card with an unlit rose. Eight empty
+        bearings say "there is a score to be had here" without a word, and
+        when a resume arrives they fill IN PLACE. Browse becomes matches.
+        Hovering sweeps them once, in bearing order: the tell that the rose
+        is a quantity and not an ornament.
+   --------------------------------------------------------------------------- */
+.jcard--swept:hover .jcard__rose .dot,
+.jcard--swept:focus-within .jcard__rose .dot {
+  opacity: .26;
+  transition-delay: calc(var(--dot-i, 0) * 26ms);
+}
+
+/* ---------------------------------------------------------------------------
+   390pt — the only things that change are the rose and two type sizes.
+   --------------------------------------------------------------------------- */
+@media (max-width: 460px) {
+  .jcard        { padding: 13px 14px 12px; }
+  .jcard__score { width: 44px; height: 44px; }
+  .jcard__num   { font-size: 15px; }
+  .jcard__title { font-size: 16px; }
+}
+.jcard--sm .jcard__score { width: 44px; height: 44px; }
+.jcard--sm .jcard__num   { font-size: 15px; }
+
+/* ---------------------------------------------------------------------------
+   Reduced motion: not "less motion" — NO motion, same information. The rose
+   still shows its lit count, the band still reads, the card still responds.
+   It just resolves instantly.
+   --------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  .jcard, .jcard__rose .dot, .jcard__btn, .jcard__heart, .jcard__arrow {
+    transition-duration: 1ms !important;
+    transition-delay: 0ms !important;
+  }
+}
