@@ -209,9 +209,11 @@ caption anyway.
 >
 > **Assets are content-stamped at deploy.** Pages caches anything that is
 > not HTML for four hours, so `base.css`, `rose.js` and `hsheet.js` get
-> `?v=<md5>` written into every page by the deploy step (and `_headers`
-> sets them to `max-age=0` besides). A new shared file must be added to
-> that loop or readers will run stale code against new HTML.
+> `?v=<md5>` written into every page by the deploy step. (`_headers` asks
+> for `max-age=0` too, but the custom domain ignores a rule that LOWERS the
+> cache - measured 14400 after deploy - so the stamp is the fix, not the
+> header.) A new shared file must be added to that loop or readers will
+> run stale code against new HTML.
 >
 > **2026-09-20: the queue stopped dispatching altogether** — nothing started
 > after 06:32Z, webhook- or API-triggered, on an Active pay-as-you-go account
