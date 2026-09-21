@@ -1,18 +1,19 @@
 package trade.tbot.jobscout
 
 import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
@@ -22,144 +23,203 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.StrokeJoin
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.scale
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.vector.PathParser
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
+import trade.tbot.jobscout.design.Radius
+import trade.tbot.jobscout.design.Space
+import trade.tbot.jobscout.design.Type
 
 /*
- * The three screens the mockup's Mobile tab specifies, drawn in Compose.
+ * The phone's screens, drawn in Compose from the mockup (mockups/mobile.html),
+ * which is the spec. 0.9.3 (2026-09-21) brings the phone level with the web and
+ * the mockup after a week in which the web moved and the phone did not:
  *
- * The reference was extracted from the mockup's own rendered DOM on 2026-09-19 rather
- * than read off a screenshot — an ordered element list per screen, hashed:
- * Canada `0d98ef3d`, Kenya `dd63597f`. Every composable below maps to one line of it,
- * and the names are kept deliberately close to the mockup's class names so the two can
- * be diffed by eye as well as by hash:
+ *   MHead        brand; on the landing the two segmented groups (market flags,
+ *                theme), elsewhere the market chip (flag + code) and the "..."
+ *                that opens the menu sheet
+ *   MenuSheet    market, the three-state theme, and every destination - 56dp rows
+ *   ResumeField  ONE résumé field at two densities: the BAR in the hero (one line,
+ *                grows to five with text) and the WELL on the application screen.
+ *                Paste OR file; a 44dp paperclip and a 44dp go; no browser chrome
+ *                to fight here, but the same geometry as site/field.css
+ *   MJob         the card: rose left, org over a serif title, the three metadata
+ *                tiers AS GEOMETRY (band pill filled / fact chip sunken / date
+ *                bare), STRONGEST only on the card, one filled primary + the heart
+ *   MEvidence    the neutral evidence card with the band as a 2px rule
  *
- *   mhead    brand mark + wordmark, market chip pushed right
- *   mhero    gradient card, serif display, paste box, three policy tabs
- *   mcount   the quiet line of numbers
- *   mjob     company initials | serif role | company | policy pill
- *   mtitle   "Explore today's sweep" / "Your matches"
- *   mfilters Remote N (on) / Hybrid N / On site
- *
- * On the "after a run" screen the initials give way to a rose and the policy pill to
- * the fit band, which is the only structural difference between the two card shapes.
+ * Every size comes from design/Tokens.kt (generated from tokens/tokens.json), so
+ * the three clients can no longer drift on a number.
  */
 
-private val CardShape = RoundedCornerShape(14.dp)
-private val HeroShape = RoundedCornerShape(16.dp)
-private val BoxShape = RoundedCornerShape(12.dp)
-private val Pill9999 = RoundedCornerShape(50)
+private val CardShape = RoundedCornerShape(Radius.card)
+private val HeroShape = RoundedCornerShape(Radius.card)
+private val ChipShape = RoundedCornerShape(Radius.chip)
+private val InnerShape = RoundedCornerShape(Radius.inner)
+val Pill9999 = RoundedCornerShape(50)
 
-/** .mhead — brand on the left, market chip hard right. */
+/** The product's target law: nothing actionable is under 44dp. */
+val TARGET = 44.dp
+
+val FLAG = mapOf("ca" to "🇨🇦", "ke" to "🇰🇪")
+
+/**
+ * .ahead - brand left; on the landing the two segmented groups, elsewhere the
+ * chip and the "...". The bar is the page ground at full width (a bar that
+ * paints, bleeds), never a rectangle inset inside the padding.
+ */
 @Composable
 fun MHead(
     market: String,
-    /* How many postings are kept, and the way in to them. TrackerScreen existed
-       and `trackerOpen` was read in exactly one place and set in none, so the
-       saved list was unreachable on the phone while the web carried "Saved (N)"
-       in its nav the whole time. */
-    saved: Int = 0,
-    onSaved: (() -> Unit)? = null,
-    /** The wordmark goes home, as the web's has since the redesign. */
-    onHome: (() -> Unit)? = null,
-    /* THEME.md section 6: the toggle is a required feature. ThemeChoice has
-       carried all three states since it was written and nothing ever called
-       set(), so the stored value could only be absent - this app was
-       permanently light with no route to dark, on a phone whose owner may
-       have asked their whole device for dark. */
-    themeChoice: String? = null,
-    onTheme: (() -> Unit)? = null,
+    home: Boolean,
+    themeChoice: String?,
+    onHome: () -> Unit,
     onMarket: (String) -> Unit,
+    onTheme: (String?) -> Unit,
+    onMenu: () -> Unit,
 ) {
     Row(
-        Modifier.fillMaxWidth().padding(top = 6.dp, bottom = 14.dp),
+        Modifier.fillMaxWidth().padding(top = Space.s1, bottom = Space.s3),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        // One target for the mark and the word — two adjacent decorations is
-        // not what anyone means by "the logo".
         Row(
-            Modifier.clip(Pill9999)
-                .then(if (onHome != null) Modifier.clickable(onClick = onHome) else Modifier)
-                .padding(horizontal = 4.dp, vertical = 4.dp),
+            Modifier.clip(Pill9999).clickable(onClick = onHome)
+                .heightIn(min = TARGET).padding(horizontal = Space.s1),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Mark(dp = 18.dp, tint = T.accent)
             Spacer(Modifier.width(7.dp))
-            Text("JobScout", style = H2, fontSize = 15.sp, color = T.ink)
+            Text("JobScout", style = H2, fontSize = Type.t3, color = T.ink)
         }
         Spacer(Modifier.weight(1f))
-        if (onTheme != null) {
-            /* THREE STATES ON ONE CONTROL, because a switch cannot express
-               the third and the third - follow the phone - is the one most
-               people want. It names the state it is IN and cycles Light,
-               Device, Dark. A word rather than an icon: this bar already
-               speaks in words, and a word is its own accessibility label. */
-            Text(
-                ThemeChoice.label(themeChoice),
-                fontSize = 11.sp, fontWeight = FontWeight.Medium, color = T.text3,
-                modifier = Modifier
-                    .clip(Pill9999)
-                    .clickable(onClick = onTheme)
-                    .padding(horizontal = 8.dp, vertical = 6.dp),
-            )
-            Spacer(Modifier.width(6.dp))
+        /* The chip and the "..." on every screen, the landing included - the
+           web's phone header (hsheet.js) on all four routes. The mockup's
+           landing-only segmented groups have no route to Saved on a phone
+           without the mockup's rail, so the sheet is the one wiring here. */
+        run {
+            Row(
+                Modifier.clip(Pill9999).background(T.chip).border(1.dp, T.hair, Pill9999)
+                    .clickable(onClick = onMenu).heightIn(min = 36.dp).padding(horizontal = Space.s3),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(Space.s1),
+            ) {
+                Text(FLAG[market] ?: "", fontSize = Type.t2)
+                Text(market.uppercase(), fontSize = Type.t1, fontWeight = FontWeight.SemiBold, color = T.ink)
+            }
+            Spacer(Modifier.width(Space.s2))
+            Box(
+                Modifier.size(TARGET).clip(Pill9999).border(1.dp, T.hair, Pill9999)
+                    .clickable(onClick = onMenu),
+                contentAlignment = Alignment.Center,
+            ) { Text("⋯", fontSize = 18.sp, color = T.ink) }
         }
-        if (onSaved != null) {
-            Text(
-                if (saved > 0) "Saved ($saved)" else "Saved",
-                fontSize = 11.sp, fontWeight = FontWeight.Medium,
-                color = if (saved > 0) T.accent else T.text3,
-                modifier = Modifier
-                    .clip(Pill9999)
-                    .clickable(onClick = onSaved)
-                    .padding(horizontal = 8.dp, vertical = 6.dp),
-            )
-            Spacer(Modifier.width(6.dp))
-        }
-        /* Both markets, both visible. One pill carrying only the CURRENT market
-           meant Kenya did not exist unless you already knew the pill was a
-           switch — reported from the phone as "there's no KE button". The web
-           has always shown the pair; this is the same control. */
-        Row(
-            Modifier.clip(Pill9999).background(T.chip).border(1.dp, T.hair, Pill9999).padding(3.dp),
-            horizontalArrangement = Arrangement.spacedBy(2.dp),
+    }
+}
+
+/** The three theme states as glyphs: device, light, dark. */
+val THEME_ICONS = listOf("system" to "◐", "light" to "☀", "dark" to "☾")
+
+/**
+ * The menu sheet: market, the three-state theme, every destination. An overlay
+ * in the activity's own window (a Dialog never received the light system-bar
+ * style), bottom-aligned, on the surface with the sheet radius.
+ */
+@Composable
+fun MenuSheet(
+    market: String, themeChoice: String?, saved: Int,
+    onMarket: (String) -> Unit, onTheme: (String?) -> Unit,
+    onGo: (String) -> Unit, onClose: () -> Unit,
+) {
+    Box(Modifier.fillMaxSize().background(T.ink.copy(alpha = .38f)).clickable(onClick = onClose)) {
+        val ins = WindowInsets.safeDrawing.asPaddingValues()
+        Column(
+            Modifier.align(Alignment.BottomCenter).fillMaxWidth()
+                .clip(RoundedCornerShape(topStart = Radius.sheet, topEnd = Radius.sheet))
+                .background(T.surface)
+                .clickable(enabled = false) {}
+                .padding(start = Space.s4, end = Space.s4, top = Space.s3,
+                         bottom = ins.calculateBottomPadding() + Space.s4),
         ) {
-            listOf("ca" to "🇨🇦 Canada", "ke" to "🇰🇪 Kenya").forEach { (id, label) ->
-                val on = market == id
-                Text(
-                    label,
-                    fontSize = 11.sp,
-                    fontWeight = if (on) FontWeight.SemiBold else FontWeight.Medium,
-                    color = if (on) T.ink else T.text3,
-                    modifier = Modifier
-                        .clip(Pill9999)
-                        .background(if (on) T.surface else Color.Transparent)
-                        .clickable(enabled = !on) { onMarket(id) }
-                        .padding(horizontal = 9.dp, vertical = 5.dp),
-                )
+            Box(Modifier.align(Alignment.CenterHorizontally).size(width = 36.dp, height = 4.dp)
+                .clip(Pill9999).background(T.hair2))
+            Row(Modifier.fillMaxWidth().padding(top = Space.s2), verticalAlignment = Alignment.CenterVertically) {
+                Text("Menu", style = H2, fontSize = Type.t5, color = T.ink, modifier = Modifier.weight(1f))
+                Box(Modifier.size(TARGET).clip(Pill9999).clickable(onClick = onClose), contentAlignment = Alignment.Center) {
+                    Text("×", fontSize = 20.sp, color = T.text2)
+                }
+            }
+            SheetLabel("Market")
+            WideSeg(listOf("ca" to (FLAG["ca"] + "  Canada"), "ke" to (FLAG["ke"] + "  Kenya")), market, onMarket)
+            SheetLabel("Theme")
+            WideSeg(listOf("system" to "◐  Device", "light" to "☀  Light", "dark" to "☾  Dark"),
+                    ThemeChoice.key(themeChoice)) { onTheme(ThemeChoice.fromKey(it)) }
+            SheetLabel("Go to")
+            val hair = T.hair   // read here: a draw lambda is not a composable
+            listOf("home" to "Home", "saved" to "Saved", "how" to "How it works", "privacy" to "Privacy").forEachIndexed { i, (id, label) ->
+                Row(
+                    Modifier.fillMaxWidth().heightIn(min = 56.dp).clickable { onGo(id) }
+                        .drawBehind { if (i < 3) drawRect(hair, topLeft = androidx.compose.ui.geometry.Offset(0f, size.height - 1f), size = Size(size.width, 1f)) }
+                        .padding(horizontal = Space.s1),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(label, fontSize = Type.t3, fontWeight = FontWeight.Medium, color = T.ink, modifier = Modifier.weight(1f))
+                    if (id == "saved" && saved > 0) Text("$saved", fontSize = Type.t1, fontWeight = FontWeight.Medium, color = T.text3)
+                    Spacer(Modifier.width(Space.s2))
+                    Text("›", fontSize = 18.sp, color = T.text2)
+                }
             }
         }
     }
 }
 
+@Composable
+private fun SheetLabel(text: String) {
+    Text(text.uppercase(), fontSize = Type.t0, letterSpacing = 0.09.em, fontWeight = FontWeight.Medium,
+        color = T.text3, modifier = Modifier.padding(top = Space.s4, bottom = Space.s2))
+}
+
+@Composable
+private fun WideSeg(items: List<Pair<String, String>>, on: String, onPick: (String) -> Unit) {
+    Row(
+        Modifier.fillMaxWidth().clip(Pill9999).background(T.chip).border(1.dp, T.hair, Pill9999).padding(3.dp),
+        horizontalArrangement = Arrangement.spacedBy(2.dp),
+    ) {
+        items.forEach { (id, label) ->
+            val pressed = id == on
+            Box(
+                Modifier.weight(1f).heightIn(min = 38.dp).clip(Pill9999)
+                    .background(if (pressed) T.surface else Color.Transparent)
+                    .clickable(enabled = !pressed) { onPick(id) },
+                contentAlignment = Alignment.Center,
+            ) { Text(label, fontSize = Type.t2, fontWeight = if (pressed) FontWeight.SemiBold else FontWeight.Medium,
+                     color = if (pressed) T.ink else T.text3, maxLines = 1) }
+        }
+    }
+}
+
 /**
- * .mhero — the gradient card. The scrim sits between the gradient and the content so
- * white text holds on both markets' hero images; without it Kenya's light green end
- * takes the display type down to nothing.
+ * .mhero - the gradient card. The scrim sits between the gradient and the content so
+ * white text holds on both markets' hero images.
  */
 @Composable
 fun MHero(
@@ -167,30 +227,28 @@ fun MHero(
     policy: String?, onPolicy: (String?) -> Unit,
     onUpload: () -> Unit, uploading: Boolean, hint: String?,
 ) {
-    Box(
-        Modifier.fillMaxWidth().clip(HeroShape).background(T.hero)
-    ) {
+    Box(Modifier.fillMaxWidth().clip(HeroShape).background(T.hero)) {
         Box(Modifier.matchParentSize().background(T.scrim))
         Column(
-            Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 26.dp),
+            Modifier.fillMaxWidth().padding(horizontal = Space.s4, vertical = Space.s6),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Text(
                 buildHeadline(),
-                style = H1, fontSize = 27.sp, lineHeight = 30.sp,
+                style = H1, fontSize = Type.t7, lineHeight = 34.sp,
                 letterSpacing = (-0.025).em, color = Color.White,
             )
-            Spacer(Modifier.height(16.dp))
-            MBox(resume = resume, onResume = onResume, onRun = onRun,
-                 onUpload = onUpload, uploading = uploading)
-            // What the extractor said, next to the control that caused it
-            // rather than three sections away.
+            Spacer(Modifier.height(Space.s4))
+            ResumeField(
+                value = resume, onChange = onResume, onGo = onRun, onAttach = onUpload,
+                uploading = uploading, well = false,
+                placeholder = "Paste or drop your résumé",
+            )
             hint?.let {
-                Spacer(Modifier.height(8.dp))
-                Text(it, fontSize = 11.5.sp, lineHeight = 16.sp,
-                     color = Color.White.copy(alpha = .85f))
+                Spacer(Modifier.height(Space.s2))
+                Text(it, fontSize = Type.t1, lineHeight = 16.sp, color = Color.White.copy(alpha = .85f))
             }
-            Spacer(Modifier.height(12.dp))
+            Spacer(Modifier.height(Space.s3))
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 POLICIES.forEach { (id, label) ->
                     MTab(label, on = policy == id) { onPolicy(if (policy == id) null else id) }
@@ -200,138 +258,205 @@ fun MHero(
     }
 }
 
-/** The display line, with the full stop in --live. */
+/** The display line, with the full stop in the brand. */
 @Composable
 private fun buildHeadline() = buildAnnotatedString {
     append("Find the work\nmade for you")
-    // brand, not T.live: live IS the unsure band solid
     withStyle(SpanStyle(color = T.accent)) { append(".") }
 }
 
 val POLICIES = listOf("remote" to "Remote", "hybrid" to "Hybrid", "onsite" to "On site")
 
-/** .mbox — the paste field with the go button inside it, not beside it. */
+/** The paperclip from site/field.css's markup, drawn as a path so it is one glyph on every client. */
+private val CLIP_PATH = "M21.4 11.05 12.25 20.2a5.5 5.5 0 0 1-7.78-7.78l9.19-9.19a3.67 3.67 0 0 1 5.18 5.18l-9.2 9.2a1.83 1.83 0 0 1-2.59-2.6l8.49-8.48"
+
 @Composable
-private fun MBox(
-    resume: String, onResume: (String) -> Unit, onRun: () -> Unit,
-    onUpload: () -> Unit, uploading: Boolean,
-) {
-    Row(
-        Modifier.fillMaxWidth().clip(BoxShape).background(T.surface)
-            .padding(start = 13.dp, top = 6.dp, end = 6.dp, bottom = 6.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        /* maxLines is load-bearing. Without it an uploaded resume — 1,800 words —
-           grew this field down past the fold and pushed the whole page off the
-           screen, which is what the operator saw after tapping Upload. Six
-           lines is enough to see that the right document arrived; the field
-           scrolls its own overflow from there. */
-        BasicTextField(
-            value = resume,
-            onValueChange = onResume,
-            modifier = Modifier.weight(1f).heightIn(max = 108.dp),
-            maxLines = 6,
-            textStyle = TextStyle(
-                fontFamily = Sans, fontSize = 12.5.sp, color = T.text,
-            ),
-            cursorBrush = SolidColor(T.accent),
-            decorationBox = { inner ->
-                if (resume.isEmpty()) {
-                    Text("Paste your résumé, or a job title…", fontSize = 12.5.sp, color = T.text3)
-                }
-                inner()
-            },
-        )
-        // The upload control sits INSIDE the box, where the web puts it. The v3
-        // rebuild dropped it and left importResume with no caller, so there was
-        // no way to upload a file at all.
-        Text(
-            if (uploading) "Reading…" else "Upload",
-            fontSize = 12.sp, fontWeight = FontWeight.Medium, color = T.accent, maxLines = 1,
-            modifier = Modifier.clip(Pill9999)
-                .clickable(enabled = !uploading, onClick = onUpload)
-                .padding(horizontal = 8.dp, vertical = 6.dp),
-        )
-        Spacer(Modifier.width(4.dp))
-        Box(
-            Modifier.size(30.dp).clip(Pill9999).background(T.btn).clickable(onClick = onRun),
-            contentAlignment = Alignment.Center,
-        ) {
-            Text("→", fontSize = 13.sp, color = T.btnInk)
+fun Paperclip(tint: Color, size: androidx.compose.ui.unit.Dp = 18.dp) {
+    val path = remember { PathParser().parsePathString(CLIP_PATH).toPath() }
+    Canvas(Modifier.size(size)) {
+        val k = this.size.width / 24f
+        scale(k, pivot = androidx.compose.ui.geometry.Offset.Zero) {
+            drawPath(path, tint, style = Stroke(width = 1.8f, cap = StrokeCap.Round, join = StrokeJoin.Round))
         }
     }
 }
 
-/** .mtabs i — translucent white on the hero, which is why they are not MFilter. */
+/**
+ * ONE résumé field, two densities (site/field.css). The bar: pill, one line
+ * while empty, grows to five with text. The well: a card-radius box that
+ * starts three lines tall. Both carry the paperclip (the file door - Android's
+ * document picker, then /api/extract, then the text lands here) and the go.
+ */
+@Composable
+fun ResumeField(
+    value: String, onChange: (String) -> Unit, onGo: () -> Unit, onAttach: () -> Unit,
+    uploading: Boolean, well: Boolean, placeholder: String,
+    focus: FocusRequester? = null,
+) {
+    val has = value.isNotBlank()
+    val shape = if (well) CardShape else Pill9999
+    val pulse = rememberInfiniteTransition(label = "clip")
+    val k by pulse.animateFloat(1f, 0.45f, infiniteRepeatable(tween(700, easing = LinearEasing), RepeatMode.Reverse), label = "busy")
+    val field: @Composable RowScope.() -> Unit = {
+        BasicTextField(
+            value = value, onValueChange = onChange,
+            modifier = Modifier.weight(1f).then(if (focus != null) Modifier.focusRequester(focus) else Modifier)
+                .then(if (well) Modifier.heightIn(min = 72.dp) else Modifier),
+            minLines = if (well) 3 else 1,
+            maxLines = if (well) 10 else 5,
+            textStyle = TextStyle(fontFamily = Sans, fontSize = Type.t2, lineHeight = 19.sp, color = T.text),
+            cursorBrush = SolidColor(T.accent),
+            decorationBox = { inner ->
+                if (value.isEmpty()) Text(placeholder, fontSize = Type.t2, color = T.text3, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                inner()
+            },
+        )
+    }
+    val foot: @Composable RowScope.() -> Unit = {
+        Row(
+            Modifier.heightIn(min = TARGET).clip(Pill9999)
+                .clickable(enabled = !uploading, onClick = onAttach)
+                .padding(horizontal = if (well) Space.s3 else 0.dp)
+                .then(if (well) Modifier else Modifier.width(TARGET))
+                .graphicsLayer { alpha = if (uploading) k else 1f },
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center,
+        ) {
+            Paperclip(T.text2)
+            if (well) {
+                Spacer(Modifier.width(Space.s2))
+                Text(if (uploading) "Reading…" else "Attach a file", fontSize = Type.t1, fontWeight = FontWeight.Medium, color = T.text2)
+            }
+        }
+        if (well) Spacer(Modifier.weight(1f)) else Spacer(Modifier.width(Space.s1))
+        Box(
+            Modifier.size(TARGET).clip(Pill9999)
+                .background(if (has) T.btn else T.canvas2)
+                .clickable(enabled = has, onClick = onGo),
+            contentAlignment = Alignment.Center,
+        ) { Text("→", fontSize = Type.t3, color = if (has) T.btnInk else T.text3) }
+    }
+    if (well) {
+        Column(
+            Modifier.fillMaxWidth().clip(shape).background(T.surface).border(1.dp, T.hair2, shape)
+                .padding(Space.s3),
+        ) {
+            Row(Modifier.fillMaxWidth()) { field() }
+            Row(Modifier.fillMaxWidth().padding(top = Space.s2), verticalAlignment = Alignment.CenterVertically) { foot() }
+        }
+    } else {
+        Row(
+            Modifier.fillMaxWidth().clip(shape).background(T.surface)
+                .padding(start = Space.s4, top = Space.s1, end = Space.s1, bottom = Space.s1),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            field()
+            Spacer(Modifier.width(Space.s1))
+            Row(verticalAlignment = Alignment.CenterVertically) { foot() }
+        }
+    }
+}
+
+/** .mtabs i - translucent white on the hero, which is why they are not MFilter. */
 @Composable
 private fun MTab(label: String, on: Boolean, onClick: () -> Unit) {
-    Text(
-        label,
-        fontSize = 11.sp, fontWeight = FontWeight.Medium,
-        color = if (on) T.ink else Color.White,
-        modifier = Modifier
-            .clip(Pill9999)
+    Box(
+        Modifier.heightIn(min = 36.dp).clip(Pill9999)
             .background(if (on) Color.White else Color.White.copy(alpha = .16f))
             .border(1.dp, Color.White.copy(alpha = .26f), Pill9999)
             .clickable(onClick = onClick)
-            .padding(horizontal = 11.dp, vertical = 7.dp),
-    )
+            .padding(horizontal = 12.dp),
+        contentAlignment = Alignment.Center,
+    ) { Text(label, fontSize = Type.t1, fontWeight = FontWeight.Medium, color = if (on) T.ink else Color.White) }
 }
 
-/** .mfilters i — the same control off the hero, on the page ground. */
+/** .mfilters i - the same control off the hero, on the page ground. 44dp: the target law. */
 @Composable
 fun MFilter(label: String, on: Boolean, onClick: () -> Unit) {
-    Text(
-        label,
-        fontSize = 11.sp, fontWeight = FontWeight.Medium, maxLines = 1,
-        color = if (on) T.canvas else T.text2,
-        modifier = Modifier
-            .clip(Pill9999)
+    Box(
+        Modifier.heightIn(min = TARGET).clip(Pill9999)
             .background(if (on) T.ink else T.chip)
             .border(1.dp, if (on) T.ink else T.hair, Pill9999)
             .clickable(onClick = onClick)
-            .padding(horizontal = 11.dp, vertical = 8.dp),
-    )
+            .padding(horizontal = 12.dp),
+        contentAlignment = Alignment.Center,
+    ) { Text(label, fontSize = Type.t1, fontWeight = FontWeight.Medium, maxLines = 1, color = if (on) T.canvas else T.text2) }
+}
+
+/** The one filled primary of a region (deep ink), or its quiet sibling. 44dp. */
+@Composable
+fun MButton(label: String, primary: Boolean, enabled: Boolean = true, onClick: () -> Unit) {
+    Box(
+        Modifier.heightIn(min = TARGET).clip(Pill9999)
+            .background(if (primary) T.btn else Color.Transparent)
+            .border(1.dp, if (primary) T.btn else T.hair2, Pill9999)
+            .clickable(enabled = enabled, onClick = onClick)
+            .padding(horizontal = Space.s4),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(label, fontSize = Type.t2, fontWeight = FontWeight.SemiBold, maxLines = 1,
+             color = if (!enabled) T.text3 else if (primary) T.btnInk else T.ink)
+    }
+}
+
+/** The heart: 44dp, outlined; the brand when kept (selection is the brand, never a band). */
+@Composable
+fun Heart(saved: Boolean, onClick: () -> Unit) {
+    Box(
+        Modifier.size(TARGET).clip(Pill9999)
+            .background(if (saved) T.accent.copy(alpha = .12f) else Color.Transparent)
+            .border(1.dp, if (saved) T.accent else T.hair2, Pill9999)
+            .clickable(onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) { Text(if (saved) "♥" else "♡", fontSize = Type.t3, color = if (saved) T.accent else T.text2) }
 }
 
 /** .mcount */
 @Composable
 fun MCount(text: String, modifier: Modifier = Modifier) {
-    Text(text, fontSize = 11.5.sp, fontWeight = FontWeight.Medium, color = T.text3, modifier = modifier)
+    Text(text, fontSize = Type.t1, fontWeight = FontWeight.Medium, color = T.text3, modifier = modifier)
 }
 
+/** Tier 1 - the verdict: the band pill, filled, the label colour. */
+@Composable
+fun Tier1(fit: Int) {
+    val (fg, bg) = T.band(fit)
+    Box(
+        Modifier.heightIn(min = 22.dp).clip(Pill9999).background(bg).padding(horizontal = Space.s2),
+        contentAlignment = Alignment.Center,
+    ) { Text(T.bandWord(fit).replace("-", " ").uppercase(), fontSize = Type.t0, fontWeight = FontWeight.SemiBold, letterSpacing = 0.06.em, color = fg) }
+}
+
+/** Tier 2 - a fact: the sunken chip, 4dp corners, the quieter ink. */
+@Composable
+fun Tier2(text: String) {
+    Box(
+        Modifier.heightIn(min = 20.dp).clip(ChipShape).background(T.canvas2).padding(horizontal = 6.dp),
+        contentAlignment = Alignment.Center,
+    ) { Text(text, fontSize = Type.t1, color = T.text2, maxLines = 1) }
+}
+
+/** Tier 3 - context: bare. */
+@Composable
+fun Tier3(text: String) { Text(text, fontSize = Type.t1, color = T.text3, maxLines = 1) }
+
 /**
- * .tax — one slice of the feed: a name and how much of today it is. The web
- * has had these since the redesign; the phone showed a bare count instead, so
- * the landing said "318 swept this morning" and stopped.
- */
-/**
- * One piece of evidence behind a score, in the same shape the below-floor panel
- * uses for its asks: a micro-label in the band's own colour over the sentence
- * itself. Nothing is truncated — a receipt you cannot read is not a receipt.
+ * One piece of evidence behind a score: a neutral at the surface's own hue, the
+ * band as a 2px rule down the left edge, a micro-label over the sentence.
  */
 @Composable
-private fun MEvidence(label: String, text: String?, fg: Color, rule: Color, body_: Color) {
+fun MEvidence(label: String, text: String?, fg: Color, rule: Color, body_: Color) {
     val body = text?.takeIf { it.isNotBlank() } ?: return
-    Spacer(Modifier.height(7.dp))
     Column(
-        Modifier.fillMaxWidth().clip(EvShape).background(T.evidenceBg)
-            /* The band, as a rule down the left edge rather than across the
-               whole field. drawBehind rather than a border, because a
-               border would run round all four sides. */
-            .drawBehind {
-                drawRect(rule, size = androidx.compose.ui.geometry.Size(2.dp.toPx(), size.height))
-            }
+        Modifier.fillMaxWidth().clip(InnerShape).background(T.evidenceBg)
+            .drawBehind { drawRect(rule, size = Size(2.dp.toPx(), size.height)) }
             .padding(start = 13.dp, end = 11.dp, top = 9.dp, bottom = 9.dp),
     ) {
-        Text(label.uppercase(), fontSize = 9.5.sp, letterSpacing = 0.09.em,
-            fontWeight = FontWeight.Medium, color = fg)
-        Spacer(Modifier.height(4.dp))
-        Text(body, fontSize = 12.sp, lineHeight = 18.sp, color = body_)
+        Text(label.uppercase(), fontSize = Type.t0, letterSpacing = 0.09.em, fontWeight = FontWeight.Medium, color = fg)
+        Spacer(Modifier.height(Space.s1))
+        Text(body, fontSize = Type.t2, lineHeight = 19.sp, color = body_)
     }
 }
-
-private val EvShape = RoundedCornerShape(10.dp)
 
 /** One line of label over one line of count, so one height fits them all. */
 private val TAX_H = 66.dp
@@ -339,31 +464,17 @@ private val TAX_H = 66.dp
 @Composable
 fun MTax(label: String, count: Int, modifier: Modifier = Modifier, onClick: () -> Unit) {
     Column(
-        modifier
-            /* Half a row is only half a row if the card takes it, and every tile
-               is the same rectangle whatever its label says. Both were true of
-               the web's grid from the start; the phone's tiles were sized by
-               their own words until 2026-09-19. */
-            .fillMaxWidth()
-            .height(TAX_H)
-            .clip(CardShape)
-            .background(T.surface)
-            .border(1.dp, T.hair, CardShape)
-            .clickable(onClick = onClick)
+        modifier.fillMaxWidth().height(TAX_H).clip(CardShape).background(T.surface)
+            .border(1.dp, T.hair, CardShape).clickable(onClick = onClick)
             .padding(horizontal = 13.dp, vertical = 11.dp),
     ) {
-        Text(label, fontSize = 13.sp, fontWeight = FontWeight.Medium, color = T.ink, maxLines = 1)
+        Text(label, fontSize = Type.t2, fontWeight = FontWeight.Medium, color = T.ink, maxLines = 1)
         Spacer(Modifier.height(3.dp))
-        Text("$count open", fontSize = 11.5.sp, color = T.text3)
+        Text("$count open", fontSize = Type.t1, color = T.text3)
     }
 }
 
-/**
- * A run in progress. The phone showed nothing at all between the tap and the
- * finished matches — the gate stream and eight Claude calls are forty seconds
- * of silence, which reads as a dead button. Claude's own mark, breathing,
- * and a line saying which half is running.
- */
+/** A run in progress: Claude's mark, breathing, and which half is running. */
 @Composable
 fun MRunning(scoring: Boolean, swept: Int, going: Int) {
     val pulse = rememberInfiniteTransition(label = "run")
@@ -373,59 +484,40 @@ fun MRunning(scoring: Boolean, swept: Int, going: Int) {
         label = "breathe",
     )
     Row(
-        Modifier.fillMaxWidth().clip(CardShape).background(T.surface)
-            .border(1.dp, T.hair, CardShape).padding(14.dp),
+        Modifier.fillMaxWidth().clip(CardShape).background(T.surface).border(1.dp, T.hair, CardShape).padding(14.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Image(
-            painter = painterResource(R.drawable.claude_mark),
-            contentDescription = null,
-            modifier = Modifier.size(22.dp).clip(RoundedCornerShape(5.dp))
-                .graphicsLayer { scaleX = k; scaleY = k; alpha = k },
+            painter = painterResource(R.drawable.claude_mark), contentDescription = null,
+            modifier = Modifier.size(22.dp).clip(RoundedCornerShape(5.dp)).graphicsLayer { scaleX = k; scaleY = k; alpha = k },
         )
         Column {
-            Text(
-                if (scoring) "Claude is scoring them" else "Dropping what cannot fit",
-                fontSize = 14.sp, fontWeight = FontWeight.Medium, color = T.ink,
-            )
+            Text(if (scoring) "Claude is scoring them" else "Dropping what cannot fit",
+                 fontSize = Type.t2, fontWeight = FontWeight.Medium, color = T.ink)
             Spacer(Modifier.height(2.dp))
             Text(
-            /* This counted the reject STREAM, and the API marks only a handful
-               of postings as hard rejects — so on a 318-posting sweep it read
-               "3 of 3" while the gate was narrowing 318 to 8. */
                 if (scoring) "$going postings, one Claude call each — about half a minute"
                 else "$swept from this morning’s sweep, narrowing to $going — this part is free",
-                fontSize = 12.5.sp, lineHeight = 18.sp, color = T.text2,
+                fontSize = Type.t1, lineHeight = 17.sp, color = T.text2,
             )
         }
     }
 }
 
-/**
- * The web's footer, in the phone's language: where the product explains itself
- * and what it does with your resume. The app had none of these — Play expects a
- * reachable privacy statement, and "how it works" and the live numbers were
- * web-only despite describing the same product.
- */
+/** The footer: what the product does with a résumé, and the two pages. */
 @Composable
 fun MFoot(onPage: (String) -> Unit) {
-    Column(Modifier.fillMaxWidth().padding(top = 26.dp, bottom = 8.dp)) {
-        Text(
-            "Reads your résumé, drops what cannot fit, and tells you why about the rest.",
-            fontSize = 11.5.sp, lineHeight = 17.sp, color = T.text3,
-        )
-        Spacer(Modifier.height(12.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            // In the app, not in a browser. A privacy policy is the last thing
-            // that should throw the reader out of the app to read.
+    Column(Modifier.fillMaxWidth().padding(top = Space.s6, bottom = Space.s2)) {
+        Text("Reads your résumé, drops what cannot fit, and tells you why about the rest.",
+             fontSize = Type.t1, lineHeight = 17.sp, color = T.text3)
+        Spacer(Modifier.height(Space.s2))
+        Row(horizontalArrangement = Arrangement.spacedBy(Space.s2)) {
             listOf("How it works" to "how", "Privacy" to "privacy").forEach { (label, page) ->
-                Text(
-                    label,
-                    fontSize = 11.sp, fontWeight = FontWeight.Medium, color = T.accent,
-                    modifier = Modifier.clip(Pill9999).clickable { onPage(page) }
-                        .padding(horizontal = 9.dp, vertical = 6.dp),
-                )
+                Box(Modifier.heightIn(min = TARGET).clip(Pill9999).clickable { onPage(page) }.padding(horizontal = Space.s2),
+                    contentAlignment = Alignment.Center) {
+                    Text(label, fontSize = Type.t1, fontWeight = FontWeight.Medium, color = T.accent)
+                }
             }
         }
     }
@@ -434,131 +526,75 @@ fun MFoot(onPage: (String) -> Unit) {
 /** .mtitle */
 @Composable
 fun MTitle(text: String) {
-    Text(text, style = H2, fontSize = 21.sp, letterSpacing = (-0.02).em, color = T.ink,
-        modifier = Modifier.padding(top = 4.dp, bottom = 14.dp))
+    Text(text, style = H2, fontSize = Type.t5, letterSpacing = (-0.02).em, color = T.ink,
+        modifier = Modifier.padding(top = Space.s1, bottom = Space.s3))
 }
 
 /**
- * .mjob — one posting. Two forms: the browse card leads with the company's initials
- * and ends in a policy pill; the scored card leads with the rose and ends in the fit
- * band. Everything between them is identical, so it is one composable.
+ * .jcard - one posting. The browse row leads with the empty rose and ends in a
+ * policy chip; the scored card leads with the rose, carries the three tiers,
+ * ONE evidence line (STRONGEST - what to answer waits behind the tap), and a
+ * single filled primary beside the heart.
  */
 @Composable
 fun MJob(
     title: String,
     company: String,
+    location: String = "",
     policy: String? = null,
     fit: Int? = null,
     onClick: (() -> Unit)? = null,
-    /* The word for what tapping does. A scored card WAS clickable and said so
-       nowhere — reported from the phone as "there is no prepare application
-       button", and it was right: the whole card opened the application page
-       and nothing on it suggested that. The web has carried the label since
-       the redesign. */
     action: String? = null,
-    /* What the score MEANS. A scored card used to carry a number and a band
-       word and nothing else: the verdict and the two evidence lines existed in
-       the response and were rendered nowhere, so the phone showed "28 ·
-       NEAR-MISS" and left the reader to guess. The web has shown all three
-       since the redesign. */
-    verdict: String? = null,
     strongest: String? = null,
-    weakest: String? = null,
-    /* Keeping a posting. The web's score card has had this since the redesign
-       and MJob never got it, so the Saved screen's own empty state — "tap Save
-       on a score to keep it" — pointed at a control that did not exist. */
     saved: Boolean = false,
     onSave: (() -> Unit)? = null,
-    /** Put this posting away, with one undo. The web has had dismiss since the
-     *  redesign; the phone had no way to say "not this one". */
     onDismiss: (() -> Unit)? = null,
 ) {
-    /* MOTION v1: the press. Compose has no :active, so the card reads its own
-       interaction source and gives .988 on Motion.exit (160ms) while pressed,
-       returning on Motion.settle - a give that eases in is not a give. */
     val press = remember { MutableInteractionSource() }
     val pressed by press.collectIsPressedAsState()
     val give by animateFloatAsState(if (pressed) 0.988f else 1f,
         animationSpec = if (pressed) Motion.exit else Motion.settle, label = "press")
-    Row(
+    Column(
         Modifier.fillMaxWidth()
             .graphicsLayer { scaleX = give; scaleY = give }
-            .clip(CardShape)
-            .background(T.surface)
-            .border(1.dp, T.hair, CardShape)
+            .clip(CardShape).background(T.surface).border(1.dp, T.hair, CardShape)
             .then(if (onClick != null) Modifier.clickable(interactionSource = press, indication = null, onClick = onClick) else Modifier)
-            .padding(13.dp),
-        horizontalArrangement = Arrangement.spacedBy(11.dp),
+            .padding(Space.s3),
     ) {
-        /* v2 stage 1: a swept row carries the EMPTY ring where it had a logo
-           box - the rose is the score device, and its unlit bearings promise
-           the score before a resume arrives. */
-        if (fit != null) BearingRose(fit, diameter = 38.dp) else EmptyRose(diameter = 38.dp)
-        Column(Modifier.weight(1f)) {
-            /* One line for a browse row: the mockup's rows never wrap, and that is
-               what keeps four of them legible in a 620px frame. Two for a scored
-               one — a match's title is the identity of the thing being judged,
-               and "Senior Associate, SLC Accounting and Controls - SLC …" is not
-               that. */
-            Text(title, style = H2, fontSize = 14.5.sp, lineHeight = 18.sp,
-                letterSpacing = (-0.015).em, color = T.ink,
-                maxLines = if (fit != null) 2 else 1, overflow = TextOverflow.Ellipsis)
-            Spacer(Modifier.height(3.dp))
-            Text(company, fontSize = 11.5.sp, color = T.text2)
-            Spacer(Modifier.height(7.dp))
-            if (fit != null) {
-                val (fg, bg) = T.band(fit)
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    Text(
-                        T.bandWord(fit).uppercase(),
-                        fontSize = 10.5.sp, fontWeight = FontWeight.Medium, letterSpacing = 0.06.em, color = fg,
-                        modifier = Modifier.clip(Pill9999).background(bg).padding(horizontal = 8.dp, vertical = 5.dp),
-                    )
-                    if (action != null) Text(
-                        action,
-                        fontSize = 10.5.sp, fontWeight = FontWeight.SemiBold, color = T.accent, maxLines = 1,
-                        modifier = Modifier.clip(Pill9999).border(1.dp, T.accent, Pill9999)
-                            .padding(horizontal = 9.dp, vertical = 5.dp),
-                    )
-                    if (onSave != null) Text(
-                        if (saved) "\u2665 Saved" else "\u2661 Save",
-                        fontSize = 10.5.sp, fontWeight = FontWeight.Medium, maxLines = 1,
-                        // selected state is the brand; T.live is the unsure solid
-                        color = if (saved) T.accent else T.text2,
-                        modifier = Modifier.clip(Pill9999)
-                            .border(1.dp, if (saved) T.accent else T.hair2, Pill9999)
-                            .clickable(onClick = onSave)
-                            .padding(horizontal = 9.dp, vertical = 5.dp),
-                    )
+        Row(horizontalArrangement = Arrangement.spacedBy(11.dp)) {
+            if (fit != null) BearingRose(fit, diameter = 44.dp) else EmptyRose(diameter = 44.dp)
+            Column(Modifier.weight(1f)) {
+                Text(listOf(company, location).filter { it.isNotBlank() }.joinToString(" · "),
+                     fontSize = Type.t1, color = T.text2, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Spacer(Modifier.height(2.dp))
+                Text(title, style = H2, fontSize = Type.t4, lineHeight = 22.sp,
+                     letterSpacing = (-0.015).em, color = T.ink,
+                     maxLines = if (fit != null) 2 else 1, overflow = TextOverflow.Ellipsis)
+                Spacer(Modifier.height(Space.s2))
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    if (fit != null) Tier1(fit)
+                    if (policy != null) Tier2(policyLabel(policy))
                 }
-                // The reasoning, not clipped: this is what the score is FOR.
-                verdict?.takeIf { it.isNotBlank() }?.let {
-                    Spacer(Modifier.height(8.dp))
-                    Text(it, fontSize = 12.5.sp, lineHeight = 19.sp, color = T.text2)
+            }
+            if (onDismiss != null) {
+                Box(Modifier.size(32.dp).clip(Pill9999).clickable(onClick = onDismiss), contentAlignment = Alignment.Center) {
+                    Text("×", fontSize = 17.sp, color = T.text3)
                 }
-                MEvidence("Strongest", strongest, T.bAuto,
-                          T.evidenceRuleStrongest, T.strongestBody)
-                MEvidence("What to answer", weakest, T.bUnsure,
-                          T.evidenceRuleAnswer, T.answerBody)
-            } else {
-                Text(
-                    policyLabel(policy),
-                    fontSize = 10.5.sp, fontWeight = FontWeight.Medium, color = T.text2,
-                    modifier = Modifier.clip(Pill9999).border(1.dp, T.hair2, Pill9999)
-                        .padding(horizontal = 8.dp, vertical = 5.dp),
-                )
             }
         }
-        if (onDismiss != null) {
-            Text(
-                "×",
-                fontSize = 17.sp, color = T.text3,
-                modifier = Modifier.clip(Pill9999).clickable(onClick = onDismiss)
-                    .padding(horizontal = 8.dp, vertical = 2.dp),
-            )
+        if (fit != null) {
+            strongest?.takeIf { it.isNotBlank() }?.let {
+                Spacer(Modifier.height(Space.s2))
+                MEvidence("Strongest", it, T.bAuto, T.evidenceRuleStrongest, T.strongestBody)
+            }
+            if (action != null || onSave != null) {
+                Spacer(Modifier.height(Space.s2))
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Space.s2)) {
+                    if (action != null && onClick != null) MButton(action, primary = true, onClick = onClick)
+                    Spacer(Modifier.weight(1f))
+                    if (onSave != null) Heart(saved, onSave)
+                }
+            }
         }
     }
 }

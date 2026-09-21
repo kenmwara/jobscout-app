@@ -152,6 +152,15 @@ gates, collapsed lists, one hue per candidate:
   The `.xcodeproj` is generated in CI from [`project.yml`](ios/project.yml)
   (XcodeGen) — only sources are committed.
 
+**0.9.3 (2026-09-21): the Android app is drawn from the phone mockup**
+(`mockups/mobile.html`) as its spec, the way the site is — the header chip and
+the menu sheet, one résumé field at two densities (the bar in the hero, the
+well on the application screen), the three metadata tiers as geometry,
+STRONGEST-only cards with one filled primary and a heart, the lead step from
+`band.js`, 44dp targets and every size from the generated `design/Tokens.kt`.
+The 0.9.2 release had changed the phone's numbers and none of what it draws,
+which is what the parity rule below exists to catch. iOS is next.
+
 All three surfaces draw the rose from the **same geometry** — a 104-unit box,
 eight dots on a ring of r=38 at 45° steps from bearing 000 — so the glyph is
 identical on the web, on Android and on iOS. Nothing rotates in it, which is

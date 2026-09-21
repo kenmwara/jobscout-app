@@ -241,6 +241,11 @@ object ThemeChoice {
         "system" -> "Device"
         else -> "Dark"
     }
+
+    /** The segmented control's key for a stored choice: the absence IS "light". */
+    fun key(choice: String?): String = when (choice) { "system" -> "system"; "dark" -> "dark"; else -> "light" }
+    /** ...and back: "light" is stored as the absence. */
+    fun fromKey(key: String): String? = when (key) { "system" -> "system"; "dark" -> "dark"; else -> null }
 }
 
 /**

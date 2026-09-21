@@ -42,7 +42,9 @@ def dump():
         # A tree with a handful of text nodes is the bridge answering before
         # the app has laid out - "<node" alone let those through. The landing
         # carries 35; anything under 20 is not the app yet.
-        if "dumped to" in out and xml.count('text="') - xml.count('text=""') >= 20:
+        # 0.9.3: the menu sheet is a screen of 17 text nodes, so the floor is
+        # 8 - still far above the handful a half-laid-out bridge answers with.
+        if "dumped to" in out and xml.count('text="') - xml.count('text=""') >= 8:
             return xml
         time.sleep(1.0)
     return xml
@@ -65,12 +67,17 @@ def text():
     return " | ".join(n["t"] for n in nodes() if n["t"])
 
 
-def tap(label, wait=2.5):
-    for n in nodes():
-        if label.lower() in n["t"].lower():
-            sh("shell", "input", "tap", str(n["cx"]), str(n["cy"]))
-            time.sleep(wait)
-            return True
+def tap(label, wait=2.5, tries=4):
+    """Tap the first node carrying `label`. Polls a few times: with the dump
+    floor lowered for the menu sheet, a half-laid-out screen can now pass the
+    floor, and the control arrives a second later."""
+    for _ in range(tries):
+        for n in nodes():
+            if label.lower() in n["t"].lower():
+                sh("shell", "input", "tap", str(n["cx"]), str(n["cy"]))
+                time.sleep(wait)
+                return True
+        time.sleep(1.5)
     return False
 
 
@@ -107,7 +114,15 @@ time.sleep(10)
 for market in ("Canada", "Kenya"):
     say(f"\n-- {market} --")
     swipe_top()
-    step(market, market, f"the {market} pill switches market", wait=9)
+    # 0.9.3: the market lives in the menu sheet behind the "..." (the web's
+    # phone header). Open it, pick the market, the sheet closes itself.
+    check(tap("\u22ef", wait=1.5), "the menu button is on screen")
+    code = {"Canada": "CA", "Kenya": "KE"}[market]
+    step(market, code, f"the {market} row switches market (the chip reads its code)", wait=9)
+    # Picking the market the app is already on presses a disabled segment and
+    # the sheet stays up; close it the way a reader would.
+    if "GO TO" in text():   # the sheet label is uppercased
+        sh("shell", "input", "keyevent", "KEYCODE_BACK"); time.sleep(1.2)
     # HOME FIRST. The app RESTORES the screen you were last on when a
     # previous run is stored, which is deliberate - come back to where you
     # were - so a launch does not necessarily land on the landing frame.
@@ -134,23 +149,25 @@ for market in ("Canada", "Kenya"):
     # above the viewport on a read that was otherwise fresh and whole.
     t = text()
     for _ in range(6):
-        if "Upload" in t and ("Paste your resume" in t or "Find the work" in t):
+        if "Find the work" in t and "\u2192" in t:
             break
         time.sleep(1.0)
         swipe_top(3)
         t = text()
     check("JobScout" in t, "the header is on screen and stays there")
-    check("Saved" in t, "Saved is reachable from the header")
+    check(code in t and "\u22ef" in t, "the chip names the market and the menu button is beside it")
 
     # the landing offers the box and the sector tiles
     # WHAT THE LANDING OWES THE READER is a way to hand over a resume, not a
     # particular string in the box. Keying on the placeholder made the check
     # depend on the box being EMPTY, so it failed the moment a previous run
     # left text in it - a red line about leftover state, not about the app.
-    if not ("Upload" in t and ("Paste your resume" in t or "Find the work" in t)):
+    # The bar: the arrow is the go and the paperclip has no word (it is a
+    # glyph); the placeholder shows only while the field is empty.
+    if not ("Find the work" in t and "\u2192" in t):
         say("        screen read: " + t[:260])
-    check("Upload" in t and ("Paste your resume" in t or "Find the work" in t),
-          "the landing offers a way to hand over a resume")
+    check("Find the work" in t and "\u2192" in t,
+          "the landing offers the bar: a way to hand over a resume")
     check("open" in t, "the sector tiles carry their counts")
 
     # a sector tile opens Browse, narrowed
@@ -166,8 +183,9 @@ for market in ("Canada", "Kenya"):
     # the logo goes home
     step("JobScout", "Find the work", "the wordmark goes home from Browse")
 
-    # Saved opens and closes
-    step("Saved", "SAVED", "Saved opens the kept list")
+    # Saved opens from the sheet and closes
+    check(tap("\u22ef", wait=1.5), "the menu opens from the landing")
+    step("Saved", "kept", "Saved opens the kept list from the menu")
     if not tap("Close", 2.0):
         sh("shell", "input", "keyevent", "KEYCODE_BACK")
         time.sleep(2)
@@ -208,35 +226,35 @@ def lum(c):
 
 tap("JobScout", wait=2.0)
 swipe_top()
+
+
+def pick_theme(label):
+    """Open the sheet, press a segment, close the sheet (back)."""
+    if not tap("\u22ef", wait=1.5):
+        return False
+    ok = tap(label, wait=1.2)
+    sh("shell", "input", "keyevent", "KEYCODE_BACK")
+    time.sleep(1.4)
+    swipe_top()
+    return ok
+
+
+check(tap("\u22ef", wait=1.5), "the menu opens for the theme")
 seen = [l for l in ("Light", "Device", "Dark") if l in text()]
-check(bool(seen), "the control is on screen (%s)" % (seen or "NOT FOUND"))
+check(len(seen) == 3, "the three theme states are in the sheet (%s)" % (seen or "NOT FOUND"))
+sh("shell", "input", "keyevent", "KEYCODE_BACK"); time.sleep(1.2)
 
-if seen:
-    order, grounds = [seen[0]], [ground()]
-    for _ in range(3):
-        if not tap(order[-1], wait=1.4):
-            check(False, "could not press %s" % order[-1])
-            break
-        now = [l for l in ("Light", "Device", "Dark") if l in text()]
-        if not now:
-            check(False, "the control vanished after a tap")
-            break
-        order.append(now[0])
-        grounds.append(ground())
-        say("        %-7s ground %s  luminance %.4f" % (now[0], grounds[-1], lum(grounds[-1])))
-
-    check(len(order) == 4 and order[0] == order[3] and len(set(order[:3])) == 3,
-          "it cycles all three and returns: " + " -> ".join(order))
-
-    if "Dark" in order and "Light" in order:
-        d, l = grounds[order.index("Dark")], grounds[order.index("Light")]
-        # A THIRD, not a hair: the dark canvas is #0a0524 against a cream
-        # #f8f3eb, so anything close to parity means nothing repainted.
-        check(lum(d) < lum(l) / 3,
-              "Dark actually darkens the app (%.4f vs %.4f)" % (lum(d), lum(l)))
-    # leave it as the reader found it
-    while [l for l in ("Device", "Dark") if l in text()]:
-        tap([l for l in ("Device", "Dark") if l in text()][0], wait=1.2)
+if len(seen) == 3:
+    grounds = {}
+    for label in ("Dark", "Light", "Device", "Light"):
+        check(pick_theme(label), "could press %s" % label)
+        grounds.setdefault(label, ground())
+        say("        %-7s ground %s  luminance %.4f" % (label, grounds[label], lum(grounds[label])))
+    d, l = grounds["Dark"], grounds["Light"]
+    # A THIRD, not a hair: the dark canvas is #0a0524 against a cream
+    # #f8f3eb, so anything close to parity means nothing repainted.
+    check(lum(d) < lum(l) / 3,
+          "Dark actually darkens the app (%.4f vs %.4f)" % (lum(d), lum(l)))
 
 say("\n" + (f"{len(fails)} FAILED" if fails else "ALL GREEN"))
 sys.exit(1 if fails else 0)

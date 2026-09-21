@@ -493,6 +493,8 @@ fun DemoScreen(vm: DemoVm = viewModel()) {
     /** "how" or "privacy" when one of the footer's pages is open. */
     var infoPage by remember { mutableStateOf<String?>(null) }
     var screen by remember { mutableStateOf(Screen.LANDING) }
+    /** The menu sheet: market, theme, every destination (mockup 0.9.3). */
+    var menuOpen by remember { mutableStateOf(false) }
     var policy by remember { mutableStateOf<String?>(null) }
     // Storage Access Framework: no storage permission, the user picks one document.
     val picker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
@@ -558,23 +560,24 @@ fun DemoScreen(vm: DemoVm = viewModel()) {
             Box(Modifier.background(T.canvas)
                 .padding(start = 14.dp, end = 14.dp, top = ins.calculateTopPadding() + 6.dp)) {
                 MHead(
-                    ui.market,
-                    saved = ui.tracker.size,
-                    onSaved = { trackerOpen = true },
-                    // Home means the top of the landing frame, with the filters
-                    // it was left in cleared — the same as the web's logo.
+                    market = ui.market,
+                    // the landing carries the two segmented groups; every other
+                    // screen the chip and the "..." that opens the menu sheet
+                    home = screen == Screen.LANDING,
+                    themeChoice = themeChoice,
                     onHome = {
                         screen = Screen.LANDING
                         sector = null; policy = null; query = ""
                     },
-                    themeChoice = themeChoice,
+                    onMarket = { vm.setMarket(it) },
                     /* Both copies move together: the state the screen watches
                        and the preference that survives the process. */
-                    onTheme = {
-                        themeChoice = ThemeChoice.next(themeChoice)
-                        ThemeChoice.set(ctx, themeChoice)
+                    onTheme = { choice ->
+                        themeChoice = choice
+                        ThemeChoice.set(ctx, choice)
                     },
-                ) { vm.setMarket(it) }
+                    onMenu = { menuOpen = true },
+                )
             }
             LazyColumn(
                 Modifier.fillMaxSize(),
@@ -630,15 +633,34 @@ fun DemoScreen(vm: DemoVm = viewModel()) {
             }
 
           }
-            if (trackerOpen) TrackerScreen(vm, ui.tracker, ui.watched) { trackerOpen = false }
+            if (trackerOpen) TrackerScreen(
+                vm, ui.tracker, ui.watched,
+                onBrowse = { trackerOpen = false; screen = Screen.BROWSE },
+                onHome = { trackerOpen = false; screen = Screen.LANDING; sector = null; policy = null; query = "" },
+            ) { trackerOpen = false }
             infoPage?.let { page -> InfoSheet(page) { infoPage = null } }
-            ui.apply?.let { a -> ApplyScreen(vm, a, vm::closeApply) }
+            ui.apply?.let { a -> ApplyScreen(vm, a, vm::closeApply, onUpload = { picker.launch(RESUME_MIMES) }) }
+            if (menuOpen) MenuSheet(
+                market = ui.market, themeChoice = themeChoice, saved = ui.tracker.size + ui.watched.size,
+                onMarket = { vm.setMarket(it); menuOpen = false },
+                onTheme = { choice -> themeChoice = choice; ThemeChoice.set(ctx, choice) },
+                onGo = { id ->
+                    menuOpen = false
+                    when (id) {
+                        "home" -> { screen = Screen.LANDING; sector = null; policy = null; query = "" }
+                        "saved" -> trackerOpen = true
+                        else -> infoPage = id
+                    }
+                },
+                onClose = { menuOpen = false },
+            )
         }
     }
 
     // Back walks the three frames in the order they were entered, then leaves.
+    BackHandler(enabled = menuOpen) { menuOpen = false }
     BackHandler(enabled = infoPage != null) { infoPage = null }
-    BackHandler(enabled = screen != Screen.LANDING && ui.apply == null && !trackerOpen && infoPage == null) {
+    BackHandler(enabled = screen != Screen.LANDING && ui.apply == null && !trackerOpen && infoPage == null && !menuOpen) {
         screen = if (screen == Screen.MATCHES) Screen.BROWSE else Screen.LANDING
     }
 }
@@ -885,7 +907,7 @@ private fun LazyListScope.matches(
     val sorted = ui.scores.sortedByDescending { it.fit }
 
     item { MTitle("Your matches") }
-    item { MCount("${sorted.size} survived the gate of ${feed?.postings?.size ?: 0}") }
+    item { MCount("${sorted.size} scored of ${feed?.postings?.size ?: 0} swept · scored by Claude just now") }
     /* A run kept from another day is still useful — the reader decides. It is
        never passed off as today's. */
     ui.runStale?.let { item { MCount(it, Modifier.padding(top = 2.dp)) } }
@@ -908,15 +930,17 @@ private fun LazyListScope.matches(
     }
     items(sorted, key = { it.id }) { s ->
         val p = byId[s.id]
-        // Below the floor the card acts only once the candidate has asked it to.
-        val open = p != null && !ui.fromCache && (s.fit >= FIT_FLOOR || ui.stretch)
+        /* Below the floor the card acts only once the candidate has asked it to.
+           A run restored from disk opens too: the application screen carries
+           the well, so a missing résumé is added THERE, beside the posting. */
+        val open = p != null && (s.fit >= FIT_FLOOR || ui.stretch)
         MJob(
             title = p?.title ?: s.id,
             company = p?.company.orEmpty(),
+            location = p?.location.orEmpty(),
+            policy = p?.remote_policy,
             fit = s.fit,
-            verdict = s.verdict,
             strongest = s.strongest,
-            weakest = s.weakest,
             saved = ui.tracker.containsKey(s.id),
             onSave = {
                 if (ui.tracker.containsKey(s.id)) vm.untrack(s.id)
@@ -1401,6 +1425,8 @@ private fun TrackerScreen(
     vm: DemoVm,
     tracker: Map<String, Tracked>,
     watched: List<Watch>,
+    onBrowse: () -> Unit,
+    onHome: () -> Unit,
     onClose: () -> Unit,
 ) {
     var confirmClear by remember { mutableStateOf(false) }
@@ -1419,20 +1445,11 @@ private fun TrackerScreen(
             ) {
                 item {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Row(
-                            Modifier.warmShadow(6.dp, Pill).background(T.surface, Pill).padding(horizontal = 16.dp, vertical = 8.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Text("270", color = T.accent, fontSize = 12.sp, fontWeight = FontWeight.Medium, letterSpacing = 0.1.em)
-                            Text(" — SAVED", color = T.text3, fontSize = 12.sp, fontWeight = FontWeight.Medium, letterSpacing = 0.1.em)
-                        }
-                        Spacer(Modifier.weight(1f))
-                        PillButton("Close", onClick = onClose)
+                        Text("Saved", style = H2, fontSize = 26.sp, color = T.ink, modifier = Modifier.weight(1f))
+                        MButton("Close", primary = false, onClick = onClose)
                     }
-                    Spacer(Modifier.height(14.dp))
-                    Text("Saved jobs", style = H2, color = T.ink)
-                    Spacer(Modifier.height(6.dp))
-                    Text("Kept on this device only. You click Apply — JobScout never does.", color = T.text2, fontSize = 14.sp, lineHeight = 21.sp)
+                    Spacer(Modifier.height(4.dp))
+                    MCount("${tracker.size + watched.size} kept · stays on this device")
                 }
                 if (tracker.isEmpty())
                     item {
@@ -1444,6 +1461,12 @@ private fun TrackerScreen(
                             Text("Nothing kept yet.", style = H2, fontSize = 20.sp, color = T.ink)
                             Spacer(Modifier.height(6.dp))
                             Text("Anything you keep lands here — on this device, and nowhere else.", color = T.text2, fontSize = 13.5.sp, lineHeight = 20.sp)
+                            Spacer(Modifier.height(16.dp))
+                            /* Two real routes: look at what has been swept, or start
+                               again. Browse leads - the sweep is already there. */
+                            MButton("Browse the sweep", primary = true, onClick = onBrowse)
+                            Spacer(Modifier.height(8.dp))
+                            MButton("Run a fresh sweep", primary = false, onClick = onHome)
                         }
                     }
                 // A few, then the rest behind a tap - an unbounded saved list is
@@ -1502,15 +1525,17 @@ private fun TrackerScreen(
 @Composable
 private fun TrackedRow(t: Tracked, vm: DemoVm) {
     Column(
-        Modifier.fillMaxWidth().warmShadow(8.dp, Card).background(T.surface, Card).padding(16.dp)
+        Modifier.fillMaxWidth().background(T.surface, Card).border(1.dp, T.hair, Card).padding(12.dp)
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(buildAnnotatedString {
-                append(t.title)
-                withStyle(SpanStyle(color = T.text2, fontWeight = FontWeight.Normal)) { append(" · ${t.company}") }
-            }, fontWeight = FontWeight.Medium, fontSize = 15.sp, lineHeight = 21.sp, color = T.ink, modifier = Modifier.weight(1f))
-            Spacer(Modifier.width(12.dp))
-            Text("${t.fit}", color = T.band(t.fit).first, fontFamily = Serif, fontSize = 24.sp)
+        Row(horizontalArrangement = Arrangement.spacedBy(11.dp)) {
+            BearingRose(t.fit, diameter = 44.dp)
+            Column(Modifier.weight(1f)) {
+                Text(t.company, fontSize = 11.sp, color = T.text2, maxLines = 1)
+                Spacer(Modifier.height(2.dp))
+                Text(t.title, style = H2, fontSize = 18.5.sp, lineHeight = 22.sp, color = T.ink, maxLines = 2)
+                Spacer(Modifier.height(8.dp))
+                Tier1(t.fit)
+            }
         }
         PostingActions(t.stage, t.url, onStage = { vm.setStage(t, it) }) {
             LinkText("remove ×") { vm.untrack(t.id) }
