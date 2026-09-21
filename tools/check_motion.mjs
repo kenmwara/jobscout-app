@@ -29,6 +29,9 @@ async function states(page, sel) {
   const box = await page.$eval(sel, el => { const r = el.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; });
   await page.mouse.move(box.x, box.y); await page.waitForTimeout(450);
   const hover = await read();
+  /* the sanity mutation: the press becomes EXACTLY the hover it was measured
+     with, whatever that hover is, so "three distinct states" must drop to two */
+  if (MUTATE === "press-equals-hover") await page.addStyleTag({ content: `${sel}:active{transform:${hover.tf} !important;box-shadow:${hover.sh} !important;border-color:${hover.edge} !important}` });
   await page.mouse.down(); await page.waitForTimeout(250);
   const press = await read();
   await page.mouse.up(); await page.mouse.move(2, 2); await page.waitForTimeout(450);
@@ -69,6 +72,8 @@ for (const theme of ["light", "dark"]) {
   let p = await ctx.newPage();
   await p.goto(SITE + "/index.html#browse", { waitUntil: "networkidle" });
   await p.evaluate(t => document.documentElement.setAttribute("data-theme", t), theme);
+  /* sanity-suite mutations: a press that equals the hover, a press that eases in slowly */
+  if (MUTATE === "slow-press") await p.addStyleTag({ content: "*:active{transition-duration:900ms !important}" });
   const tok = await p.evaluate(() => {
     const s = getComputedStyle(document.documentElement);
     return ["--spring-arrive", "--spring-settle", "--spring-snap", "--spring-exit", "--t-exit", "--stagger-dot", "--edge-hover", "--tile-fill"]

@@ -90,9 +90,9 @@
       min-height:560px;display:flex;align-items:center;justify-content:center;isolation:isolate}
 .hero .bg{position:absolute;inset:0;background:var(--hero);z-index:-2}
 .hero .bg::after{content:"";position:absolute;inset:0;background:var(--scrim)}
-.hero .inner{width:100%;max-width:760px;padding:var(--s12) var(--s6);text-align:center;color:#fff}
+.hero .inner{width:100%;max-width:760px;padding:var(--s12) var(--s6);text-align:center;color:var(--hero-ink)}   /* the wash is dark in both themes: a constant, generated */
 h1.display{
-  font:400 clamp(var(--t8),7.2vw,72px)/1.06 var(--serif);
+  font:400 clamp(var(--t8),7.2vw,var(--t12))/1.06 var(--serif);
   letter-spacing:-.03em;margin:0 0 var(--s7);color:#fff;text-wrap:balance
 }
 h1.display .dot{color:var(--accent)}  /* brand, not --live: --live IS the
@@ -1679,8 +1679,7 @@ function scoreCard(x, i){
           <p class="c-meta meta">
             <span class="route tier1" style="color:${col};background:${bg}">${route}</span>
             <span class="pill tier2">${p.remote_policy === "remote" ? "Remote" : p.remote_policy === "hybrid" ? "Hybrid" : "On site"}</span>
-            <button class="age tier3${age.days === 0 ? " new" : ""}${age.stale ? " stale" : ""}" type="button"
-              aria-expanded="false" data-ev="${esc(age.ev)}">${esc(age.text)}</button></p>
+            <span class="age tier3${age.days === 0 ? " new" : ""}${age.stale ? " stale" : ""}" title="${esc(age.ev)}">${esc(age.text)}</span></p>
         </div>
       </div>
       <div>
@@ -2183,7 +2182,7 @@ function browseCard(p){
           : esc(p.title || "")}</h3>
         <p class="c-meta meta">
           <span class="pill tier2">${p.remote_policy === "remote" ? "Remote" : p.remote_policy === "hybrid" ? "Hybrid" : "On site"}</span>
-          <button class="age tier3${a.days === 0 ? " new" : ""}${a.stale ? " stale" : ""}" type="button" aria-expanded="false" data-ev="${esc(a.ev)}">${esc(a.text)}</button></p>
+          <span class="age tier3${a.days === 0 ? " new" : ""}${a.stale ? " stale" : ""}" title="${esc(a.ev)}">${esc(a.text)}</span></p>
       </div>
     </div>
     <div class="act">
@@ -2795,5 +2794,6 @@ reveal(); relight(); rotate();
 </script>
 <script>document.getElementById("build").textContent = "build " + (document.querySelector('meta[name="build"]') || {}).content;</script>
 <script src="hsheet.js"></script>
+<script src="parallax.js"></script>
 </body>
 </html>

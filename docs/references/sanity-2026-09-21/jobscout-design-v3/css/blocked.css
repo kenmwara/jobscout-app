@@ -1,0 +1,77 @@
+/* ===========================================================================
+   JobScout — blocked actions carry their own unblock.
+
+   WHAT SHIPS NOW
+   The prepare screen's first card offers "Write the letter" and, underneath
+   it, the line "profile + posting required" in ember.
+
+   That line is a dead end. It names a precondition and offers no way to meet
+   it, which is the honesty law's own failure mode from the other direction:
+   it leads with what the reader LACKS and then stops. It is also the only
+   ember on the screen, so the eye goes straight to the one thing that cannot
+   be acted on.
+
+   THE RULE
+   A control that cannot run does not explain why. It becomes the action that
+   makes it runnable. "profile required" is a fact about the system; "Add your
+   résumé" is a thing the reader can do, and it carries the same information.
+
+   One state, one button, no extra line. The card's own description already
+   says what the card is for.
+   =========================================================================== */
+
+/* The blocked card is NOT dimmed, greyed or marked. It is a normal card whose
+   button asks for something different. Dimming it would say "this is broken";
+   it is not broken, it is waiting for one input. */
+/* :not(.btn--unblock) matters. The unblock button carries .btn--primary too —
+   it IS the primary action in this state — so without the exclusion the hide
+   rule out-specifies the show rule and the card renders with no button at
+   all. Caught in the render, not in review. */
+.prep__card[data-blocked] .prep__a .btn--primary:not(.btn--unblock) { display: none; }
+.prep__card[data-blocked] .btn--unblock { display: inline-flex; }
+.btn--unblock { display: none; }
+
+/* --------------------------------------------------------------------------
+   THE RÉSUMÉ BAR, in place.
+   The shortest path from "we need your résumé" to having it is the résumé
+   field, so the unblock opens the SAME component the hero uses rather than
+   navigating away and losing the posting. Reusing .hero__field is deliberate:
+   the product has exactly one input and it should look like itself wherever
+   it appears.
+   -------------------------------------------------------------------------- */
+.prep__resume {
+  display: none;
+  margin-top: var(--s3);
+}
+.prep__card[data-blocked][data-open="1"] .prep__resume { display: block; }
+.prep__card[data-blocked][data-open="1"] .btn--unblock  { display: none; }
+
+.prep__resume .hero__field {
+  margin-top: 0;
+  background: var(--canvas);          /* a well inside a card, not another card */
+  border-color: var(--edge-rest);
+  box-shadow: none;
+}
+.prep__resume .hero__field:focus-within { border-color: var(--selected-edge); }
+.prep__resume .hero__input { color: var(--text); }
+
+/* One line, and it goes AFTER the field, never before it. A requirement
+   stated ahead of its remedy reads as a refusal. */
+.prep__resume__note {
+  margin-top: var(--s2);
+  font: 400 var(--t1)/1.4 var(--font-sans);
+  color: var(--text-2);
+}
+
+/* --------------------------------------------------------------------------
+   WHAT IS NOT A BLOCK.
+   "posting required" is not the reader's problem — if the posting is missing,
+   the scorer has nothing to compare and that is a REFUSAL, which already has
+   a surface: .refusal, neutral-ruled, stating plainly that there is nothing
+   to compare. Never ask the reader to supply something only the system can.
+   -------------------------------------------------------------------------- */
+.prep__card[data-blocked="posting"] .prep__a { display: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .prep__resume { transition: none; }
+}

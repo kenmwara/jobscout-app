@@ -1,0 +1,184 @@
+/* ===========================================================================
+   JobScout v3 — screens: hero, browse, detail, apply, saved, states.
+   Requires tokens/tokens.css, css/base.css, css/components.css.
+   =========================================================================== */
+
+.wrap { max-width: 720px; margin: 0 auto; padding: 0 var(--s4); }
+.stack { display: grid; gap: var(--s3); }
+
+/* ===========================================================================
+   THE HERO — market-driven, and the ONE painted surface that is not the
+   ground. RULING 2026-09-21 (Ken): the hero stays and Kenya stays green.
+   Hue 147 overlaps AUTO's; raised, accepted, closed. check_halo_ext rule A
+   will flag the landing wash forever — that is the ruling, not a bug.
+
+   It is legal as a SURFACE and not a ground because it is inset and
+   contained: measured at 354 × 254pt in a 390 × 844pt viewport it is 27.3%,
+   under rule A's 50% ground threshold.
+
+   The 150px landing padding stays. Decided; do not re-propose.
+   =========================================================================== */
+.hero {
+  margin: var(--s3) var(--s4) 0;
+  padding: var(--hero-pad, 150px) var(--s4) var(--s5);
+  border-radius: var(--r-card);
+  background: linear-gradient(var(--hero-a), var(--hero-b));
+  /* The wash is a MARKET colour and is dark in BOTH themes, so its foreground
+     is a constant, not a theme token. --canvas here inverts to near-black on
+     dark and the headline disappears — caught in the v3 dark render. */
+  color: var(--hero-ink);
+}
+@media (max-width: 460px) { .hero { --hero-pad: var(--s5); } }
+
+.hero__h1   { font-family: var(--font-serif); font-weight: 400;
+              font-size: var(--t7); line-height: 1.12; letter-spacing: -.015em;
+              color: var(--hero-ink); max-width: 13ch; }
+.hero__stop { color: var(--accent); }
+
+/* The one raised thing in the hero, because it is the one thing you can act
+   on. It takes the card material, so the hero's affordance is made of the
+   same stuff as the cards below it. */
+.hero__field {
+  display: flex; align-items: center; gap: var(--s1);
+  margin-top: var(--s4);
+  background: var(--surface);
+  border: 1px solid var(--edge-rest);
+  border-radius: var(--r-pill);
+  box-shadow: var(--sh-rest);
+  padding: var(--s1) var(--s1) var(--s1) var(--s4);
+  transition: box-shadow var(--t-settle) var(--spring-settle),
+              border-color var(--t-settle) var(--spring-settle);
+}
+.hero__field:focus-within { box-shadow: var(--sh-hover); border-color: var(--edge-hover); }
+.hero__input {
+  flex: 1; min-width: 0; border: 0; background: none; outline: none;
+  font: 400 var(--t2)/1.35 var(--font-sans); color: var(--text);
+  padding: var(--s3) 0;
+}
+.hero__input::placeholder { color: var(--text-2); }
+.hero__go {
+  width: 44px; height: 44px; flex: none; border: 0; padding: 0;
+  font: 400 var(--t2)/1 var(--font-sans);
+  border-radius: var(--r-pill); background: var(--action); color: var(--action-on);
+  display: flex; align-items: center; justify-content: center; cursor: pointer;
+  transition: transform var(--t-snap) var(--spring-snap), box-shadow var(--t-snap) var(--spring-snap);
+}
+.hero__go:hover  { transform: translateY(-1px); box-shadow: var(--sh-hover); }
+.hero__go:active { transform: scale(var(--press-control)); transition-duration: var(--t-exit);
+                   transition-timing-function: var(--spring-exit); }
+
+/* Filters are tier-2 information — facts about what you want, not a verdict
+   about anything — so they take tier 2's treatment and NO hue. Selected takes
+   --action: a filter is never a verdict. Inside the hero they sit on the
+   market wash, so they use a translucent cream rather than --sunken. */
+.hero__filters { display: flex; flex-wrap: wrap; gap: var(--s2); margin-top: var(--s3); }
+.hero__f {
+  border: 1px solid transparent; border-radius: var(--r-pill);
+  background: rgba(248,243,235,.10); color: var(--hero-ink);
+  font: 400 var(--t2)/1 var(--font-sans);
+  padding: 0 var(--s3); min-height: 40px; cursor: pointer;
+  transition: transform var(--t-snap) var(--spring-snap),
+              background var(--t-snap) var(--spring-snap);
+}
+.hero__f:hover  { transform: translateY(-1px); background: rgba(248,243,235,.16); }
+.hero__f:active { transform: scale(var(--press-control)); transition-duration: var(--t-exit); }
+/* Selected takes the wash's own colour as its ink — cream plate, market
+   ink — so it reads identically in both themes. */
+.hero__f[aria-pressed="true"] { background: var(--hero-ink); color: var(--hero-a); }
+
+/* The list caption. The count is true and says what list you are looking at,
+   so it stays. No instruction follows it: the swept card's eight empty
+   bearings already say there is a score to be had, and an affordance that
+   needs a caption is not finished. */
+.feed__count { margin: var(--s6) 0 var(--s3); font: 400 var(--t2)/1.4 var(--font-sans);
+               color: var(--text-2); }
+
+/* ===========================================================================
+   THE DETAIL / MATCH — the card EXPANDED, never a page containing a card.
+   The shipped version repeated the org line, the title and the primary action
+   on one screen, and gave the heart's job to a third button.
+   =========================================================================== */
+.match { padding: var(--s4); }
+.match__score { display: flex; align-items: center; gap: var(--s3); }
+.match__title { margin-top: var(--s3); }
+.match__org   { margin-top: var(--s1); font: 400 var(--t1)/1.3 var(--font-sans); color: var(--text-2); }
+.match__meta  { margin-top: var(--s3); }
+/* ONE primary, ONCE, with the heart beside it and the secondary beneath. */
+.match__actions { display: grid; grid-template-columns: 1fr 54px; gap: var(--s2); margin-top: var(--s4); }
+.match__actions .btn--primary   { grid-column: 1; }
+.match__actions .btn--secondary { grid-column: 1 / 3; }
+.match__actions .heart--boxed   { grid-column: 2; grid-row: 1; }
+
+/* ===========================================================================
+   THE PREPARE SCREEN — the highest-stakes surface: it produces the thing you
+   send. It shipped with the score as the bare text "fit 28" and with three
+   identical filled buttons.
+   =========================================================================== */
+.prep__lede { margin: var(--s3) 0 0; font: 400 var(--t2)/1.45 var(--font-sans); color: var(--text-2); }
+.prep__list { display: grid; gap: var(--s3); margin-top: var(--s3); }
+.prep__card { padding: var(--s3) var(--s4); }
+.prep__t    { font-family: var(--font-serif); font-weight: 400; font-size: var(--t4); line-height: 1.2; }
+.prep__d    { margin-top: var(--s1); font: 400 var(--t2)/1.45 var(--font-sans); color: var(--text-2); }
+.prep__a    { margin-top: var(--s3); display: flex; gap: var(--s2); flex-wrap: wrap;
+              position: relative; z-index: 2; }
+/* A finished step demotes its own button and says so in its description. No
+   tick, no badge, no green — the ONE filled button on the screen is always
+   the next move. */
+.prep__card--done .btn--primary { background: none; color: var(--text);
+                                  border-color: var(--edge-rest); box-shadow: none; }
+
+/* ===========================================================================
+   SAVED — a row list, not a card list. A saved job is a thing you return to,
+   so the row carries the band and the state, and nothing else.
+   =========================================================================== */
+.saved__row { display: flex; align-items: center; gap: var(--s3); min-height: 64px;
+              padding: var(--s2) var(--s1); border-bottom: 1px solid var(--hairline);
+              text-decoration: none; color: var(--text); cursor: pointer;
+              transition: background var(--t-snap) var(--spring-snap); }
+.saved__row:hover, .saved__row:focus-visible { background: var(--sunken); }
+.saved__row:active { background: var(--sunken); transition-duration: var(--t-exit); }
+.saved__id   { flex: 1; min-width: 0; }
+.saved__t    { font: 400 var(--t3)/1.25 var(--font-serif); }
+.saved__org  { font: 400 var(--t1)/1.3 var(--font-sans); color: var(--text-2); }
+/* The band lives on a saved row as the ROSE, not a pill — the row already
+   has a verdict-shaped thing in it, and two would compete. */
+.saved__state { font: 500 var(--t0)/1 var(--font-sans); letter-spacing: .14em;
+                text-transform: uppercase; color: var(--text-2); }
+.saved__state--applied { color: var(--auto-label); }
+
+/* ===========================================================================
+   STATES — empty, refused, rate-limited.
+   Honesty law: never claim what the reader has not done, never lead with what
+   they lack, and never dress a limit as a feature.
+   =========================================================================== */
+.state { padding: var(--s6) var(--s4); text-align: left; max-width: 44ch; }
+.state__t { font-family: var(--font-serif); font-weight: 400; font-size: var(--t5); line-height: 1.2; }
+.state__b { margin-top: var(--s3); font: 400 var(--t2)/1.55 var(--font-sans); color: var(--text-long); }
+.state__a { margin-top: var(--s4); display: flex; gap: var(--s2); flex-wrap: wrap; }
+
+/* The empty state's rose SEEKS — it is looking, not stuck. It must never be
+   mistaken for a score, so no dot ever reaches full opacity. */
+@keyframes rose-seek { 0%,100% { opacity: var(--rose-empty-alpha) } 50% { opacity: .42 } }
+.rose--seeking .dot {
+  animation: rose-seek var(--t-seek) ease-in-out infinite;
+  animation-delay: calc(var(--dot-i) * 180ms);
+}
+
+/* A refusal is a surface, not a band: nothing was scored, so no hue applies. */
+.refusal { border-left: 2px solid var(--hairline); background: var(--evidence);
+           border-radius: var(--r-inner); padding: var(--s3); margin-top: var(--s3); }
+
+/* ===========================================================================
+   390 / 360 / 320. The only things that change are the rose and two sizes.
+   =========================================================================== */
+@media (max-width: 460px) {
+  .wrap { padding: 0 var(--s3); }
+  .score--card   { width: 44px; height: 44px; }
+  .score--detail { width: 52px; height: 52px; }
+  .jcard__title  { font-size: var(--t3); }
+  .hero__h1      { font-size: var(--t6); }
+}
+@media (max-width: 340px) {
+  .hero__h1 { font-size: var(--t5); }
+  .jcard    { padding: var(--s3); }
+}

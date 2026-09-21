@@ -33,8 +33,14 @@ for (const route of ["browse", "apply", "saved", "states"]) {
     await page.evaluate(() => { const e = document.querySelector(".ev--strongest .ev__b, .ev--answer .ev__b"); if (e) e.textContent = "Your experience makes you a perfect match for this role — a no-brainer."; });
   if (MUTATE === "lede-lack")
     await page.evaluate(() => { const e = document.querySelector(".prep__lede, .feed__count"); if (e) e.textContent = "At 28, the resume is the gap — not the letter."; });
+  /* the site carries no quoted block today, so the mutation plants one (an
+     attributed quotation, the pack's markup) and then re-tags it as the
+     reader's move - the ember rule meaning two opposite things */
   if (MUTATE === "ember-quote")
-    await page.evaluate(() => { document.querySelectorAll(".ev--quoted").forEach(e => { e.classList.remove("ev--quoted"); e.classList.add("ev--answer"); }); });
+    await page.evaluate(() => {
+      if (!document.querySelector(".ev--quoted")) { const c = document.querySelector(".job, .step, main"); if (c) { const d = document.createElement("div"); d.className = "ev ev--quoted";
+        d.innerHTML = '<p class="ev__k">They are asking for</p><p class="ev__b">"Five years of production Kubernetes and an on-call rotation." - the posting</p>'; c.appendChild(d); } }
+      document.querySelectorAll(".ev--quoted").forEach(e => { e.classList.remove("ev--quoted"); e.classList.add("ev--answer"); }); });
 
   const blocks = await page.evaluate(() => [...document.querySelectorAll(".ev")].filter(e => e.getBoundingClientRect().height || e.closest("[hidden]") === null).map(e => ({
     kind: e.classList.contains("ev--strongest") ? "strongest" : e.classList.contains("ev--answer") ? "answer" : e.classList.contains("ev--quoted") ? "quoted" : "unknown",

@@ -277,3 +277,13 @@ node tools/check_honesty.mjs    # law 12 through site/evidence.js
 
 Each takes `--mutate <name>` (names in the file header) and must report "correctly broke";
 exit 2 means the check is asleep. See docs/THEME.md §19.
+
+## The sanity suite
+
+```
+node tools/sanity.mjs --mutations        # every check, and each one proven awake
+SITE=https://jobscout.page node tools/sanity.mjs
+```
+
+Exit 0 all green · 1 a check failed · 2 a check is asleep (a mutation did not break it) · 3 a check is not present.
+Every row was a real defect once; the register is docs/references/sanity-2026-09-21/.

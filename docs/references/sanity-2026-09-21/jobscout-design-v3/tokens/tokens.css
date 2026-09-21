@@ -9,7 +9,7 @@
 :root {
   color-scheme: light dark;
 
-  /* --- type: base 9, ratio 1.195, 13 steps --- */
+  /* --- type: base 9, ratio 1.195, 8 steps --- */
   --t0: 9px;   /* caps label — band pill, evidence key, section label */
   --t1: 11px;   /* meta — chip, date, org line */
   --t2: 13px;   /* body — descriptions, buttons, UI */
@@ -18,15 +18,10 @@
   --t5: 22px;   /* screen title — serif */
   --t6: 26px;   /* page title — serif */
   --t7: 31.5px;   /* hero — serif */
-  --t8: 37.5px;   /* display — desktop screen title */
-  --t9: 44.5px;   /* display — desktop page title */
-  --t10: 53.5px;   /* display — desktop hero */
-  --t11: 64px;   /* display — wide hero */
-  --t12: 76.5px;   /* display — widest hero */
 
-  --font-serif: Newsreader, Georgia, "Times New Roman", serif;
-  --font-sans: Inter, -apple-system, system-ui, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --font-serif: Newsreader, Georgia, serif;
+  --font-sans: Inter, system-ui, -apple-system, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
 
   /* --- space: 4px grid --- */
   --s0: 2px;
@@ -37,14 +32,6 @@
   --s5: 20px;
   --s6: 24px;
   --s7: 32px;
-  --s8: 40px;
-  --s9: 48px;
-  --s10: 56px;
-  --s11: 64px;
-  --s12: 72px;
-  --s13: 80px;
-  --s14: 96px;
-  --s15: 128px;
 
   /* --- radius: card 16, step 6 --- */
   --r-chip: 4px;
@@ -69,7 +56,6 @@
   --selected-fg: light-dark(#394981, #a4bbff);
   --scrim: light-dark(rgba(8,3,49,.66), rgba(0,0,0,.66));
   --hero-ink: light-dark(#f8f3eb, #f8f3eb);
-  --hero-accent: light-dark(#a2baff, #a2baff);
 
   /* --- bands: generated from 4 hues + 3 L/C pairs.
          NEAR-MISS is the same ramp at 0.28x chroma — its band IS the neutral. --- */
@@ -121,16 +107,6 @@
   --t-breathe: 4200ms;
   --breathe-floor: 0.9;
   --t-seek: 5600ms;
-
-  /* --- the card's parallax: tilt, perspective, depth per layer --- */
-  --tilt-max: 7deg;
-  --tilt-perspective: 900px;
-  --z-rose: 34px;
-  --z-org: 8px;
-  --z-meta: 12px;
-  --z-evidence: 6px;
-  --z-actions: 40px;
-  --z-arrive: -60px;
 
   /* --- elevation. Light: --surface is #ffffff, the ceiling, so hover
          cannot lift and carries in shadow alone. Dark: no shadow, so it

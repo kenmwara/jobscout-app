@@ -38,13 +38,19 @@
   document.body.appendChild(sheet);
   const body = sheet.querySelector(".hs-body");
 
+  /* the routes without a market switch (saved, apply, privacy) still name
+     the market: the chip reads html[data-market] and draws its own flag */
+  const FLAG = {
+    ca: '<svg class="flag" viewBox="0 0 24 16" aria-hidden="true"><rect width="24" height="16" fill="#fff"/><rect width="6" height="16" fill="#d52b1e"/><rect x="18" width="6" height="16" fill="#d52b1e"/><path d="M12 4l1.1 2.6 2.4-1-1 2.4 1.4.6-2.2 1.3.3 1.5-1.6-.7-.4 1.9-.4-1.9-1.6.7.3-1.5L8.1 8.6l1.4-.6-1-2.4 2.4 1z" fill="#d52b1e"/></svg>',
+    ke: '<svg class="flag" viewBox="0 0 24 16" aria-hidden="true"><rect width="24" height="16" fill="#fff"/><rect width="24" height="4.6" fill="#000"/><rect y="5.6" width="24" height="4.8" fill="#be0027"/><rect y="11.4" width="24" height="4.6" fill="#009a49"/><ellipse cx="12" cy="8" rx="2.3" ry="5" fill="#be0027" stroke="#fff" stroke-width=".7"/></svg>',
+  };
   function paintChip() {
     const on = mkt && mkt.querySelector('[aria-pressed="true"]');
-    if (!on) { chip.hidden = true; return; }
+    const m = (document.documentElement.dataset.market || "ca").toLowerCase();
+    const flag = on ? on.querySelector("svg.flag") : null;
+    const code = (on ? (on.dataset.mkt || on.textContent.trim().slice(0, 2)) : m).toUpperCase();
     chip.hidden = false;
-    const flag = on.querySelector("svg.flag");
-    const code = (on.dataset.mkt || on.textContent.trim().slice(0, 2)).toUpperCase();
-    chip.innerHTML = (flag ? flag.outerHTML : "") + `<span>${code}</span>`;
+    chip.innerHTML = (flag ? flag.outerHTML : (FLAG[m] || "")) + `<span>${code}</span>`;
   }
   function open() {
     sections.forEach(([title, el]) => {

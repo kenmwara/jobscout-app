@@ -686,3 +686,82 @@ html.anim .hsheet:not([hidden]) .hs-pane{animation:sheetup var(--t-settle) var(-
 .ev__b{margin:var(--s1) 0 0;font:400 var(--t1)/1.5 var(--sans);color:var(--text-long)}
 /* a saved row carries the band as the ROSE; APPLIED is the only state word */
 .saved__state{font:500 var(--t0)/1 var(--sans);letter-spacing:.14em;text-transform:uppercase;color:var(--auto-label);margin-right:var(--s2)}
+
+/* ── SANITY PACK (2026-09-21) ───────────────────────────────────────────────
+   THE CARD'S PARALLAX. The card tilts toward the pointer and its layers sit
+   at different depths (tokens: --tilt-max, --tilt-perspective, --z-*), so
+   they separate as it moves; on a touch device the drama attaches to the
+   arrival instead. site/parallax.js sets --mx/--my and data-arrive; with no
+   JS both stay at rest and the card is flat and correct. Only the layers are
+   depth-transformed, never the title (the site's title is the link) and
+   never the rose's dots (their scale IS the empty state). */
+.job{transform-style:preserve-3d;--mx:0;--my:0}
+.job .rose{transform:translateZ(var(--z-rose))}
+.job .co{transform:translateZ(var(--z-org))}
+.job .c-meta{transform:translateZ(var(--z-meta))}
+.job .ev--strongest{transform:translateZ(var(--z-evidence))}
+.job .act{transform:translateZ(var(--z-actions));position:relative;z-index:2}
+.job .rose,.job .co,.job .c-meta,.job .ev--strongest,.job .act{transition:transform var(--t-settle) var(--spring-settle),opacity var(--t-settle) linear}
+@media (hover:hover) and (pointer:fine){
+  html .job:hover,html .job:focus-within{
+    transform:perspective(var(--tilt-perspective)) translateY(var(--travel-liftHover)) rotateX(calc(var(--my) * var(--tilt-max) * -1)) rotateY(calc(var(--mx) * var(--tilt-max)));
+    box-shadow:var(--sh-hover);border-color:var(--edge-hover);background:var(--surface-hover)}
+  /* while tracking the tilt follows with no lag; the return is --t-settle */
+  html .job.is-tracking{transition-property:box-shadow,border-color,background}
+  html .job:hover .co{transform:translateZ(0);opacity:.68}
+  html .job:focus-within:not(:hover){--mx:0;--my:0}
+}
+/* arrival: a card entering the viewport lands its layers from behind, in
+   reading order, on the arrive spring; --card-i staggers the cards */
+.job[data-arrive="pending"] .rose,.job[data-arrive="pending"] h3.role,.job[data-arrive="pending"] .co,.job[data-arrive="pending"] .c-meta,.job[data-arrive="pending"] .ev--strongest,.job[data-arrive="pending"] .act{opacity:0;transform:translateZ(var(--z-arrive)) translateY(var(--travel-row))}
+.job[data-arrive="in"] .rose,.job[data-arrive="in"] h3.role,.job[data-arrive="in"] .co,.job[data-arrive="in"] .c-meta,.job[data-arrive="in"] .ev--strongest,.job[data-arrive="in"] .act{transition:transform var(--t-arrive) var(--spring-arrive),opacity var(--t-arrive) linear}
+.job[data-arrive="in"] .rose{transition-delay:calc(var(--card-i,0) * var(--stagger-row))}
+.job[data-arrive="in"] h3.role{transition-delay:calc(var(--card-i,0) * var(--stagger-row) + 40ms)}
+.job[data-arrive="in"] .co{transition-delay:calc(var(--card-i,0) * var(--stagger-row) + 56ms)}
+.job[data-arrive="in"] .c-meta{transition-delay:calc(var(--card-i,0) * var(--stagger-row) + 72ms)}
+.job[data-arrive="in"] .ev--strongest{transition-delay:calc(var(--card-i,0) * var(--stagger-row) + 88ms)}
+.job[data-arrive="in"] .act{transition-delay:calc(var(--card-i,0) * var(--stagger-row) + 104ms)}
+@media (prefers-reduced-motion:reduce){
+  .job,.job .rose,.job .co,.job .c-meta,.job .ev--strongest,.job .act,.job h3.role{transform:none !important;transition-duration:1ms !important;transition-delay:0ms !important;opacity:1 !important}
+  html .job:hover{transform:none !important;box-shadow:var(--sh-hover)}
+}
+/* TOUCH TARGETS: every control is a 44px target at phone width (GAPS #8);
+   inline text links stay inline. A visible focus on everything focusable -
+   the pages' own outline:none on the résumé box and the filter input is
+   overridden here at a higher specificity. */
+.brand{min-height:44px;display:inline-flex;align-items:center}
+.taxtabs button,.tax,.btn,.btn2,.applybtn,.cta,.st,.rm,.plink,.sctab,.savebtn,.dismiss,.down,.thm button,.mkt button,.hchip,.hmore,.filters button,.filters label,.secrow button{min-height:44px}
+.savebtn,.dismiss,.rm,.hmore{min-width:44px}
+html input:focus-visible,html textarea:focus-visible,html select:focus-visible,html button:focus-visible,html a:focus-visible,html [tabindex]:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+/* THE FOLD (GAPS #5): on a phone the browse list begins above 60% of the
+   viewport. The two section headings and the lede are explanation the sticky
+   sector chips already carry; they return at 620px and up. */
+@media (max-width:620px){
+  /* `html` prefixes beat the page's own later rules at equal specificity */
+  html .feedhead .feedh1,html .feedhead .lede,html .browsehead #browseTitle{display:none}
+  html .feedhead{padding-top:0}
+  /* the mode tabs and the second sector row are redundant on a phone: the
+     sticky row IS the sector axis and the filter chips carry policy and place */
+  html .taxtabs,html .browsehead .secrow{display:none}
+  html .browsehead{padding-top:var(--s2)}
+  /* the filters are one sliding row of chips, like the sectors */
+  .browsehead .filters{display:flex;flex-wrap:nowrap;overflow-x:auto;gap:var(--s2);scrollbar-width:none;padding-bottom:var(--s1)}
+  .browsehead .filters::-webkit-scrollbar{display:none}
+  .browsehead .filters>*{flex:none}
+  html .browsehead #scSeg{margin-bottom:var(--s2)}
+  html .browsehead .filters{margin-top:var(--s2)}
+}
+/* targets that sat under 44 after the first sanity run, at the specificity
+   their own rules use; the outline wins over the pages' outline:none */
+.job .act .applybtn,.job .act .savebtn{min-height:44px;min-width:44px}
+.searchrow input,.f,button.f,select.f{min-height:44px}
+.plink{display:inline-flex;align-items:center;min-height:44px}
+html input:focus-visible,html textarea:focus-visible,html select:focus-visible{outline:2px solid var(--accent) !important;outline-offset:2px}
+/* the brand stop on the hero: the wash is dark in both themes, so the stop
+   takes the dark theme's accent as a constant (2.32:1 in indigo, measured) */
+.hero h1.display .dot{color:var(--hero-accent)}
+/* the footer's link lists are targets too (GAPS #8): 44px rows, the type unchanged */
+footer.site a{display:inline-flex;align-items:center;min-height:44px}
+/* every word on the hero wears --hero-ink: the wash is dark in both themes, so
+   the ink is a constant, never a theme token (contrast check, mutation hero-ink) */
+.hero .inner,.hero .inner h1.display,.hero .inner .sub,.hero .inner p,.hero .inner label{color:var(--hero-ink)}
