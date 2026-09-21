@@ -268,6 +268,7 @@
   /* the page mark (base.css) sits at z-index:-1 inside this stacking context */
   body{position:relative;z-index:0}
 </style>
+<script src="rose.js"></script>
 </head>
 <body id="top">
 <!-- THE PAGE MARK: the eight-dot rose at page scale, pinned to the viewport
@@ -467,17 +468,9 @@ const BAND = f => f >= 80 ? ["auto","var(--b-auto)","var(--b-auto-bg)"]
               : f >= 70 ? ["ping","var(--b-ping)","var(--b-ping-bg)"]
               : f >= 55 ? ["unsure","var(--b-unsure)","var(--b-unsure-bg)"]
                         : ["near-miss","var(--b-near)","var(--b-near-bg)"];
-const ROSE = Array.from({length:8}, (_,i) => { const th = (-90 + 45*i) * Math.PI/180;
-  return [52 + 38*Math.cos(th), 52 + 38*Math.sin(th)]; });
-function roseSVG(fit){
-  const f = Math.max(0, Math.min(100, +fit || 0)), col = BAND(f)[1];
-  const lit = Math.max(1, Math.round(f / 100 * 8));
-  return `<svg class="rose" viewBox="0 0 104 104" role="img" aria-label="fit ${f} of 100">` +
-    ROSE.map(([x,y],i) => i < lit
-      ? `<circle cx="${x.toFixed(2)}" cy="${y.toFixed(2)}" r="${(7.87+i*1.019).toFixed(2)}" fill="${col}"/>`
-      : `<circle cx="${x.toFixed(2)}" cy="${y.toFixed(2)}" r="${((7.87+i*1.019)*0.42).toFixed(2)}" fill="var(--hair2)"/>`).join("") +
-    `<text class="fitnum" x="52" y="60.5" fill="${col}">${f}</text></svg>`;
-}
+/* The rose is rose.js's - the fourth copy of the builder lived here, on the
+   old 104-box geometry, and base.css's numeral rule (sized for the display
+   cut) made its number tiny. One glyph, every page. */
 const plural = (n, unit) => `posted ${n} ${unit}${n === 1 ? "" : "s"} ago`;
 function ago(iso){
   if (!iso) return "";

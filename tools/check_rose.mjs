@@ -89,6 +89,21 @@ for (const theme of ["light", "dark"]) {
     judge(`saved ${tag}`, await p.evaluate(ROSES), await p.evaluate(TIERS));
     await p.close();
 
+    // apply.html: the posting's rose in the header (the fourth copy of the
+    // builder lived here on the old geometry, and its numeral came out tiny)
+    p = await ctx.newPage();
+    await p.addInitScript(() => sessionStorage.setItem("jobscout.apply", JSON.stringify({
+      posting: { id: "chk", title: "Threat Detection Analyst", company: "Fastly", url: "", location: "Anywhere", remote_policy: "remote", sector: "cybersecurity" },
+      profile: "", fit: 72, stretch: false })));
+    await p.goto(SITE + "/apply.html", { waitUntil: "networkidle" });
+    await p.evaluate(t => document.documentElement.setAttribute("data-theme", t), theme);
+    await p.waitForSelector("#fit svg.rose", { timeout: 10000 }).catch(() => {});
+    const ar = await p.evaluate(ROSES);
+    judge(`apply ${tag}`, ar);
+    const numPx = await p.$eval("#fit .fitnum", n => n.getBoundingClientRect().height).catch(() => 0);
+    is(numPx >= 10, `apply ${tag}: the numeral is legible (${numPx.toFixed(1)}px tall)`);
+    await p.close();
+
     // the mockup's home screen: four example cards, both markets
     for (const market of ["canada", "kenya"]) {
       p = await ctx.newPage();
