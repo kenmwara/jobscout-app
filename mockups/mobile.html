@@ -112,6 +112,27 @@ html[data-plat="android"] .notch{position:absolute;top:19px;left:50%;transform:t
   font:500 15px/1 var(--sans);padding:6px 4px 6px 0;display:flex;align-items:center;gap:5px}
 .ahead .mk{display:flex;align-items:center;gap:7px;font:500 16px/1 var(--serif);color:var(--ink)}
 .ahead .mk svg{width:19px;height:19px;fill:var(--accent)}
+.ahead .hchip,.ahead .hmore{appearance:none;display:inline-flex;align-items:center;gap:5px;height:34px;min-width:34px;
+  padding:0 9px;border-radius:10px;border:1px solid var(--hair);background:var(--trough);color:var(--ink);
+  font:500 12px/1 var(--sans);cursor:pointer}
+.ahead .hchip{margin-left:auto}
+.ahead .hmore{width:34px;padding:0;font-size:16px}
+.menu .lb{font:500 10px/1 var(--sans);letter-spacing:.09em;text-transform:uppercase;color:var(--text3);margin:14px 0 8px}
+.menu .mrow{display:flex;gap:6px;flex-wrap:wrap}
+.menu .mnav button{display:block;width:100%;text-align:left;appearance:none;background:transparent;border:0;border-bottom:1px solid var(--hair);
+  padding:12px 0;font:400 15px/1 var(--sans);color:var(--ink);cursor:pointer}
+.emptyst{text-align:center;padding:34px 12px 8px}
+.emptyst .rose{width:84px;height:84px;margin:0 auto 14px}
+.emptyst h3{font:400 20px/1.2 var(--serif);margin:0 0 6px;color:var(--ink)}
+.emptyst p{color:var(--text2);font-size:13.5px;margin:0 0 16px}
+.emptyst .cta{margin-top:8px}
+.state{background:var(--surface);border:1px solid var(--hair);border-radius:var(--r-card);padding:14px;margin:0 0 14px}
+.state .lb{font:500 10px/1 var(--sans);letter-spacing:.09em;text-transform:uppercase;color:var(--text3);margin:0 0 6px}
+.state h3{font:400 18px/1.25 var(--serif);margin:0 0 8px;color:var(--ink)}
+.state p{color:var(--text2);font-size:13.5px;margin:0 0 8px}
+.state .next{background:var(--evidence-bg);border-left:2px solid var(--evidence-rule-strongest);border-radius:10px;padding:9px 12px;display:flex;align-items:baseline;gap:8px}
+.state .next .lb{margin:0}
+.state .mono{font:500 15px/1 var(--mono);font-variant-numeric:tabular-nums;color:var(--ink)}
 .ahead .fl{margin-left:auto;font-size:15px}
 h2.big{font:400 27px/1.15 var(--serif);color:var(--ink);letter-spacing:-.02em;margin:4px 0 6px}
 h2.big .dot{color:var(--accent)}
@@ -646,16 +667,18 @@ function closeSheet() {
   back?.focus();
 }
 
-async function runDraft(id) {
+let excludeNext = null;
+async function runDraft(id, exclude) {
   const spec = DRAFT[id], p = current;
   if (!spec || !p) return;
+  excludeNext = Array.isArray(exclude) && exclude.length ? exclude : null;
   draftState[id] = { busy: spec.verb };
   paint();
   try {
     const r = await fetch(API + spec.path, {
       method: "POST", headers: { "content-type": "text/plain" },
       body: JSON.stringify({ profile: lastProfile, posting: p, fit: p.fit,
-                             stretch: p.fit < 55 }),
+                             stretch: p.fit < 55, exclude: excludeNext || undefined }),
     });
     const d = await r.json().catch(() => ({}));
     /* a grounded refusal (422 + invented[]) is the product working: show it
@@ -665,7 +688,8 @@ async function runDraft(id) {
       <p>${d.invented.length === 1 ? "One of its claims is" : `${d.invented.length} of its claims are`} not in your resume, so it is not being shown as yours. Nothing here is a judgement about you &mdash; only about what the document says.</p>
       <p class="lb">Not in the resume</p>
       <ol>${d.invented.map(q => `<li>&ldquo;${esc(q)}&rdquo; &mdash; the resume does not say it.</li>`).join("")}</ol>
-      <button class="cta" type="button" data-go="home">Add them to the resume and re-run &rarr;</button></div>`;
+      <button class="cta" type="button" data-rewrite="${id}" data-exclude="${esc(d.invented.slice(0, 12).join("\u001f"))}">Rewrite without ${d.invented.length === 1 ? "that one" : d.invented.length === 2 ? "those two" : "those " + d.invented.length} &rarr;</button>
+      <button class="cta quiet" type="button" data-go="home">Add them to the resume and re-run &rarr;</button></div>`;
     const html = r.ok ? spec.render(d) : (Array.isArray(d.invented) && d.invented.length ? refusal(d) : null);
     draftState[id] = html
       ? { html, text: d }
@@ -700,10 +724,58 @@ const scored = () => scoredReal
 
 const MARK = `<svg viewBox="-3.5 -3.5 31 31" aria-hidden="true"><circle cx="12" cy="1" r="2.275"/><circle cx="19.7782" cy="4.2218" r="2.5694"/><circle cx="23" cy="12" r="2.8639"/><circle cx="19.7782" cy="19.7782" r="3.1583"/><circle cx="12" cy="23" r="3.4527"/><circle cx="4.2218" cy="19.7782" r="3.7471"/><circle cx="1" cy="12" r="4.0416"/><circle cx="4.2218" cy="4.2218" r="4.336"/></svg>`;
 const HEART = `<svg viewBox="0 0 24 24"><path d="M12 20s-7.5-4.7-7.5-9.8A4.2 4.2 0 0 1 12 7.4a4.2 4.2 0 0 1 7.5 2.8C19.5 15.3 12 20 12 20z"/></svg>`;
+/* MOTION v2 stage 7, the phone header: brand, then a market chip (flag +
+   code) and an ellipsis that opens a sheet holding the market switch, the
+   three-state theme control and every destination - the same header the
+   web wears at 620px and under. */
 const head = (back) => `<div class="ahead">${back
   ? `<button class="bk" data-go="${esc(back)}">&#8592; Back</button>`
   : `<span class="mk">${MARK} JobScout</span>`}
-  <span class="fl">${market === "ke" ? "🇰🇪" : "🇨🇦"}</span></div>`;
+  <button class="hchip" type="button" data-menu aria-label="Market">${market === "ke" ? "🇰🇪 <span>KE</span>" : "🇨🇦 <span>CA</span>"}</button>
+  <button class="hmore" type="button" data-menu aria-label="Menu" aria-expanded="false">&#8943;</button></div>`;
+
+/* The menu sheet reuses the drafting sheet's window. The market and theme
+   rows press the rail's own buttons, so there is one wiring, not two. */
+function openMenu() {
+  const t = document.documentElement.dataset.theme || "light";
+  $("#sheetTitle").textContent = "Menu";
+  $("#sheetBody").innerHTML = `
+    <div class="menu">
+      <p class="lb">Market</p>
+      <div class="mrow">${["ca", "ke"].map(m => `<button class="mini-cta${market === m ? " solid" : ""}" type="button" data-menu-market="${m}">${m === "ke" ? "🇰🇪 Kenya" : "🇨🇦 Canada"}</button>`).join("")}</div>
+      <p class="lb">Theme</p>
+      <div class="mrow">${[["light", "Light"], ["system", "Device"], ["dark", "Dark"]].map(([v, l]) => `<button class="mini-cta${t === v ? " solid" : ""}" type="button" data-menu-theme="${v}">${l}</button>`).join("")}</div>
+      <p class="lb">Go to</p>
+      <div class="mnav">${TABS.map(([id, label]) => `<button type="button" data-go="${id}">${label}${id === "saved" ? ` (${scored().filter(p => saved.has(p.id)).length + savedSearches.size})` : ""}</button>`).join("")}</div>
+    </div>`;
+  $("#sheetBody").scrollTop = 0;
+  $("#sheet").hidden = false;
+  $("#sheet").dataset.which = "menu";
+  $("[data-sheet-close]").focus();
+}
+
+/* MOTION v2 stage 9: the rate limit leads with what happened and when,
+   counts down in tabular mono so it never reflows, and offers two real
+   routes. The guard is per reader per hour, so "within the hour" from the
+   moment it tripped is the honest bound. */
+function limitedHTML() {
+  const at = new Date(limitedAt), pad = n => String(n).padStart(2, "0");
+  const left = Math.max(0, Math.round((limitedAt + 3600 * 1000 - Date.now()) / 1000));
+  return `<div class="state limited">
+    <p class="lb">Hourly limit</p>
+    <h3>The hourly cap was reached at ${pad(at.getHours())}:${pad(at.getMinutes())}.</h3>
+    <p>The demo scores for everyone from one budget, so each reader gets a fixed number of runs an hour. Nothing was lost &mdash; your last run is still below.</p>
+    <p class="next"><span class="lb">Next run</span><b class="mono" id="rlLeft">${pad(Math.floor(left / 60))}:${pad(left % 60)}</b> from now</p>
+    ${scoredReal ? `<button class="cta" type="button" data-go="matches">Open your last run</button>` : ""}
+    <button class="cta quiet" type="button" data-go="home">Browse the sweep meanwhile</button></div>`;
+}
+setInterval(() => {
+  const el = $("#rlLeft"); if (!el || !limitedAt) return;
+  const left = Math.max(0, Math.round((limitedAt + 3600 * 1000 - Date.now()) / 1000));
+  const pad = n => String(n).padStart(2, "0");
+  el.textContent = `${pad(Math.floor(left / 60))}:${pad(left % 60)}`;
+  if (!left) { limitedAt = 0; paint(); }
+}, 1000);
 
 /* Mirrors the web's panel, in the web's words. What the postings asked for
    is QUOTED from the scoring - each scored posting carries the one thing it
@@ -785,7 +857,7 @@ const cardHTML = (p, full) => {
 
 const API = "https://jobscout-app-api.kenmwara.workers.dev";
 let lastProfile = "";
-let scoredReal = null, runErr = "";
+let scoredReal = null, runErr = "", limitedAt = 0;
 
 /* Eight postings to Claude, the same shape the apps send. text/plain on
    purpose: a JSON content-type triggers a CORS preflight, and this file is
@@ -796,6 +868,7 @@ async function scoreReal(profile) {
     method: "POST", headers: { "content-type": "text/plain" },
     body: JSON.stringify({ profile, postings: picks, market }),
   });
+  if (r.status === 429) limitedAt = Date.now();
   if (!r.ok) throw new Error(r.status === 429
     ? "the demo's hourly limit - it scores for everyone from one budget"
     : "the scorer returned " + r.status);
@@ -832,6 +905,7 @@ const SCREENS = {
     ${postings().slice(0, 4).map(p => cardHTML({ ...p, fit: fitOf(p.id) })).join("")}`,
 
   matches: () => `${head()}
+    ${limitedAt ? limitedHTML() : ""}
     <h2 class="big">Your matches</h2>
     <p class="sub">${scored().length} scored of ${postings().length} swept &middot; ${scoredReal
       ? "scored by Claude just now" : "example scores &mdash; paste a resume to score for real"}
@@ -914,8 +988,12 @@ const SCREENS = {
       <p class="sub">${n} kept &middot; stays on this device</p>
       ${sweeps}
       ${rows.length ? rows.map(p => cardHTML(p)).join("")
-        : (savedSearches.size ? "" : `<p class="empty">Nothing saved yet.<br>
-            Tap the heart on a match, or save the whole search.</p>`)}`;
+        : (savedSearches.size ? "" : `<div class="emptyst">
+            ${roseSVG(null, 84).replace('class="rose unlit"', 'class="rose unlit seek"')}
+            <h3>Nothing kept yet.</h3>
+            <p>Anything you keep lands here &mdash; on this device, and nowhere else.</p>
+            <button class="cta" type="button" data-go="home">Run the pipeline</button>
+            <button class="cta quiet" type="button" data-go="home">Browse the sweep</button></div>`)}`;
   },
 };
 
@@ -1068,6 +1146,14 @@ document.addEventListener("click", e => {
     saved.has(id) ? saved.delete(id) : saved.add(id);
     return paint();
   }
+  const menu = e.target.closest("[data-menu]");
+  if (menu) { openMenu(); return; }
+  const mm = e.target.closest("[data-menu-market]");
+  if (mm) { document.querySelector(`#segMarket [data-m="${mm.dataset.menuMarket}"]`)?.click(); closeSheet(); return; }
+  const mt = e.target.closest("[data-menu-theme]");
+  if (mt) { document.querySelector(`#segTheme [data-t="${mt.dataset.menuTheme}"]`)?.click(); openMenu(); return; }
+  const rw = e.target.closest("[data-rewrite]");
+  if (rw) { closeSheet(); runDraft(rw.dataset.rewrite, rw.dataset.exclude.split("\u001f")); return; }
   const go = e.target.closest("[data-go]");
   if (go) {
     const to = go.dataset.go;
@@ -1093,6 +1179,19 @@ const wire = (sel, attr, fn) => $(sel).addEventListener("click", e => {
 wire("#segMarket", "m", v => { market = v; D.setAttribute("data-market", v); saved.clear(); paint(); });
 wire("#segTheme", "t", v => D.setTheme(v));
 wire("#segPlat", "p", v => D.setAttribute("data-plat", v));
+/* The sheet is a sibling of #view, so the view's delegated taps never reach
+   the menu rows: the sheet gets its own, pressing the rail's buttons so
+   there is still one wiring for market and theme. */
+$("#sheet").addEventListener("click", e => {
+  const mm = e.target.closest("[data-menu-market]");
+  if (mm) { document.querySelector(`#segMarket [data-m="${mm.dataset.menuMarket}"]`)?.click(); closeSheet(); return; }
+  const mt = e.target.closest("[data-menu-theme]");
+  if (mt) { document.querySelector(`#segTheme [data-t="${mt.dataset.menuTheme}"]`)?.click(); openMenu(); return; }
+  const rw = e.target.closest("[data-rewrite]");
+  if (rw) { closeSheet(); runDraft(rw.dataset.rewrite, rw.dataset.exclude.split("")); return; }
+  const go = e.target.closest(".mnav [data-go]");
+  if (go) { closeSheet(); screen = go.dataset.go; paint(); }
+});
 D.setAttribute("data-plat", "android");
 
 /* Read the rail's state back OFF the document rather than assuming it. With

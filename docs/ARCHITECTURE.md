@@ -275,8 +275,15 @@ the market switch, the full three-state theme control and the nav into a
 §15 sheet and back. The empty saved page carries a seeking rose; a rate
 limit is a state with a tabular countdown and two real routes; a grounded
 refusal leads with what the product did and quotes each claim it could not
-find. Android's browse is a sticky, count-sorted chip row where a tile grid
-put the first posting 81% down the screen. iOS gained its ground
+find, and "rewrite without those" re-runs with the claims sent as `exclude`,
+which the worker folds into the instruction. Android's browse is a sticky,
+count-sorted chip row where a tile grid put the first posting 81% down the
+screen; the web does the same at phone width (the seventeen-tile grid
+becomes one sticky sliding row: first posting 2,458px → 960px at 390pt). The
+phone mockup carries the same five states as the web — header chip + menu
+sheet, empty saved with the seeking rose, the rate-limit state with its
+countdown, the quoted refusal with both actions — so the mockup and the
+site are strictly the same design. iOS gained its ground
 (`Ground.swift`: halo behind the scroll view, one cached texture tile, the
 mark stepping every 12s and still under reduced motion or Low Power Mode).
 Both sweeps take `--reduced` and must stay green under it.

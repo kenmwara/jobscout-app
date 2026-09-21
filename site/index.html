@@ -862,7 +862,18 @@ nav.main{margin-left:18px}
 }
 @media(max-width:620px){
   .wrap{padding:0 16px}
-  .grid3,.jobs,.taxgrid{grid-template-columns:1fr}
+  .grid3,.jobs{grid-template-columns:1fr}
+  /* MOTION v2 stage 8, the web at phone width: the seventeen-tile grid put
+     the first posting ~2,450px down a 390pt screen. One sticky row of chips
+     instead - the same tiles, the count inline, sliding sideways - and the
+     list starts right below the sweep's own heading. */
+  #taxGrid{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;position:sticky;top:0;z-index:5;
+    padding:8px 0;margin:0 -16px;padding-left:16px;padding-right:16px;background:var(--canvas)}
+  #taxGrid::-webkit-scrollbar{display:none}
+  #taxGrid .tax{flex:0 0 auto;display:inline-flex;align-items:baseline;gap:6px;padding:9px 13px;border-radius:var(--r-pill);white-space:nowrap}
+  #taxGrid .tax b{font-size:13px;margin:0}
+  #taxGrid .tax span{font-size:11.5px}
+  #taxGrid .tax .tbar{display:none}
   /* On a phone the switch drops to flags so it cannot clip the edge, and the
      nav keeps only Browse — the rest are in the footer, which is 4,000px away.
      Browse carries .keep for exactly this reason. */

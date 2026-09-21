@@ -234,7 +234,11 @@ async function guarded(request, env, breakerNote) {
   if (fit < FIT_FLOOR && !stretch)
     return json(400, { error: "below_floor",
       detail: `Drafting is only offered for a fit of ${FIT_FLOOR} or better; this posting scored ${fit}.` });
-  return { key, spent, profile, p, fit, stretch };
+  /* `exclude`: claims the reader has already seen refused (stage 9's
+     "rewrite without those"). Short strings only; folded into the
+     instruction, never into the profile. */
+  const exclude = Array.isArray(body.exclude) ? body.exclude.slice(0, 12).map(x => String(x).slice(0, 80)) : [];
+  return { key, spent, profile, p, fit, stretch, exclude };
 }
 
 const postingText = p =>
@@ -521,8 +525,9 @@ export default {
     if (url.pathname === "/api/resume" && request.method === "POST") {
       const g = await guarded(request, env, "resume rebuilding resumes tomorrow");
       if (g instanceof Response) return g;
-      const { profile, p } = g;
+      const { profile, p, exclude } = g;
       const SYS =
+        (exclude.length ? "Do NOT use any of these, which the profile does not contain: " + exclude.join(", ") + ". " : "") +
         "You rewrite a candidate's entire resume for one job posting. Return JSON only, no prose, no code fence: " +
         '{"name": string, "contact": string, "headline": string, ' +
         '"sections": [{"heading": string, "items": [{"title": string, "meta": string, "bullets": [string]}]}], ' +

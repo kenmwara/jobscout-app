@@ -1435,7 +1435,17 @@ private fun TrackerScreen(
                     Text("Kept on this device only. You click Apply — JobScout never does.", color = T.text2, fontSize = 14.sp, lineHeight = 21.sp)
                 }
                 if (tracker.isEmpty())
-                    item { Text("Nothing saved yet — tap Save on a score to keep it.", color = T.text3, fontSize = 14.sp) }
+                    item {
+                        /* v2 stage 9: the empty state is the mark - eight unlit bearings
+                           (still; an infinite seek would keep the window from idling) */
+                        Column(Modifier.fillMaxWidth().padding(top = 18.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                            EmptyRose(diameter = 84.dp)
+                            Spacer(Modifier.height(14.dp))
+                            Text("Nothing kept yet.", style = H2, fontSize = 20.sp, color = T.ink)
+                            Spacer(Modifier.height(6.dp))
+                            Text("Anything you keep lands here — on this device, and nowhere else.", color = T.text2, fontSize = 13.5.sp, lineHeight = 20.sp)
+                        }
+                    }
                 // A few, then the rest behind a tap - an unbounded saved list is
                 // the thing that made this unreadable in the first place.
                 val all = tracker.values.sortedByDescending { it.fit }

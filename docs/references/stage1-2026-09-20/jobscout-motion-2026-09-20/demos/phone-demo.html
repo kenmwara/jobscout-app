@@ -1,0 +1,268 @@
+<!doctype html><html lang="en" data-theme="light" data-market="ca"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1"><title>JobScout — phone</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500&family=Inter:opsz,wght@14..32,400;14..32,500&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+:root{color-scheme:light dark;
+ --canvas:light-dark(#f8f3eb,#0a0524);--surface:light-dark(#fff,#1c1544);
+ --sunken:light-dark(#ece5d8,#1a1240);--text:light-dark(#080331,#f8f3eb);
+ --text-2:light-dark(#5a5560,#b9b3c4);--text-long:light-dark(#080331,#ded9e8);
+ --hairline:light-dark(rgba(8,3,49,.13),rgba(248,243,235,.13));
+ --accent:light-dark(#4865ff,#a2baff);--action:light-dark(#080331,#f8f3eb);
+ --action-on:light-dark(#f8f3eb,#0a0524);
+ --b-auto:light-dark(#3e954d,#7ac683);--b-ping:light-dark(#617ad1,#93adff);
+ --b-unsure:light-dark(#b86b03,#e89f59);--b-near:light-dark(#7d7d97,#aeafc7);
+ --b-unsure-l:light-dark(#713f00,#ecaf78);--b-unsure-bg:light-dark(#fbede1,#3d2b1a);
+ --b-auto-l:light-dark(#225b2c,#92d098);
+ --rose-empty:light-dark(#080331,#f8f3eb);
+ --evidence-bg:light-dark(#f1f1fa,#2b284f);
+ --scrim:light-dark(rgba(8,3,49,.66),rgba(0,0,0,.66));
+ --halo-1:light-dark(rgba(255,252,242,.92),rgba(43,57,108,.50));
+ --halo-2:light-dark(rgba(255,250,240,.80),rgba(58,42,96,.42));
+  --spring-snap:   linear(0.0000, 0.0236, 0.0841, 0.1686, 0.2664, 0.3695, 0.4717, 0.5687, 0.6577, 0.7370, 0.8057, 0.8637, 0.9115, 0.9498, 0.9795, 1.0018, 1.0178, 1.0284, 1.0348, 1.0378, 1.0383, 1.0370, 1.0343, 1.0309, 1.0271, 1.0231, 1.0000);
+  --spring-settle: linear(0.0000, 0.0249, 0.0852, 0.1645, 0.2520, 0.3404, 0.4253, 0.5041, 0.5756, 0.6393, 0.6952, 0.7437, 0.7854, 0.8210, 0.8512, 0.8767, 0.8981, 0.9160, 0.9309, 0.9433, 0.9536, 0.9620, 0.9690, 0.9747, 0.9794, 0.9833, 1.0000);
+  --spring-arrive: linear(0.0000, 0.0264, 0.0948, 0.1910, 0.3029, 0.4208, 0.5373, 0.6468, 0.7458, 0.8318, 0.9041, 0.9624, 1.0075, 1.0406, 1.0631, 1.0766, 1.0827, 1.0831, 1.0792, 1.0724, 1.0637, 1.0540, 1.0441, 1.0346, 1.0258, 1.0180, 1.0000);
+  --spring-exit:   cubic-bezier(0.4, 0.0, 1, 1);
+  --t-snap: 180ms;  --t-settle: 340ms;  --t-arrive: 520ms;  --t-exit: 160ms;
+ --sh-rest:0 1px 2px rgba(75,68,57,.05),0 6px 14px rgba(75,68,57,.06);
+ --sh-hover:0 2px 4px rgba(75,68,57,.06),0 14px 30px rgba(75,68,57,.10);
+ --sh-press:0 1px 2px rgba(75,68,57,.08);
+ --edge-rest:light-dark(rgba(8,3,49,.08),rgba(248,243,235,.13));
+ --serif:Newsreader,Georgia,serif;--sans:Inter,system-ui,sans-serif;--mono:'JetBrains Mono',monospace}
+[data-theme=light]{color-scheme:light}
+[data-theme=dark]{color-scheme:dark;--sh-rest:none;--sh-hover:none;--sh-press:none}
+*{box-sizing:border-box}
+body{margin:0;background:#d8d2c6;font-family:var(--sans);display:flex;gap:20px;padding:22px;align-items:flex-start;flex-wrap:wrap}
+.ph{width:390px;height:844px;border-radius:30px;overflow:hidden;position:relative;background:var(--canvas);
+ box-shadow:0 10px 30px rgba(0,0,0,.18);color:var(--text)}
+.ph::before{content:"";position:absolute;inset:0;pointer-events:none;background:
+ radial-gradient(62% 48% at 88% 2%,var(--halo-1) 0,transparent 64%),
+ radial-gradient(54% 42% at 2% 30%,var(--halo-2) 0,transparent 62%)}
+.cap{position:absolute;z-index:9;top:8px;left:10px;font:500 8px/1 var(--sans);letter-spacing:.16em;
+ color:var(--text-2);background:var(--surface);border:1px solid var(--edge-rest);padding:5px 8px;border-radius:1600px}
+.sb{position:relative;height:30px;display:flex;align-items:flex-end;justify-content:space-between;
+ padding:0 16px 3px;font:500 10px/1 var(--sans);color:var(--text-2)}
+.scr{position:relative;height:814px;overflow:hidden}
+
+/* ============ AS BUILT: two rows ============ */
+.hd-old{padding:10px 14px;display:flex;flex-wrap:wrap;gap:9px;align-items:center}
+.hd-old .brand{display:flex;align-items:center;gap:7px;font-family:var(--serif);font-size:17px}
+.seg-old{display:flex;background:var(--sunken);border-radius:1600px;padding:3px}
+.seg-old span{padding:7px 12px;border-radius:1600px;font-size:13px}
+.seg-old span.on{background:var(--surface);box-shadow:var(--sh-rest)}
+.nav-old{font-size:12.5px;color:var(--text-2)}
+
+/* ============ FIXED: one row ============ */
+.hd{height:56px;padding:0 14px;display:flex;align-items:center;justify-content:space-between;gap:8px;
+ border-bottom:1px solid transparent}
+.hd.stuck{border-bottom-color:var(--hairline)}
+.brand{display:flex;align-items:center;gap:8px;font-family:var(--serif);font-size:17px;min-width:0}
+.hd .acts{display:flex;align-items:center;gap:7px}
+.mkt,.more{height:36px;min-width:44px;display:flex;align-items:center;justify-content:center;gap:6px;
+ border:1px solid var(--edge-rest);background:var(--surface);color:var(--text);border-radius:1600px;
+ font:500 12px/1 var(--sans);padding:0 11px;cursor:pointer;box-shadow:var(--sh-rest);
+ transition:transform var(--t-snap) var(--spring-snap),box-shadow var(--t-snap) var(--spring-snap)}
+.mkt:active,.more:active{transform:scale(.94);box-shadow:var(--sh-press);transition-duration:var(--t-exit)}
+.more{padding:0;width:36px;font-size:15px}
+
+/* the sector scroller — replaces 710px of tiles with 52px */
+.scl{display:flex;gap:7px;overflow-x:auto;padding:4px 14px 10px;scrollbar-width:none}
+.scl::-webkit-scrollbar{display:none}
+.sc{flex:none;display:flex;align-items:center;gap:6px;height:36px;padding:0 12px;border-radius:1600px;
+ border:1px solid var(--edge-rest);background:var(--surface);color:var(--text);
+ font:500 12px/1 var(--sans);cursor:pointer;box-shadow:var(--sh-rest);
+ transition:transform var(--t-snap) var(--spring-snap),background var(--t-snap) linear,color var(--t-snap) linear}
+.sc b{font:500 10.5px/1 var(--mono);color:var(--text-2)}
+.sc.on{background:var(--action);color:var(--action-on);border-color:transparent}
+.sc.on b{color:var(--action-on);opacity:.72}
+.sc:active{transform:scale(.95);transition-duration:var(--t-exit)}
+h2{font-family:var(--serif);font-weight:400;font-size:21px;margin:2px 14px 0;letter-spacing:-.01em}
+.cnt{margin:6px 14px 8px;font:400 11px/1 var(--mono);color:var(--text-2)}
+.jr{display:flex;gap:11px;align-items:flex-start;margin:0 14px 8px;background:var(--surface);
+ border:1px solid var(--edge-rest);border-radius:14px;padding:12px 13px;box-shadow:var(--sh-rest)}
+.av{width:30px;height:30px;flex:none;border-radius:8px;background:var(--sunken);display:flex;
+ align-items:center;justify-content:center;font:500 10px/1 var(--sans);color:var(--text-2)}
+.jm{flex:1;min-width:0}
+.jc{font-size:10.5px;color:var(--text-2)}
+.jm h4{margin:1px 0 0;font-family:var(--serif);font-weight:400;font-size:15px;line-height:1.25}
+.chip{display:inline-block;margin-top:7px;font-size:10px;color:var(--text-2);background:var(--sunken);
+ padding:4px 9px;border-radius:1600px}
+.x{border:0;background:transparent;color:var(--text-2);font-size:17px;cursor:pointer;padding:2px 4px;line-height:1}
+.tiles-old{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:6px 14px}
+.tile-old{background:var(--surface);border:1px solid var(--edge-rest);border-radius:12px;padding:12px 13px;box-shadow:var(--sh-rest)}
+.tile-old .n{font-size:13px;font-weight:500}
+.tile-old .c{margin-top:5px;font-size:11px;color:var(--text-2)}
+
+/* the sheet */
+.sheet{position:absolute;inset:0;z-index:8;display:none}
+.sheet.open{display:block}
+.sheet .sc-bg{position:absolute;inset:0;background:var(--scrim)}
+.sheet .pane{position:absolute;left:0;right:0;bottom:0;background:var(--surface);
+ border-radius:22px 22px 0 0;padding:9px 0 20px;box-shadow:0 -2px 8px rgba(75,68,57,.06),0 -18px 48px rgba(75,68,57,.16)}
+[data-theme=dark] .sheet .pane{box-shadow:none;border-top:1px solid var(--hairline)}
+.grab{width:34px;height:4px;border-radius:2px;background:var(--hairline);margin:0 auto 12px}
+.sheet h3{margin:0 18px 10px;font-family:var(--serif);font-weight:400;font-size:18px}
+.seg3{display:flex;margin:0 18px 14px;background:var(--sunken);border-radius:1600px;padding:3px}
+.seg3 button{flex:1;border:0;background:transparent;color:var(--text-2);font:500 12px/1 var(--sans);
+ padding:10px 0;border-radius:1600px;cursor:pointer}
+.seg3 button[aria-pressed=true]{background:var(--surface);color:var(--text);box-shadow:var(--sh-rest)}
+.lnk{display:flex;align-items:center;justify-content:space-between;margin:0 18px;padding:13px 0;
+ border-top:1px solid var(--hairline);font-size:14px}
+.lnk b{font-weight:400;font-family:var(--serif);font-size:16px}
+.lnk i{font-style:normal;font:400 11px/1 var(--mono);color:var(--text-2)}
+
+/* ---- states ---- */
+.st{padding:24px 18px}
+.st .eRose{width:84px;height:84px;margin:0 auto 16px;position:relative}
+.eRose .d{fill:var(--rose-empty);opacity:.14;transform-box:fill-box;transform-origin:center;transform:scale(.72)}
+@keyframes seek{0%,100%{opacity:.14;transform:scale(.72)}22%{opacity:.8;transform:scale(1)}44%{opacity:.14;transform:scale(.72)}}
+.eRose .d{animation:seek 5.6s ease-in-out infinite;animation-delay:calc(var(--di) * 220ms)}
+.st h3{font-family:var(--serif);font-weight:400;font-size:22px;margin:0 0 7px;text-align:center}
+.st p{margin:0 auto;font-size:13px;line-height:1.6;color:var(--text-2);text-align:center;max-width:32ch}
+.act{display:block;width:100%;margin-top:18px;border:0;border-radius:1600px;background:var(--action);
+ color:var(--action-on);font:500 13px/1 var(--sans);padding:14px;cursor:pointer;box-shadow:var(--sh-rest)}
+.act.ghost{background:transparent;color:var(--text);border:1px solid var(--edge-rest);box-shadow:none;margin-top:9px}
+.card{background:var(--surface);border:1px solid var(--edge-rest);border-radius:16px;padding:16px 16px 15px;
+ box-shadow:var(--sh-rest)}
+.kv{font:500 8.5px/1 var(--sans);letter-spacing:.16em;color:var(--b-unsure-l)}
+.rule{margin-top:13px;background:var(--evidence-bg);border-left:2px solid var(--b-unsure);border-radius:12px;padding:11px 13px}
+.rule p{margin:6px 0 0;font-size:12px;line-height:1.5;color:var(--text-long);text-align:left}
+.miss{margin:9px 0 0;padding:0;list-style:none}
+.miss li{display:flex;gap:8px;align-items:flex-start;font-size:12px;line-height:1.5;color:var(--text-long);padding:5px 0}
+.miss span{color:var(--b-unsure-l);font:500 11px/1.5 var(--mono);flex:none}
+.timer{font:500 15px/1 var(--mono);color:var(--text);font-variant-numeric:tabular-nums}
+@media (prefers-reduced-motion:reduce){*{animation:none!important}.sc,.mkt,.more{transition-duration:1ms!important}}
+</style></head><body>
+
+<!-- 1. AS BUILT -->
+<div class="ph"><span class="cap">HEADER &middot; AS BUILT</span>
+ <div class="sb"><span>9:41</span><span>5G ▮</span></div>
+ <div class="scr">
+  <div class="hd-old">
+   <div class="brand"><svg class="rose brandrose" viewBox="-4.2416 -3.0639 31.3054 31.3054" width="19" height="19" aria-hidden="true"><circle class="d" style="--di:0" cx="12.000" cy="1.000" r="2.275"/><circle class="d" style="--di:1" cx="19.778" cy="4.222" r="2.569"/><circle class="d" style="--di:2" cx="23.000" cy="12.000" r="2.864"/><circle class="d" style="--di:3" cx="19.778" cy="19.778" r="3.158"/><circle class="d" style="--di:4" cx="12.000" cy="23.000" r="3.453"/><circle class="d" style="--di:5" cx="4.222" cy="19.778" r="3.747"/><circle class="d" style="--di:6" cx="1.000" cy="12.000" r="4.041"/><circle class="d" style="--di:7" cx="4.222" cy="4.222" r="4.336"/></svg> JobScout</div>
+   <div class="seg-old"><span class="on">🇨🇦</span><span>🇰🇪</span></div>
+   <div class="seg-old"><span>▭</span><span class="on">☀</span><span>☾</span></div>
+   <div class="nav-old">Browse</div>
+  </div>
+  <h2 style="margin-top:14px">Browse by what the feed actually knows</h2>
+  <p style="margin:6px 14px 0;font-size:12px;line-height:1.55;color:var(--text-2)">Every tile is a real slice of today&rsquo;s sweep.</p>
+  <div class="tiles-old">
+   <div class="tile-old"><div class="n">Finance &amp; banking</div><div class="c">24 open</div></div>
+   <div class="tile-old"><div class="n">Software &amp; IT</div><div class="c">24 open</div></div>
+   <div class="tile-old"><div class="n">DevOps &amp; cloud</div><div class="c">24 open</div></div>
+   <div class="tile-old"><div class="n">Operations &amp; support</div><div class="c">24 open</div></div>
+   <div class="tile-old"><div class="n">Analytics &amp; insights</div><div class="c">24 open</div></div>
+   <div class="tile-old"><div class="n">Sales &amp; marketing</div><div class="c">24 open</div></div>
+   <div class="tile-old"><div class="n">Data &amp; AI</div><div class="c">24 open</div></div>
+   <div class="tile-old"><div class="n">Other</div><div class="c">24 open</div></div>
+  </div>
+  <div style="position:absolute;left:0;right:0;top:790px;border-top:1px dashed var(--b-unsure)">
+   <span style="position:absolute;right:8px;top:-15px;font:500 8px/1 var(--mono);color:var(--b-unsure);background:var(--canvas);padding:2px 5px;border-radius:4px">first posting is 1,150px below this</span></div>
+ </div></div>
+
+<!-- 2. FIXED -->
+<div class="ph"><span class="cap">HEADER + BROWSE &middot; FIXED</span>
+ <div class="sb"><span>9:41</span><span>5G ▮</span></div>
+ <div class="scr">
+  <div class="hd stuck">
+   <div class="brand"><svg class="rose brandrose" viewBox="-4.2416 -3.0639 31.3054 31.3054" width="19" height="19" aria-hidden="true"><circle class="d" style="--di:0" cx="12.000" cy="1.000" r="2.275"/><circle class="d" style="--di:1" cx="19.778" cy="4.222" r="2.569"/><circle class="d" style="--di:2" cx="23.000" cy="12.000" r="2.864"/><circle class="d" style="--di:3" cx="19.778" cy="19.778" r="3.158"/><circle class="d" style="--di:4" cx="12.000" cy="23.000" r="3.453"/><circle class="d" style="--di:5" cx="4.222" cy="19.778" r="3.747"/><circle class="d" style="--di:6" cx="1.000" cy="12.000" r="4.041"/><circle class="d" style="--di:7" cx="4.222" cy="4.222" r="4.336"/></svg> JobScout</div>
+   <div class="acts">
+    <button class="mkt" id="mktbtn">🇨🇦 <span>CA</span></button>
+    <button class="more" id="morebtn" aria-label="Menu">&#8943;</button>
+   </div>
+  </div>
+  <h2 style="margin-top:10px">Today&rsquo;s sweep</h2>
+  <div class="cnt">318 read this morning &middot; 24 shown</div>
+  <div class="scl"><button class="sc on"><span>Finance & banking</span><b>24+</b></button><button class="sc"><span>Software & IT</span><b>24+</b></button><button class="sc"><span>DevOps & cloud</span><b>24+</b></button><button class="sc"><span>Operations & support</span><b>24+</b></button><button class="sc"><span>Analytics & insights</span><b>24+</b></button><button class="sc"><span>Sales & marketing</span><b>24+</b></button><button class="sc"><span>Data & AI</span><b>24+</b></button><button class="sc"><span>Other</span><b>24+</b></button><button class="sc"><span>Product & design</span><b>24+</b></button><button class="sc"><span>Cybersecurity</span><b>24+</b></button><button class="sc"><span>Content & comms</span><b>20</b></button><button class="sc"><span>People & HR</span><b>16</b></button><button class="sc"><span>Legal & compliance</span><b>15</b></button><button class="sc"><span>Education</span><b>9</b></button><button class="sc"><span>Healthcare</span><b>6</b></button><button class="sc"><span>IT support</span><b>5</b></button><button class="sc"><span>Construction</span><b>4</b></button></div>
+  <article class="jr" style="--i:0">
+ <div class="av">SU</div>
+ <div class="jm"><div class="jc">Sun Life</div><h4>Senior Associate, SLC Accounting and Controls</h4><span class="chip">On site</span></div>
+ <button class="x" aria-label="Not for me">&times;</button></article><article class="jr" style="--i:1">
+ <div class="av">SU</div>
+ <div class="jm"><div class="jc">Sun Life</div><h4>Senior Financial Analyst</h4><span class="chip">Hybrid</span></div>
+ <button class="x" aria-label="Not for me">&times;</button></article><article class="jr" style="--i:2">
+ <div class="av">MA</div>
+ <div class="jm"><div class="jc">Manulife</div><h4>Manager, Treasury Operations</h4><span class="chip">Remote</span></div>
+ <button class="x" aria-label="Not for me">&times;</button></article><article class="jr" style="--i:3">
+ <div class="av">TD</div>
+ <div class="jm"><div class="jc">TD Bank</div><h4>Business Systems Analyst III</h4><span class="chip">On site</span></div>
+ <button class="x" aria-label="Not for me">&times;</button></article>
+ </div>
+ <div class="sheet" id="sheet">
+  <div class="sc-bg"></div>
+  <div class="pane"><div class="grab"></div>
+   <h3>Settings</h3>
+   <div class="seg3"><button aria-pressed="false">Light</button><button aria-pressed="true">Device</button><button aria-pressed="false">Dark</button></div>
+   <div class="lnk"><b>Browse</b></div>
+   <div class="lnk"><b>Saved</b><i>7</i></div>
+   <div class="lnk"><b>How it works</b></div>
+   <div class="lnk"><b>Privacy</b></div>
+  </div>
+ </div></div>
+
+<!-- 3. RATE-LIMITED -->
+<div class="ph"><span class="cap">REFUSED &middot; RATE LIMIT</span>
+ <div class="sb"><span>9:41</span><span>5G ▮</span></div>
+ <div class="scr">
+  <div class="hd"><div class="brand"><svg class="rose brandrose" viewBox="-4.2416 -3.0639 31.3054 31.3054" width="19" height="19" aria-hidden="true"><circle class="d" style="--di:0" cx="12.000" cy="1.000" r="2.275"/><circle class="d" style="--di:1" cx="19.778" cy="4.222" r="2.569"/><circle class="d" style="--di:2" cx="23.000" cy="12.000" r="2.864"/><circle class="d" style="--di:3" cx="19.778" cy="19.778" r="3.158"/><circle class="d" style="--di:4" cx="12.000" cy="23.000" r="3.453"/><circle class="d" style="--di:5" cx="4.222" cy="19.778" r="3.747"/><circle class="d" style="--di:6" cx="1.000" cy="12.000" r="4.041"/><circle class="d" style="--di:7" cx="4.222" cy="4.222" r="4.336"/></svg> JobScout</div>
+   <div class="acts"><button class="mkt">🇨🇦 <span>CA</span></button><button class="more">&#8943;</button></div></div>
+  <div class="st">
+   <div class="card">
+    <div class="kv">HOURLY LIMIT</div>
+    <h3 style="text-align:left;margin-top:9px">One run an hour, and you used yours at 09:12.</h3>
+    <p style="text-align:left;margin-top:8px">The guard is there so a single visitor cannot drain the day&rsquo;s budget. Nothing was lost &mdash; your last run is still on the saved page.</p>
+    <div class="rule"><div class="kv">NEXT RUN</div>
+     <p style="display:flex;align-items:baseline;gap:8px"><span class="timer">47:08</span> from now &middot; 10:12</p></div>
+    <button class="act">Open your last run</button>
+    <button class="act ghost">Browse the sweep meanwhile</button>
+   </div>
+  </div>
+ </div></div>
+
+<!-- 4. GROUNDED REFUSAL -->
+<div class="ph"><span class="cap">REFUSED &middot; GROUNDING</span>
+ <div class="sb"><span>9:41</span><span>5G ▮</span></div>
+ <div class="scr">
+  <div class="hd"><div class="brand"><svg class="rose brandrose" viewBox="-4.2416 -3.0639 31.3054 31.3054" width="19" height="19" aria-hidden="true"><circle class="d" style="--di:0" cx="12.000" cy="1.000" r="2.275"/><circle class="d" style="--di:1" cx="19.778" cy="4.222" r="2.569"/><circle class="d" style="--di:2" cx="23.000" cy="12.000" r="2.864"/><circle class="d" style="--di:3" cx="19.778" cy="19.778" r="3.158"/><circle class="d" style="--di:4" cx="12.000" cy="23.000" r="3.453"/><circle class="d" style="--di:5" cx="4.222" cy="19.778" r="3.747"/><circle class="d" style="--di:6" cx="1.000" cy="12.000" r="4.041"/><circle class="d" style="--di:7" cx="4.222" cy="4.222" r="4.336"/></svg> JobScout</div>
+   <div class="acts"><button class="mkt">🇨🇦 <span>CA</span></button><button class="more">&#8943;</button></div></div>
+  <div class="st">
+   <div class="card">
+    <div class="kv" style="color:var(--b-auto-l)">DRAFT HELD BACK</div>
+    <h3 style="text-align:left;margin-top:9px">The letter was written, then checked.</h3>
+    <p style="text-align:left;margin-top:8px">Two of its claims are not in your resume, so it is not being shown as yours. Nothing here is a judgement about you &mdash; only about what the document says.</p>
+    <div class="rule"><div class="kv">NOT IN THE RESUME</div>
+     <ul class="miss">
+      <li><span>1</span><div>&ldquo;led a team of six engineers&rdquo; &mdash; the resume names no team size.</div></li>
+      <li><span>2</span><div>&ldquo;AWS certified&rdquo; &mdash; no certification appears anywhere in the document.</div></li>
+     </ul></div>
+    <button class="act">Rewrite without those two</button>
+    <button class="act ghost">Add them to the resume and re-run</button>
+   </div>
+  </div>
+ </div></div>
+
+<!-- 5. SAVED EMPTY -->
+<div class="ph"><span class="cap">EMPTY &middot; SAVED</span>
+ <div class="sb"><span>9:41</span><span>5G ▮</span></div>
+ <div class="scr">
+  <div class="hd"><div class="brand"><svg class="rose brandrose" viewBox="-4.2416 -3.0639 31.3054 31.3054" width="19" height="19" aria-hidden="true"><circle class="d" style="--di:0" cx="12.000" cy="1.000" r="2.275"/><circle class="d" style="--di:1" cx="19.778" cy="4.222" r="2.569"/><circle class="d" style="--di:2" cx="23.000" cy="12.000" r="2.864"/><circle class="d" style="--di:3" cx="19.778" cy="19.778" r="3.158"/><circle class="d" style="--di:4" cx="12.000" cy="23.000" r="3.453"/><circle class="d" style="--di:5" cx="4.222" cy="19.778" r="3.747"/><circle class="d" style="--di:6" cx="1.000" cy="12.000" r="4.041"/><circle class="d" style="--di:7" cx="4.222" cy="4.222" r="4.336"/></svg> JobScout</div>
+   <div class="acts"><button class="mkt">🇨🇦 <span>CA</span></button><button class="more">&#8943;</button></div></div>
+  <div class="st" style="padding-top:70px">
+   <div class="eRose"><svg class="rose" viewBox="-4.2416 -3.0639 31.3054 31.3054" width="84" height="84" aria-hidden="true"><circle class="d" style="--di:0" cx="12.000" cy="1.000" r="2.275"/><circle class="d" style="--di:1" cx="19.778" cy="4.222" r="2.569"/><circle class="d" style="--di:2" cx="23.000" cy="12.000" r="2.864"/><circle class="d" style="--di:3" cx="19.778" cy="19.778" r="3.158"/><circle class="d" style="--di:4" cx="12.000" cy="23.000" r="3.453"/><circle class="d" style="--di:5" cx="4.222" cy="19.778" r="3.747"/><circle class="d" style="--di:6" cx="1.000" cy="12.000" r="4.041"/><circle class="d" style="--di:7" cx="4.222" cy="4.222" r="4.336"/></svg></div>
+   <h3>Nothing kept yet.</h3>
+   <p>Anything you keep lands here &mdash; on this device, and nowhere else.</p>
+   <button class="act">Run the pipeline</button>
+   <button class="act ghost">Browse the sweep</button>
+  </div>
+ </div></div>
+
+<script>
+document.querySelectorAll('.brandrose .d').forEach(d=>{d.style.fill='var(--accent)';d.style.opacity=1;d.style.transform='none';d.style.animation='none';});
+const sh=document.getElementById('sheet');
+document.getElementById('morebtn')?.addEventListener('click',()=>sh.classList.add('open'));
+sh?.querySelector('.sc-bg').addEventListener('click',()=>sh.classList.remove('open'));
+document.querySelectorAll('.scl').forEach(s=>s.addEventListener('click',e=>{
+ const b=e.target.closest('.sc'); if(!b)return;
+ s.querySelectorAll('.sc').forEach(x=>x.classList.toggle('on',x===b));}));
+document.querySelectorAll('.seg3 button').forEach(b=>b.addEventListener('click',()=>{
+ b.parentElement.querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));}));
+</script></body></html>

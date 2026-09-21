@@ -130,6 +130,16 @@ for (const theme of ["light", "dark"]) {
     is(reach.before.length > 0 && reach.before.every(x => reach.inSheet.includes(x)) && reach.thm === 3 && reach.mkt >= 2 && reach.back === 3,
       `${theme} ${w}px: one tap of the ellipsis reaches ${reach.inSheet.length} nav items, the 3-state theme control and ${reach.mkt} markets, and they return`);
     if (w === 390) {
+      /* stage 8 on the web: the tile grid is one sticky row of chips at phone
+         width and the first posting is within reach - it was 2,458px down */
+      const bp = await ctx.newPage(); await bp.setViewportSize({ width: 390, height: 844 });
+      await bp.goto(SITE + "/index.html#browse", { waitUntil: "networkidle" });
+      await bp.waitForSelector("#browseJobs .job", { timeout: 20000 }).catch(() => {});
+      const br = await bp.evaluate(() => { const g = document.querySelector("#taxGrid"), j = document.querySelector("#browseJobs .job");
+        return g ? { h: Math.round(g.getBoundingClientRect().height), sticky: getComputedStyle(g).position, slides: g.scrollWidth > g.clientWidth + 10, first: j ? Math.round(j.getBoundingClientRect().top + scrollY) : null } : null; });
+      is(br && br.h <= 70 && br.sticky === "sticky" && br.slides && br.first !== null && br.first < 1200,
+        `${theme} 390px browse: the sectors are one sticky row (${br && br.h}px) that slides, first posting ${br && br.first}px down`);
+      await bp.close();
       const four = await hp.evaluate(() => {
         const mkt = document.querySelector(".mkt"), h0 = document.querySelector("header.site .row").offsetHeight;
         for (const [code, name] of [["us", "United States"], ["uk", "United Kingdom"]]) { const b = document.createElement("button"); b.type = "button"; b.dataset.mkt = code; b.setAttribute("aria-pressed", "false"); b.textContent = name; mkt.appendChild(b); }

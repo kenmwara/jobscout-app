@@ -117,6 +117,14 @@ for market in ("Canada", "Kenya"):
     # green that means nothing. Press the wordmark, the way a reader would.
     tap("JobScout", wait=2.0)
     swipe_top()
+    # Press the wordmark again if the landing is not up: twice in three runs
+    # the read after a market switch was Browse, narrowed to a sector no tap
+    # of ours had chosen, and by hand the wordmark went home every time. A
+    # reader who does not see home taps the logo again; so does this.
+    for _ in range(2):
+        if "Find the work" in text(): break
+        say("        (home again)")
+        tap("JobScout", wait=2.5); swipe_top(3)
 
     # A market switch refetches the feed and re-lays the landing; the hero
     # can be a second or two behind the header. Kenya failed this on a single

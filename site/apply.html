@@ -836,7 +836,10 @@ function failed(id, msg, label, d){
       <p>${n === 1 ? "One of its claims is" : `${n} of its claims are`} not in your resume, so it is not being shown as yours. Nothing here is a judgement about you — only about what the document says.</p>
       <p class="c-ev-k">Not in the resume</p>
       <ol>${d.invented.map(q => `<li>“${esc(q)}” — the resume does not say it.</li>`).join("")}</ol>
-      <div class="act"><button class="applybtn" type="button" data-fix="${id}">Add them to the resume and re-run →</button></div></div>`;
+      <div class="act"><button class="applybtn" type="button" data-rewrite="${id}">Rewrite without ${n === 1 ? "that one" : n === 2 ? "those two" : "those " + n} →</button><button class="applybtn quiet" type="button" data-fix="${id}">Add them to the resume and re-run →</button></div></div>`;
+    /* "Rewrite without those": the same call with the flagged claims sent as
+       `exclude`, which the worker folds into the instruction. */
+    $("#out-" + id).querySelector("[data-rewrite]").onclick = () => { S.exclude = d.invented.slice(0, 12); $("#do-" + id).click(); };
     $("#out-" + id).querySelector("[data-fix]").onclick = () => {
       const box = $("#profileBox"); if (box){ box.focus(); box.scrollIntoView({ block: "center" }); }
     };
@@ -851,8 +854,8 @@ function failed(id, msg, label, d){
    one — so it has to travel on every call, not just the letter. */
 const post = (path) => fetch(API + path, {
   method: "POST", headers: { "content-type": "application/json" },
-  body: JSON.stringify({ profile: S.profile, posting: p, fit: S.fit, stretch: !!S.stretch }),
-}).then(r => r.json().then(d => ({ r, d })));
+  body: JSON.stringify({ profile: S.profile, posting: p, fit: S.fit, stretch: !!S.stretch, exclude: S.exclude || undefined }),
+}).then(r => r.json().then(d => { S.exclude = undefined; return { r, d }; }));
 
 $("#do-letter").onclick = async () => {
   waiting("letter", "drafting the letter");
