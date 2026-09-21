@@ -251,8 +251,6 @@ p.lede{font:400 16px/1.6 var(--sans);color:var(--text2);max-width:520px;margin:0
 .job .age{font:400 12.5px/1 var(--sans);color:var(--text3);white-space:nowrap}
 .job .co{font:400 14px/1 var(--sans);color:var(--text2);margin:0 0 6px}
 .job .role{font:400 19px/1.3 var(--serif);letter-spacing:-.02em;color:var(--ink);margin:0}
-.job .foot{display:flex;align-items:center;justify-content:space-between;gap:12px}
-.job .loc{font:400 13.5px/1.35 var(--sans);color:var(--text2)}
 /* ONE colour declaration. This block already ended with `color:var(--text)`,
    so adding --text2 at the top just lost to it - a later declaration in the
    SAME rule wins, and nothing in the cascade looks wrong from outside. Read
@@ -273,27 +271,31 @@ p.lede{font:400 16px/1.6 var(--sans);color:var(--text2);max-width:520px;margin:0
    Eight dots on the logo's own ring; the fit lights them clockwise from
    bearing 000 and the lit ones bloom in order. Nothing rotates, so the number
    reads the same at any size. */
-.rose{width:64px;height:64px;flex:0 0 auto;display:block}
-.rose .fitnum{font:500 30px/1 var(--serif);text-anchor:middle;font-variant-numeric:tabular-nums}
-/* MOTION v1: each lit dot arrives on --spring-arrive (520ms, 8.3% overshoot),
-   one every --stagger-dot from bearing 000, so the fill IS the score forming.
-   The numeral counts up on the same clock (see the render loop) and seats on
-   the frame the last dot lands. */
-html.anim .rose .lit{transform:scale(.34);transform-origin:center;transform-box:fill-box;
-  opacity:0;transition:transform var(--t-arrive) var(--spring-arrive),opacity var(--t-arrive) var(--ease);
-  transition-delay:calc(var(--i) * var(--stagger-dot))}
-html.anim .job.arrive .rose .lit,html.anim .job.shown .rose .lit{transform:none;opacity:1}
-/* A settled rose breathes - lit dots only, 1 -> .90 -> 1 over --t-breathe,
-   offset 260ms per card and 120ms per dot so a grid never pulses in unison
-   (in unison it reads as a loading state). */
-@keyframes rosebreathe{0%,100%{opacity:1}50%{opacity:var(--breathe-floor)}}
+/* MOTION v2: the glyph and its arrival transition live in base.css. A card
+   that has not arrived holds its lit dots at the unlit look; `.arrive` lets
+   each dot spring to full one --stagger-dot apart from bearing 000, so the
+   fill IS the score forming. The numeral counts up on the same clock (see
+   the render loop) and seats on the frame the last dot lands. */
+html.anim .job:not(.arrive):not(.shown) .rose .d.lit{opacity:.14;transform:scale(.55)}
+/* A settled rose breathes - lit dots only, offset 260ms per card and 120ms
+   per dot so a grid never pulses in unison (that reads as loading). */
 html.anim .job.settled .rose .lit{animation:rosebreathe var(--t-breathe) ease-in-out infinite;
   animation-delay:calc(var(--ci, 0) * 260ms + var(--i) * 120ms)}
-/* The reward asymmetry: a real AUTO gets one 1.05 pulse on its band pill,
-   420ms, once. NEAR-MISS gets nothing - celebrating a 32 is the interface
-   lying to someone having a bad morning. */
-@keyframes pillpulse{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
-html.anim .job.settled[data-band="auto"] .route{animation:pillpulse 420ms var(--spring-snap) 1}
+/* The reward asymmetry: a real AUTO's band pill pulses 1 -> 1.05 at 38% -> 1
+   on --spring-arrive, 420ms, ONCE, when the card settles. NEAR-MISS has no
+   rule at all - the absence is the design. */
+html.anim .job.settled[data-band="auto"] .route{animation:autopulse 420ms var(--spring-arrive) 1}
+/* the card's anatomy (motion v2 stage 1): the rose leads, then identity,
+   then three tiers of metadata - verdict filled, fact sunken, date bare */
+.c-id{flex:1;min-width:0}
+.job .co .sep{opacity:.5;margin:0 4px}
+.c-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:9px 0 0}
+.c-ev{background:var(--evidence-bg);border-left:2px solid var(--evidence-rule-strongest);
+  border-radius:10px;padding:9px 12px;margin:10px 0 0}
+.c-ev-k{font:500 10px/1 var(--sans);letter-spacing:.09em;text-transform:uppercase;color:var(--b-auto);margin:0 0 4px}
+.c-ev p{margin:0;font:400 13px/1.5 var(--sans);color:var(--strongest-body)}
+.job .act .savebtn{margin-left:auto}
+.applybtn.quiet{background:transparent;border:1.5px solid var(--hair2);color:var(--link)}
 .route{
   font:500 10px/1 var(--sans);letter-spacing:.09em;text-transform:uppercase;
   border-radius:var(--r-pill);padding:5px 9px;display:inline-block;white-space:nowrap
@@ -457,7 +459,11 @@ html .tabs a:active,html .f:active,html .mkt button:active,html .taxtabs button:
 }
 .tabs a,.f,.mkt button,.taxtabs button{transition:all var(--t-micro) var(--ease)}
 .tabs a:hover{transform:translateY(-2px)}
-.box{transition:box-shadow var(--t-ui) var(--ease),transform .5s var(--spring)}
+.box{transition:box-shadow var(--t-ui) var(--ease),transform .5s var(--spring),border-color var(--t-ui) var(--ease)}
+.box:focus-within{box-shadow:var(--sh-hover);border-color:var(--edge-hover)}
+html .box:active{transform:scale(.995);transition-duration:var(--t-exit);transition-timing-function:var(--spring-exit)}
+html .thm button:active{transform:scale(.94);transition-duration:var(--t-exit)}
+.mkt button:hover{color:var(--ink)}
 .box:focus-within{transform:translateY(-2px)}
 .box .go{transition:transform .5s var(--spring),background var(--t-micro) var(--ease)}
 .box .go:hover{transform:scale(1.08)}
@@ -575,19 +581,10 @@ html.anim .savebtn[aria-pressed="true"]{animation:float 1.6s ease-in-out 1}
    it works on the wordmark. So it runs on the card's own mark instead: the
    rose's top four bearings slide left, the bottom four slide right, and the
    ring visibly breaks and re-forms. */
+/* MOTION v2 retired the shear: it slid whole circles, which fought the
+   scaled unlit dots. The hover tell is the NEXT bearing lighting (base.css). */
 html.anim .job .rose{transition:transform .5s var(--spring)}
-html.anim .job .rose circle{transition:transform .5s var(--spring);transform-box:fill-box;transform-origin:center}
 html.anim .job:hover .rose{transform:scale(1.04)}
-/* ±4px and no per-dot scale. At ±7px with the dots also scaling 1.15 they
-   overlapped and the ring read as crumpled rather than opening — the stagger
-   was doing the work, the size was undoing it. */
-html.anim .job:hover .rose circle:nth-child(-n+4){transform:translateX(-4px)}
-html.anim .job:hover .rose circle:nth-child(n+5):not(text){transform:translateX(4px)}
-html.anim .job:hover .rose circle:nth-child(1),html.anim .job:hover .rose circle:nth-child(8){transition-delay:0ms}
-html.anim .job:hover .rose circle:nth-child(2),html.anim .job:hover .rose circle:nth-child(7){transition-delay:45ms}
-html.anim .job:hover .rose circle:nth-child(3),html.anim .job:hover .rose circle:nth-child(6){transition-delay:90ms}
-html.anim .job:hover .rose circle:nth-child(4),html.anim .job:hover .rose circle:nth-child(5){transition-delay:135ms}
-html.anim .job:hover .rose .fitnum{transform:none}
 
 /* On a chip there is no mark to shear, so it gets the literal thing the word
    means: the box skews, briefly, and returns. */
@@ -745,8 +742,11 @@ html.anim .coach .hand{display:inline-block;animation:nudge 1.9s ease-in-out inf
 }
 .job.swiping .swipehint{opacity:var(--hintop,0)}
 
+/* top-right now: the score corner is free since the rose leads (v2 stage
+   1.5), and bottom-right is where the heart lives - the two overlapped and
+   the x intercepted every save. */
 .job .dismiss{
-  position:absolute;right:12px;bottom:12px;appearance:none;background:transparent;
+  position:absolute;right:12px;top:12px;appearance:none;background:transparent;
   border:1px solid var(--hair);border-radius:50%;cursor:pointer;width:26px;height:26px;
   color:var(--text3);font:400 15px/1 var(--sans);padding:0;opacity:0;
   transition:opacity var(--t-micro) var(--ease),color var(--t-micro) var(--ease)
@@ -938,8 +938,6 @@ nav.main{margin-left:18px}
 .stage{padding:76px 0 0}
 .stage h2{font:400 clamp(26px,3.2vw,36px)/1.2 var(--serif);letter-spacing:-.02em;color:var(--ink);margin:12px 0 8px}
 .stage .note{font:400 15.5px/1.6 var(--sans);color:var(--text2);max-width:64ch;margin:0 0 6px}
-.bearing{font:500 11px/1 var(--sans);letter-spacing:.14em;text-transform:uppercase;color:var(--text3)}
-.bearing b{color:var(--link);font-weight:600}
 
 /* ── still carried from v2.2: the banner, the Claude chip and the
    indigo band the How-it-works section uses. The stages, the gates band,
@@ -985,7 +983,6 @@ nav.main{margin-left:18px}
     header nav a.market{padding:8px 11px}      /* the live chip yields to the two pills on a phone */
     .brand{font-size:19px}
     .mark{width:26px;height:26px}
-    .bearing{font-size:11px;padding:8px 14px}
     /* on a phone the tiles are a strip ABOVE the headline, not a field behind it */
     .tiles{height:160px}
     .tile{width:calc(var(--s,64px) * .68);height:calc(var(--s,64px) * .53)}
@@ -1068,6 +1065,7 @@ nav.main{margin-left:18px}
           <g class="pop" fill="url(#markpop2)"><circle cx="380.0" cy="80.0" r="28.4"/><circle cx="592.1" cy="167.9" r="54.1"/><circle cx="680.0" cy="380.0" r="79.8"/><circle cx="592.1" cy="592.1" r="105.5"/><circle cx="380.0" cy="680.0" r="131.2"/><circle cx="167.9" cy="592.1" r="156.9"/><circle cx="80.0" cy="380.0" r="182.6"/><circle cx="167.9" cy="167.9" r="208.3"/></g>
         </svg>
       </div>
+<script src="rose.js"></script>
 <main>
 <div id="v-landing">
   <div class="wrap">
@@ -1274,22 +1272,8 @@ const BAND = f => f >= 80 ? ["auto", "var(--b-auto)", "var(--b-auto-bg)"]
               : f >= 55 ? ["unsure", "var(--b-unsure)", "var(--b-unsure-bg)"]
                         : ["near-miss", "var(--b-near)", "var(--b-near-bg)"];
 
-/* The bearing rose - the brand mark, carrying the score. Eight dots on the same
-   ring as the logo; fit lights them clockwise from bearing 000 and the lit ones
-   bloom. Nothing rotates, so the score reads the same at any size. */
-const ROSE = Array.from({length: 8}, (_, i) => {
-  const th = (-90 + 45 * i) * Math.PI / 180;
-  return [52 + 38 * Math.cos(th), 52 + 38 * Math.sin(th)];
-});
-function roseSVG(fit){
-  const col = BAND(fit)[1];
-  const lit = Math.max(1, Math.round(Math.max(0, Math.min(100, fit)) / 100 * 8));
-  const dots = ROSE.map(([x, y], i) => i < lit
-    ? `<circle class="lit" style="--i:${i}" cx="${x.toFixed(2)}" cy="${y.toFixed(2)}" r="${(7.87 + i * 1.019).toFixed(2)}" fill="${col}"/>`
-    : `<circle cx="${x.toFixed(2)}" cy="${y.toFixed(2)}" r="${((7.87 + i * 1.019) * 0.42).toFixed(2)}" fill="var(--hair2)"/>`).join("");
-  return `<svg class="rose" viewBox="0 0 104 104" role="img" aria-label="fit ${fit} of 100">
-    ${dots}<text class="fitnum" x="52" y="60.5" fill="${col}">${fit}</text></svg>`;
-}
+/* The rose is built by rose.js (one glyph for index, saved and the mockup);
+   BAND above still names the pill and its colours. */
 
 /* The numeral counts up on the dots' own clock: it reaches the score on the
    frame the last lit dot's transition ends ((lit-1) x stagger + arrive), so the
@@ -1298,7 +1282,7 @@ function roseSVG(fit){
 function countRose(card, fit){
   const num = card.querySelector(".fitnum");
   if (!num) return;
-  const lit = Math.max(1, Math.round(Math.max(0, Math.min(100, fit)) / 100 * 8));
+  const lit = ROSE_LIT[roseBand(Math.max(0, Math.min(100, fit)))];
   const dur = reduced ? 0 : (lit - 1) * 46 + 520;
   if (!dur){ num.textContent = fit; card.classList.add("settled"); return; }
   const t0 = performance.now();
@@ -1639,43 +1623,37 @@ function scoreCard(x, i){
   el.dataset.band = route;
   el.style.setProperty("--ci", i);
   el.dataset.title = p.title || x.id;
-  el.innerHTML = `      <button class="dismiss" type="button" aria-label="Dismiss this match">\u00d7</button>
+  el.innerHTML = `      <button class="dismiss" type="button" aria-label="Dismiss this match">×</button>
       <span class="swipehint" aria-hidden="true">Not for me</span>
       <div class="top">
-        <span class="logo">${esc((p.company || "?").slice(0, 2).toUpperCase())}</span>
-        <span style="display:flex;align-items:center;gap:10px">
-          ${roseSVG(x.fit)}
-          <button class="savebtn" type="button" data-save="${esc(x.id)}" aria-pressed="${!!tracker[x.id]}"
-            aria-label="Save ${esc(p.title || x.id)}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 1 0-7.8 7.8l1 1.1L12 21.2l7.8-7.7 1-1.1a5.5 5.5 0 0 0 0-7.8z"/></svg></button>
-        </span>
+        ${roseSVG(x.fit)}
+        <div class="c-id">
+          <p class="co">${esc(p.company || "")}${p.location ? `<span class="sep">·</span>${esc(p.location)}` : ""}</p>
+          <h3 class="role">${esc(p.title || x.id)}</h3>
+          <p class="c-meta">
+            <span class="route" style="color:${col};background:${bg}">${route}</span>
+            <span class="pill">${p.remote_policy === "remote" ? "Remote" : p.remote_policy === "hybrid" ? "Hybrid" : "On site"}</span>
+            <button class="age${age.days === 0 ? " new" : ""}${age.stale ? " stale" : ""}" type="button"
+              aria-expanded="false" data-ev="${esc(age.ev)}">${esc(age.text)}</button></p>
+        </div>
       </div>
       <div>
-        <p class="co">${esc(p.company || "")}</p>
-        <h3 class="role">${esc(p.title || x.id)}</h3>
-        <p style="margin:9px 0 0;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-          <span class="route" style="color:${col};background:${bg}">${route}</span>
-          <button class="age${age.days === 0 ? " new" : ""}${age.stale ? " stale" : ""}" type="button"
-            aria-expanded="false" data-ev="${esc(age.ev)}">${esc(age.text)}</button></p>
         <p class="verdict" style="margin:9px 0 0">${esc(x.verdict || "")}</p>
+        <div class="c-ev"><div class="c-ev-k">Strongest</div><p>${esc(x.strongest || "—")}</p></div>
+        <!-- what to answer stays behind the tap: a card that leads with a gap
+             leads with what the reader lacks (law 12) -->
         <div class="ev">
-          <button class="up" type="button" aria-expanded="false" data-ev="${esc(x.strongest || "\u2014")}">\u2191 strongest</button>
-          <button class="down" type="button" aria-expanded="false" data-ev="${esc(x.weakest || "\u2014")}">\u2193 what to answer</button>
+          <button class="down" type="button" aria-expanded="false" data-ev="${esc(x.weakest || "—")}">↓ what to answer</button>
         </div>
         <!-- EVERY match can be applied to. Below the floor the button is the
              quiet "Apply anyway", which still sets the stretch flag so the
              letter leads with the strongest real parallel - but it is always
-             THERE. Gating it behind the global opt-in meant a 42 the
-             candidate believes in had no route at all on a mixed list, and
-             the score is our opinion, not their decision. -->
+             THERE. The score is our opinion, not their decision. -->
         <div class="act">${x.fit >= FIT_FLOOR
-          ? `<button class="applybtn" type="button">Prepare application \u2192</button>`
-          : `<button class="applybtn stretch" type="button">Apply anyway \u2192</button>`
-          }${plink(p.url)}</div>
-      </div>
-      <div class="foot">
-        <span class="loc">${esc(p.location || "Location not stated")}</span>
-        <span class="pill${p.remote_policy === "remote" ? " on" : ""}">${
-          p.remote_policy === "remote" ? "Remote" : p.remote_policy === "hybrid" ? "Hybrid" : "On site"}</span>
+          ? `<button class="applybtn" type="button">Prepare application →</button>`
+          : `<button class="applybtn stretch" type="button">Apply anyway →</button>`
+          }${plink(p.url)}<button class="savebtn" type="button" data-save="${esc(x.id)}" aria-pressed="${!!tracker[x.id]}"
+            aria-label="Save ${esc(p.title || x.id)}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 1 0-7.8 7.8l1 1.1L12 21.2l7.8-7.7 1-1.1a5.5 5.5 0 0 0 0-7.8z"/></svg></button></div>
       </div>`;
   setTimeout(() => { el.classList.add("in", "arrive"); countRose(el, x.fit); }, reduced ? 0 : 105 * i);
   const sb = el.querySelector("[data-save]");
@@ -2146,27 +2124,40 @@ function browseRows(){
 const BELL = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>`;
 
 function browseCard(p){
+  /* MOTION v2 stage 1: the swept card is the scored card with the rose
+     unlit - eight empty bearings say "there is a score to be had here"
+     without a word, and when a resume arrives they fill in place. */
   const a = ageOf(p);
-  return `<article class="job" data-id="${esc(p.id)}" data-title="${esc(p.title)}">
+  return `<article class="job swept" data-id="${esc(p.id)}" data-title="${esc(p.title)}">
     <div class="top">
-      <span class="logo">${esc((p.company || "?").slice(0, 2).toUpperCase())}</span>
-      <span style="display:flex;align-items:center;gap:10px">
-        <button class="age${a.days === 0 ? " new" : ""}${a.stale ? " stale" : ""}" type="button" aria-expanded="false" data-ev="${esc(a.ev)}">${esc(a.text)}</button>
-        <button class="savebtn" type="button" data-save="${esc(p.id)}" aria-pressed="${!!tracker[p.id]}"
-          aria-label="Save ${esc(p.title)}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 1 0-7.8 7.8l1 1.1L12 21.2l7.8-7.7 1-1.1a5.5 5.5 0 0 0 0-7.8z"/></svg></button>
-      </span>
+      ${roseSVG(null)}
+      <div class="c-id">
+        <p class="co">${esc(p.company || "")}${p.location ? `<span class="sep">·</span>${esc(p.location)}` : ""}</p>
+        <h3 class="role">${p.url
+          ? `<a href="${esc(p.url)}" target="_blank" rel="noopener">${esc(p.title || "")}</a>`
+          : esc(p.title || "")}</h3>
+        <p class="c-meta">
+          <span class="pill">${p.remote_policy === "remote" ? "Remote" : p.remote_policy === "hybrid" ? "Hybrid" : "On site"}</span>
+          <button class="age${a.days === 0 ? " new" : ""}${a.stale ? " stale" : ""}" type="button" aria-expanded="false" data-ev="${esc(a.ev)}">${esc(a.text)}</button></p>
+      </div>
     </div>
-    <div><p class="co">${esc(p.company || "")}</p>
-      <h3 class="role">${p.url
-        ? `<a href="${esc(p.url)}" target="_blank" rel="noopener">${esc(p.title || "")}</a>`
-        : esc(p.title || "")}</h3></div>
-    <div class="foot">
-      <span class="loc">${esc(p.location || "Location not stated")}</span>
-      <span class="pill${p.remote_policy === "remote" ? " on" : ""}">${
-        p.remote_policy === "remote" ? "Remote" : p.remote_policy === "hybrid" ? "Hybrid" : "On site"}</span>
+    <div class="act">
+      <button class="applybtn quiet scoreme" type="button">Score against my resume →</button>
+      <button class="savebtn" type="button" data-save="${esc(p.id)}" aria-pressed="${!!tracker[p.id]}"
+        aria-label="Save ${esc(p.title)}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 1 0-7.8 7.8l1 1.1L12 21.2l7.8-7.7 1-1.1a5.5 5.5 0 0 0 0-7.8z"/></svg></button>
     </div>
   </article>`;
 }
+/* "Score against my resume": the run scores the sweep against what you
+   paste, so the honest thing the button can do is take you to the box.
+   The picker (four implementations that must agree) is not touched. */
+document.addEventListener("click", e => {
+  const b = e.target.closest(".scoreme");
+  if (!b) return;
+  setView("landing");
+  const box = document.getElementById("ownText");
+  if (box){ box.focus(); box.scrollIntoView({ block: "center" }); }
+});
 
 /* Companies, rolled up from today's sweep. Only what the feed supports: how
    many are open and how many remote. No "posted this week" — that needs a
@@ -2383,7 +2374,11 @@ function browse(){
     const old = [...host.querySelectorAll(".job")];
     old.forEach((el, i) => { el.style.transitionDelay = Math.min(i, 12) * 14 + "ms"; el.classList.add("leaving"); });
     host.dataset.reform = "1";
-    setTimeout(() => { delete host.dataset.reform; browse(); }, 160 + 14 * Math.min(old.length - 1, 12));
+    /* The flag stays up through the second call: it is what lets that call
+       past this guard to the render below, which clears it. Clearing it
+       first re-armed the guard, so every pass marked the rows leaving and
+       scheduled itself again - the list sat at opacity 0 for good. */
+    setTimeout(browse, 160 + 14 * Math.min(old.length - 1, 12));
     return;
   }
   delete host.dataset.reform;
@@ -2753,5 +2748,6 @@ reveal(); relight(); rotate();
   paint();
 })();
 </script>
+<script src="hsheet.js"></script>
 </body>
 </html>

@@ -101,6 +101,47 @@ for (const theme of ["light", "dark"]) {
     `${theme}: "How JobScout works" paints no ground and carries the hairline (${howBg.bg} / ${howBg.img} / ${howBg.top})`);
   await p.close();
 
+  // stage 7: the phone header is ONE row at 390/360/320, every destination one tap away,
+  // and a fourth market costs it nothing
+  for (const w of [390, 360, 320]) {
+    const hp = await ctx.newPage(); await hp.setViewportSize({ width: w, height: 800 });
+    await hp.goto(SITE + "/index.html", { waitUntil: "networkidle" });
+    await hp.evaluate(t => document.documentElement.setAttribute("data-theme", t), theme);
+    await hp.waitForTimeout(400);
+    const h = await hp.evaluate(() => {
+      const row = document.querySelector("header.site .row");
+      const kids = [...row.children].filter(el => getComputedStyle(el).display !== "none");
+      /* one row = every visible child sits inside the row's own box (a wrap
+         pushes a child below it); centred children have different tops */
+      const R = row.getBoundingClientRect();
+      const inside = kids.every(el => { const r = el.getBoundingClientRect(); return r.top >= R.top - 1 && r.bottom <= R.bottom + 1; });
+      return { height: row.offsetHeight, inside, visible: kids.map(el => el.className || el.tagName).join(" "), chip: document.querySelector(".hchip")?.textContent.trim() };
+    });
+    is(h.height <= 60 && h.inside, `${theme} ${w}px: the header is one row, ${h.height}px (${h.visible}; chip "${h.chip}")`);
+    const reach = await hp.evaluate(() => {
+      const before = [...document.querySelectorAll("nav.main a")].map(a => a.getAttribute("href"));
+      window.__hsheet.open();
+      const inSheet = [...document.querySelectorAll(".hsheet:not([hidden]) nav.main a")].map(a => a.getAttribute("href"));
+      const thm = document.querySelectorAll(".hsheet:not([hidden]) .thm button").length;
+      const mkt = document.querySelectorAll(".hsheet:not([hidden]) .mkt button").length;
+      window.__hsheet.close();
+      return { before, inSheet, thm, mkt, back: document.querySelectorAll("header.site .row .thm button").length };
+    });
+    is(reach.before.length > 0 && reach.before.every(x => reach.inSheet.includes(x)) && reach.thm === 3 && reach.mkt >= 2 && reach.back === 3,
+      `${theme} ${w}px: one tap of the ellipsis reaches ${reach.inSheet.length} nav items, the 3-state theme control and ${reach.mkt} markets, and they return`);
+    if (w === 390) {
+      const four = await hp.evaluate(() => {
+        const mkt = document.querySelector(".mkt"), h0 = document.querySelector("header.site .row").offsetHeight;
+        for (const [code, name] of [["us", "United States"], ["uk", "United Kingdom"]]) { const b = document.createElement("button"); b.type = "button"; b.dataset.mkt = code; b.setAttribute("aria-pressed", "false"); b.textContent = name; mkt.appendChild(b); }
+        const row = document.querySelector("header.site .row");
+        const over = [...row.children].some(el => { const r = el.getBoundingClientRect(); return r.right > innerWidth + 1 || r.left < -1; });
+        return { h0, h1: row.offsetHeight, over, n: mkt.children.length };
+      });
+      is(four.h1 === four.h0 && !four.over, `${theme} 390px: with ${four.n} markets the header stays ${four.h0}px and nothing overflows`);
+    }
+    await hp.close();
+  }
+
   // the mockup card, three states
   p = await ctx.newPage();
   await p.goto(MOCK + "/mobile.html", { waitUntil: "networkidle" });

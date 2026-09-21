@@ -1,0 +1,274 @@
+<!doctype html><html lang="en" data-theme="light"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1"><title>JobScout — card anatomy</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500&family=Inter:opsz,wght@14..32,400;14..32,500&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+:root{color-scheme:light dark;
+ --canvas:light-dark(#f8f3eb,#0a0524);--surface:light-dark(#fff,#1c1544);
+ --sunken:light-dark(#ece5d8,#1a1240);--text:light-dark(#080331,#f8f3eb);
+ --text-2:light-dark(#5a5560,#b9b3c4);--text-long:light-dark(#080331,#ded9e8);
+ --hairline:light-dark(rgba(8,3,49,.13),rgba(248,243,235,.13));
+ --accent:light-dark(#4865ff,#a2baff);--action:light-dark(#080331,#f8f3eb);
+ --action-on:light-dark(#f8f3eb,#0a0524);
+ --b-auto:light-dark(#3e954d,#7ac683);--b-ping:light-dark(#617ad1,#93adff);
+ --b-unsure:light-dark(#b86b03,#e89f59);--b-near:light-dark(#7d7d97,#aeafc7);
+ --b-auto-l:light-dark(#225b2c,#92d098);--b-auto-bg:light-dark(#e7f4e8,#223424);
+ --b-ping-l:light-dark(#394981,#a4bbff);--b-ping-bg:light-dark(#eaf0ff,#272e42);
+ --b-unsure-l:light-dark(#713f00,#ecaf78);--b-unsure-bg:light-dark(#fbede1,#3d2b1a);
+ --b-near-l:light-dark(#4b4b5c,#bbbcd0);--b-near-bg:light-dark(#eff0f4,#2e2e34);
+ --rose-empty:light-dark(#080331,#f8f3eb);
+ --evidence-bg:light-dark(#f1f1fa,#2b284f);
+ --halo-1:light-dark(rgba(255,252,242,.92),rgba(43,57,108,.50));
+ --halo-2:light-dark(rgba(255,250,240,.80),rgba(58,42,96,.42));
+  --spring-snap:   linear(0.0000, 0.0236, 0.0841, 0.1686, 0.2664, 0.3695, 0.4717, 0.5687, 0.6577, 0.7370, 0.8057, 0.8637, 0.9115, 0.9498, 0.9795, 1.0018, 1.0178, 1.0284, 1.0348, 1.0378, 1.0383, 1.0370, 1.0343, 1.0309, 1.0271, 1.0231, 1.0000);
+  --spring-settle: linear(0.0000, 0.0249, 0.0852, 0.1645, 0.2520, 0.3404, 0.4253, 0.5041, 0.5756, 0.6393, 0.6952, 0.7437, 0.7854, 0.8210, 0.8512, 0.8767, 0.8981, 0.9160, 0.9309, 0.9433, 0.9536, 0.9620, 0.9690, 0.9747, 0.9794, 0.9833, 1.0000);
+  --spring-arrive: linear(0.0000, 0.0264, 0.0948, 0.1910, 0.3029, 0.4208, 0.5373, 0.6468, 0.7458, 0.8318, 0.9041, 0.9624, 1.0075, 1.0406, 1.0631, 1.0766, 1.0827, 1.0831, 1.0792, 1.0724, 1.0637, 1.0540, 1.0441, 1.0346, 1.0258, 1.0180, 1.0000);
+  --spring-exit:   cubic-bezier(0.4, 0.0, 1, 1);
+  --t-snap: 180ms;  --t-settle: 340ms;  --t-arrive: 520ms;  --t-exit: 160ms;
+ --sh-rest:0 1px 2px rgba(75,68,57,.05),0 6px 14px rgba(75,68,57,.06);
+ --sh-hover:0 2px 4px rgba(75,68,57,.06),0 14px 30px rgba(75,68,57,.10);
+ --sh-press:0 1px 2px rgba(75,68,57,.08);
+ --edge-rest:light-dark(rgba(8,3,49,.08),rgba(248,243,235,.13));
+ --edge-hover:light-dark(rgba(8,3,49,.12),rgba(248,243,235,.26));
+ --surface-hover:light-dark(#ffffff,#221a52);
+ --serif:Newsreader,Georgia,serif;--sans:Inter,system-ui,sans-serif;--mono:'JetBrains Mono',monospace}
+[data-theme=light]{color-scheme:light}
+[data-theme=dark]{color-scheme:dark;--sh-rest:none;--sh-hover:none;--sh-press:none}
+*{box-sizing:border-box}
+html{background:var(--canvas)}
+body{margin:0;background:transparent;color:var(--text);font-family:var(--sans);-webkit-font-smoothing:antialiased}
+body::before{content:"";position:fixed;inset:0;z-index:-1;background:
+ radial-gradient(62% 48% at 88% 2%,var(--halo-1) 0,transparent 64%),
+ radial-gradient(54% 42% at 2% 30%,var(--halo-2) 0,transparent 62%)}
+.wrap{max-width:1180px;margin:0 auto;padding:26px 28px 60px}
+.bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:22px;gap:12px;flex-wrap:wrap}
+h1{font-family:var(--serif);font-weight:400;font-size:clamp(26px,3.4vw,34px);margin:0 0 7px;letter-spacing:-.01em}
+.lede{margin:0;font-size:13.5px;line-height:1.6;color:var(--text-2);max-width:74ch}
+.seg{display:flex;background:var(--sunken);border-radius:1600px;padding:3px}
+.seg button{border:0;background:transparent;color:var(--text-2);font:500 11.5px/1 var(--sans);
+ padding:8px 13px;border-radius:1600px;cursor:pointer}
+.seg button[aria-pressed=true]{background:var(--surface);color:var(--text);box-shadow:var(--sh-rest)}
+.k{font:500 9px/1 var(--sans);letter-spacing:.2em;color:var(--text-2)}
+.sec{margin-top:30px}
+.grid{margin-top:12px;display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:12px;align-items:start}
+
+/* ================= THE CARD ================= */
+.c{background:var(--surface);border:1px solid var(--edge-rest);border-radius:16px;
+ padding:15px 16px 14px;box-shadow:var(--sh-rest);cursor:pointer;
+ transition:transform var(--t-settle) var(--spring-settle),box-shadow var(--t-settle) var(--spring-settle),
+            border-color var(--t-settle) var(--spring-settle),background var(--t-settle) var(--spring-settle)}
+.c:hover{transform:translateY(-2px);box-shadow:var(--sh-hover);border-color:var(--edge-hover);background:var(--surface-hover)}
+.c:active{transform:scale(.988);box-shadow:var(--sh-press);transition-duration:var(--t-exit);transition-timing-function:var(--spring-exit)}
+
+/* 1 — the score LEADS. 52px, first in reading order. */
+.c-head{display:flex;gap:14px;align-items:flex-start}
+.c-score{position:relative;width:52px;height:52px;flex:none}
+.rose .d{fill:var(--rose-empty);opacity:.14;transform-box:fill-box;transform-origin:center;transform:scale(.55);
+ transition:opacity var(--t-arrive) var(--spring-arrive),transform var(--t-arrive) var(--spring-arrive)}
+.c[data-band=auto] .rose .d.lit{fill:var(--b-auto)}
+.c[data-band=ping] .rose .d.lit{fill:var(--b-ping)}
+.c[data-band=unsure] .rose .d.lit{fill:var(--b-unsure)}
+.c[data-band=near] .rose .d.lit{fill:var(--b-near)}
+.rose .d.lit{opacity:1;transform:scale(1);transition-delay:calc(var(--di) * 46ms)}
+.c:hover .rose .d.next{opacity:.55;transform:scale(.86)}
+.c-num{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+ font:500 17px/1 var(--mono);font-variant-numeric:tabular-nums;letter-spacing:-.02em;color:var(--text)}
+.c-dash{color:var(--text-2);opacity:.5;font-size:15px}
+
+/* 2 — title in NEWSREADER. The phone shipped it in sans-bold; law 13 assigns
+      the serif to display, and the desktop card already obeys. */
+.c-id{flex:1;min-width:0}
+.c-co{font-size:11px;color:var(--text-2)}
+.c-co .sep{opacity:.45}
+.c-ti{margin:2px 0 0;font-family:var(--serif);font-weight:400;font-size:18px;line-height:1.22;letter-spacing:-.005em}
+
+/* 3 — THREE TIERS of metadata. Container weight = importance.
+      band: filled, band colour · chip: sunken, no hue · date: no container. */
+.c-meta{margin-top:9px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.band{font:500 8.5px/1 var(--sans);letter-spacing:.14em;padding:6px 10px;border-radius:1600px}
+.c[data-band=auto] .band{background:var(--b-auto-bg);color:var(--b-auto-l)}
+.c[data-band=ping] .band{background:var(--b-ping-bg);color:var(--b-ping-l)}
+.c[data-band=unsure] .band{background:var(--b-unsure-bg);color:var(--b-unsure-l)}
+.c[data-band=near] .band{background:var(--b-near-bg);color:var(--b-near-l)}
+.chip{font-size:10.5px;color:var(--text-2);background:var(--sunken);padding:5px 10px;border-radius:1600px}
+.ago{font-size:10.5px;color:var(--text-2)}
+
+/* 4 — ONE evidence line: the STRONGEST. What-to-answer stays behind the tap,
+      because a browse card leading with a gap is leading with what they lack. */
+.c-ev{margin-top:12px;background:var(--evidence-bg);border-left:2px solid var(--b-auto);
+ border-radius:12px;padding:10px 12px}
+.c-ev-k{font:500 8px/1 var(--sans);letter-spacing:.16em;color:var(--b-auto-l)}
+.c-ev p{margin:6px 0 0;font-size:11.5px;line-height:1.5;color:var(--text-long)}
+
+/* 5 — the heart leaves the score's corner and joins the action row. */
+.c-act{margin-top:12px;display:flex;align-items:center;gap:9px}
+.b1,.b2{border:0;border-radius:1600px;font:500 11.5px/1 var(--sans);padding:11px 15px;cursor:pointer;
+ transition:transform var(--t-snap) var(--spring-snap),box-shadow var(--t-snap) var(--spring-snap)}
+.b1{background:var(--action);color:var(--action-on);box-shadow:var(--sh-rest)}
+.b2{background:transparent;color:var(--text);border:1px solid var(--edge-rest)}
+.b1:hover,.b2:hover{transform:translateY(-1px);box-shadow:var(--sh-hover)}
+.b1:active,.b2:active{transform:scale(.96);box-shadow:var(--sh-press);transition-duration:var(--t-exit)}
+.ar{display:inline-block;transition:transform var(--t-snap) var(--spring-snap)}
+.b1:hover .ar,.b2:hover .ar{transform:translateX(3px)}
+.heart{margin-left:auto;border:0;background:transparent;color:var(--text-2);cursor:pointer;padding:7px;
+ border-radius:1600px;display:flex;transition:color var(--t-snap) linear,transform var(--t-snap) var(--spring-snap)}
+.heart:hover{color:var(--text)}
+.heart:active{transform:scale(.88);transition-duration:var(--t-exit)}
+.heart.on{color:var(--b-unsure)}.heart.on svg{fill:currentColor}
+
+/* the swept card: same anatomy, unlit rose, one action */
+.swept .c-score.unlit .rose .d{opacity:.14}
+.swept:hover .c-score.unlit .rose .d{opacity:.26;transition-delay:calc(var(--di) * 26ms)}
+
+/* phone column */
+.phones{display:flex;gap:18px;flex-wrap:wrap;margin-top:12px}
+.ph{width:390px;border-radius:26px;border:1px solid var(--edge-rest);background:var(--canvas);
+ padding:14px 12px 16px;box-shadow:var(--sh-rest)}
+.ph .c{padding:13px 14px 12px}
+.ph .c-score{width:44px;height:44px}
+.ph .c-num{font-size:15px}
+.ph .c-ti{font-size:16px}
+
+.note{margin-top:30px;padding-top:16px;border-top:1px solid var(--hairline);font-size:12px;line-height:1.65;
+ color:var(--text-2);max-width:92ch}
+.note b{color:var(--text);font-weight:500}
+.note code{font:400 11px/1 var(--mono);background:var(--sunken);padding:2px 5px;border-radius:5px}
+@media (prefers-reduced-motion:reduce){*{animation:none!important}
+ .c,.rose .d,.b1,.b2,.heart{transition-duration:1ms!important;transition-delay:0ms!important}}
+</style></head><body><div class="wrap">
+
+<div class="bar">
+ <div><h1>Card anatomy</h1>
+ <p class="lede">Two card types, one skeleton. The difference between them is whether the rose is lit &mdash; which is also the difference between the sweep and your matches.</p></div>
+ <div class="seg" id="thm"><button aria-pressed="true" data-t="light">Light</button><button aria-pressed="false" data-t="dark">Dark</button></div>
+</div>
+
+<div class="sec">
+ <div class="k">A &middot; SWEPT, NOT YET SCORED &mdash; browse before a resume</div>
+ <div class="grid">
+  <article class="c swept">
+ <div class="c-head">
+  <div class="c-score unlit"><svg class="rose" viewBox="-4.2416 -3.0639 31.3054 31.3054" width="52" height="52" aria-hidden="true"><circle class="d" style="--di:0" cx="12.000" cy="1.000" r="2.275"/><circle class="d" style="--di:1" cx="19.778" cy="4.222" r="2.569"/><circle class="d" style="--di:2" cx="23.000" cy="12.000" r="2.864"/><circle class="d" style="--di:3" cx="19.778" cy="19.778" r="3.158"/><circle class="d" style="--di:4" cx="12.000" cy="23.000" r="3.453"/><circle class="d" style="--di:5" cx="4.222" cy="19.778" r="3.747"/><circle class="d" style="--di:6" cx="1.000" cy="12.000" r="4.041"/><circle class="d" style="--di:7" cx="4.222" cy="4.222" r="4.336"/></svg><span class="c-num c-dash">&ndash;</span></div>
+  <div class="c-id">
+   <div class="c-co">Sun Life <span class="sep">&middot;</span> Toronto, Ontario</div>
+   <h3 class="c-ti">Senior Financial Analyst</h3>
+   <div class="c-meta"><span class="chip">Hybrid</span><span class="ago">posted 2 days ago</span></div>
+  </div>
+ </div>
+ <div class="c-act">
+  <button class="b2">Score this against me <span class="ar">&rarr;</span></button>
+  <button class="heart" aria-label="Save"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l8.8 8.8 8.8-8.8a5.5 5.5 0 0 0 0-7.8z"/></svg></button>
+ </div></article>
+  <article class="c swept">
+ <div class="c-head">
+  <div class="c-score unlit"><svg class="rose" viewBox="-4.2416 -3.0639 31.3054 31.3054" width="52" height="52" aria-hidden="true"><circle class="d" style="--di:0" cx="12.000" cy="1.000" r="2.275"/><circle class="d" style="--di:1" cx="19.778" cy="4.222" r="2.569"/><circle class="d" style="--di:2" cx="23.000" cy="12.000" r="2.864"/><circle class="d" style="--di:3" cx="19.778" cy="19.778" r="3.158"/><circle class="d" style="--di:4" cx="12.000" cy="23.000" r="3.453"/><circle class="d" style="--di:5" cx="4.222" cy="19.778" r="3.747"/><circle class="d" style="--di:6" cx="1.000" cy="12.000" r="4.041"/><circle class="d" style="--di:7" cx="4.222" cy="4.222" r="4.336"/></svg><span class="c-num c-dash">&ndash;</span></div>
+  <div class="c-id">
+   <div class="c-co">TD Bank <span class="sep">&middot;</span> Toronto, Ontario</div>
+   <h3 class="c-ti">Business Systems Analyst III</h3>
+   <div class="c-meta"><span class="chip">On site</span><span class="ago">posted 3 weeks ago</span></div>
+  </div>
+ </div>
+ <div class="c-act">
+  <button class="b2">Score this against me <span class="ar">&rarr;</span></button>
+  <button class="heart" aria-label="Save"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l8.8 8.8 8.8-8.8a5.5 5.5 0 0 0 0-7.8z"/></svg></button>
+ </div></article>
+ </div>
+</div>
+
+<div class="sec">
+ <div class="k">B &middot; SCORED &mdash; matches and saved</div>
+ <div class="grid">
+  <article class="c scored " data-band="auto" data-lit="8">
+ <div class="c-head">
+  <div class="c-score"><svg class="rose" viewBox="-4.2416 -3.0639 31.3054 31.3054" width="52" height="52" aria-hidden="true"><circle class="d" style="--di:0" cx="12.000" cy="1.000" r="2.275"/><circle class="d" style="--di:1" cx="19.778" cy="4.222" r="2.569"/><circle class="d" style="--di:2" cx="23.000" cy="12.000" r="2.864"/><circle class="d" style="--di:3" cx="19.778" cy="19.778" r="3.158"/><circle class="d" style="--di:4" cx="12.000" cy="23.000" r="3.453"/><circle class="d" style="--di:5" cx="4.222" cy="19.778" r="3.747"/><circle class="d" style="--di:6" cx="1.000" cy="12.000" r="4.041"/><circle class="d" style="--di:7" cx="4.222" cy="4.222" r="4.336"/></svg><span class="c-num">84</span></div>
+  <div class="c-id">
+   <div class="c-co">Shopify <span class="sep">&middot;</span> Anywhere in Canada</div>
+   <h3 class="c-ti">Staff Engineer, Developer Platform</h3>
+   <div class="c-meta"><span class="band">AUTO</span><span class="chip">Remote</span><span class="ago">posted yesterday</span></div>
+  </div>
+ </div>
+ <div class="c-ev"><div class="c-ev-k">STRONGEST</div><p>Platform and API surface owned end to end, with public developer docs.</p></div>
+ <div class="c-act">
+  <button class="b1">Prepare application <span class="ar">&rarr;</span></button>
+  <button class="heart" aria-label="Save"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l8.8 8.8 8.8-8.8a5.5 5.5 0 0 0 0-7.8z"/></svg></button>
+ </div></article>
+  <article class="c scored " data-band="ping" data-lit="6">
+ <div class="c-head">
+  <div class="c-score"><svg class="rose" viewBox="-4.2416 -3.0639 31.3054 31.3054" width="52" height="52" aria-hidden="true"><circle class="d" style="--di:0" cx="12.000" cy="1.000" r="2.275"/><circle class="d" style="--di:1" cx="19.778" cy="4.222" r="2.569"/><circle class="d" style="--di:2" cx="23.000" cy="12.000" r="2.864"/><circle class="d" style="--di:3" cx="19.778" cy="19.778" r="3.158"/><circle class="d" style="--di:4" cx="12.000" cy="23.000" r="3.453"/><circle class="d" style="--di:5" cx="4.222" cy="19.778" r="3.747"/><circle class="d" style="--di:6" cx="1.000" cy="12.000" r="4.041"/><circle class="d" style="--di:7" cx="4.222" cy="4.222" r="4.336"/></svg><span class="c-num">79</span></div>
+  <div class="c-id">
+   <div class="c-co">Manulife <span class="sep">&middot;</span> Toronto, Ontario</div>
+   <h3 class="c-ti">External Wholesaler, Canada Insurance</h3>
+   <div class="c-meta"><span class="band">PING</span><span class="chip">Remote</span><span class="ago">posted 2 days ago</span></div>
+  </div>
+ </div>
+ <div class="c-ev"><div class="c-ev-k">STRONGEST</div><p>Wholesaling and advisor-facing distribution, with the licensing already held.</p></div>
+ <div class="c-act">
+  <button class="b1">Prepare application <span class="ar">&rarr;</span></button>
+  <button class="heart" aria-label="Save"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l8.8 8.8 8.8-8.8a5.5 5.5 0 0 0 0-7.8z"/></svg></button>
+ </div></article>
+ </div>
+</div>
+
+<div class="sec">
+ <div class="k">C &middot; THE SAME CARDS AT 390pt</div>
+ <div class="phones">
+  <div class="ph"><article class="c swept">
+ <div class="c-head">
+  <div class="c-score unlit"><svg class="rose" viewBox="-4.2416 -3.0639 31.3054 31.3054" width="44" height="44" aria-hidden="true"><circle class="d" style="--di:0" cx="12.000" cy="1.000" r="2.275"/><circle class="d" style="--di:1" cx="19.778" cy="4.222" r="2.569"/><circle class="d" style="--di:2" cx="23.000" cy="12.000" r="2.864"/><circle class="d" style="--di:3" cx="19.778" cy="19.778" r="3.158"/><circle class="d" style="--di:4" cx="12.000" cy="23.000" r="3.453"/><circle class="d" style="--di:5" cx="4.222" cy="19.778" r="3.747"/><circle class="d" style="--di:6" cx="1.000" cy="12.000" r="4.041"/><circle class="d" style="--di:7" cx="4.222" cy="4.222" r="4.336"/></svg><span class="c-num c-dash">&ndash;</span></div>
+  <div class="c-id">
+   <div class="c-co">Sun Life <span class="sep">&middot;</span> Toronto, Ontario</div>
+   <h3 class="c-ti">Senior Financial Analyst</h3>
+   <div class="c-meta"><span class="chip">Hybrid</span><span class="ago">posted 2 days ago</span></div>
+  </div>
+ </div>
+ <div class="c-act">
+  <button class="b2">Score this against me <span class="ar">&rarr;</span></button>
+  <button class="heart" aria-label="Save"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l8.8 8.8 8.8-8.8a5.5 5.5 0 0 0 0-7.8z"/></svg></button>
+ </div></article></div>
+  <div class="ph"><article class="c scored " data-band="auto" data-lit="8">
+ <div class="c-head">
+  <div class="c-score"><svg class="rose" viewBox="-4.2416 -3.0639 31.3054 31.3054" width="44" height="44" aria-hidden="true"><circle class="d" style="--di:0" cx="12.000" cy="1.000" r="2.275"/><circle class="d" style="--di:1" cx="19.778" cy="4.222" r="2.569"/><circle class="d" style="--di:2" cx="23.000" cy="12.000" r="2.864"/><circle class="d" style="--di:3" cx="19.778" cy="19.778" r="3.158"/><circle class="d" style="--di:4" cx="12.000" cy="23.000" r="3.453"/><circle class="d" style="--di:5" cx="4.222" cy="19.778" r="3.747"/><circle class="d" style="--di:6" cx="1.000" cy="12.000" r="4.041"/><circle class="d" style="--di:7" cx="4.222" cy="4.222" r="4.336"/></svg><span class="c-num">84</span></div>
+  <div class="c-id">
+   <div class="c-co">Shopify <span class="sep">&middot;</span> Anywhere in Canada</div>
+   <h3 class="c-ti">Staff Engineer, Developer Platform</h3>
+   <div class="c-meta"><span class="band">AUTO</span><span class="chip">Remote</span><span class="ago">posted yesterday</span></div>
+  </div>
+ </div>
+ <div class="c-ev"><div class="c-ev-k">STRONGEST</div><p>Platform and API surface owned end to end, with public developer docs.</p></div>
+ <div class="c-act">
+  <button class="b1">Prepare application <span class="ar">&rarr;</span></button>
+  <button class="heart" aria-label="Save"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l8.8 8.8 8.8-8.8a5.5 5.5 0 0 0 0-7.8z"/></svg></button>
+ </div></article></div>
+  <div class="ph"><article class="c scored " data-band="near" data-lit="3">
+ <div class="c-head">
+  <div class="c-score"><svg class="rose" viewBox="-4.2416 -3.0639 31.3054 31.3054" width="44" height="44" aria-hidden="true"><circle class="d" style="--di:0" cx="12.000" cy="1.000" r="2.275"/><circle class="d" style="--di:1" cx="19.778" cy="4.222" r="2.569"/><circle class="d" style="--di:2" cx="23.000" cy="12.000" r="2.864"/><circle class="d" style="--di:3" cx="19.778" cy="19.778" r="3.158"/><circle class="d" style="--di:4" cx="12.000" cy="23.000" r="3.453"/><circle class="d" style="--di:5" cx="4.222" cy="19.778" r="3.747"/><circle class="d" style="--di:6" cx="1.000" cy="12.000" r="4.041"/><circle class="d" style="--di:7" cx="4.222" cy="4.222" r="4.336"/></svg><span class="c-num">32</span></div>
+  <div class="c-id">
+   <div class="c-co">Sun Life <span class="sep">&middot;</span> Toronto, Ontario</div>
+   <h3 class="c-ti">Sr. Analytics and Automation Engineer</h3>
+   <div class="c-meta"><span class="band">NEAR-MISS</span><span class="chip">Hybrid</span><span class="ago">posted 2 days ago</span></div>
+  </div>
+ </div>
+ <div class="c-ev"><div class="c-ev-k">STRONGEST</div><p>Infrastructure and LLM orchestration, shipped end to end and measured.</p></div>
+ <div class="c-act">
+  <button class="b1">Prepare application <span class="ar">&rarr;</span></button>
+  <button class="heart" aria-label="Save"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l8.8 8.8 8.8-8.8a5.5 5.5 0 0 0 0-7.8z"/></svg></button>
+ </div></article></div>
+ </div>
+</div>
+
+<p class="note"><b>Five changes, and one of them is the whole idea.</b> The score <b>leads</b> &mdash; 52px, first in reading order, where the eye lands; it shipped as a bare numeral parked in a corner at body-text weight, so the most important value on the card was the least weighted. The title moves to <b>Newsreader</b>: the phone shipped it in sans-bold while the desktop card already obeyed law 13. Metadata gets <b>three tiers</b> &mdash; band pill filled in the band colour, location chip sunken with no hue, date with no container at all &mdash; because a verdict and a fact were rendered identically. The heart leaves the score&rsquo;s corner for the action row, so saving stops competing with the verdict. And the card carries <b>one</b> evidence line, the strongest: what-to-answer stays behind the tap, because a browse card that leads with a gap is leading with what the reader lacks, which law 12 forbids. <b>The idea:</b> an unscored card is the same card with an unlit rose. Eight empty bearings say &ldquo;there is a score to be had here&rdquo; without a word, on every row of the sweep &mdash; and when a resume arrives they fill in place. Browse <em>becomes</em> matches.</p>
+
+</div>
+<script>
+document.querySelectorAll('.scored').forEach(c=>{
+ const n=+c.dataset.lit,d=[...c.querySelectorAll('.d')];
+ d.forEach(x=>x.classList.remove('lit','next'));
+ d.slice(0,n).forEach(x=>x.classList.add('lit'));
+ if(d[n])d[n].classList.add('next');
+});
+document.querySelectorAll('.heart').forEach(h=>h.addEventListener('click',e=>{e.stopPropagation();h.classList.toggle('on')}));
+document.getElementById('thm').addEventListener('click',e=>{
+ const b=e.target.closest('button'); if(!b)return;
+ e.currentTarget.querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));
+ document.documentElement.setAttribute('data-theme',b.dataset.t);
+});
+</script></body></html>

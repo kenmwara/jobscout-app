@@ -145,10 +145,13 @@ const ok = (m) => console.log(`  ok    ${m}`);
 {
   // Named precisely per page: "the word appears somewhere" passed a build where
   // the guard had been deleted and only its call site survived.
+  // The builder moved to site/rose.js (one glyph for every page); the guard
+  // lives there now and every page inherits it.
   const saved = readFileSync(join(root, "site", "saved.html"), "utf8");
-  const rose = saved.match(/function roseSVG\(fit\)\{[\s\S]{0,240}/)?.[0] || "";
-  if (!/fit === null|fit == null/.test(rose))
-    bad("saved.html draws the rose without ruling out null — an unscored save shows a 0");
+  const rosejs = readFileSync(join(root, "site", "rose.js"), "utf8");
+  const rose = rosejs.match(/function roseSVG\(fit[^)]*\)\s*\{[\s\S]{0,300}/)?.[0] || "";
+  if (!/fit !== null|fit === null|fit == null/.test(rose))
+    bad("rose.js draws the rose without ruling out null — an unscored save shows a 0");
   else ok("saved.html draws no number for an unscored save");
   if (!/min:\s*null/.test(saved))
     bad("saved.html has no band for an unscored save — it lands under \"below 55\"");

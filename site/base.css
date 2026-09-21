@@ -363,6 +363,7 @@
 :root{
   --serif:"Newsreader",Georgia,"Times New Roman",serif;
   --sans:"Inter",-apple-system,system-ui,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;   /* data: the rose's numeral */
   --r-card:20px; --r-input:14px; --r-btn:10px; --r-pill:9999px;
   --max:1200px;
   /* motion, measured off the reference's own stylesheet */
@@ -399,7 +400,35 @@
   --surface-hover:light-dark(#ffffff, #221a52);   /* --surface lifted one rung, 1.10:1 */
   --tile-fill:light-dark(rgba(72,101,255,.085), rgba(162,186,255,.10)); /* a quantity, not a signal (s16) */
   --t-breathe:4200ms; --breathe-floor:.90; --t-seek:5600ms;
+  /* the unlit bearing: the ink at 14% (via opacity), never a band colour */
+  --rose-empty:light-dark(#080331, #f8f3eb);
 }
+
+/* ── THE ROSE, one glyph on every surface (site/rose.js builds it) ────────
+   Display cut at >=48px; lit = the band; unlit dots stay at 14%, scaled .55.
+   Each dot carries its own arrival transition on --spring-arrive, one
+   --stagger-dot apart, so a card that goes from swept to scored fills in
+   place. The numeral is data: mono, tabular, centred in the ring. */
+.rose{display:block;flex:0 0 auto;width:52px;height:52px;overflow:visible}
+.rose .d{fill:var(--rose-empty);opacity:.14;transform-box:fill-box;transform-origin:center;transform:scale(.55);
+  transition:transform var(--t-arrive) var(--spring-arrive),opacity var(--t-arrive) var(--ease);
+  transition-delay:calc(var(--i) * var(--stagger-dot))}
+.rose .d.lit{opacity:1;transform:scale(1)}
+.rose .fitnum{font:500 8.6px/1 var(--mono);text-anchor:middle;dominant-baseline:central;
+  font-variant-numeric:tabular-nums;fill:var(--text)}
+.rose.unlit .fitnum{fill:var(--text3)}
+/* the tell: hovering a scored card lights the NEXT bearing at 55% - the
+   cheapest way to say the rose is a quantity, not an ornament */
+.job:hover .rose .d.next,.card:hover .rose .d.next,.row:hover .rose .d.next{opacity:.55;transform:scale(.86)}
+/* a swept card's empty ring brightens a little under the pointer */
+.job:hover .rose.unlit .d,.card:hover .rose.unlit .d{opacity:.26;transition-delay:calc(var(--i) * 26ms)}
+/* settled roses breathe, out of step; a real AUTO's pill pulses once */
+@keyframes rosebreathe{0%,100%{opacity:1}50%{opacity:var(--breathe-floor)}}
+@keyframes autopulse{0%{transform:scale(1)}38%{transform:scale(1.05)}100%{transform:scale(1)}}
+/* the empty state's seeking rose: one bearing lighting and dimming at a time */
+@keyframes seek{0%,100%{opacity:.14;transform:scale(.72)}22%{opacity:.8;transform:scale(1)}44%{opacity:.14;transform:scale(.72)}}
+html.anim .rose.seek .d{animation:seek var(--t-seek) ease-in-out infinite;animation-delay:calc(var(--i) * 220ms)}
+@media (prefers-reduced-motion:reduce){ .rose .d{transition-duration:1ms;transition-delay:0ms} }
 @media (prefers-color-scheme: dark){
   :root[data-theme="system"]{ --sh-rest:none; --sh-press:none; }
 }
@@ -563,7 +592,6 @@ footer.site{padding:70px 0 40px;border-top:1px solid var(--hair);margin-top:70px
    Copied out of index.html so a saved score, an application and the demo
    all draw the same rose and the same band pill. */
 .rose{width:64px;height:64px;flex:0 0 auto;display:block}
-.rose .fitnum{font:500 30px/1 var(--serif);text-anchor:middle}
 .route{font:500 10px/1 var(--sans);letter-spacing:.09em;text-transform:uppercase;
   border-radius:var(--r-pill);padding:5px 9px;display:inline-block;white-space:nowrap}
 .verdict{font:500 13px/1.35 var(--sans);color:var(--text2)}
@@ -597,3 +625,40 @@ h1.display,h2.sec{text-wrap:balance}
    THE RULE: one ground. The card region is --canvas and there is no second
    surface floating over it. If the page ever needs texture again it has to
    come from the canvas token itself, not from a layer on top of it. */
+
+/* ── THE PHONE HEADER (motion v2 stage 7; site/hsheet.js) ──────────────
+   One row, 56px, at 620px and under: brand, then a market chip (flag +
+   code) and an ellipsis that opens the sheet. The switch, the three-state
+   theme control and the nav MOVE into the sheet while it is open. */
+.hchip,.hmore{display:none}
+@media (max-width:620px){
+  header.site{padding:6px 0}
+  header.site .row{flex-wrap:nowrap;height:56px;gap:10px;align-items:center}
+  header.site .row>.mkt,header.site .row>.thm,header.site .row>nav.main{display:none}
+  .hchip,.hmore{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:44px;min-width:44px;
+    padding:0 10px;border-radius:12px;border:1px solid var(--hair);background:var(--trough);color:var(--ink);
+    font:500 13px/1 var(--sans);cursor:pointer;appearance:none;
+    transition:transform var(--t-snap) var(--spring-snap),background var(--t-snap) var(--spring-snap)}
+  .hchip{margin-left:auto}
+  .hchip .flag{width:16px;height:11px;border-radius:2px;display:block}
+  .hmore{width:44px;padding:0;font-size:18px;line-height:1}
+  html .hchip:active,html .hmore:active{transform:scale(.94);transition-duration:var(--t-exit)}
+}
+.hsheet{position:fixed;inset:0;z-index:60}
+.hsheet[hidden]{display:none}
+.hs-scrim{position:absolute;inset:0;background:var(--scrim)}
+.hs-pane{position:absolute;left:0;right:0;bottom:0;max-height:90dvh;overflow:auto;background:var(--surface);
+  border-radius:22px 22px 0 0;border-top:1px solid var(--sheet-edge);box-shadow:var(--shadow-sheet);
+  padding:10px 18px calc(28px + env(safe-area-inset-bottom, 0px))}
+.hs-grab{width:38px;height:4px;border-radius:2px;background:var(--hair2);margin:4px auto 10px}
+.hs-close{position:absolute;right:14px;top:12px;width:30px;height:30px;border-radius:50%;border:1px solid var(--hair);
+  background:transparent;color:var(--text2);font:400 18px/1 var(--sans);cursor:pointer;appearance:none}
+.hs-sec h3{font:400 15px/1 var(--serif);color:var(--text2);margin:16px 0 10px}
+.hs-sec .mkt,.hs-sec .thm{position:static;transform:none;margin:0;display:inline-flex}
+.hs-sec .thm button{min-width:44px;min-height:44px;padding:0}
+.hs-sec nav.main{display:flex;flex-direction:column;gap:0;margin:0}
+.hs-sec nav.main a{display:block;width:100%;padding:13px 0;font-size:16px;border-bottom:1px solid var(--hair);border-radius:0}
+html.anim .hsheet:not([hidden]) .hs-pane{animation:sheetup var(--t-settle) var(--spring-settle)}
+@keyframes sheetup{from{transform:translateY(24px);opacity:0}}
+@media (prefers-reduced-motion:reduce){ .hsheet .hs-pane{animation:none} }
+

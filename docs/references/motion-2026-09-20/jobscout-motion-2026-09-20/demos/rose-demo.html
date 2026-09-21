@@ -24,6 +24,7 @@
   --b-ping:   light-dark(#617ad1,#93adff);
   --b-unsure: light-dark(#b86b03,#e89f59);
   --b-near:   light-dark(#7d7d97,#aeafc7);
+  --rose-empty: light-dark(#080331,#f8f3eb);
   --b-auto-l:   light-dark(#225b2c,#92d098);  --b-auto-bg:   light-dark(#e7f4e8,#223424);
   --b-ping-l:   light-dark(#394981,#a4bbff);  --b-ping-bg:   light-dark(#eaf0ff,#272e42);
   --b-unsure-l: light-dark(#713f00,#ecaf78);  --b-unsure-bg: light-dark(#fbede1,#3d2b1a);
@@ -42,9 +43,10 @@
 
   /* Material ladder. On light, elevation is shadow. On dark there is no
      shadow, so the hairline brightens and the surface lifts one step. */
-  --sh-rest:  light-dark(0 1px 2px rgba(75,68,57,.05), 0 6px 14px rgba(75,68,57,.06), none);
-  --sh-hover: light-dark(0 2px 4px rgba(75,68,57,.06), 0 14px 30px rgba(75,68,57,.10), none);
-  --sh-press: light-dark(0 1px 2px rgba(75,68,57,.08), none);
+ --sh-rest:0 1px 2px rgba(75,68,57,.05),0 6px 14px rgba(75,68,57,.06);
+ --sh-hover:0 2px 4px rgba(75,68,57,.06),0 14px 30px rgba(75,68,57,.10);
+ --sh-press:0 1px 2px rgba(75,68,57,.08);
+ --sh-float:0 2px 6px rgba(75,68,57,.07),0 24px 56px rgba(75,68,57,.16);
   --edge-rest:  light-dark(rgba(8,3,49,.08), rgba(248,243,235,.13));
   --edge-hover: light-dark(rgba(8,3,49,.12), rgba(248,243,235,.26));
   --lift-rest: light-dark(#ffffff,#1c1544);
@@ -56,7 +58,7 @@
   --mono: 'JetBrains Mono', ui-monospace, monospace;
 }
 [data-theme="light"]{color-scheme:light}
-[data-theme="dark"]{color-scheme:dark; --sh-rest:none; --sh-hover:none; --sh-press:none}
+[data-theme="dark"]{color-scheme:dark; --sh-rest:none; --sh-hover:none; --sh-press:none; --sh-float:none}
 *{box-sizing:border-box}
 html{background:var(--canvas)}
 body{margin:0;background:transparent;color:var(--text);font-family:var(--sans);
@@ -89,7 +91,7 @@ h1{font-family:var(--serif);font-weight:400;font-size:clamp(28px,4vw,40px);line-
   box-shadow:var(--sh-rest);
   transition:transform var(--t-snap) var(--spring-snap), box-shadow var(--t-snap) var(--spring-snap)}
 .run:hover{transform:translateY(-1px);box-shadow:var(--sh-hover)}
-.run:active{transform:scale(.97);box-shadow:var(--sh-press)}
+.run:active{transform:scale(.97);box-shadow:var(--sh-press);transition-duration:var(--t-exit)}
 .hint{font-size:11.5px;color:var(--text-2)}
 
 .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(330px,1fr));gap:14px;margin-top:6px}
@@ -116,7 +118,7 @@ h1{font-family:var(--serif);font-weight:400;font-size:clamp(28px,4vw,40px);line-
 /* ---------------- the rose: the score device ---------------- */
 .score{position:relative;width:52px;height:52px;flex:none}
 .rose{display:block}
-.rose .d{fill:var(--b-near);opacity:.16;
+.rose .d{fill:var(--rose-empty);opacity:.14;
   transform-box:fill-box;transform-origin:center;transform:scale(.55);
   transition:opacity var(--t-arrive) var(--spring-arrive),
              transform var(--t-arrive) var(--spring-arrive),
@@ -171,8 +173,8 @@ h1{font-family:var(--serif);font-weight:400;font-size:clamp(28px,4vw,40px);line-
 .btn-1 .ar{display:inline-block;transition:transform var(--t-snap) var(--spring-snap)}
 .btn-1:hover .ar{transform:translateX(3px)}
 .btn-2{background:transparent;color:var(--text);border:1px solid var(--edge-rest)}
-.btn-2:hover{border-color:var(--edge-hover)}
-.btn:active{transform:scale(.96);transition-duration:var(--t-exit)}
+.btn-2:hover{border-color:var(--edge-hover);transform:translateY(-1px);box-shadow:var(--sh-hover)}
+.btn:active{transform:scale(.96);box-shadow:var(--sh-press);transition-duration:var(--t-exit)}
 .heart{margin-left:auto;border:0;background:transparent;color:var(--text-2);cursor:pointer;padding:6px;
   border-radius:1600px;display:flex;
   transition:color var(--t-snap) linear, transform var(--t-snap) var(--spring-snap)}

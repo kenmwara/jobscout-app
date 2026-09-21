@@ -155,3 +155,98 @@ Add to the existing suite:
 - **Reduced motion** — re-run `cycle3.mjs` with
   `prefers-reduced-motion: reduce` emulated and assert identical *information*:
   same lit-dot counts, same tile bar widths, same filtered row count.
+
+
+---
+
+## 10. The phone header — one row, and it scales
+
+Measured at 390pt. The header wraps to **two rows, 80px**, before any content:
+
+```
+  row 1   brand + market pill (flags only, no labels)
+  row 2   theme control (3 icons) + "Browse"
+```
+
+Three things are wrong and only one of them is the wrap:
+
+- **The market pill drops its labels on phone** — two flags at 24px, and the
+  selected one is a white pill. Nothing says which market you are in.
+- **The nav is silently truncated** to "Browse". Saved and How it works are
+  gone, not collapsed.
+- **It breaks past three markets.** Four flags plus padding is ~200px of a
+  390pt row, and the segmented control has no overflow behaviour.
+
+**Fixed: one row, 56px.**
+
+```
+  [rose] JobScout .................. [🇨🇦 CA]  [⋯]
+```
+
+- The market chip is **flag + 2-letter code**, 44pt tall, and opens a sheet
+  when there are more than three markets — so it scales without a redesign.
+- `⋯` opens a sheet carrying the **full three-state theme control** (law 2 —
+  still Light / Device / Dark, at full size where it is easier to hit) plus
+  every nav item with its count. Nothing is truncated any more.
+- 24px back, and the header stops being a layout with a breaking point.
+
+## 11. Android browse — the sweep starts 81% down the screen
+
+Measured from `android-browse-ca-light.png`, 1080×2400:
+
+| | |
+|---|---|
+| two-column tile grid | y 430 → ~1140 (**710px**) |
+| filter chips, heading, sub-chips, count | → 1940 |
+| **first posting card** | **y 1940 of 2400 = 81% down** |
+
+Ten identical tiles, all reading "24 open", occupy half the screen before a
+single job. This is item 4's problem with a phone's aspect ratio on top of it.
+
+**Fixed:** the tile grid becomes a **single horizontal scroller of chips**,
+sorted by count, with the count inline — `Finance & banking 24+`. 50px instead
+of 710. The list starts immediately underneath, and the chip row is sticky so
+the filter stays reachable.
+
+```
+  first posting   y 1940  ->  y ~461   (19% down instead of 81%)
+                  1,479px recovered
+```
+
+No information is lost: every sector is still there, still tappable, still
+shows its count — it scrolls sideways instead of downwards.
+
+## 12. Empty and refused states — law 12 as a screen
+
+Three states currently have no design. All three are in `demos/phone-demo.html`.
+
+**Saved, empty.** A white box with centred text today. Gets the 84px seeking
+rose (item 7): one bearing lighting at a time over 5.6s. The mark doing the
+product's job at the exact moment there is no data.
+
+**Rate-limited.** Leads with *what happened and when*, not with a wall:
+
+> **One run an hour, and you used yours at 09:12.**
+> The guard is there so a single visitor cannot drain the day's budget.
+> Nothing was lost — your last run is still on the saved page.
+> **NEXT RUN** `47:08` from now · 10:12
+
+The countdown is mono with tabular figures. Both actions are real routes, not
+dead ends: open the last run, or browse the sweep meanwhile.
+
+**Grounded refusal.** Law 12: *a refusal is shown with its reason, never
+silently* — and *never lead with what they lack*. So it leads with what the
+product **did**, then names the two claims, quoted, with why each failed:
+
+> **The letter was written, then checked.**
+> Two of its claims are not in your resume, so it is not being shown as yours.
+> Nothing here is a judgement about you — only about what the document says.
+>
+> **NOT IN THE RESUME**
+> 1. "led a team of six engineers" — the resume names no team size.
+> 2. "AWS certified" — no certification appears anywhere in the document.
+
+Quoting the exact phrase matters: "2 things your resume does not contain" is
+unactionable, and the reader cannot tell whether the model was wrong. The two
+actions are rewrite-without, or add-and-re-run — the second one treats the
+refusal as possibly the *resume's* omission rather than the reader's failing.

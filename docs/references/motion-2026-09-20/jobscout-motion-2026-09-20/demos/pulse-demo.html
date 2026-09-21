@@ -1,0 +1,148 @@
+<!doctype html><html lang="en" data-theme="light"><head><meta charset="utf-8">
+<title>The AUTO pulse</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400&family=Inter:opsz,wght@14..32,400;14..32,500&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+:root{color-scheme:light dark;
+ --canvas:light-dark(#f8f3eb,#0a0524);--surface:light-dark(#fff,#1c1544);
+ --sunken:light-dark(#ece5d8,#1a1240);--text:light-dark(#080331,#f8f3eb);
+ --text-2:light-dark(#5a5560,#b9b3c4);--text-long:light-dark(#080331,#ded9e8);
+ --hairline:light-dark(rgba(8,3,49,.13),rgba(248,243,235,.13));
+ --action:light-dark(#080331,#f8f3eb);--action-on:light-dark(#f8f3eb,#0a0524);
+ --b-auto:light-dark(#3e954d,#7ac683);--b-near:light-dark(#7d7d97,#aeafc7);
+ --b-auto-l:light-dark(#225b2c,#92d098);--b-auto-bg:light-dark(#e7f4e8,#223424);
+ --b-near-l:light-dark(#4b4b5c,#bbbcd0);--b-near-bg:light-dark(#eff0f4,#2e2e34);
+ --rose-empty:light-dark(#080331,#f8f3eb);--evidence-bg:light-dark(#f1f1fa,#2b284f);
+ --halo-1:light-dark(rgba(255,252,242,.92),rgba(43,57,108,.50));
+  --spring-snap:   linear(0.0000, 0.0236, 0.0841, 0.1686, 0.2664, 0.3695, 0.4717, 0.5687, 0.6577, 0.7370, 0.8057, 0.8637, 0.9115, 0.9498, 0.9795, 1.0018, 1.0178, 1.0284, 1.0348, 1.0378, 1.0383, 1.0370, 1.0343, 1.0309, 1.0271, 1.0231, 1.0000);
+  --spring-settle: linear(0.0000, 0.0249, 0.0852, 0.1645, 0.2520, 0.3404, 0.4253, 0.5041, 0.5756, 0.6393, 0.6952, 0.7437, 0.7854, 0.8210, 0.8512, 0.8767, 0.8981, 0.9160, 0.9309, 0.9433, 0.9536, 0.9620, 0.9690, 0.9747, 0.9794, 0.9833, 1.0000);
+  --spring-arrive: linear(0.0000, 0.0264, 0.0948, 0.1910, 0.3029, 0.4208, 0.5373, 0.6468, 0.7458, 0.8318, 0.9041, 0.9624, 1.0075, 1.0406, 1.0631, 1.0766, 1.0827, 1.0831, 1.0792, 1.0724, 1.0637, 1.0540, 1.0441, 1.0346, 1.0258, 1.0180, 1.0000);
+  --spring-exit:   cubic-bezier(0.4, 0.0, 1, 1);
+  --t-snap: 180ms;  --t-settle: 340ms;  --t-arrive: 520ms;  --t-exit: 160ms;
+ --sh-rest:0 1px 2px rgba(75,68,57,.05),0 6px 14px rgba(75,68,57,.06);
+ --edge-rest:light-dark(rgba(8,3,49,.08),rgba(248,243,235,.13));
+ --serif:Newsreader,Georgia,serif;--sans:Inter,system-ui,sans-serif;--mono:'JetBrains Mono',monospace;
+ --pulse-ms:420ms}
+[data-theme=dark]{color-scheme:dark;--sh-rest:none}
+*{box-sizing:border-box}
+html{background:var(--canvas)}
+body{margin:0;background:transparent;color:var(--text);font-family:var(--sans);-webkit-font-smoothing:antialiased}
+body::before{content:"";position:fixed;inset:0;z-index:-1;background:radial-gradient(62% 48% at 88% 2%,var(--halo-1) 0,transparent 64%)}
+.w{max-width:940px;margin:0 auto;padding:26px 28px 40px}
+h1{font-family:var(--serif);font-weight:400;font-size:32px;margin:0 0 7px;letter-spacing:-.01em}
+.l{margin:0 0 20px;font-size:13.5px;line-height:1.6;color:var(--text-2);max-width:74ch}
+.ctl{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:20px}
+.run{border:0;border-radius:1600px;background:var(--action);color:var(--action-on);
+ font:500 13px/1 var(--sans);padding:13px 22px;cursor:pointer;box-shadow:var(--sh-rest)}
+.tg{border:1px solid var(--edge-rest);background:var(--surface);color:var(--text);border-radius:1600px;
+ font:500 12px/1 var(--sans);padding:11px 16px;cursor:pointer}
+.tg[aria-pressed=true]{background:var(--action);color:var(--action-on);border-color:transparent}
+.g{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.c{background:var(--surface);border:1px solid var(--edge-rest);border-radius:16px;padding:16px 17px 15px;box-shadow:var(--sh-rest)}
+.h{display:flex;gap:14px;align-items:flex-start}
+.s{position:relative;width:52px;height:52px;flex:none}
+.rose .d{fill:var(--rose-empty);opacity:.14;transform-box:fill-box;transform-origin:center;transform:scale(.55);
+ transition:opacity var(--t-arrive) var(--spring-arrive),transform var(--t-arrive) var(--spring-arrive)}
+.c[data-band=auto] .rose .d.lit{fill:var(--b-auto)}
+.c[data-band=near] .rose .d.lit{fill:var(--b-near)}
+.rose .d.lit{opacity:1;transform:scale(1);transition-delay:calc(var(--di) * 46ms)}
+.n{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+ font:500 17px/1 var(--mono);font-variant-numeric:tabular-nums;color:var(--text)}
+.i{flex:1;min-width:0}.co{font-size:11px;color:var(--text-2)}
+.i h3{margin:2px 0 0;font-family:var(--serif);font-weight:400;font-size:18px;line-height:1.22}
+.m{margin-top:9px;display:flex;gap:8px;align-items:center}
+.band{display:inline-block;font:500 8.5px/1 var(--sans);letter-spacing:.14em;padding:6px 10px;border-radius:1600px;
+ transform-origin:center}
+.c[data-band=auto] .band{background:var(--b-auto-bg);color:var(--b-auto-l)}
+.c[data-band=near] .band{background:var(--b-near-bg);color:var(--b-near-l)}
+.chip{font-size:10.5px;color:var(--text-2);background:var(--sunken);padding:5px 10px;border-radius:1600px}
+.ev{margin-top:12px;background:var(--evidence-bg);border-left:2px solid var(--b-auto);border-radius:12px;padding:10px 12px}
+.k{font:500 8px/1 var(--sans);letter-spacing:.16em;color:var(--b-auto-l)}
+.ev p{margin:6px 0 0;font-size:11.5px;line-height:1.5;color:var(--text-long)}
+
+/* ============== THE PULSE. This is the whole thing. ============== */
+@keyframes autopulse{
+  0%   { transform: scale(1);    }
+  38%  { transform: scale(1.05); }
+  100% { transform: scale(1);    }
+}
+.c[data-band=auto].settled .band{ animation: autopulse var(--pulse-ms) var(--spring-arrive) 1; }
+/* NEAR-MISS has no rule at all. That absence is the design. */
+
+.strip{margin-top:26px;padding-top:18px;border-top:1px solid var(--hairline)}
+.frames{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px}
+.fr{text-align:center}
+.fr .px{display:flex;align-items:center;justify-content:center;height:46px}
+.fr .band{background:var(--b-auto-bg);color:var(--b-auto-l)}
+.fr .t{margin-top:5px;font:400 9px/1 var(--mono);color:var(--text-2)}
+.note{margin-top:24px;font-size:12px;line-height:1.65;color:var(--text-2);max-width:88ch}
+.note b{color:var(--text);font-weight:500}
+.note code{font:400 11px/1 var(--mono);background:var(--sunken);padding:2px 5px;border-radius:5px}
+@media (prefers-reduced-motion:reduce){*{animation:none!important}}
+</style></head><body><div class="w">
+<h1>The AUTO pulse</h1>
+<p class="l">One scale pulse on the band pill, <b>420ms, once</b>, when a score lands in AUTO. NEAR-MISS has no rule at all &mdash; that absence is the design. Press Run; the two cards are identical in every other respect.</p>
+<div class="ctl">
+ <button class="run" id="run">Run the pipeline</button>
+ <button class="tg" id="slow" aria-pressed="false">Slow to 4&times;</button>
+ <button class="tg" id="thm" aria-pressed="false">Dark</button>
+</div>
+<div class="g">
+<article class="c" data-band="auto" data-lit="8" data-score="84">
+ <div class="h"><div class="s"><svg class="rose" viewBox="-4.2416 -3.0639 31.3054 31.3054" width="52" height="52" aria-hidden="true"><circle class="d" style="--di:0" cx="12.000" cy="1.000" r="2.275"/><circle class="d" style="--di:1" cx="19.778" cy="4.222" r="2.569"/><circle class="d" style="--di:2" cx="23.000" cy="12.000" r="2.864"/><circle class="d" style="--di:3" cx="19.778" cy="19.778" r="3.158"/><circle class="d" style="--di:4" cx="12.000" cy="23.000" r="3.453"/><circle class="d" style="--di:5" cx="4.222" cy="19.778" r="3.747"/><circle class="d" style="--di:6" cx="1.000" cy="12.000" r="4.041"/><circle class="d" style="--di:7" cx="4.222" cy="4.222" r="4.336"/></svg><span class="n">0</span></div>
+  <div class="i"><div class="co">Shopify &middot; Anywhere in Canada</div><h3>Staff Engineer, Developer Platform</h3>
+   <div class="m"><span class="band">AUTO</span><span class="chip">Remote</span></div></div></div>
+ <div class="ev"><div class="k">STRONGEST</div><p>Platform and API surface owned end to end, with public developer docs.</p></div></article>
+<article class="c" data-band="near" data-lit="3" data-score="32">
+ <div class="h"><div class="s"><svg class="rose" viewBox="-4.2416 -3.0639 31.3054 31.3054" width="52" height="52" aria-hidden="true"><circle class="d" style="--di:0" cx="12.000" cy="1.000" r="2.275"/><circle class="d" style="--di:1" cx="19.778" cy="4.222" r="2.569"/><circle class="d" style="--di:2" cx="23.000" cy="12.000" r="2.864"/><circle class="d" style="--di:3" cx="19.778" cy="19.778" r="3.158"/><circle class="d" style="--di:4" cx="12.000" cy="23.000" r="3.453"/><circle class="d" style="--di:5" cx="4.222" cy="19.778" r="3.747"/><circle class="d" style="--di:6" cx="1.000" cy="12.000" r="4.041"/><circle class="d" style="--di:7" cx="4.222" cy="4.222" r="4.336"/></svg><span class="n">0</span></div>
+  <div class="i"><div class="co">Sun Life &middot; Toronto, Ontario</div><h3>Sr. Analytics and Automation Engineer</h3>
+   <div class="m"><span class="band">NEAR-MISS</span><span class="chip">Remote</span></div></div></div>
+ <div class="ev"><div class="k">STRONGEST</div><p>Infrastructure and LLM orchestration, shipped end to end and measured.</p></div></article>
+</div>
+<div class="strip">
+ <div style="font:500 9px/1 var(--sans);letter-spacing:.2em;color:var(--text-2)">THE PULSE, FRAME BY FRAME &middot; 420ms ON --spring-arrive</div>
+ <div class="frames" id="frames"></div>
+</div>
+<p class="note"><b>What it is.</b> <code>scale(1) &rarr; 1.05 at 38% &rarr; 1</code> on <code>--spring-arrive</code>, 420ms, <code>1</code> iteration. It fires when the card settles &mdash; after the eighth dot lands &mdash; so it reads as the verdict arriving rather than the page loading. 5% is deliberately small: at the pill's 78&times;22px that is about <b>4px of travel</b> at the widest point. <b>What it is not:</b> it does not repeat, it does not fire on hover or on scroll, and it never fires below 80. A NEAR-MISS card runs the identical rose fill and then simply stops &mdash; no rule exists for it, so there is nothing to disable. <b>Why the asymmetry:</b> law 12 says never claim what the reader has not done. A celebration that fires on every result is not a signal, and celebrating a 32 would be the interface congratulating someone on a bad morning.</p>
+</div>
+<script>
+const cards=[...document.querySelectorAll('.c')];
+function run(){
+ cards.forEach(c=>{
+  c.classList.remove('settled');
+  c.querySelectorAll('.d').forEach(d=>d.classList.remove('lit'));
+  c.querySelector('.n').textContent='0';
+ });
+ void document.body.offsetWidth;
+ cards.forEach(c=>{
+  const lit=+c.dataset.lit,target=+c.dataset.score,dots=[...c.querySelectorAll('.d')];
+  dots.slice(0,lit).forEach((d,k)=>setTimeout(()=>d.classList.add('lit'),k*46));
+  const num=c.querySelector('.n'),dur=lit*46+300,t0=performance.now();
+  (function tick(now){const p=Math.min(1,(now-t0)/dur),e=1-Math.pow(1-p,3);
+   num.textContent=Math.round(target*e);
+   if(p<1)requestAnimationFrame(tick);else{num.textContent=target;c.classList.add('settled');}})(t0);
+ });
+}
+document.getElementById('run').onclick=run;
+document.getElementById('slow').onclick=e=>{
+ const on=e.target.getAttribute('aria-pressed')==='true';
+ e.target.setAttribute('aria-pressed',String(!on));
+ document.documentElement.style.setProperty('--pulse-ms',!on?'1680ms':'420ms');
+ e.target.textContent=!on?'Back to 1\u00d7':'Slow to 4\u00d7';
+};
+document.getElementById('thm').onclick=e=>{
+ const on=e.target.getAttribute('aria-pressed')==='true';
+ e.target.setAttribute('aria-pressed',String(!on));
+ document.documentElement.setAttribute('data-theme',!on?'dark':'light');
+ e.target.textContent=!on?'Light':'Dark';
+};
+// frame strip: the exact scale at each 42ms step
+const F=document.getElementById('frames');
+for(let i=0;i<=10;i++){
+ const p=i/10, s = p<=.38 ? 1+.05*(p/.38) : 1+.05*(1-(p-.38)/.62);
+ const d=document.createElement('div');d.className='fr';
+ d.innerHTML='<div class="px"><span class="band" style="transform:scale('+s.toFixed(3)+')">AUTO</span></div>'+
+             '<div class="t">'+Math.round(p*420)+'ms<br>'+s.toFixed(2)+'&times;</div>';
+ F.appendChild(d);
+}
+setTimeout(run,600);
+</script></body></html>

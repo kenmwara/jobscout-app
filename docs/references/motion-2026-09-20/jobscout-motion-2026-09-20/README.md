@@ -20,13 +20,16 @@ data carries none.
 
 ## Start here
 
-**`docs/BUILD-ORDER.md`** — the sequenced build for Claude Code: nine stages,
-what blocks what, the files on each surface, measurable acceptance criteria and
-the mutation that must break each one. It carries the Compose and SwiftUI
-spring equivalents so the native clients do not drift from the web clock.
+**`docs/BUILD-ORDER.md` is the single document to work from.** Everything in
+this pack is folded in and sequenced: thirteen stages, what blocks what, the
+files on each surface, measurable acceptance criteria and the mutation that
+must break each one. It carries the Compose and SwiftUI spring equivalents so
+the native clients cannot drift from the web clock, and it names the two things
+that were proposed and **rejected** so they are not re-proposed.
 
-`docs/CHANGELOG.md` is the same work as a flat, value-ordered list — read it if
-you want the *what* without the *order*.
+`docs/CHANGELOG.md` is the same work as a flat, value-ordered list and
+`docs/MOTION.md` is the reasoning — read those for the *what* and the *why*
+without the *order*.
 
 **`demos/rose-demo.html`** — open it. The rose filling *is* the pitch.
 
@@ -35,8 +38,15 @@ css/motion.css          the four springs, the stagger, the material ladder
 docs/MOTION.md          the spec — every value with the number that justifies it
 docs/BUILD-ORDER.md     the sequenced build: stages, files, acceptance, mutations
 docs/CHANGELOG.md       the same work as a flat list, with before -> should-be
-demos/rose-demo.html    scoring: the rose fills, the numeral counts, AUTO pulses
+docs/IOS-GROUND.md      the one surface with no ground, as SwiftUI
+tools/check_motion.mjs  the material ladder, measured + self-mutating
+tools/check_rose.mjs    the needle-is-the-score law, measured + self-mutating
+tools/check_halo_ext.mjs  the three ground rules — fold into check_halo.mjs
+demos/card-demo.html     the card anatomy: swept vs scored, desktop and 390pt
+demos/rose-demo.html     scoring: the rose fills, the numeral counts, AUTO pulses
+demos/pulse-demo.html    the AUTO pulse alone, at 1x and 4x, frame by frame
 demos/surfaces-demo.html sector tiles as a distribution, list re-forming, empty state
+demos/phone-demo.html    the phone header, Android browse, and the three states
 reference/jobscout-motion.json        every token, generated from the CSS
 reference/springs-crossplatform.json  the four springs as CSS / Compose / SwiftUI
 stills/                 both demos, both themes
@@ -50,7 +60,9 @@ Each one measured, each one in the stills.
    bare numeral on the phone, the web list and Android. Sampling the score
    region of `mockup-ca-dark.png` returns `#1c1544` and `#a4bbff` and no rose
    geometry. The handover calls the rose "the score device"; it currently is
-   not one anywhere a reader looks.
+   not one anywhere a reader looks. The card also renders a verdict and a fact
+   identically, and the phone puts its title in sans-bold while the desktop
+   card obeys law 13.
 2. **The sector grid carries no information.** 17 tiles, 11 reading "24 open"
    because 24 is a page cap — 65% of the grid is the same number, and the real
    4–24 (6×) spread is invisible.
@@ -94,6 +106,27 @@ No parallax hero, no scroll-jacking, no page transitions, no motion added to the
 halo or the wandering mark (law 8 already tuned those), and not one new colour.
 `docs/MOTION.md` §9 has the reasoning so the argument is not re-run.
 
+## Tried and withdrawn — 2026-09-20
+
+**A rebuilt landing hero.** Proposed and built: real sweep numbers counting up
+in the headline, a pre-scored "today's top match" card floating beside the
+paste box, a live-dot kicker, and a four-stat row under the fold.
+
+**Withdrawn the same day.** It was a SaaS landing page — proof, social proof
+and a stat row, on a free public tool that is not selling anything and has
+nobody to convince. The existing hero is a headline and a paste box, and that
+is correct: if you know what it is, you try it. The device was persuasion
+dressed as design, and it belongs on the same list as the oryzo restyle.
+
+A follow-up proposal to cut the hero's padding from 150px to 56px was also
+**declined** — the tall block is the landing effect and that is a deliberate
+call, not an oversight. The one thing still worth doing there is the paste box
+taking the focus/press states from §4, because a control that does not answer
+the pointer feels broken regardless of what it is for.
+
+Everything else in this pack is interaction, information density or a measured
+bug. None of it argues with the reader.
+
 ## The native clients
 
 Compose and SwiftUI cannot consume `linear()`, so the same damped-spring
@@ -111,7 +144,46 @@ matching the web and the clients drift.
 
 ## Verifying it
 
-`docs/CHANGELOG.md` ends with four checks written to be mutation-tested:
-`check_motion.mjs`, `check_rose.mjs`, an extension to `check_halo.mjs` that
-catches findings 3 and 4, and a reduced-motion pass of `cycle3.mjs` asserting
-identical *information*.
+Two checks ship in `tools/`, both written to your standard — a check that only
+asserts presence is rejected, so every assertion reads a **computed value at a
+real interaction state** and compares it to the other two.
+
+```
+node tools/check_rose.mjs                        # lit count == band, geometry, clipping
+node tools/check_rose.mjs --mutate wrong-band    # must FAIL (exit 2 if it does not)
+node tools/check_rose.mjs --reduced              # same information, no motion
+
+node tools/check_motion.mjs                      # three distinct states, exits faster
+node tools/check_motion.mjs --mutate press-equals-hover
+node tools/check_motion.mjs --mutate slow-press  # breaks the asymmetry law
+```
+
+Both were run against the demos. Both passed, both mutations broke them — and
+**both found real bugs in the demos they were written for**:
+
+- `check_rose` found that NEAR-MISS's lit and unlit dots shared a fill, because
+  that band's colour *is* the neutral. Fixed with `--rose-empty` (`--text` at
+  14% — distinct from every band, and not a new colour).
+- `check_motion` found four `light-dark()` shadow declarations with **three**
+  arguments, which CSS drops silently — the exact trap documented two sections
+  below, in the demos written to document it. Fixed as plain values with a dark
+  override.
+
+`tools/check_halo_ext.mjs` covers the three ground rules and folds into
+`check_halo.mjs`:
+
+```
+node tools/check_halo_ext.mjs                     # one ground, warm, halo present
+node tools/check_halo_ext.mjs --mutate section-bg # a container paints its own ground
+node tools/check_halo_ext.mjs --mutate grey-blob  # a layer that subtracts chroma
+node tools/check_halo_ext.mjs --mutate kill-halo  # the halo misses a route
+```
+
+It finds the ground with `elementFromPoint` rather than sampling fixed
+coordinates — fixed points land on cards the moment a layout changes, which
+this check did on its first run. And rule B tests *losing* warmth rather than
+hitting an exact hue, because below ~0.010 chroma the hue angle is numerically
+unstable and a near-white will report any value.
+
+Still to write: a reduced-motion pass of `cycle3.mjs` asserting identical
+information.

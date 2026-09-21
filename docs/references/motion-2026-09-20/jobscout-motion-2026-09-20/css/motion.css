@@ -75,6 +75,15 @@
      surface, so it may not carry a band-strength tint. */
   --tile-fill: light-dark(rgba(72,101,255,.085), rgba(162,186,255,.10));
 
+  /* --- the rose's empty track --------------------------------------------
+     An unlit dot may NOT be a band colour. NEAR-MISS's band IS the neutral,
+     so using it for the track left lit and unlit dots the same fill,
+     distinguished by opacity alone — check_rose.mjs caught exactly this in
+     the first build of the demos. --text at low alpha is always distinct
+     from every band in both themes, and is not a new colour. */
+  --rose-empty: light-dark(#080331, #f8f3eb);
+  --rose-empty-alpha: .14;
+
   /* --- idle life ---------------------------------------------------------
      A settled rose breathes. Slow enough to be felt, not watched. Offset
      per card so a grid never pulses in unison — that reads as a loading

@@ -202,7 +202,10 @@ const run = async () => {
     const ctx = await browser.newContext({ viewport: { width, height: 900 } });
     const page = await ctx.newPage();
     await page.goto(CA, { waitUntil: "domcontentloaded" });
-    const m = await page.evaluate(() => {
+        /* At 620px and under the control lives in the header's sheet (motion v2
+       stage 7): open it, measure there, close it after. */
+    if (width <= 620) await page.evaluate(() => window.__hsheet && window.__hsheet.open());
+const m = await page.evaluate(() => {
       const box = (s) => { const e = document.querySelector(s); if (!e) return null;
         const r = e.getBoundingClientRect(); return { x: r.x, r: r.right, w: r.width, h: r.height }; };
       const t = document.getElementById("thmTop");
@@ -220,7 +223,8 @@ const run = async () => {
         hscroll: document.documentElement.scrollWidth > window.innerWidth + 1,
       };
     });
-    const w = `${width}px`;
+        if (width <= 620) await page.evaluate(() => window.__hsheet && window.__hsheet.close());
+const w = `${width}px`;
     if (m.missing) bad(`${w}: the control is not in the DOM`);
     else if (m.thm.w === 0 || m.thm.h === 0) bad(`${w}: the control is not rendered`);
     else if (m.svgW === 0 || m.svgH === 0) bad(`${w}: the icons are ${m.svgW}x${m.svgH} - the CSS is not reaching them`);
