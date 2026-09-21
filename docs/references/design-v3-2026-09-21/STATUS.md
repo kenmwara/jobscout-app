@@ -36,3 +36,23 @@ Stages 1–6 replace `site/base.css`'s root block and the mockup's CSS with the 
 three v3 sheets, and re-cut seven screens' markup (browse, detail, prepare, prepare-done, saved, sheet,
 states) — the whole live site's type and spacing change. Stages 7–8 hand the apps unproven Kotlin/Swift.
 Not started: waiting on the rulings and the go.
+
+---
+
+# Revision 1 (same day) — verified
+
+Chat's reply to the D3 finding. Replaced the pack in place (17 files changed + `tools/derive_thresholds.mjs`).
+
+| claim | result |
+|---|---|
+| thresholds moved into `tokens.json` (80/70/55) and generated into `--threshold-*`, Kotlin, Swift | **true** (tokens.css lines 83–85; the native objects carry the same three) |
+| `band.js` reads the generated custom properties at runtime, falls back to the same table | **true**; `reconcile()` present and deliberately unwired |
+| `generate.mjs --check` still 0 clean / 1 edited | **true** (edited `--threshold-ping`, exit 1; restored, 0) |
+| three checks green | **true** (12 cells / 8 rows / **12** evidence blocks — screen copy now checked) |
+| eleven mutations all break their check | **true** — every one reports "correctly broke N"; none asleep |
+| D4 copy no longer leads with a lack | **true**: "Aiming the resume first is worth more here than the letter." |
+| D1 exemption + "exactly one exempt element" (`second-hero` mutation) | **true** (broke 4) |
+| D2 generated band values taken | **true** |
+
+Still open: **D5 only** (type 20 → 8, space → 4px grid, ≤2px moves on every route) — Ken's look-and-decide.
+Implementation (Stages 1–8) remains not started pending D5 and the go.

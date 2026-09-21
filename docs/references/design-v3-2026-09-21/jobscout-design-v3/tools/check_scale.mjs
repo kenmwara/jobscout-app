@@ -22,6 +22,7 @@
  *   node tools/check_scale.mjs --mutate off-scale-type   # must FAIL A
  *   node tools/check_scale.mjs --mutate off-grid-space   # must FAIL B
  *   node tools/check_scale.mjs --mutate band-wash        # must FAIL C
+ *   node tools/check_scale.mjs --mutate second-hero      # must FAIL C/exempt
  *
  * Exit 0 pass · 1 failure · 2 a mutation did not fail (the check is asleep).
  */
@@ -60,6 +61,13 @@ async function run() {
         await page.addStyleTag({ content: `.jcard__org, .match__org, .prep__d { font-size: 12.7px !important; }` });
       if (MUTATE === 'off-grid-space')
         await page.addStyleTag({ content: `.meta, .jcard__actions, .prep__a { gap: 7px !important; }` });
+      if (MUTATE === 'second-hero')
+        await page.evaluate(() => {
+          const d = document.createElement('div');
+          d.className = 'hero';
+          d.style.cssText = 'height:200px;background:#103c19';
+          document.body.appendChild(d);
+        });
       if (MUTATE === 'band-wash')
         await page.evaluate(() => {
           const d = document.createElement('div');
@@ -70,7 +78,7 @@ async function run() {
 
       const where = `${route}/${theme}`;
       const report = await page.evaluate(({ TYPE, SPACE, HUE_LO, HUE_HI, CHROMA_MAX, BIG }) => {
-        const badType = [], badSpace = [], badSurface = [];
+        const badType = [], badSpace = [], badSurface = [], exempt = [];
         const px = v => parseFloat(v) || 0;
         const near = (v, list) => list.some(x => Math.abs(x - v) < 0.26);
 
@@ -107,7 +115,11 @@ async function run() {
           /* C — large painted surfaces */
           const r = el.getBoundingClientRect();
           const area = r.width * r.height;
-          if (area > BIG && el.dataset.hero === undefined && !el.classList.contains('hero')) {
+          /* D1: the market hero is exempt BY RULING. The exemption is a hole —
+             anything that gets the class inherits it — so it is counted, and
+             more than one exempt element on a page is a failure. */
+          if (el.classList.contains('hero')) { exempt.push(el.className); continue; }
+          if (area > BIG) {
             const c = oklch(s.backgroundColor);
             if (c && c.C > CHROMA_MAX) {
               const inside = c.H >= HUE_LO && c.H <= HUE_HI;
@@ -116,13 +128,16 @@ async function run() {
             }
           }
         }
-        return { badType: [...new Set(badType)], badSpace: [...new Set(badSpace)], badSurface: [...new Set(badSurface)] };
+        return { badType: [...new Set(badType)], badSpace: [...new Set(badSpace)],
+                 badSurface: [...new Set(badSurface)], exempt };
       }, { TYPE, SPACE: [...SPACE], HUE_LO, HUE_HI, CHROMA_MAX, BIG });
 
       seen++;
       for (const b of report.badType.slice(0, 6))    fails.push(`${where} A/type:  ${b} is not on the ${TYPE.join('/')} scale`);
       for (const b of report.badSpace.slice(0, 6))   fails.push(`${where} B/space: ${b} is off the ${T.space.grid}px grid`);
       for (const b of report.badSurface.slice(0, 6)) fails.push(`${where} C/surface: ${b} — coloured hue outside the neutral family ${HUE_LO}-${HUE_HI}`);
+      if (report.exempt.length > 1)
+        fails.push(`${where} C/exempt: ${report.exempt.length} elements carry the .hero exemption (${report.exempt.join(', ')}) — exactly one is allowed`);
       await page.close();
     }
   }

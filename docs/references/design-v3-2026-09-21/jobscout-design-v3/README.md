@@ -39,6 +39,7 @@ native/Tokens.kt|swift  GENERATED — build-unproven, see BUILD-ORDER stage 7
 tools/check_scale.mjs   type on the scale, space on the grid, hue membership
 tools/check_tiers.mjs   container weight is importance, measured as geometry
 tools/check_honesty.mjs placement and content of every evidence line
+tools/derive_thresholds.mjs  measures the band boundaries from a real feed
 preview.html            all seven surfaces side by side
 stills/                 rendered samples, both themes
 ```
@@ -53,15 +54,23 @@ node tools/check_tiers.mjs   --url http://localhost:8761/markup/browse.html
 node tools/check_honesty.mjs --url http://localhost:8761/markup/browse.html
 ```
 
-All four green in this package. Every mutation breaks them:
+All four green in this package. All **eleven** mutations break them:
 
 ```
---mutate off-scale-type | off-grid-space | band-wash
+--mutate off-scale-type | off-grid-space | band-wash | second-hero
 --mutate fat-fact | boxed-date | pill-fact
---mutate gap-on-browse | persuasion | ember-quote
+--mutate gap-on-browse | persuasion | ember-quote | lede-lack
 ```
 
-## Two things found while building this
+## Where the thresholds live
+
+The scorer emits `fit` only and **every client derives the band**, so that
+table was load-bearing in five places with nothing holding it together —
+exactly the failure the band colours had before v3. It now lives in
+`tokens.json` and generates into `--threshold-*`, `object Band` and
+`enum JSBand`. Confirmed: `auto ≥ 80 · ping ≥ 70 · unsure ≥ 55`.
+
+## Three things found while building this
 
 - **The light hover measures 1.000:1** — no surface change at all. Not an
   oversight: `--surface` is `#ffffff`, the ceiling, so light carries elevation
@@ -70,6 +79,11 @@ All four green in this package. Every mutation breaks them:
   market wash in dark mode and loses the headline. The wash is dark in both
   themes, so its foreground is a constant. Caught in the v3 dark render, fixed
   as `--hero-ink`.
+- **The honesty law only policed evidence blocks**, so the prepare screen's
+  lede led with a lack for a whole draft and nothing looked at it. Screen copy
+  is now checked too — and the check's own first run failed the weak-day
+  paragraph for length, which was the rule being wrong rather than the copy.
+  `lede` and `explanation` are separate kinds now.
 
 ## Corrections to earlier guides from this author
 

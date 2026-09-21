@@ -67,6 +67,21 @@ enum JSBands {
     static let litByBand: [String: Int] = ["auto": 8, "ping": 6, "unsure": 5, "nearmiss": 3]
 }
 
+// score -> band. CONFIRMED from the code 2026-09-21. The scorer emits
+// `fit` ONLY and every client derives, so this must match web and
+// Android exactly. It is generated for that reason.
+enum JSBand {
+    static let auto = 80
+    static let ping = 70
+    static let unsure = 55
+    static func of(_ fit: Int) -> String {
+        if fit >= auto { return "auto" }
+        if fit >= ping { return "ping" }
+        if fit >= unsure { return "unsure" }
+        return "nearmiss"
+    }
+}
+
 // SwiftUI's `response` IS the natural period, so it equals the CSS duration.
 enum JSMotion {
     static let snap = Animation.spring(response: 0.180, dampingFraction: 0.72)

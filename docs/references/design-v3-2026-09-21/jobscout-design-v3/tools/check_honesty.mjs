@@ -20,9 +20,10 @@
  *   node tools/check_honesty.mjs --mutate gap-on-browse   # must FAIL
  *   node tools/check_honesty.mjs --mutate persuasion      # must FAIL
  *   node tools/check_honesty.mjs --mutate ember-quote     # must FAIL
+ *   node tools/check_honesty.mjs --mutate lede-lack       # must FAIL
  */
 import { chromium } from 'playwright';
-import { validate, KIND, allowedOn } from '../js/evidence.js';
+import { validate, validateLede, KIND, allowedOn } from '../js/evidence.js';
 
 const args=process.argv.slice(2);
 const opt=(k,d)=>{const i=args.indexOf(k);return i<0?d:args[i+1];};
@@ -45,6 +46,9 @@ for (const [route,surface] of Object.entries(SURFACES)) {
   if (MUTATE==='persuasion')
     await p.evaluate(()=>{ const e=document.querySelector('.ev--strongest .ev__b');
       if(e) e.textContent='Your experience makes you a perfect match for this role — a no-brainer.'; });
+  if (MUTATE==='lede-lack')
+    await p.evaluate(()=>{ const e=document.querySelector('.prep__lede');
+      if(e) e.textContent='At 28, the resume is the gap — not the letter.'; });
   if (MUTATE==='ember-quote')
     await p.evaluate(()=>{ document.querySelectorAll('.ev--quoted').forEach(e=>{
       e.classList.remove('ev--quoted'); e.classList.add('ev--answer'); }); });
@@ -65,6 +69,19 @@ for (const [route,surface] of Object.entries(SURFACES)) {
     const v=validate(blk.kind, blk.text);
     if (!v.ok) fails.push(`${w}: ${v.reasons.join('; ')}`);
   }
+  /* Screen-level copy is held to the same law. A rule that only polices the
+     evidence blocks is not a rule — the prepare lede led with a lack for a
+     whole draft before anyone noticed, because nothing looked at it. */
+  const copy = await p.evaluate(()=>[
+    ...[...document.querySelectorAll('.prep__lede, .feed__count')].map(e=>({kind:'lede', text:(e.textContent||'').trim()})),
+    ...[...document.querySelectorAll('.state__b, .refusal .ev__b')].map(e=>({kind:'explanation', text:(e.textContent||'').trim()})),
+  ].filter(x=>x.text));
+  for (const { kind, text } of copy) {
+    n++;
+    const v = validateLede(text, kind);
+    if (!v.ok) fails.push(`${route} ${kind}: ${v.reasons.join('; ')} — "${text.slice(0,60)}…"`);
+  }
+
   /* The ember rule marks the reader's move only. A quotation re-tagged as an
      answer is caught by the placement rule above: allowedOn('answer','matches')
      is false, because their demand is not your move. */

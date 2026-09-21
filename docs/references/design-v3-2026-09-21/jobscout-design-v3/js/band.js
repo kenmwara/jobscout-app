@@ -1,73 +1,137 @@
 /* ===========================================================================
-   band.js — the ONE place score→band lives, on every platform.
+   band.js — score → band, and what a band earns.
 
-   The design never re-derives a band. The scorer emits one; this module is
-   the shared contract so the web, Android and iOS cannot disagree about what
-   a 69 is.
+   ---------------------------------------------------------------------------
+   TWO CORRECTIONS THIS FILE CARRIES, BOTH OF THEM MINE.
+
+   1. THE THRESHOLDS WERE WRONG. An earlier draft inferred `ping 69` and
+      `unsure 45` from four observed scores. Confirmed from the code
+      2026-09-21: they are 70 and 55. `auto 80` was right. The inference
+      method was sound for `ping` (the evidence bounded it to 68 < x ≤ 70 and
+      I took the midpoint, which is a classifier, not a boundary) and was a
+      pure guess for `unsure`, where no observation existed between 28 and 68.
+      A guess should have been labelled as one.
+
+   2. I SAID THE SCORER EMITS A BAND. IT DOES NOT. It emits `fit` only, and
+      every client — web, worker, mockup, Android, iOS — derives the band
+      itself. So the previous version of this file, which took the scorer's
+      band as authoritative and logged disagreement, described a system that
+      does not exist. It was a proposal wearing a description's clothes.
+
+   What follows from (2) is the useful part:
+   ---------------------------------------------------------------------------
+   There are FIVE copies of the threshold table in the product today, and
+   nothing holds them together. That is the same failure the band COLOURS had
+   before v3, and it takes the same fix: the numbers live in tokens.json and
+   are generated into tokens.css, Tokens.kt and Tokens.swift. Five copies
+   become one source with five readers, and `generate.mjs --check` fails the
+   build if any of them is edited by hand.
+
+   This module reads the generated CSS custom properties at runtime, so the
+   web client cannot hold a stale copy either.
 
    THE LAW THE UI DEPENDS ON: the number of lit dots IS the band, not the
-   score. A 79 and a 65 are both PING and both light six. The score is the
-   numeral; the band is the shape. They are two readings of one thing and they
-   must never be computed separately.
+   score. A 79 and a 70 are both PING and both light six. The score is the
+   numeral; the band is the shape. Two readings of one thing.
    =========================================================================== */
 
-/** Lit dots per band. Mirrors tokens.json → rose.litByBand. */
+/** Lit dots per band. Mirrors tokens.json → band.litByBand. */
 export const LIT = Object.freeze({ auto: 8, ping: 6, unsure: 5, nearmiss: 3 });
 
-/** Human labels. NEAR-MISS reads with a space; the key never changes. */
+/** NEAR-MISS reads with a space; the key never changes. */
 export const LABEL = Object.freeze({
   auto: 'AUTO', ping: 'PING', unsure: 'UNSURE', nearmiss: 'NEAR MISS',
 });
 
-/**
- * THRESHOLDS — needs Ken's confirmation against the scorer.
- *
- * Derived from the observed mockup data, which is the only evidence available
- * from outside the scorer: 87 → AUTO, 70 → PING, 68 → UNSURE, 28 → NEAR-MISS.
- * That fixes one boundary exactly (PING/UNSURE lies between 68 and 70) and
- * leaves the other two inferred. If the scorer disagrees, change it HERE and
- * nowhere else.
- */
-export const THRESHOLD = Object.freeze({ auto: 80, ping: 69, unsure: 45 });
+/* CONFIRMED from the code 2026-09-21, identical on all five clients. These
+   literals are the fallback for a non-browser context (tests, SSR); in a
+   browser the generated custom properties win, so this file cannot drift
+   from tokens.json even if someone edits it. */
+const FALLBACK = { auto: 80, ping: 70, unsure: 55 };
 
-export function bandFor(score) {
-  if (typeof score !== 'number' || Number.isNaN(score)) return null;
-  if (score >= THRESHOLD.auto)   return 'auto';
-  if (score >= THRESHOLD.ping)   return 'ping';
-  if (score >= THRESHOLD.unsure) return 'unsure';
+function fromCss() {
+  if (typeof document === 'undefined') return null;
+  const s = getComputedStyle(document.documentElement);
+  const n = k => {
+    const v = parseFloat(s.getPropertyValue(`--threshold-${k}`));
+    return Number.isFinite(v) ? v : null;
+  };
+  const t = { auto: n('auto'), ping: n('ping'), unsure: n('unsure') };
+  return (t.auto && t.ping && t.unsure) ? t : null;
+}
+
+let _t = null;
+export function thresholds() { return (_t ??= fromCss() ?? FALLBACK); }
+
+/**
+ * score → band. The ONE derivation on the web client.
+ *
+ * Note this is a REAL derivation, not a display of something the scorer sent.
+ * If the worker ever starts emitting a band, this becomes a check rather than
+ * a source — see `reconcile()` below, which is written for that day and is
+ * deliberately not wired up yet.
+ */
+export function bandFor(fit) {
+  if (typeof fit !== 'number' || Number.isNaN(fit)) return null;
+  const t = thresholds();
+  if (fit >= t.auto)   return 'auto';
+  if (fit >= t.ping)   return 'ping';
+  if (fit >= t.unsure) return 'unsure';
   return 'nearmiss';
 }
 
 /**
- * The action a band earns. This is the honesty law expressed as a verb:
- * a NEAR-MISS is never offered "Prepare application" as though it were a
- * match, and an AUTO is never hedged.
+ * For the day the worker emits a band of its own.
+ *
+ * NOT WIRED UP. It is here so that the move is a one-line change at the call
+ * site rather than a redesign, and so the intent is recorded: when the server
+ * has an opinion, the server wins and the client's derivation becomes a
+ * tripwire that reports drift instead of silently overruling it.
+ *
+ * This matters more than it looks. A band may not stay a pure function of
+ * `fit` — the product's own evidence lines talk about a location rule
+ * passing, and the moment any such rule can demote a posting, a client that
+ * re-derives from the number alone will silently contradict the server.
+ */
+export function reconcile(row, report = (m, d) => console.warn(`[band] ${m}`, d)) {
+  const given = typeof row?.band === 'string' ? row.band.toLowerCase() : null;
+  const fit = typeof row?.fit === 'number' ? row.fit
+            : typeof row?.score === 'number' ? row.score : null;
+  if (given && !(given in LIT)) { report('unknown band from server', { given, fit }); return bandFor(fit); }
+  if (given) {
+    const implied = bandFor(fit);
+    if (fit !== null && implied !== given) report('server/client disagreement — server wins', { fit, server: given, implied });
+    return given;
+  }
+  return bandFor(fit);
+}
+
+/**
+ * The action a band earns — the honesty law expressed as a verb. A NEAR-MISS
+ * is never offered "Prepare application" as though it were a match, and an
+ * AUTO is never hedged.
  */
 export function actionFor(band) {
   switch (band) {
-    case 'auto':   return { primary: 'Prepare application', tone: 'go' };
-    case 'ping':   return { primary: 'Prepare application', tone: 'go' };
-    case 'unsure': return { primary: 'Prepare application', tone: 'qualified' };
-    case 'nearmiss': return { primary: 'Apply anyway',      tone: 'stretch' };
-    default:       return { primary: 'Score this against me', tone: 'unscored' };
+    case 'auto':
+    case 'ping':     return { primary: 'Prepare application', tone: 'go' };
+    case 'unsure':   return { primary: 'Prepare application', tone: 'qualified' };
+    case 'nearmiss': return { primary: 'Apply anyway',        tone: 'stretch' };
+    default:         return { primary: 'Score this against me', tone: 'unscored' };
   }
 }
 
 /**
- * Which prepare step leads, given the band.
+ * Which prepare step leads. PROPOSAL — see docs/DECISIONS.md D4.
  *
- * PROPOSAL, not a shipped rule — see docs/DECISIONS.md D4. At NEAR-MISS or
- * UNSURE the resume is the gap, so aiming it is the higher-value move and the
- * letter waits. At PING or AUTO the resume is already close enough. The three
- * cards keep a FIXED order either way: a list that reorders itself is
- * disorienting. Only the single filled button moves.
+ * The three cards keep a FIXED order; only the single filled button moves.
  */
 export function leadStep(band) {
   return (band === 'nearmiss' || band === 'unsure') ? 'resume' : 'letter';
 }
 
-/** Relative age. Nothing is returned when the posting has no date — an
- *  invented "today" is a claim, and law 12 forbids claims. */
+/** Relative age. Nothing when the posting has no date: an invented "today"
+ *  is a claim, and law 12 forbids claims. */
 export function whenOf(postedAt, now = new Date()) {
   if (!postedAt) return null;
   const d = new Date(postedAt);

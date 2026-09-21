@@ -64,6 +64,21 @@ object Bands {
     val litByBand = mapOf("auto" to 8, "ping" to 6, "unsure" to 5, "nearmiss" to 3)
 }
 
+// score -> band. CONFIRMED from the code 2026-09-21. The scorer emits
+// `fit` ONLY and every client derives, so this must match web and iOS
+// exactly. It is generated for that reason — five copies became one.
+object Band {
+    const val AUTO = 80
+    const val PING = 70
+    const val UNSURE = 55
+    fun of(fit: Int): String = when {
+        fit >= AUTO -> "auto"
+        fit >= PING -> "ping"
+        fit >= UNSURE -> "unsure"
+        else -> "nearmiss"
+    }
+}
+
 // Compose cannot consume linear(). Do NOT eyeball an equivalent and do NOT
 // substitute Compose's named stiffness constants — the durations stop
 // matching and the clients drift. Derived from the same parameters:

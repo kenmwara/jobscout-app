@@ -11,18 +11,25 @@ The scorer emits a band. **The design never re-derives one.** `js/band.js` is
 the shared contract so web, Android and iOS cannot disagree about what a 69 is.
 
 ```
-auto     score ≥ 80
-ping     69 ≤ score < 80
-unsure   45 ≤ score < 69
-nearmiss      score < 45
+auto     fit ≥ 80
+ping     70 ≤ fit < 80
+unsure   55 ≤ fit < 70
+nearmiss      fit < 55
 ```
 
-**These thresholds need confirming against the scorer — see DECISIONS.md D3.**
-They are derived from the only evidence visible from outside it: the mockup's
-own data, where 87 → AUTO, 70 → PING, 68 → UNSURE, 28 → NEAR-MISS. That fixes
-the PING/UNSURE boundary exactly (it lies between 68 and 70) and leaves the
-other two inferred. If the scorer disagrees, change `THRESHOLD` in
-`js/band.js` and nowhere else.
+**CONFIRMED from the code 2026-09-21**, identical on web, worker, mockup,
+Android and iOS.
+
+**The scorer emits `fit` only — every client derives the band.** So this table
+is load-bearing in five places at once, and it lives in `tokens/tokens.json`,
+generated into `--threshold-*`, `object Band` and `enum JSBand`. Five copies
+became one source with five readers, and `generate.mjs --check` fails the
+build if any reader is hand-edited.
+
+Run `tools/derive_thresholds.mjs <feed>.json` to check the table against real
+data. It reports the interval each boundary lies in and **refuses to print a
+value unless the observations pin it** — a midpoint is a classifier, not a
+boundary, which is how an earlier draft shipped `ping` as 69.
 
 **The law the UI depends on:** the number of lit dots IS the band, not the
 score. The score is the numeral; the band is the shape. They are two readings

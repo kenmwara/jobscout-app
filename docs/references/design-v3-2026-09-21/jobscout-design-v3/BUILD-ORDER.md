@@ -75,14 +75,22 @@ fact wins.** Geometry settles it in both themes at once:
 
 **Files:** `js/rose.js`, `js/band.js`, replacing `site/rose.js`
 
-`band.js` is the ONE place `score → band` lives on every platform. Confirm the
-thresholds (`DECISIONS.md` D3) before this ships.
+The scorer emits `fit` only and **every client derives the band**, so the
+threshold table is load-bearing in five places. It is now generated from
+`tokens.json` into CSS, Kotlin and Swift; `band.js` reads the generated custom
+properties at runtime. Confirmed values: `auto ≥ 80 · ping ≥ 70 · unsure ≥ 55`.
+
+`reconcile()` exists and is **not wired up** — it is for the day the worker
+emits a band of its own, so that becomes a one-line change.
 
 `lightRose()` **throws** on an unknown band rather than drawing a plausible
 wrong number. A rose that lies about the band is worse than no rose.
 
 **Accept:** the existing `tools/check_rose.mjs`, unchanged, plus
-`--mutate wrong-band` and `--mutate cropped-viewbox`.
+`--mutate wrong-band` and `--mutate cropped-viewbox`. Additionally
+`node tools/derive_thresholds.mjs <real feed>.json` exits 0 and reprints
+`{ "auto": 80, "ping": 70, "unsure": 55 }` — or exits 1, which means the band
+is not a pure function of `fit` and is a finding worth having.
 
 ---
 

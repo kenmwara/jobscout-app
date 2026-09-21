@@ -92,6 +92,55 @@ export function allowedOn(kind, surface) {
   }
 }
 
+/* Deficiency framing: naming the reader's document as the thing that is
+   wrong. "The resume is the gap" is a verdict on what they have; "aiming the
+   resume first is worth more than the letter" is a comparison of two moves.
+   The second says the same thing operationally and claims nothing.
+
+   This was caught in review: the prepare screen's lede led with a lack, which
+   the law forbids on a card, and the law had simply never been extended to
+   screen copy. A rule that only polices the easy place is not a rule. */
+const DEFICIENCY = [
+  /\bis the gap\b/i,
+  /\byour (?:resume|experience|background) (?:is|lacks|does not|doesn\u2019t)\b/i,
+  /\b(?:too|not) (?:weak|thin|light|enough)\b/i,
+  /\byou (?:are )?missing\b/i,
+  /\bfalls? short\b/i,
+];
+
+/**
+ * Screen-level copy. Two kinds, and conflating them was a mistake this rule
+ * made on its first run:
+ *
+ *   'lede'        one line that explains the screen's next move. Capped at
+ *                 160 characters, because past that it stops being a lede.
+ *   'explanation' a paragraph that does real work when the news is bad —
+ *                 the weak-day message, an empty state, a refusal. NOT
+ *                 capped at a lede's length. A first draft of this function
+ *                 capped everything at 160 and failed the best paragraph in
+ *                 the product. The length rule was wrong, not the copy.
+ *
+ * Both are held to the same CONTENT law: no persuasion, no claim about the
+ * reader, no framing the reader's document as deficient. Comparing two
+ * ACTIONS is always allowed — "aiming the resume first is worth more than the
+ * letter" says what "the resume is the gap" says, and claims nothing.
+ *
+ * @returns {{ok: boolean, reasons: string[]}}
+ */
+export const COPY_LIMIT = Object.freeze({ lede: 160, explanation: 420 });
+
+export function validateLede(text, kind = 'lede') {
+  const t = String(text || '').trim();
+  const reasons = [];
+  const low = t.toLowerCase();
+  for (const w of PERSUASION) if (low.includes(w)) reasons.push(`persuasion: "${w}"`);
+  for (const re of CLAIMS_ABOUT_READER) if (re.test(t)) reasons.push(`claims something about the reader: ${re}`);
+  for (const re of DEFICIENCY) if (re.test(t)) reasons.push(`leads with a lack: ${re}`);
+  const cap = COPY_LIMIT[kind] ?? COPY_LIMIT.lede;
+  if (t.length > cap) reasons.push(`${kind} over ${cap} chars`);
+  return { ok: reasons.length === 0, reasons };
+}
+
 /** Render or refuse. Never render an invalid line. */
 export function render(kind, text, surface) {
   if (!allowedOn(kind, surface)) return null;

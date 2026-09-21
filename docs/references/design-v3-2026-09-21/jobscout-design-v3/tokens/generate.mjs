@@ -131,6 +131,11 @@ function css() {
   L.push(`  --rose-empty-alpha: ${T.rose.emptyAlpha};`);
   L.push(``);
 
+  L.push(`  /* --- band thresholds. The scorer emits \`fit\` only and every client`);
+  L.push(`         derives the band, so this table had five copies. Now it has one. --- */`);
+  for (const [k, v] of real(T.band.threshold)) L.push(`  --threshold-${k}: ${v};`);
+  L.push(``);
+
   L.push(`  /* --- motion: real spring step responses, sampled --- */`);
   for (const [k, s] of real(T.motion.springs)) {
     L.push(`  --t-${k}: ${s.durationMs}ms;`);
@@ -204,6 +209,18 @@ function kotlin() {
   }
   L.push(`    val litByBand = mapOf(${Object.entries(T.rose.litByBand).map(([k, v]) => `"${k}" to ${v}`).join(', ')})`);
   L.push(`}`, ``);
+  L.push(`// score -> band. CONFIRMED from the code 2026-09-21. The scorer emits`);
+  L.push(`// \`fit\` ONLY and every client derives, so this must match web and iOS`);
+  L.push(`// exactly. It is generated for that reason — five copies became one.`);
+  L.push(`object Band {`);
+  for (const [k, v] of real(T.band.threshold)) L.push(`    const val ${k.toUpperCase()} = ${v}`);
+  L.push(`    fun of(fit: Int): String = when {`);
+  L.push(`        fit >= AUTO -> "auto"`);
+  L.push(`        fit >= PING -> "ping"`);
+  L.push(`        fit >= UNSURE -> "unsure"`);
+  L.push(`        else -> "nearmiss"`);
+  L.push(`    }`);
+  L.push(`}`, ``);
   L.push(`// Compose cannot consume linear(). Do NOT eyeball an equivalent and do NOT`);
   L.push(`// substitute Compose's named stiffness constants — the durations stop`);
   L.push(`// matching and the clients drift. Derived from the same parameters:`);
@@ -259,6 +276,18 @@ function swift() {
     }
   }
   L.push(`    static let litByBand: [String: Int] = [${Object.entries(T.rose.litByBand).map(([k, v]) => `"${k}": ${v}`).join(', ')}]`);
+  L.push(`}`, ``);
+  L.push(`// score -> band. CONFIRMED from the code 2026-09-21. The scorer emits`);
+  L.push(`// \`fit\` ONLY and every client derives, so this must match web and`);
+  L.push(`// Android exactly. It is generated for that reason.`);
+  L.push(`enum JSBand {`);
+  for (const [k, v] of real(T.band.threshold)) L.push(`    static let ${k} = ${v}`);
+  L.push(`    static func of(_ fit: Int) -> String {`);
+  L.push(`        if fit >= auto { return "auto" }`);
+  L.push(`        if fit >= ping { return "ping" }`);
+  L.push(`        if fit >= unsure { return "unsure" }`);
+  L.push(`        return "nearmiss"`);
+  L.push(`    }`);
   L.push(`}`, ``);
   L.push(`// SwiftUI's \`response\` IS the natural period, so it equals the CSS duration.`);
   L.push(`enum JSMotion {`);
