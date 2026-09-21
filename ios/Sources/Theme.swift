@@ -58,6 +58,7 @@ let muted = dyn(0x5A5560, 0xB9B3C4)       // --text2. 6.55:1 / 9.72:1 - was
 let text3 = dyn(0x5A5560, 0xB9B3C4)       // no third tone; the kit has two
 let canvasBg = dyn(0xF8F3EB, 0x0A0524)
 let cardBg = dyn(0xFFFFFF, 0x1C1544)
+let surface = dyn(0xFFFFFF, 0x1C1544)    // --surface: the sheets and the field (stage 11 referenced it, nothing defined it - Codemagic #238)
 let info = dyn(0xEAF0FF, 0x272E42)        // the ping fill, hue 270
 let lavender = dyn(0xA2BAFF, 0xA2BAFF)
 // `lavender` is the SAME fill in both themes, so whatever sits on it must be
