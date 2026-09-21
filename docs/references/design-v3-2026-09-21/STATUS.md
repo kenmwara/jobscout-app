@@ -81,3 +81,10 @@ steps) for the desktop site; the product's band key stays `near-miss` (`JSBand.T
 generated `nearmiss`); the apply page is detail + prepare in one so it takes surface `detail`; the
 evidence anchors gained `profile|certif|degree|years` because the scorer says "the profile shows".
 Résumé spelling swept across reader-facing strings the same day (Ken).
+
+**Deployed to the web 2026-09-21 06:48Z** (Ken: "see v3 on a mockup build and deployed on web first, before any
+Codemagic builds"): a stamped copy of `site/` was pushed to Cloudflare Pages production with local wrangler,
+exactly as the workflow does (css/js content hashes, build meta `bb668cc … local`). No git push, so no
+Codemagic build. Verified live: `SITE=https://jobscout.page` check_scale / check_tiers / check_honesty green,
+check_theme --live and check_halo --live green, both hosts serve the pinned tokens.css with `--threshold-*`.
+The mockup build is `C:\Workspaces\jobscout-mockup-2026-09-21\` (+ `.zip`), rebuilt on the same commit.

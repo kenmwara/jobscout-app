@@ -7,7 +7,8 @@
 // browse  index.html on the sweep view      saved   saved.html with a seeded shortlist
 // apply   apply.html with a seeded posting  sheet   index.html with the phone sheet open
 // landing index.html as a first visit       states  the empty shortlist + the rate limit
-export const SITE = "http://localhost:8765/site";
+/* SITE=https://jobscout.page node tools/check_scale.mjs runs the same check on the live host */
+export const SITE = process.env.SITE || "http://localhost:8765/site";
 
 const SEED = {
   a: { id: "a", title: "Staff Engineer", company: "Shopify", url: "", fit: 84, saved: "2026-09-20", status: "applied" },
