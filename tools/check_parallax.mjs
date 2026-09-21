@@ -27,7 +27,8 @@ const mut = async p => {
   if (MUTATE === "flat") await p.addStyleTag({ content: ".jcard:hover,.job:hover{transform:translateY(-2px) !important}" });
   if (MUTATE === "ignore-motion") await p.addStyleTag({ content: "@media (prefers-reduced-motion: reduce){.jcard:hover,.job:hover{transform:perspective(900px) rotateY(6deg) !important}}" });
   if (MUTATE === "shrink-link") await p.addStyleTag({ content: ".jcard__title{transform:translateZ(20px) !important}" });
-  if (MUTATE === "bury-actions") await p.addStyleTag({ content: ".jcard__link::after{z-index:9 !important}.jcard__actions{z-index:0 !important;position:static !important}" });
+  /* bury = the actions lose their Z lift AND their stacking (with preserve-3d a lifted element wins by depth, whatever its z-index - the old mutation only bit while the first card was still below the fold, unlifted) */
+  if (MUTATE === "bury-actions") await p.addStyleTag({ content: ".jcard__link::after{z-index:9 !important}.jcard__actions{z-index:0 !important;position:static !important;transform:none !important}" });
 };
 const b = await chromium.launch();
 async function open(target, reduce) {

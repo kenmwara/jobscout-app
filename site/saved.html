@@ -281,7 +281,7 @@ function render(){
     : "Anything you keep lands here — on this device, and nowhere else.";
   if (!items.length){
     $("#list").innerHTML = `<div class="empty">${roseSVG(null, 96).replace('class="rose unlit"', 'class="rose unlit seek"')}<p class="big">Your shortlist starts on the demo page.</p>
-      <p>Run the pipeline, then tap <b>Save</b> on any score to keep it here.</p><div class="foot" style="justify-content:center;margin-top:0"><a class="btn" href="./">Run the pipeline</a><a class="btn quiet" href="./#browse">Browse the sweep</a></div></div>`;
+      <p>Score a sweep, then tap <b>Save</b> on any match to keep it here.</p><div class="foot" style="justify-content:center;margin-top:0"><a class="btn" href="./#browse">Browse the sweep</a><a class="btn quiet" href="./">Run a fresh sweep</a></div></div>`;
     return;
   }
   let used = [];

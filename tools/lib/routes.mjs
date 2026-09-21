@@ -50,6 +50,19 @@ export async function openMockupDraft(browser, theme = "light") {
   return { page, ctx, surface: "prepare" };
 }
 
+/** Any MOCKUP screen by name (home, matches, saved, sheet, draft): the mockup
+ *  paints whole screens from a `screen` variable, so a screen is one paint away. */
+export async function openMockup(browser, screen = "home", theme = "light") {
+  if (screen === "draft") return openMockupDraft(browser, theme);
+  const ctx = await browser.newContext({ viewport: { width: 1200, height: 1100 }, colorScheme: theme });
+  const page = await ctx.newPage();
+  await page.goto(SITE.replace(/\/site$/, "/mockups/mobile.html"), { waitUntil: "networkidle" });
+  await page.waitForSelector("#view .card.jcard", { timeout: 15000 }); await page.waitForTimeout(600);
+  await page.evaluate(t => { const x = [...document.querySelectorAll("button")].find(b => b.textContent.trim().toLowerCase() === t); if (x) x.click(); }, theme);
+  if (screen !== "home") { await page.evaluate(sc => { screen = sc; paint(); }, screen); await page.waitForTimeout(900); }
+  return { page, ctx, surface: screen };
+}
+
 /** Open a route in a fresh page at phone width, theme applied. */
 export async function openRoute(browser, name, theme, { width = 390, height = 844 } = {}) {
   const r = ROUTES[name];

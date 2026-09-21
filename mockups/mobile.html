@@ -110,8 +110,16 @@ html[data-plat="android"] .notch{position:absolute;top:19px;left:50%;transform:t
 .view::-webkit-scrollbar{width:0}
 
 /* app chrome */
-.ahead{display:flex;align-items:center;gap:var(--s2);padding:var(--s2) 0 var(--s3);position:sticky;top:0;
-  background:var(--canvas);z-index:4}
+.ahead{display:flex;align-items:center;gap:var(--s2);padding:var(--s2) var(--s4) var(--s5);position:sticky;top:0;z-index:4;
+  /* A BAR THAT PAINTS, BLEEDS (field-and-bar pack): painted --canvas while inset by the
+     view's padding it drew two seams down the wash and a hard edge over the title. It is
+     sticky, so it must stay opaque under scrolling text: it bleeds to the screen edge and
+     fades at its foot instead of ending on a line. */
+  margin-inline:calc(var(--s4) * -1);
+  background:color-mix(in srgb,var(--canvas) 86%,transparent);
+  -webkit-backdrop-filter:saturate(180%) blur(18px);backdrop-filter:saturate(180%) blur(18px);
+  -webkit-mask-image:linear-gradient(to bottom,#000 72%,transparent 100%);mask-image:linear-gradient(to bottom,#000 72%,transparent 100%)}
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){.ahead{background:var(--canvas)}}
 .ahead .bk{appearance:none;border:0;background:transparent;cursor:pointer;color:var(--ink);
   font:500 var(--t3)/1 var(--sans);padding:var(--s1) var(--s1) var(--s1) 0;display:flex;align-items:center;gap:var(--s1)}
 .ahead .mk{display:flex;align-items:center;gap:var(--s2);font:500 var(--t3)/1 var(--serif);color:var(--ink);
@@ -187,33 +195,13 @@ p.sub{font:400 var(--t2)/1.5 var(--sans);color:var(--text2);margin:0 0 var(--s4)
   position:relative;overflow:hidden}
 .mhero h2{font:400 var(--t6)/1.2 var(--serif);color:#f8f3eb;margin:0 0 var(--s3);letter-spacing:-.02em}
 .mhero .dot{color:var(--accent)}
-.mbox{
-  display:flex;align-items:center;gap:var(--s2);background:var(--surface);
-  border-radius:var(--r-input);padding:var(--s2) var(--s2) var(--s2) var(--s4);
-  box-shadow:var(--sh-hover);text-align:left}
-.mbox .sep{flex:0 0 auto;width:1px;height:26px;background:var(--hair)}
-.mbox textarea{
-  flex:1;min-width:0;border:0;background:none;resize:none;outline:none;
-  font:400 var(--t2)/1.45 var(--sans);color:var(--text);height:20px;max-height:104px;
-  padding:0;scrollbar-width:thin}
-.mbox textarea::placeholder{color:var(--text2)}
-/* Once it holds a resume the controls go to the bottom edge, so the text
-   starts at the top of the box the way it does in a real field. */
-.mbox.tall{align-items:flex-end}
-.mbox.tall textarea{height:104px}
-.mbox.tall .sep{height:20px}
-.mbox b[disabled]{opacity:.55}
-/* The clip. Same affordance as the real box: paste OR upload, and the upload
-   goes through the app's own /api/extract so a PDF becomes text the same way
-   it does on the phone. */
-.mbox .clip{
-  flex:0 0 auto;display:grid;place-items:center;width:36px;height:36px;
-  border:0;background:none;cursor:pointer;color:var(--text2);
-  border-radius:var(--r-btn)}
-.mbox .clip:hover,.mbox .clip:focus-visible{color:var(--ink);background:var(--canvas-2)}
-.mbox .clip svg{width:17px;height:17px;fill:none;stroke:currentColor;
-  stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
-.mbox .clip.busy{animation:mpulse 1s ease-in-out infinite}
+/* the résumé field is field.css (one component, two densities); these are the app's own bits */
+.field__attach.busy{animation:mpulse 1s ease-in-out infinite}
+.field__go .cmark{width:18px;height:18px}
+.field__go.busy{background:var(--surface);border:1px solid var(--edge-rest)}
+.mhero .field{margin-top:var(--s3)}
+.field[hidden],.prep__resume[hidden]{display:none}
+.matches-field{margin:var(--s2) 0 var(--s3)}
 /* This note lives INSIDE the hero, which is a dark block in both themes, so
    it takes cream - not --text-2, which is a dark grey and would have been
    unreadable on it. THEME.md section 3: the hero's text is always cream. */
@@ -440,10 +428,6 @@ html.anim .card.settled[data-band="auto"] .jcard__band{animation:autopulse 420ms
 .draft h3{font:400 var(--t4)/1.2 var(--serif);color:var(--ink);margin:0 0 var(--s0)}   /* law 13: titles are the serif */
 .prep__lede{margin:var(--s3) 0 0;font:400 var(--t2)/1.45 var(--sans);color:var(--text2)}
 .prep__resume{margin:var(--s3) 0 0}
-.prep__resume .mbox{background:var(--canvas);border:1px solid var(--edge-rest);box-shadow:none;align-items:flex-start}
-.prep__resume .mbox textarea{flex:1;min-width:0;border:0;background:transparent;resize:vertical;font:400 var(--t2)/1.5 var(--sans);color:var(--text);padding:var(--s2) 0}
-.prep__resume .mbox b{display:grid;place-items:center;width:44px;height:44px;border-radius:var(--r-pill);background:var(--btn);color:var(--btn-ink);cursor:pointer;flex:none}
-.prep__resume__note{margin:var(--s2) 0 0;font:400 var(--t1)/1.4 var(--sans);color:var(--text2)}
 .draft .lede{font:400 var(--t2)/1.5 var(--sans);color:var(--text2);margin:0 0 var(--s3)}
 .draft .out{font:400 var(--t2)/1.62 var(--sans);color:var(--text);margin:var(--s3) 0 0;
   white-space:pre-wrap;max-height:230px;overflow:auto}
@@ -476,6 +460,8 @@ html.anim .card.settled[data-band="auto"] .jcard__band{animation:autopulse 420ms
 .refusal ol{margin:0;padding-left:var(--s4);font-size:var(--t2)}
 </style>
 <link rel="stylesheet" href="card.css">
+<link rel="stylesheet" href="field.css">
+<script src="../site/field.js"></script>
 <link rel="stylesheet" href="parallax.css">
 <script src="../site/parallax.js"></script>
 </head>
@@ -982,23 +968,28 @@ async function scoreReal(profile) {
   }).sort((a, b) => b.fit - a.fit);
 }
 
+/* ONE résumé field in the product (field-and-bar pack): the bar density, used
+   by the hero and by the browse screen; the well is on the prepare screen. */
+const FIELD_BAR = `<form class="field field--bar" id="mbox" data-state="empty" novalidate onsubmit="return false">
+        <textarea class="field__area" id="resume" rows="1" placeholder="Paste or drop your résumé"
+                  aria-label="Paste your r\u00e9sum\u00e9" spellcheck="false" autocomplete="off"></textarea>
+        <div class="field__foot">
+          <input class="field__file-input" type="file" id="resumeFile" accept=".pdf,.doc,.docx,.txt,.md,.rtf,.odt,text/plain" tabindex="-1" aria-hidden="true">
+          <button class="field__attach clip" id="clipBtn" type="button" aria-controls="resumeFile" aria-label="Attach your r\u00e9sum\u00e9 as a PDF, Word file or text">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.4 11.05 12.25 20.2a5.5 5.5 0 0 1-7.78-7.78l9.19-9.19a3.67 3.67 0 0 1 5.18 5.18l-9.2 9.2a1.83 1.83 0 0 1-2.59-2.6l8.49-8.48"/></svg>
+            <span class="field__attach__t">Attach a file</span></button>
+          <span class="field__chip" role="status"><span class="field__chip__name"></span><span class="field__chip__size"></span><button class="field__chip__x" type="button" aria-label="Remove the attached file">\u00d7</button></span>
+          <button class="field__go" id="runBtn" type="button" aria-label="Score these postings against your r\u00e9sum\u00e9">\u2192</button>
+        </div>
+        <p class="field__err" role="alert"></p>
+      </form>
+      <p class="mfile" id="mfile" hidden></p>`;
+
 const SCREENS = {
   home: () => `${head()}
     <div class="mhero">
       <h2>Find the work<br>made for you<span class="dot">.</span></h2>
-      <div class="mbox" id="mbox">
-        <textarea id="resume" rows="1" placeholder="Paste your résumé&hellip;"
-                  aria-label="Paste your résumé"></textarea>
-        <span class="sep" aria-hidden="true"></span>
-        <button class="clip" id="clipBtn" type="button"
-                aria-label="Upload your résumé as a PDF, Word file or text">
-          <svg viewBox="0 0 24 24"><path d="M20 11.5 12.4 19a4.6 4.6 0 0 1-6.5-6.5l7.8-7.8a3 3 0 0 1 4.3 4.3l-7.7 7.7a1.5 1.5 0 0 1-2.1-2.1l7-7"/></svg>
-        </button>
-        <input type="file" id="resumeFile" accept=".pdf,.doc,.docx,.txt,.md,text/plain"
-               style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none">
-        <b id="runBtn" role="button" tabindex="0"
-           aria-label="Score these postings against your résumé">&#8594;</b></div>
-      <p class="mfile" id="mfile" hidden></p>
+      ${FIELD_BAR}
       <div class="chips"><i>Remote</i><i>Hybrid</i><i>On site</i><i>Any of those</i></div>
     </div>
     <p class="sub">${postings().length} swept this morning</p>
@@ -1008,8 +999,9 @@ const SCREENS = {
     ${limitedAt ? limitedHTML() : ""}
     <h2 class="big">Your matches</h2>
     <p class="sub">${scored().length} scored of ${postings().length} swept &middot; ${scoredReal
-      ? "scored by Claude just now" : "example scores &mdash; paste a résumé to score for real"}
+      ? "scored by Claude just now" : "example scores until you paste a r\u00e9sum\u00e9."}
       ${runErr ? `<br><span style="color:var(--b-unsure)">${esc(runErr)}</span>` : ""}</p>
+    ${scoredReal ? "" : `<div class="matches-field">${FIELD_BAR}</div>`}
     <button class="savesearch" type="button" id="saveSearch" aria-pressed="${isSearchSaved()}">
       <svg viewBox="0 0 24 24"><path d="M6.5 3.5h11v17l-5.5-4-5.5 4z"/></svg>
       ${isSearchSaved() ? "Search saved" : "Save this search"}
@@ -1093,9 +1085,17 @@ const SCREENS = {
         ? "Aiming the r\u00e9sum\u00e9 first is worth more here than the letter."
         : "The letter leads here; the r\u00e9sum\u00e9 already reads close to what this posting asks for."}</p>
       ${blocked ? `<div class="prep__resume" id="prepResume" hidden>
-        <div class="mbox"><textarea id="draftResume" rows="3" placeholder="Paste your r\u00e9sum\u00e9&hellip;" aria-label="Paste your r\u00e9sum\u00e9"></textarea>
-          <b id="draftGo" role="button" tabindex="0" aria-label="Use this r\u00e9sum\u00e9">&#8594;</b></div>
-        <p class="prep__resume__note">Read in the browser and sent only to draft for this posting.</p></div>` : ""}
+        <form class="field" data-state="empty" novalidate onsubmit="return false">
+          <textarea class="field__area" id="draftResume" placeholder="Paste your r\u00e9sum\u00e9 \u2014 or drop a file here" aria-label="Paste your r\u00e9sum\u00e9" spellcheck="false" autocomplete="off"></textarea>
+          <div class="field__foot">
+            <input class="field__file-input" type="file" id="draftFile" accept=".pdf,.doc,.docx,.txt,.md,.rtf,.odt,text/plain" tabindex="-1" aria-hidden="true">
+            <button class="field__attach" type="button" aria-controls="draftFile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.4 11.05 12.25 20.2a5.5 5.5 0 0 1-7.78-7.78l9.19-9.19a3.67 3.67 0 0 1 5.18 5.18l-9.2 9.2a1.83 1.83 0 0 1-2.59-2.6l8.49-8.48"/></svg><span class="field__attach__t">Attach a file</span></button>
+            <span class="field__chip" role="status"><span class="field__chip__name"></span><span class="field__chip__size"></span><button class="field__chip__x" type="button" aria-label="Remove the attached file">\u00d7</button></span>
+            <button class="field__go" id="draftGo" type="button" aria-label="Use this r\u00e9sum\u00e9">\u2192</button>
+          </div>
+          <p class="field__err" role="alert"></p>
+        </form>
+        <p class="field__note">Read in the browser and sent only to draft for this posting.</p></div>` : ""}
       ${sec("letter", "Cover letter",
             "A short letter for this posting, grounded in your r\u00e9sum\u00e9.", "Write the letter")}
       ${sec("resume", "Your r\u00e9sum\u00e9, aimed at it",
@@ -1130,8 +1130,8 @@ const SCREENS = {
             ${roseSVG(null, 84).replace('class="rose unlit"', 'class="rose unlit seek"')}
             <h3>Nothing kept yet.</h3>
             <p>Anything you keep lands here &mdash; on this device, and nowhere else.</p>
-            <button class="cta" type="button" data-go="home">Run the pipeline</button>
-            <button class="cta quiet" type="button" data-go="home">Browse the sweep</button></div>`)}`;
+            <button class="cta" type="button" data-go="home">Browse the sweep</button>
+            <button class="cta quiet" type="button" data-go="home">Run a fresh sweep</button></div>`)}`;
   },
 };
 
@@ -1192,22 +1192,21 @@ async function extractFile(file) {
   return j;
 }
 
-document.addEventListener("click", e => {
-  if (e.target.closest("#clipBtn")) $("#resumeFile").click();
-});
-
+/* the attach button is field.js's; this is the app's own door: the file goes
+   through /api/extract and its TEXT lands in that field's paste area */
 document.addEventListener("change", async e => {
-  if (e.target.id !== "resumeFile") return;
+  if (!e.target.classList || !e.target.classList.contains("field__file-input")) return;
   const file = e.target.files && e.target.files[0];
   if (!file) return;
-  const clip = $("#clipBtn"), note = $("#mfile");
+  const field = e.target.closest(".field"), ta = field.querySelector(".field__area"), clip = field.querySelector(".field__attach");
+  const note = $("#mfile") || field.querySelector(".field__err");
   clip.classList.add("busy");
   note.hidden = false;
   note.innerHTML = `Reading <b>${esc(file.name)}</b>&hellip;`;
   try {
     const j = await extractFile(file);
-    $("#resume").value = j.text;
-    $("#mbox").classList.add("tall");
+    ta.value = j.text;
+    field.dataset.state = "typing"; ta.dispatchEvent(new Event("input", { bubbles: true }));
     note.innerHTML = `<b>${esc(file.name)}</b> &middot; ${j.chars.toLocaleString()} characters read
       &middot; tap the arrow to score`;
   } catch (err) {

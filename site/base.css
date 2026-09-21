@@ -756,7 +756,7 @@ html input:focus-visible,html textarea:focus-visible,html select:focus-visible,h
 .job .act .applybtn,.job .act .savebtn{min-height:44px;min-width:44px}
 .searchrow input,.f,button.f,select.f{min-height:44px}
 .plink{display:inline-flex;align-items:center;min-height:44px}
-html input:focus-visible,html textarea:focus-visible,html select:focus-visible{outline:2px solid var(--accent) !important;outline-offset:2px}
+html :is(input,textarea,select):focus-visible:not(.field *){outline:2px solid var(--accent);outline-offset:2px}   /* inside a .field the well lights instead (field.css) */
 /* the brand stop on the hero: the wash is dark in both themes, so the stop
    takes the dark theme's accent as a constant (2.32:1 in indigo, measured) */
 .hero h1.display .dot{color:var(--hero-accent)}

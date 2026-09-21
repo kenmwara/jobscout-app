@@ -63,7 +63,7 @@ jobs:
           # A content hash makes the URL change whenever the file does, so no
           # cache policy anywhere can pair new markup with an old palette. The
           # checkout is fresh, so this never touches the repo.
-          for css in tokens.css base.css; do
+          for css in tokens.css base.css field.css; do
             H=$(md5sum "site/$css" | cut -c1-10)
             sed -i "s|href=\"$css\"|href=\"$css?v=$H\"|g" site/*.html
             echo "$css pinned to $H"
@@ -73,7 +73,7 @@ jobs:
           # rose on every page and hsheet.js is the phone header. Pages
           # caches a .js for four hours, so a reader got new HTML with the
           # OLD rose builder - "it is still loading a stale version".
-          for js in band.js evidence.js rose.js hsheet.js parallax.js; do
+          for js in band.js evidence.js rose.js hsheet.js parallax.js field.js; do
             H=$(md5sum "site/$js" | cut -c1-10)
             sed -i "s|src=\"$js\"|src=\"$js?v=$H\"|g" site/*.html
             echo "$js pinned to $H"

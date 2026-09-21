@@ -1,0 +1,32 @@
+<!doctype html><html lang="en" data-market="ca"><head><meta charset="utf-8"><title>after</title>
+<link rel="stylesheet" href="../../v3/pack/tokens/tokens.css">
+<link rel="stylesheet" href="../../v3/pack/css/base.css">
+<link rel="stylesheet" href="../../v3/pack/css/components.css">
+<link rel="stylesheet" href="../css/bleed.css">
+<link rel="stylesheet" href="../css/field.css">
+<style>
+html{color-scheme:dark}
+body{margin:0;background:var(--canvas)}
+.screen{position:relative;width:430px;height:520px;overflow:hidden;padding:0 var(--s4);
+        background:var(--canvas)}
+.screen::before{content:"";position:absolute;inset:0;
+  background:radial-gradient(120% 80% at 18% 8%,rgba(72,101,255,.34),transparent 62%),
+             radial-gradient(110% 76% at 88% 30%,rgba(140,100,255,.30),transparent 64%)}
+.screen>*{position:relative}
+.u-sr{position:absolute;width:1px;height:1px;margin:-1px;overflow:hidden;clip-path:inset(50%)}
+</style></head><body>
+<div class="screen">
+  <header class="phdr"><button class="chip-btn">← Back</button><span class="phdr__right"><button class="chip-btn">CA</button></span></header>
+  <h1 style="font:400 24px/1.2 serif;color:var(--text)">Senior Associate, SLC Accounting</h1>
+  <form class="field" data-state="empty" novalidate>
+    <label class="u-sr" for="r1">Your résumé</label>
+    <textarea class="field__area" id="r1" placeholder="Paste your résumé — or drop a file here"></textarea>
+    <div class="field__foot">
+      <input class="field__file-input" type="file" id="r1f" accept=".pdf,.doc,.docx,.txt" tabindex="-1" aria-hidden="true">
+      <button class="field__attach" type="button">Attach a file</button>
+      <span class="field__chip"><span class="field__chip__name"></span><span class="field__chip__size"></span><button class="field__chip__x" type="button">×</button></span>
+      <button class="field__go" type="submit" disabled>→</button>
+    </div>
+    <p class="field__err" role="alert"></p>
+  </form>
+</div></body></html>

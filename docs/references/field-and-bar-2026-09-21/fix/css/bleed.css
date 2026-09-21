@@ -1,0 +1,87 @@
+/* ===========================================================================
+   JobScout — a bar that paints, bleeds.
+
+   THE DEFECT, MEASURED
+   On the detail screen a flat rectangle sits over the market wash, directly
+   above the title, with four hard edges. Sampled off the screenshot:
+
+     screen spans        x 722 .. 1180   (458px at that zoom)
+     the rectangle       x 742 .. 1161   (inset ~20px each side)
+     its fill            rgb(10, 5, 36)
+     --canvas, dark      #0a0524  =  rgb(10, 5, 36)          <- exact match
+     the 20px gutters    a smooth gradient, 15,10,42 -> 33,23,64  (the wash)
+
+   So `.phdr` is painted `--canvas` while sitting inside the screen's
+   horizontal padding. The wash runs underneath it and reappears in the 20px
+   gutters on either side, which is what draws the two vertical seams and
+   makes the whole header read as a box drawn around the title.
+
+   THE PACK DID NOT ASK FOR THIS. `.phdr` in components.css is:
+       .phdr { display:flex; align-items:center; justify-content:space-between;
+               gap:var(--s2); min-height:56px; padding:0 var(--s4); }
+   — no background at all. The fill was added during the build, reasonably
+   (a header usually wants one) and wrongly (this one must not have one).
+
+   THE RULE
+   The market wash IS the ground of the detail and prepare screens. Nothing
+   may be painted on top of it edge-to-edge-minus-the-padding. A bar either:
+     a) paints nothing, and the wash runs unbroken behind it — correct here,
+        because .chip-btn already carries its own surface and shadow, so the
+        controls are legible without a plate behind them; or
+     b) genuinely needs to be opaque because content scrolls under it, and
+        then it must bleed the full width and fade rather than end on a line.
+   =========================================================================== */
+
+/* --------------------------------------------------------------------------
+   (a) THE FIX. The header paints nothing.
+   -------------------------------------------------------------------------- */
+.phdr {
+  background: none;
+  border: 0;
+  box-shadow: none;
+  /* it keeps its own inner padding; it just never fills */
+  padding: 0 var(--s4);
+}
+
+/* --------------------------------------------------------------------------
+   (b) IF A BAR EVER DOES NEED TO BE OPAQUE — sticky headers, sheet bars,
+   toolbars — it takes this class and never a bare `background`.
+
+   Two things make it correct:
+     - the negative margin + matching padding push the fill out to the screen
+       edge, so no gutter of ground survives beside it;
+     - the mask fades the bottom edge, so the bar ends in the wash instead of
+       on a hard line. A hard line across a gradient is exactly the artefact
+       this file exists to remove.
+   -------------------------------------------------------------------------- */
+.bar--solid {
+  /* pull out to the screen edge whatever padding the parent imposes */
+  margin-inline: calc(var(--s4) * -1);
+  padding-inline: var(--s4);
+  background: color-mix(in srgb, var(--canvas) 86%, transparent);
+  -webkit-backdrop-filter: saturate(180%) blur(18px);
+  backdrop-filter: saturate(180%) blur(18px);
+  -webkit-mask-image: linear-gradient(to bottom, #000 62%, transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 62%, transparent 100%);
+}
+/* Safety: where backdrop-filter is unavailable the 86% is too transparent to
+   hide scrolling text, so it goes opaque instead. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .bar--solid { background: var(--canvas); }
+}
+
+/* --------------------------------------------------------------------------
+   THE GENERAL RULE, for every similar object.
+
+   Any full-width bar that sits on the wash is covered by the same reasoning:
+   the phone header, the sheet's grab bar, a future sticky filter row. None of
+   them may carry a bare fill while inset by the page padding.
+   -------------------------------------------------------------------------- */
+.phdr, .sheet__bar, .toolbar, [data-bar] {
+  background-clip: padding-box;
+}
+.phdr:not(.bar--solid),
+.toolbar:not(.bar--solid),
+[data-bar]:not(.bar--solid) {
+  background: none;
+}

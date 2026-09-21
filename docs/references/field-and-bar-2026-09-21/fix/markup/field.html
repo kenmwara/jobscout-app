@@ -1,0 +1,43 @@
+<!-- ===========================================================================
+     THE FIELD — paste or file. Copy this block verbatim wherever JobScout
+     asks for a résumé: the hero, the prepare screen's unblock, anywhere else.
+     It is the same object every time; no screen builds its own.
+
+     The only thing that changes per placement is the id pair on
+     .field__area / its <label>, which must be unique on the page.
+     =========================================================================== -->
+
+<form class="field" data-state="empty" novalidate>
+  <label class="u-sr" for="resume-1">Your résumé</label>
+  <textarea class="field__area" id="resume-1" name="resume"
+            placeholder="Paste your résumé — or drop a file here"
+            spellcheck="false" autocomplete="off"></textarea>
+
+  <div class="field__foot">
+    <!-- the file door. A real <input type=file> stays in the DOM for the
+         form and for assistive tech; it is visually hidden, never display:none,
+         because display:none takes it out of the accessibility tree too. -->
+    <input class="field__file-input" type="file" id="resume-1-file"
+           accept=".pdf,.doc,.docx,.txt,.rtf,.odt" tabindex="-1" aria-hidden="true">
+
+    <button class="field__attach" type="button" aria-controls="resume-1-file">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+           stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M21.4 11.05 12.25 20.2a5.5 5.5 0 0 1-7.78-7.78l9.19-9.19a3.67 3.67 0 0 1 5.18 5.18l-9.2 9.2a1.83 1.83 0 0 1-2.59-2.6l8.49-8.48"/>
+      </svg>
+      <span class="field__attach__t">Attach a file</span>
+    </button>
+
+    <!-- shown instead of the attach button once a file is on -->
+    <span class="field__chip" role="status">
+      <span class="field__chip__name"></span>
+      <span class="field__chip__size"></span>
+      <button class="field__chip__x" type="button" aria-label="Remove the attached file">×</button>
+    </span>
+
+    <button class="field__go" type="submit" aria-label="Use this résumé" disabled>→</button>
+  </div>
+
+  <p class="field__err" role="alert"></p>
+</form>
+<p class="field__note">Read in the browser and sent only to draft for this posting.</p>

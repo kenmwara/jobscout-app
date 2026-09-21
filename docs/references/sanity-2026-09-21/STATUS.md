@@ -14,6 +14,8 @@ site. The suite is now REPO-NATIVE, bound to the site's six surfaces (`tools/lib
 | rose / motion | existing; motion gained press-equals-hover, slow-press, selected-as-action | pack + GAPS #6 | — |
 | parallax | `tools/check_parallax.mjs` (mockup A–D, site A B D) | pack | flat, ignore-motion, shrink-link, bury-actions |
 | ground | `tools/check_halo_ext.mjs` (pngjs; light halo is on the HUE axis by ruling, so rule B floors at the canvas's chroma and rule C accepts a chroma lift) | pack | section-bg, grey-blob, kill-halo |
+| field | `tools/check_field_chrome.mjs` (site landing/apply/browse + mockup home/matches/draft) | field-and-bar pack | resize-grip, ring-inside, no-ring-outside, long-placeholder |
+| bar | `tools/check_bar_bleed.mjs` (site landing/browse/apply/saved + mockup home/matches/draft/saved) | field-and-bar pack | inset-bar |
 | contrast | `tools/check_contrast.mjs` (ancestor walk; gradients and translucent chips sampled from pixels beside the text) | GAPS #1 | hero-ink |
 | gaps | `tools/check_gaps.mjs` heading · twice · pill · fold · targets | GAPS #2 #3 #4 #5 #8 | split-title, repeat-org, double-code, push-below, tiny-target, no-focus |
 | theme / palette | existing | — | — |

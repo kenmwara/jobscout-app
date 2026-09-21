@@ -17,6 +17,7 @@
 <link rel="stylesheet" href="fonts-embedded.css">
 <link rel="stylesheet" href="tokens.css">
 <link rel="stylesheet" href="base.css">
+<link rel="stylesheet" href="field.css">
 <script>/* Two independent attributes, stamped before first paint.
 
    market: always written, from the hostname. The palette keys on
@@ -186,10 +187,7 @@
   .note{font:400 var(--t2)/1.6 var(--sans);color:var(--text2);margin:0 0 var(--s4)}
   .warn{background:var(--b-unsure-bg);color:var(--b-unsure);border-radius:12px;padding:var(--s3) var(--s4);
     font:400 var(--t3)/1.55 var(--sans);margin:0 0 var(--s4)}
-  #profileBox{width:100%;min-height:150px;resize:vertical;border:1px solid var(--hair2);
-    border-radius:12px;padding:var(--s3);font:400 var(--t3)/1.6 var(--sans);color:var(--ink);
-    background:var(--surface);outline:none}
-  #profileBox:focus{border-color:var(--accent)}
+  /* #profileBox is the field component's paste area now (field.css): no UA grip, no ring, the well lights */
   /* The same control the landing page and the phone use, so a file behaves
      the same way wherever a resume is asked for. A label wrapping a hidden
      input is the only way to style a file picker; the input stays in the
@@ -354,15 +352,18 @@ nav.main{margin-left:auto;display:flex;gap:var(--s2);align-items:center}
         <p class="note">You came here from your saved jobs, so this page does not have your résumé &mdash; nothing about you is
           kept between visits. Paste it once and the three steps below can be drafted. It is read in the browser and
           sent only to score this one posting.</p>
-        <textarea id="profileBox" placeholder="Paste your résumé&hellip;"></textarea>
-        <div class="acts" style="margin-top:var(--s3)">
-          <button class="btn" type="button" id="useProfile">Use this résumé</button>
-          <label class="up" id="upLabel">
-            <svg class="clip" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true"><path d="M21.4 11.05 12.25 20.2a5.5 5.5 0 0 1-7.78-7.78l9.19-9.19a3.67 3.67 0 1 1 5.18 5.19l-9.2 9.19a1.83 1.83 0 1 1-2.59-2.6l8.49-8.48"/></svg>
-            <span>Upload a file</span>
-            <input type="file" id="applyFile" accept=".pdf,.docx,.txt,.md,application/pdf">
-          </label>
-        </div>
+        <form class="field" id="profileField" data-state="empty" novalidate onsubmit="return false">
+          <textarea class="field__area" id="profileBox" placeholder="Paste your résumé — or drop a file here" spellcheck="false" autocomplete="off" aria-label="Paste your résumé"></textarea>
+          <div class="field__foot">
+            <input class="field__file-input" type="file" id="applyFile" accept=".pdf,.doc,.docx,.txt,.md,.rtf,.odt,application/pdf" tabindex="-1" aria-hidden="true">
+            <button class="field__attach" id="upLabel" type="button" aria-controls="applyFile">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.4 11.05 12.25 20.2a5.5 5.5 0 0 1-7.78-7.78l9.19-9.19a3.67 3.67 0 0 1 5.18 5.18l-9.2 9.2a1.83 1.83 0 0 1-2.59-2.6l8.49-8.48"/></svg>
+              <span class="field__attach__t">Attach a file</span></button>
+            <span class="field__chip" role="status"><span class="field__chip__name"></span><span class="field__chip__size"></span><button class="field__chip__x" type="button" aria-label="Remove the attached file">&times;</button></span>
+            <button class="field__go" id="useProfile" type="button" aria-label="Use this résumé" disabled>&#8594;</button>
+          </div>
+          <p class="field__err" role="alert"></p>
+        </form>
         <p id="uplStatus" class="fnote" style="margin:var(--s2) 0 0" role="status" aria-live="polite"></p>
       </div>
     </div>
@@ -602,6 +603,7 @@ $("#applyFile").onchange = async () => {
     const d = await r.json();
     if (d.text) {
       $("#profileBox").value = d.text;
+      const fld = $("#profileBox").closest(".field"); if (fld) { fld.dataset.state = "typing"; $("#profileBox").dispatchEvent(new Event("input", { bubbles: true })); }
       st.textContent = "\u2713 " + d.chars.toLocaleString() + " characters read from " +
         file.name + " \u2014 review it, then use it"
         + (d.chars > 6000 ? " (trimmed to 6,000)" : "");
@@ -1045,5 +1047,6 @@ $("#do-answers").onclick = async () => {
 };
 </script>
 <script src="hsheet.js"></script>
+<script src="field.js"></script>
 </body>
 </html>

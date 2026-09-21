@@ -165,9 +165,13 @@ if (want("targets")) {
            the fold is scaled .96 for a moment, and that is not the target */
         const w = el.offsetWidth || el.getBoundingClientRect().width, h = el.offsetHeight || el.getBoundingClientRect().height;
         if (w < 44 - 0.5 || h < 44 - 0.5) out.small.push(`${name(el)} ${Math.round(w)}×${Math.round(h)}`);
-        const rest = getComputedStyle(el); const restKey = rest.outlineStyle + rest.outlineWidth + rest.boxShadow;
+        /* inside a .field the focus is MOVED to the wrapper (field.css): the well's edge and
+           shadow change on focus-within, so that is what visible focus means there */
+        const host = el.closest(".field") || el;
+        const key = x => { const c = getComputedStyle(x); return c.outlineStyle + c.outlineWidth + c.boxShadow + c.borderColor; };
+        const restKey = key(host);
         try { el.focus({ focusVisible: true, preventScroll: true }); } catch { el.focus({ preventScroll: true }); }
-        const f = getComputedStyle(el); const fKey = f.outlineStyle + f.outlineWidth + f.boxShadow;
+        const fKey = key(host);
         if (document.activeElement === el && fKey === restKey) out.focus.push(name(el));
         el.blur();
       }

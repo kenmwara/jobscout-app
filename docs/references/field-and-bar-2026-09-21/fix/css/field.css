@@ -1,0 +1,300 @@
+/* ===========================================================================
+   JobScout — THE FIELD. One component, every résumé input in the product.
+
+   WHY THIS FILE EXISTS
+   The prepare screen shipped a raw <textarea>: UA border, UA focus ring, a
+   native resize grip in the corner, a native scrollbar, and a box too short
+   for its own line-height so the placeholder was cut in half. Measured off
+   the screenshot, not guessed.
+
+   THE CAUSE IS MINE, NOT THE BUILD'S.
+   The pack described `.hero__field` + `.hero__input` and those rules are
+   correct — `border:0; outline:none` — but they describe a single-line
+   <input>. Nothing in the pack ever described a <textarea>, and the résumé
+   paste is inherently multi-line, so the build reached for the element the
+   job needed and got the element's defaults with it. A spec that covers one
+   element and stays silent about the one the job requires is an incomplete
+   spec, and this is what an incomplete spec looks like on screen.
+
+   THE RULE THIS FILE SETS
+   There is ONE résumé field in JobScout. It takes a paste AND a file. It
+   appears in the hero, on the prepare screen, and anywhere else the product
+   asks for a résumé, and it is the same object every time. No screen builds
+   its own input; no element in it is ever left at its UA defaults.
+
+   REPLACES  .hero__field / .hero__input / .hero__go  and the prepare
+             screen's ad-hoc textarea. Keep the old class names as aliases if
+             that is cheaper than editing markup — see the bottom of the file.
+   =========================================================================== */
+
+/* ---------------------------------------------------------------------------
+   THE WELL
+   One rounded surface. Not a pill: a pill cannot hold three lines of text
+   without its corners eating the first and last of them. --r-inner is the
+   radius for a thing INSIDE a card, which is what this is on the prepare
+   screen; it is also correct free-standing in the hero.
+   --------------------------------------------------------------------------- */
+.field {
+  display: grid;
+  grid-template-rows: auto auto;
+  gap: var(--s2);
+  background: var(--surface);
+  border: 1px solid var(--edge-rest);
+  border-radius: var(--r-inner);
+  box-shadow: var(--sh-rest);
+  padding: var(--s3);
+  transition: border-color var(--t-settle) var(--spring-settle),
+              box-shadow   var(--t-settle) var(--spring-settle),
+              background   var(--t-settle) var(--spring-settle);
+}
+
+/* Focus lives on the WELL, never on the control inside it. That is what lets
+   the control drop its own outline without losing a keyboard indicator: the
+   whole field lights, which is bigger and easier to see than a 1px ring. */
+.field:focus-within {
+  border-color: var(--selected-edge);
+  box-shadow: var(--sh-hover);
+}
+
+/* ---------------------------------------------------------------------------
+   THE PASTE AREA
+   Every line here is load-bearing. Removing any one of them reproduces a
+   part of the screenshot.
+   --------------------------------------------------------------------------- */
+.field__area {
+  /* 1. strip the UA control entirely */
+  appearance: none; -webkit-appearance: none;
+  border: 0; outline: none; background: none; box-shadow: none;
+  /* 2. the resize grip. The single ugliest default on the web, and the one
+        thing a user can do to a layout that no stylesheet can undo. */
+  resize: none;
+  /* 3. type. `font: inherit` is not enough — a textarea's UA font is
+        monospace-ish at a smaller size and it will not inherit without this. */
+  font: 400 var(--t2)/1.45 var(--font-sans);
+  color: var(--text);
+  width: 100%; min-width: 0;
+  display: block;
+  padding: var(--s2) var(--s1);
+  margin: 0;
+  /* 4. THE CLIPPING. The screenshot's placeholder was cut through the middle
+        because the box was shorter than one line-height plus its padding.
+        Three lines is the floor: a résumé paste that shows one line reads as
+        a search box and people type their job title into it. */
+  min-height: calc(1.45em * 3 + var(--s2) * 2);
+  max-height: calc(1.45em * 12 + var(--s2) * 2);
+  overflow-y: auto;
+  /* 5. the scrollbar, if it ever appears */
+  scrollbar-width: thin;
+  scrollbar-color: var(--edge-hover) transparent;
+}
+.field__area::placeholder { color: var(--text-2); opacity: 1; }
+.field__area::-webkit-scrollbar { width: 10px; }
+.field__area::-webkit-scrollbar-track { background: transparent; }
+.field__area::-webkit-scrollbar-thumb {
+  background: var(--edge-hover);
+  border-radius: var(--r-pill);
+  border: 3px solid transparent;
+  background-clip: content-box;
+}
+
+/* The box grows with the paste where the browser supports it, capped by
+   max-height above, so a full résumé is not read through a 3-line porthole.
+   Progressive: without it the field is simply fixed at its min-height. */
+@supports (field-sizing: content) {
+  .field__area { field-sizing: content; }
+}
+
+/* ---------------------------------------------------------------------------
+   THE FOOT — attach on the left, send on the right.
+   The upload is not a separate screen or a separate control somewhere else.
+   A résumé arrives as a paste or as a file and both doors are on the same box.
+   --------------------------------------------------------------------------- */
+.field__foot {
+  display: flex; align-items: center; gap: var(--s2);
+  min-height: 36px;
+}
+.field__file-input { position: absolute; width: 1px; height: 1px;
+                     padding: 0; margin: -1px; overflow: hidden;
+                     clip-path: inset(50%); white-space: nowrap; border: 0; }
+
+.field__attach {
+  display: inline-flex; align-items: center; gap: var(--s1);
+  appearance: none; -webkit-appearance: none;
+  border: 1px solid var(--edge-rest); background: none;
+  border-radius: var(--r-chip);
+  padding: 0 var(--s2); min-height: 30px;
+  font: 400 var(--t1)/1 var(--font-sans); color: var(--text-2);
+  cursor: pointer;
+  transition: color var(--t-snap) var(--spring-snap),
+              border-color var(--t-snap) var(--spring-snap);
+}
+.field__attach:hover { color: var(--text); border-color: var(--edge-hover); }
+.field__attach svg { width: 14px; height: 14px; flex: none; }
+
+/* the attached file, once there is one */
+.field__chip {
+  display: none; align-items: center; gap: var(--s2);
+  min-width: 0; flex: 1;
+  background: var(--sunken); border-radius: var(--r-chip);
+  padding: 0 var(--s1) 0 var(--s2); min-height: 30px;
+  font: 400 var(--t1)/1 var(--font-sans); color: var(--text);
+}
+.field__chip__name {
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0;
+}
+.field__chip__size { color: var(--text-2); flex: none; }
+.field__chip__x {
+  appearance: none; -webkit-appearance: none;
+  border: 0; background: none; cursor: pointer;
+  width: 22px; height: 22px; flex: none; border-radius: var(--r-pill);
+  color: var(--text-2); font: 400 var(--t2)/1 var(--font-sans);
+  display: grid; place-items: center;
+}
+.field__chip__x:hover { color: var(--text); background: var(--surface); }
+
+.field__go {
+  width: 36px; height: 36px; flex: none; margin-left: auto;
+  appearance: none; -webkit-appearance: none;
+  border: 0; padding: 0; cursor: pointer;
+  border-radius: var(--r-pill);
+  background: var(--action); color: var(--action-on);
+  font: 400 var(--t2)/1 var(--font-sans);
+  display: grid; place-items: center;
+  transition: transform var(--t-snap) var(--spring-snap),
+              box-shadow var(--t-snap) var(--spring-snap),
+              opacity    var(--t-snap) var(--spring-snap);
+}
+.field__go:hover  { transform: translateY(-1px); box-shadow: var(--sh-hover); }
+.field__go:active { transform: scale(var(--press-control));
+                    transition-duration: var(--t-exit);
+                    transition-timing-function: var(--spring-exit); }
+/* Not-yet, not broken. `opacity:.38` on a dark button over a white well
+   renders a washed grey disc that reads as a fault; a muted fill reads as a
+   control waiting for its input. Same information, no alarm. */
+.field__go:disabled {
+  background: var(--sunken); color: var(--text-2);
+  cursor: default; transform: none; box-shadow: none;
+}
+
+/* ---------------------------------------------------------------------------
+   STATES. Each one is a data attribute on .field, set by field.js, so the
+   whole component is inspectable from the DOM and testable from a check.
+   --------------------------------------------------------------------------- */
+
+/* a file is attached: the chip replaces the attach button, and the paste area
+   collapses to a single line — you are not going to paste AND upload. */
+.field[data-state="file"] .field__attach { display: none; }
+.field[data-state="file"] .field__chip   { display: flex; }
+.field[data-state="file"] .field__area   { min-height: 0; height: 0;
+                                           padding-block: 0; overflow: hidden; }
+
+/* dragging a file over it. The whole well is the drop target — a small dashed
+   rectangle inside a box is two targets where the user sees one. */
+.field[data-drag="1"] {
+  border-color: var(--selected-edge);
+  background: var(--surface-hover);
+  box-shadow: var(--sh-hover);
+}
+.field[data-drag="1"] .field__area::placeholder { color: var(--selected-edge); }
+
+/* a rejected file. Ember, and it says what to do, not what went wrong. */
+.field__err {
+  display: none;
+  margin-top: var(--s2);
+  font: 400 var(--t1)/1.4 var(--font-sans);
+  color: var(--band-nearmiss-l, var(--text-2));
+}
+.field[data-state="error"] .field__err { display: block; }
+
+/* the one line under the field. AFTER the field, never before it — a
+   condition stated ahead of its remedy reads as a refusal. */
+.field__note {
+  margin-top: var(--s2);
+  font: 400 var(--t1)/1.4 var(--font-sans);
+  color: var(--text-2);
+}
+
+/* ---------------------------------------------------------------------------
+   .field--bar — THE HERO DENSITY.
+
+   The landing asks for a résumé in one line at the top of the page. A
+   three-line well there would push the first result below the fold, so the
+   hero gets a bar — but it is the SAME component: same two doors, same drop
+   target, same states, same stripped controls. One row instead of two.
+
+   This is the "all similar objects" half of the fix. The landing's field
+   looked acceptable already; what it was, was a SECOND implementation, and a
+   second implementation is where the next resize grip comes from.
+   --------------------------------------------------------------------------- */
+.field--bar {
+  grid-template-columns: 1fr auto;
+  grid-template-rows: auto;
+  align-items: center;
+  gap: var(--s2);
+  border-radius: var(--r-pill);
+  padding: var(--s1) var(--s1) var(--s1) var(--s4);
+}
+.field--bar .field__area {
+  grid-column: 1;
+  min-height: 0; max-height: none;
+  height: calc(1.45em + var(--s2) * 2);
+  padding: var(--s2) 0;
+  overflow: hidden;            /* one line; it must never scroll or grow */
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+@supports (field-sizing: content) {
+  .field--bar .field__area { field-sizing: fixed; }  /* the bar does not grow */
+}
+.field--bar .field__foot { grid-column: 2; min-height: 0; }
+.field--bar .field__attach {
+  border: 0; width: 34px; min-height: 34px; padding: 0;
+  justify-content: center; border-radius: var(--r-pill);
+}
+.field--bar .field__attach .field__attach__t { display: none; }   /* icon only */
+.field--bar .field__attach:hover { background: var(--sunken); }
+.field--bar .field__go { width: 40px; height: 40px; margin-left: 0; }
+.field--bar .field__err { grid-column: 1 / -1; }
+
+/* a file attached in the bar: the chip takes the input's place */
+.field--bar[data-state="file"] .field__area { display: none; }
+.field--bar[data-state="file"] .field__foot { grid-column: 1 / -1; }
+.field--bar[data-state="file"] .field__chip { flex: 1; }
+
+/* ---------------------------------------------------------------------------
+   ALIASES — so this lands without touching every screen's markup.
+   Delete these once the markup uses .field everywhere.
+   --------------------------------------------------------------------------- */
+.hero__field { all: unset; }        /* neutralise the old pill wrapper */
+.hero__field.field { all: revert; } /* but not when it is already the new one */
+
+/* ---------------------------------------------------------------------------
+   THE GENERAL RULE, for every similar object in the product.
+
+   The screenshot's grip and ring were not unique to one textarea. They are
+   what ANY control does when a stylesheet does not claim it. So the claim is
+   made once, for the whole document, and a new control cannot arrive with its
+   defaults showing:
+   --------------------------------------------------------------------------- */
+:where(input, textarea, select, button) { font: inherit; color: inherit; }
+textarea { resize: none; }
+:where(input, textarea, select) { border-radius: var(--r-chip); }
+
+/* Focus is never removed outright — it is MOVED to the wrapper. Any control
+   not inside a .field keeps a real ring, so this rule can never silently
+   strand a keyboard user. */
+:where(input, textarea, select, button):focus-visible {
+  outline: 2px solid var(--selected-edge);
+  outline-offset: 2px;
+}
+.field :where(input, textarea, button):focus-visible { outline: none; }
+.field:focus-within { outline: 2px solid transparent; } /* forced-colors hook */
+
+@media (forced-colors: active) {
+  .field { border: 1px solid CanvasText; }
+  .field:focus-within { outline: 2px solid Highlight; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .field, .field__go, .field__attach { transition-duration: 1ms; }
+}
