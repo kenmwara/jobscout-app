@@ -484,5 +484,28 @@ else:
     ok("Android's four springs match base.css within 1ms / 0.01 damping")
 
 
+
+# 9. THE ROSE'S LIT TABLE is one table on three clients. rose.js is the
+#    reference (AUTO 8, PING 6, UNSURE 5, NEAR-MISS 3); Rose.kt's litFor() and
+#    RoseView.swift's litFor() must carry the same four numbers in the same
+#    order, or a 79 lights six bearings on the web and seven on the phone.
+def _lit(path, pat):
+    try:
+        src = _decomment(io.open(os.path.join(ROOT, *path), encoding="utf-8").read())
+    except OSError:
+        return None
+    m = re.search(pat, src, re.S)
+    return [int(x) for x in m.groups()] if m else None
+_web = _lit(("site", "rose.js"), r"auto:\s*(\d+),\s*ping:\s*(\d+),\s*unsure:\s*(\d+),\s*\"near-miss\":\s*(\d+)")
+_kt = _lit(("android", "app", "src", "main", "java", "trade", "tbot", "jobscout", "Rose.kt"),
+           r"fun litFor\(fit: Int\): Int = when \{\s*fit >= 80 -> (\d+)\s*fit >= 70 -> (\d+)\s*fit >= FIT_FLOOR -> (\d+)\s*else -> (\d+)")
+_sw = _lit(("ios", "Sources", "RoseView.swift"), r"func litFor\(_ f: Int\) -> Int \{ f >= 80 \? (\d+) : f >= 70 \? (\d+) : f >= 55 \? (\d+) : (\d+) \}")
+if not (_web and _kt and _sw):
+    bad("the rose's lit table is missing on a client (web %s / kotlin %s / swift %s)" % (_web, _kt, _sw))
+elif not (_web == _kt == _sw):
+    bad("the rose's lit table drifts: web %s / kotlin %s / swift %s" % (_web, _kt, _sw))
+else:
+    ok("the rose lights the same bearings per band on web, Android and iOS %s" % _web)
+
 print("%d FAILED" % len(fails) if fails else "ALL GREEN")
 sys.exit(1 if fails else 0)

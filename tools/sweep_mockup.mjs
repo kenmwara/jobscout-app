@@ -22,6 +22,9 @@ import { readFile } from "node:fs/promises";
 
 const KEEP = process.argv.includes("--keep");
 const DARK = process.argv.includes("--dark");
+/* --reduced runs the whole sweep under prefers-reduced-motion: reduce. The
+   information must be identical - reduced motion means no motion, not less. */
+const REDUCED = process.argv.includes("--reduced");
 /* NOT `URL`: a module-scope const by that name shadows the global URL
    constructor, and `new URL(...)` two functions below then throws. */
 const PAGE = "http://localhost:4174/mockups/mobile.html";
@@ -107,7 +110,7 @@ const unitLetterhead = async () => {
 const run = async () => {
   await unitLetterhead();
   const browser = await chromium.launch();
-  const page = await browser.newPage({ viewport: { width: 1400, height: 1000 } });
+  const page = await browser.newPage({ ...{ viewport: { width: 1400, height: 1000 } }, reducedMotion: REDUCED ? "reduce" : "no-preference" });
   const errors = [];
   page.on("pageerror", (e) => errors.push(String(e)));
   page.on("console", (m) => {

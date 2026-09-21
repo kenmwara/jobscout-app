@@ -17,6 +17,9 @@ const LIVE = process.argv.includes("--live");
    same path a real reader who chose dark takes. The default sweep is
    light, which is the default on every surface. */
 const DARK = process.argv.includes("--dark");
+/* --reduced runs the whole sweep under prefers-reduced-motion: reduce. The
+   information must be identical - reduced motion means no motion, not less. */
+const REDUCED = process.argv.includes("--reduced");
 const BASES = LIVE
   ? [["ca", "https://jobscout.page"], ["ke", "https://nairobi.jobscout.page"]]
   : [["ca", "http://localhost:8787"], ["ke", "http://localhost:8787?market=ke"]];
@@ -45,7 +48,7 @@ EDUCATION. BSc Computer Science.`;
 
 for (const [market, base] of BASES) {
   const browser = await chromium.launch();
-  const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
+  const page = await browser.newPage({ ...{ viewport: { width: 1280, height: 900 } }, reducedMotion: REDUCED ? "reduce" : "no-preference" });
   /* Cloudflare Pages serves clean URLs and `python -m http.server` does not,
      so locally the extensionless routes the app navigates to (/apply, /saved)
      are 404s. Rewrite them in the harness rather than teaching the app about

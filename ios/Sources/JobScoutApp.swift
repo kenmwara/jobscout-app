@@ -530,12 +530,21 @@ struct ContentView: View {
             }
             .padding(.horizontal, 16).padding(.top, 12).padding(.bottom, 40)
         }
-        .background(ZStack { canvasBg; Dots() }.ignoresSafeArea())
-        .sheet(isPresented: $showTracker) { TrackerView(vm: vm) }
+        .ground()   // law 7: ONE ground, from Ground.swift, never a per-screen fill
+        .sheet(isPresented: $showTracker) {
+            // THEME.md s15: a sheet is 90% tall with a grab handle; the ground
+            // stays visible above it. An explicit surface, never a system
+            // material (it would sample the hero and leak market colour).
+            TrackerView(vm: vm)
+                .presentationDetents([.fraction(0.9)])
+                .presentationDragIndicator(.visible)
+        }
         .task { Api.ev("open", market: vm.market); await vm.load() }
         .sheet(isPresented: .init(get: { vm.apply != nil },
                                   set: { if !$0 { vm.closeApply() } })) {
             ApplyView(vm: vm)
+                .presentationDetents([.fraction(0.9)])
+                .presentationDragIndicator(.visible)
         }
         }   // ScrollViewReader
     }

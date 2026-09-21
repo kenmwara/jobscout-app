@@ -62,7 +62,7 @@ struct ApplyView: View {
                 }
                 .padding(.horizontal, 16).padding(.top, 12).padding(.bottom, 40)
             }
-            .background(ZStack { canvasBg; Dots() }.ignoresSafeArea())
+            .background(surface)   // a sheet: the s15 surface, not a second ground
         }
     }
 

@@ -390,6 +390,10 @@ html.anim .card.settled[data-band="auto"] .band{animation:autopulse 420ms var(--
 .tabbar button[aria-pressed="true"]{color:var(--accent)}
 .hide{display:none!important}
 .empty{text-align:center;color:var(--text2);font:400 13.5px/1.6 var(--sans);padding:50px 20px}
+.refusal h3{font:400 18px/1.25 var(--serif);margin:0 0 8px;color:var(--ink)}
+.refusal p{margin:0 0 8px;color:var(--text2);font-size:13.5px}
+.refusal .lb{font:500 10px/1 var(--sans);letter-spacing:.09em;text-transform:uppercase;color:var(--b-unsure);margin:12px 0 6px}
+.refusal ol{margin:0;padding-left:18px;font-size:13.5px}
 </style>
 </head>
 <body>
@@ -654,7 +658,15 @@ async function runDraft(id) {
                              stretch: p.fit < 55 }),
     });
     const d = await r.json().catch(() => ({}));
-    const html = r.ok ? spec.render(d) : null;
+    /* a grounded refusal (422 + invented[]) is the product working: show it
+       with its reason and the claims quoted, never as a number */
+    const refusal = d => `<div class="refusal">
+      <h3>The ${id === "letter" ? "letter" : "document"} was written, then checked.</h3>
+      <p>${d.invented.length === 1 ? "One of its claims is" : `${d.invented.length} of its claims are`} not in your resume, so it is not being shown as yours. Nothing here is a judgement about you &mdash; only about what the document says.</p>
+      <p class="lb">Not in the resume</p>
+      <ol>${d.invented.map(q => `<li>&ldquo;${esc(q)}&rdquo; &mdash; the resume does not say it.</li>`).join("")}</ol>
+      <button class="cta" type="button" data-go="home">Add them to the resume and re-run &rarr;</button></div>`;
+    const html = r.ok ? spec.render(d) : (Array.isArray(d.invented) && d.invented.length ? refusal(d) : null);
     draftState[id] = html
       ? { html, text: d }
       : { err: d.detail || d.error || (d.unsupported

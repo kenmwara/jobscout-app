@@ -257,6 +257,13 @@
       padding:11px 16px calc(13px + env(safe-area-inset-bottom,0px))}
     .docwin .dfoot button,.docwin .dfoot a{width:100%;text-align:center}
   }
+.refusal{background:var(--surface);border:1px solid var(--hair);border-left:2px solid var(--evidence-rule-answer);border-radius:14px;padding:18px 20px}
+.refusal h3{font:400 20px/1.25 var(--serif);margin:0 0 8px;color:var(--ink)}
+.refusal p{margin:0 0 8px;color:var(--text2)}
+.refusal .c-ev-k{font:500 10px/1 var(--sans);letter-spacing:.09em;text-transform:uppercase;color:var(--b-unsure);margin:14px 0 6px}
+.refusal ol{margin:0;padding-left:20px;color:var(--text)}
+.refusal li{margin:4px 0}
+.refusal .act{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
 </style>
 </head>
 <body id="top">
@@ -803,8 +810,27 @@ const resumeText = r => [r.name, r.contact, "", r.headline, ""].filter(x => x !=
   + r.sections.filter(sec => (sec.items || []).length).map(sec => "\n" + sec.heading.toUpperCase() + "\n" +
       sec.items.map(it => [it.title, it.meta, ...it.bullets.map(b => "  • " + b)]
         .filter(Boolean).join("\n")).join("\n\n")).join("\n");
-function failed(id, msg, label){
-  $("#out-" + id).innerHTML = `<div class="warn">${esc(msg)}</div>`;
+function failed(id, msg, label, d){
+  /* MOTION v2 stage 9: a grounded refusal is shown with its reason (law 12),
+     leading with what the product did - the document was written, then
+     checked - and quoting each claim it could not find, verbatim, so the
+     reader can tell a real omission from the model being wrong. The second
+     action treats it as the resume's omission, not the reader's failing. */
+  if (d && Array.isArray(d.invented) && d.invented.length){
+    const what = id === "letter" ? "letter" : id === "tailor" ? "resume" : "document";
+    const n = d.invented.length;
+    $("#out-" + id).innerHTML = `<div class="refusal">
+      <h3>The ${what} was written, then checked.</h3>
+      <p>${n === 1 ? "One of its claims is" : `${n} of its claims are`} not in your resume, so it is not being shown as yours. Nothing here is a judgement about you — only about what the document says.</p>
+      <p class="c-ev-k">Not in the resume</p>
+      <ol>${d.invented.map(q => `<li>“${esc(q)}” — the resume does not say it.</li>`).join("")}</ol>
+      <div class="act"><button class="applybtn" type="button" data-fix="${id}">Add them to the resume and re-run →</button></div></div>`;
+    $("#out-" + id).querySelector("[data-fix]").onclick = () => {
+      const box = $("#profileBox"); if (box){ box.focus(); box.scrollIntoView({ block: "center" }); }
+    };
+  } else {
+    $("#out-" + id).innerHTML = `<div class="warn">${esc(msg)}</div>`;
+  }
   const b = $("#do-" + id);
   b.disabled = false; b.textContent = label;
 }
@@ -820,7 +846,7 @@ $("#do-letter").onclick = async () => {
   waiting("letter", "drafting the letter");
   try{
     const { r, d } = await post("/api/letter");
-    if (!d.letter) return failed("letter", d.detail || d.error || "Letter drafting is unavailable right now.", "Write the letter");
+    if (!d.letter) return failed("letter", d.detail || d.error || "Letter drafting is unavailable right now.", "Write the letter", d);
     $("#out-letter").innerHTML = asProse(d.letter);
     $("#st-letter").textContent = "drafted"; $("#st-letter").className = "state done";
     $("#do-letter").hidden = true;
@@ -835,7 +861,7 @@ $("#do-tailor").onclick = async () => {
   try{
     const { r, d } = await post("/api/resume");
     if (!Array.isArray(d.sections))
-      return failed("tailor", d.detail || d.error || "The resume could not be built right now.", "Rebuild my resume");
+      return failed("tailor", d.detail || d.error || "The resume could not be built right now.", "Rebuild my resume", d);
 
     // the document, then — separately, never inside it — what it does not say
     $("#out-tailor").innerHTML =

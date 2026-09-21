@@ -490,18 +490,10 @@ fun MJob(
             .padding(13.dp),
         horizontalArrangement = Arrangement.spacedBy(11.dp),
     ) {
-        if (fit != null) {
-            BearingRose(fit, diameter = 38.dp)
-        } else {
-            Box(
-                Modifier.size(28.dp).clip(RoundedCornerShape(8.dp)).background(T.chip)
-                    .border(1.dp, T.hair, RoundedCornerShape(8.dp)),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(company.take(2).uppercase(), fontSize = 11.sp,
-                    fontWeight = FontWeight.Medium, color = T.text2)
-            }
-        }
+        /* v2 stage 1: a swept row carries the EMPTY ring where it had a logo
+           box - the rose is the score device, and its unlit bearings promise
+           the score before a resume arrives. */
+        if (fit != null) BearingRose(fit, diameter = 38.dp) else EmptyRose(diameter = 38.dp)
         Column(Modifier.weight(1f)) {
             /* One line for a browse row: the mockup's rows never wrap, and that is
                what keeps four of them legible in a 620px frame. Two for a scored

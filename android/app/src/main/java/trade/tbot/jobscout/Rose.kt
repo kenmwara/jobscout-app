@@ -16,6 +16,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -35,15 +36,30 @@ import kotlin.math.sin
  * Nothing rotates, which is the point — the old dial rotated a needle, and a
  * rotation is the one thing that can land off-canvas when its pivot is wrong.
  */
-private const val BOX = 104f
-private const val RING = 38f
-private const val LIT_R = 13f
-private const val UNLIT_R = 5.5f
+/* MOTION v2 stage 1: law 9's geometry, the same glyph site/rose.js draws.
+   A 24 box, ring r=11, eight bearings from 000, radii 2.275 + 0.2944*i
+   clockwise (the two largest touch at 270/315 on purpose), inside the
+   DISPLAY CUT: the true bbox plus 1.2 clear space, squared - 31.3054 units
+   with the box's origin at (4.2416, 3.0639). */
+private const val VB = 31.3054f
+private const val OX = 4.2416f
+private const val OY = 3.0639f
+private const val RING = 11f
 
-/** Dot centre i (0 = bearing 000, clockwise) in 104-unit space, scaled by [u] about [c]. */
-private fun dotCentre(i: Int, c: Offset, u: Float): Offset {
+/** Dot centre i (0 = bearing 000, clockwise) for a rose of side [side] px. */
+private fun dotCentre(i: Int, side: Float): Offset {
+    val u = side / VB
     val th = Math.toRadians((-90 + 45 * i).toDouble())
-    return Offset(c.x + RING * u * cos(th).toFloat(), c.y + RING * u * sin(th).toFloat())
+    return Offset((12f + OX + RING * cos(th).toFloat()) * u, (12f + OY + RING * sin(th).toFloat()) * u)
+}
+private fun dotRadius(i: Int, side: Float): Float = (2.275f + 0.2944f * i) * side / VB
+
+/** The lit count IS the band: AUTO 8, PING 6, UNSURE 5, NEAR-MISS 3 (rose.js's table). */
+fun litFor(fit: Int): Int = when {
+    fit >= 80 -> 8
+    fit >= 70 -> 6
+    fit >= FIT_FLOOR -> 5
+    else -> 3
 }
 
 @Composable
@@ -54,7 +70,7 @@ fun BearingRose(fit: Int, modifier: Modifier = Modifier, diameter: Dp = 84.dp) {
        card's near-black ground: a rose you could not see with a number you
        could not read inside it. */
     val col = T.band(f).first
-    val lit = maxOf(1, (f / 100f * 8f).roundToInt())
+    val lit = litFor(f)
 
     /* MOTION v1: each lit dot arrives on Motion.arrive (the web's
        --spring-arrive: 520ms, 8.3% overshoot), one Motion.STAGGER_DOT apart
@@ -74,27 +90,41 @@ fun BearingRose(fit: Int, modifier: Modifier = Modifier, diameter: Dp = 84.dp) {
                                   easing = CubicBezierEasing(0.33f, 1f, 0.68f, 1f)))
     }
 
-    // The unlit dots are the page's hairline, so they read as absent on either ground.
-    val unlit = T.hair2
+    // The unlit bearings: the ink at 14%, scaled .55 - never a band colour
+    // (NEAR-MISS's band is the neutral, which left lit and unlit identical).
+    val unlit = T.text.copy(alpha = .14f)
     Box(modifier.size(diameter), contentAlignment = Alignment.Center) {
         Canvas(Modifier.size(diameter)) {
-            val u = size.width / BOX
-            val c = center
+            val side = size.width
             for (i in 0 until 8) {
                 val on = i < lit
-                val p = if (on) dots[i].value else 1f
-                val r = if (on) LIT_R * u * (0.34f + 0.66f * p) else UNLIT_R * u
-                drawCircle(if (on) col else unlit, radius = r, center = dotCentre(i, c, u))
+                val p = if (on) dots[i].value else 0f
+                val r = dotRadius(i, side) * (0.55f + 0.45f * p)
+                drawCircle(if (on) col.copy(alpha = .14f + .86f * p) else unlit, radius = r, center = dotCentre(i, side))
             }
         }
-        // The web's .fitnum: serif at weight 400, 24 units of the 104 box.
+        // The numeral is data: mono, tabular, 8.6 of the 31.3-unit cut (rose.js).
         Text(
-            "${(f * count.value).roundToInt()}", color = col, fontFamily = Serif, fontWeight = FontWeight.Normal,
-            fontSize = (diameter.value * 24f / BOX).sp,
+            "${(f * count.value).roundToInt()}", color = col, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Medium,
+            fontSize = (diameter.value * 8.6f / VB).sp,
         )
     }
 }
 
+
+/** Eight empty bearings: "there is a score to be had here", on every row of
+ *  the sweep, without a word. */
+@Composable
+fun EmptyRose(modifier: Modifier = Modifier, diameter: Dp = 38.dp) {
+    val unlit = T.text.copy(alpha = .14f)
+    Box(modifier.size(diameter), contentAlignment = Alignment.Center) {
+        Canvas(Modifier.size(diameter)) {
+            val side = size.width
+            for (i in 0 until 8) drawCircle(unlit, radius = dotRadius(i, side) * 0.55f, center = dotCentre(i, side))
+        }
+        Text("\u2013", color = T.text3, fontFamily = FontFamily.Monospace, fontSize = (diameter.value * 8.6f / VB).sp)
+    }
+}
 
 /*
  * The four fit bands. Every caller uses bandFor() for TEXT, so it returns the

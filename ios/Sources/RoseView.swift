@@ -14,19 +14,25 @@ import SwiftUI
 /// Everything here is CGFloat rather than Double on purpose: SwiftUI's frame
 /// and font APIs take CGFloat, and leaning on implicit numeric conversion is
 /// not worth it in a file that cannot be compiled locally.
-private let roseBox: CGFloat = 104
-private let roseRing: CGFloat = 38
-private let roseLit: CGFloat = 13
-private let roseUnlit: CGFloat = 5.5
-private let paleDot = Color(hex: 0xDDD4C3)
+/// MOTION v2 stage 1: law 9's geometry, the glyph site/rose.js draws - a 24
+/// box, ring r=11, eight bearings from 000, radii 2.275 + 0.2944*i clockwise,
+/// inside the display cut (31.3054 units, origin offset 4.2416 / 3.0639).
+private let roseVB: CGFloat = 31.3054
+private let roseOX: CGFloat = 4.2416
+private let roseOY: CGFloat = 3.0639
+private let roseRing: CGFloat = 11
 
-/// Dot centre i (0 = bearing 000, clockwise) in a box of side `side`.
+/// Dot centre i (0 = bearing 000, clockwise) for a rose of side `side`.
 func roseDot(_ i: Int, side: CGFloat) -> CGPoint {
-    let u = side / roseBox
+    let u = side / roseVB
     let th = Double(-90 + 45 * i) * .pi / 180
-    return CGPoint(x: side / 2 + roseRing * u * CGFloat(cos(th)),
-                   y: side / 2 + roseRing * u * CGFloat(sin(th)))
+    return CGPoint(x: (12 + roseOX + roseRing * CGFloat(cos(th))) * u,
+                   y: (12 + roseOY + roseRing * CGFloat(sin(th))) * u)
 }
+func roseRadius(_ i: Int, side: CGFloat) -> CGFloat { (2.275 + 0.2944 * CGFloat(i)) * side / roseVB }
+
+/// The lit count IS the band: AUTO 8, PING 6, UNSURE 5, NEAR-MISS 3.
+func litFor(_ f: Int) -> Int { f >= 80 ? 8 : f >= 70 ? 6 : f >= 55 ? 5 : 3 }
 
 struct BearingRose: View {
     let fit: Int
@@ -34,26 +40,28 @@ struct BearingRose: View {
     @State private var bloom = false
 
     private var f: Int { min(max(fit, 0), 100) }
-    private var lit: Int { max(1, Int((Double(f) / 100 * 8).rounded())) }
+    private var lit: Int { litFor(f) }
 
     var body: some View {
-        let u = side / roseBox
         return ZStack {
             ForEach(0..<8, id: \.self) { i in
                 let on = i < lit
-                let open: CGFloat = on ? (bloom ? 1.0 : 0.34) : 1.0
-                let d = (on ? roseLit : roseUnlit) * 2 * u * open
+                // unlit bearings: the ink at 14%, scaled .55 - never a band colour
+                let open: CGFloat = on ? (bloom ? 1.0 : 0.55) : 0.55
+                let d = roseRadius(i, side: side) * 2 * open
                 Circle()
-                    .fill(on ? band(f).1 : paleDot)
+                    .fill(on ? band(f).1 : ink)
+                    .opacity(on ? (bloom ? 1 : 0.14) : 0.14)
                     .frame(width: d, height: d)
                     .position(roseDot(i, side: side))
                     // MOTION v1: each bearing arrives on the web's --spring-arrive
                     // (520ms, 8.3% overshoot), one --stagger-dot apart, from 000.
                     .animation(Motion.arrive.delay(Double(i) * Motion.staggerDot), value: bloom)
             }
-            // The web's .fitnum: serif at weight 400, 24 units of the 104 box.
+            // The numeral is data: mono, tabular, 8.6 of the 31.3-unit cut.
             Text("\(f)")
-                .font(serif(side * 24 / roseBox))
+                .font(.system(size: side * 8.6 / roseVB, weight: .medium, design: .monospaced))
+                .monospacedDigit()
                 .foregroundColor(band(f).1)
         }
         .frame(width: side, height: side)
@@ -69,12 +77,12 @@ struct MiniRose: View {
     var side: CGFloat = 30
 
     var body: some View {
-        let u = side / roseBox
         return ZStack {
             ForEach(0..<8, id: \.self) { i in
-                let d = 22 * u * (selected ? 1.0 : 0.42)
+                let d = roseRadius(i, side: side) * 2 * (selected ? 1.0 : 0.55)
                 Circle()
-                    .fill(selected ? tint : paleDot)
+                    .fill(selected ? tint : ink)
+                    .opacity(selected ? 1 : 0.14)
                     .frame(width: d, height: d)
                     .position(roseDot(i, side: side))
                     .animation(.easeOut(duration: 0.42).delay(Double(i) * 0.05), value: selected)

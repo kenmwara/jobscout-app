@@ -96,7 +96,7 @@ struct TrackerView: View {
             }
             .padding(.horizontal, 16).padding(.top, 20).padding(.bottom, 40)
         }
-        .background(ZStack { canvasBg; Dots() }.ignoresSafeArea())
+        .background(surface)   // a sheet: the s15 surface, not a second ground
         .confirmationDialog("Clear saved jobs?", isPresented: $confirmClear, titleVisibility: .visible) {
             Button("Clear all", role: .destructive) { vm.clearTracker() }
             Button("Cancel", role: .cancel) {}

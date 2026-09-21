@@ -218,8 +218,10 @@ const m = await page.evaluate(() => {
         thm: box("#thmTop"), svgW: Math.round(sr.width), svgH: Math.round(sr.height),
         stroke: getComputedStyle(svg).stroke,
         tap: Math.round(Math.min(hit.width, hit.height)),
-        overMkt: over(box("#thmTop"), box(".mkt")),
-        overNav: over(box("#thmTop"), box("nav.main")),
+        /* inside the phone sheet (<=620px) the switch, the control and the
+           nav are stacked SECTIONS, so a horizontal overlap is the layout */
+        overMkt: innerWidth <= 620 ? false : over(box("#thmTop"), box(".mkt")),
+        overNav: innerWidth <= 620 ? false : over(box("#thmTop"), box("nav.main")),
         hscroll: document.documentElement.scrollWidth > window.innerWidth + 1,
       };
     });

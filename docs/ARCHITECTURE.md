@@ -259,6 +259,28 @@ count/max; a filtered list leaves before it arrives. The lit count stays
 round(fit/100·8) — the score, not the band — and the numeral stays serif on all
 three clients. Spec and reasoning: `docs/references/motion-2026-09-20/`.
 
+**Motion v2 (2026-09-20, the same night).** The rose is ONE glyph:
+`site/rose.js` builds it for index, saved and the mockup, and `Rose.kt` /
+`RoseView.swift` draw the identical geometry — law 9's ring inside the
+display-cut viewBox — with the lit count = the band (AUTO 8 · PING 6 ·
+UNSURE 5 · NEAR-MISS 3; `check_palette` rule 9 holds the three tables
+together), unlit bearings at 14% of the ink scaled .55, the numeral mono and
+tabular. A posting nobody scored carries the whole ring unlit and an
+en-dash: the swept card is the scored card before the resume arrives. The
+card: rose first, then identity, then three metadata tiers (band pill
+filled, fact chip sunken, date bare), one evidence line on the card, the
+heart in the action row, serif titles everywhere. The phone header is one
+56px row — brand, a market chip, an ellipsis — and `site/hsheet.js` MOVES
+the market switch, the full three-state theme control and the nav into a
+§15 sheet and back. The empty saved page carries a seeking rose; a rate
+limit is a state with a tabular countdown and two real routes; a grounded
+refusal leads with what the product did and quotes each claim it could not
+find. Android's browse is a sticky, count-sorted chip row where a tile grid
+put the first posting 81% down the screen. iOS gained its ground
+(`Ground.swift`: halo behind the scroll view, one cached texture tile, the
+mark stepping every 12s and still under reduced motion or Low Power Mode).
+Both sweeps take `--reduced` and must stay green under it.
+
 ### Run these before reading anything
 
 Nothing here needs a CI credit. Every one of them was written after a defect that
@@ -276,6 +298,7 @@ this codebase actually has.
 | `node tools/check_halo.mjs [--live]` | The halo in pixels: six regions per route per theme, content hidden. Dark on luminance contrast and hue; light on ΔE. Its first run reported green while measuring a light page against the dark constant. |
 | `node tools/link_sweep.mjs [--live]` | Every link on every page fetched for real, both domains; a fragment counts as resolved when the destination routes it by script (`#browse`). |
 | `node tools/api_sweep.mjs` | The worker's endpoints for contract (a bad body must be refused, not 500) and the postings' own URLs. |
+| `node tools/cycle3.mjs --reduced` · `node tools/sweep_mockup.mjs --reduced` | The same sweeps under `prefers-reduced-motion: reduce`. Reduced motion means no motion, not less information: the same greens must come back. |
 | `python tools/cycle3_mobile.py` | The same pass over adb, both markets. It taps by **visible label from a fresh dump every time** — the box grows as it fills, so a coordinate captured one step earlier misses. And it **removes `/sdcard/u.xml` before each dump**: a failed dump ("null root node", one in three under a busy window) leaves the previous file in place and `cat` returns it whole — a full, healthy tree of the wrong screen. The landing read as Browse for an afternoon that way. |
 | `node tools/labels_audit.mjs` | Lists every control's text beside its element, for reading. "Watch this search" under a bell that emails nothing survived three audits because nothing ever printed the two together. |
 | `python tools/check_palette.py` | The colour law below, asserted against `site/base.css` **and** `Tokens.kt`: the market touching anything but the hero; a role under the contrast bar that applies to it; a band that fails on its own fill, duplicates another band, or takes a text colour; a primary button filled with the brand; the action wearing the auto hue; `--live` used as text; and either client drifting from the other. |

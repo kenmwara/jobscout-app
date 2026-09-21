@@ -243,7 +243,7 @@ one the YAML is correct and simply never fires.
 
 Cloudflare Pages + Workers + D1 · Anthropic Claude (Haiku) · Python (feed
 publisher) · vanilla JS, one self-contained page · Kotlin/Jetpack Compose
-(Android) · Swift/SwiftUI (iOS) · Codemagic CI · JobScout Brand Kit v2.1 · motion v1 (four springs, one clock on every client)
+(Android) · Swift/SwiftUI (iOS) · Codemagic CI · JobScout Brand Kit v2.1 · motion v2 (four springs, one clock and one rose on every client)
 (the bearing rose, the cream/indigo system, Newsreader + Inter embedded).
 
 ---

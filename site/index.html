@@ -285,6 +285,11 @@ html.anim .job.settled .rose .lit{animation:rosebreathe var(--t-breathe) ease-in
    on --spring-arrive, 420ms, ONCE, when the card settles. NEAR-MISS has no
    rule at all - the absence is the design. */
 html.anim .job.settled[data-band="auto"] .route{animation:autopulse 420ms var(--spring-arrive) 1}
+/* the rate-limited state (v2 stage 9) */
+.state h3{font:400 22px/1.25 var(--serif);margin:6px 0 8px;color:var(--ink)}
+.state p{margin:0 0 6px}
+.state .mono{font:500 1em/1 var(--mono);font-variant-numeric:tabular-nums}
+.state .act{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
 /* the card's anatomy (motion v2 stage 1): the rose leads, then identity,
    then three tiers of metadata - verdict filled, fact sunken, date bare */
 .c-id{flex:1;min-width:0}
@@ -1393,6 +1398,32 @@ function profileText(){
 function banner(kind, text){
   $("#banner").innerHTML = text ? `<div class="banner ${kind}">${text}</div>` : "";
 }
+/* MOTION v2 stage 9: the rate limit is a STATE that leads with what happened
+   and when, counts down in tabular mono so it never reflows, and offers two
+   real routes - never a dead end. The guard is per reader per hour, so the
+   honest bound is "within the hour"; it counts from the moment it tripped. */
+let limitTick = null;
+function limited(){
+  const at = new Date(), pad = n => String(n).padStart(2, "0");
+  $("#banner").innerHTML = `<div class="banner warn state limited">
+    <p class="c-ev-k">Rate limited</p>
+    <h3>The hourly cap was reached at ${pad(at.getHours())}:${pad(at.getMinutes())}.</h3>
+    <p>The demo scores for everyone from one budget, so each reader gets a fixed number of runs an hour. It resets within <b class="mono" id="rlLeft">60:00</b>.</p>
+    <div class="act">${scored ? `<button class="applybtn" type="button" data-rl="run">Open the last run →</button>` : ""}<button class="applybtn quiet" type="button" data-rl="sweep">Browse the sweep →</button></div></div>`;
+  const end = at.getTime() + 3600 * 1000;
+  clearInterval(limitTick);
+  limitTick = setInterval(() => {
+    const el = $("#rlLeft"); if (!el){ clearInterval(limitTick); return; }
+    const s = Math.max(0, Math.round((end - Date.now()) / 1000));
+    el.textContent = `${pad(Math.floor(s / 60))}:${pad(s % 60)}`;
+    if (!s){ clearInterval(limitTick); banner("", ""); }
+  }, 1000);
+  $("#banner").querySelectorAll("[data-rl]").forEach(b => b.onclick = () => {
+    if (b.dataset.rl === "run"){ sweepOverride = false; setView("browse"); }
+    else { sweepOverride = true; sector = null; policyOnly = ""; query = ""; setView("browse"); }
+    banner("", "");
+  });
+}
 
 async function loadFeed(){
   try{
@@ -1524,7 +1555,7 @@ async function runPipeline(){
       body: JSON.stringify({ profile, postings: passers, market: MARKET }),
     });
     data = await r.json();
-    if (r.status === 429) { banner("warn", "Rate limit reached for this hour — the guard is doing its job. Try again in a bit."); finish(); return; }
+    if (r.status === 429) { limited(); finish(); return; }
   }catch(e){ banner("err", "Scoring API unreachable: " + e); finish(); return; }
 
   status.textContent = `${passers.length} scored of ${feed.postings.length} swept \u2014 reads as ${label}`

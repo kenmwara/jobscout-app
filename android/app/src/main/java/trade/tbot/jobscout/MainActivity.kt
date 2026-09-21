@@ -24,7 +24,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -726,6 +728,7 @@ private fun LazyListScope.landing(
 /** The web renders sixteen company cards; the phone matches it so the two agree. */
 private const val COMPANY_CAP = 16
 
+@OptIn(ExperimentalFoundationApi::class)
 private fun LazyListScope.browse(
     ui: Ui, feed: Feed?, policy: String?, query: String?, sector: String?, scope: String,
     dismissed: List<String>,
@@ -761,23 +764,25 @@ private fun LazyListScope.browse(
     feed?.let { f ->
         val by = f.passers.groupingBy { it.sector }.eachCount()
             .toList().sortedByDescending { it.second }
-        item { MTitle("Browse by what the feed actually knows") }
-        item {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                by.take(10).chunked(2).forEach { pair ->
-                    Row(Modifier.fillMaxWidth(), Arrangement.spacedBy(8.dp)) {
-                        pair.forEach { (sec, n) ->
-                            MTax(
-                                (f.labels[sec] ?: sec) + if (sector == sec) "  ×" else "",
-                                n, Modifier.weight(1f),
-                            ) { onSector(sec) }
-                        }
-                        if (pair.size == 1) Spacer(Modifier.weight(1f))
-                    }
+        /* MOTION v2 stage 8: the two-column tile grid put the first posting
+           81% down a 1080x2400 screen - ten identical "24 open" rectangles
+           before a single job. One horizontal row of chips instead, sorted
+           by count with the count inline (a "+" where it sits on the feed's
+           cap plateau, law 12), sticky so the filter stays reachable. Every
+           sector is still here, still tappable; it scrolls sideways. */
+        val max = by.firstOrNull()?.second ?: 1
+        val cap = if (by.count { it.second == max } >= 3) max else null
+        stickyHeader {
+            LazyRow(
+                Modifier.fillMaxWidth().background(T.canvas).padding(vertical = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                item { MFilter("All", on = sector == null) { sector?.let { onSector(it) } } }
+                items(by) { (sec, n) ->
+                    MFilter((f.labels[sec] ?: sec) + "  " + (if (n == cap) "$n+" else "$n"), on = sector == sec) { onSector(sec) }
                 }
             }
         }
-        item { Spacer(Modifier.height(18.dp)) }
     }
     /* Jobs or Companies. The web has had the pair since the redesign; the phone
        only ever showed postings, so "who is hiring today" was a question it
