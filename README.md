@@ -223,6 +223,12 @@ caption anyway.
 > cancel-and-retrigger on 09-20; the fresh build #25 queued the same way). Play publishing is
 > **manual** (no `publishing:` block): download the AAB from the build's
 > artifacts and upload it in the Play Console.
+>
+> **2026-09-21: resolved by Codemagic support** (cancel everything, start one
+> build from the UI): build #26 (v0.9.1, signed AAB) ran in three minutes and
+> the webhook dispatched again afterwards. `v0.9.2` is the first release tag
+> after that: the v3 design system, the sanity suite, parallax, the privacy fix
+> and the field-and-bar pack, on every surface.
 
 Both halves deploy from a push to `main`, and neither needs a command run by hand.
 
