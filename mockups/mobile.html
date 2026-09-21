@@ -437,7 +437,13 @@ html.anim .card.settled[data-band="auto"] .jcard__band{animation:autopulse 420ms
 /* The drafting screen: three sections, each one endpoint. */
 .draft{background:var(--surface);border:1px solid var(--hair);
   border-radius:var(--r-card);padding:var(--s3);margin:0 0 var(--s3)}
-.draft h3{font:500 var(--t2)/1.3 var(--sans);color:var(--ink);margin:0 0 var(--s0)}
+.draft h3{font:400 var(--t4)/1.2 var(--serif);color:var(--ink);margin:0 0 var(--s0)}   /* law 13: titles are the serif */
+.prep__lede{margin:var(--s3) 0 0;font:400 var(--t2)/1.45 var(--sans);color:var(--text2)}
+.prep__resume{margin:var(--s3) 0 0}
+.prep__resume .mbox{background:var(--canvas);border:1px solid var(--edge-rest);box-shadow:none;align-items:flex-start}
+.prep__resume .mbox textarea{flex:1;min-width:0;border:0;background:transparent;resize:vertical;font:400 var(--t2)/1.5 var(--sans);color:var(--text);padding:var(--s2) 0}
+.prep__resume .mbox b{display:grid;place-items:center;width:44px;height:44px;border-radius:var(--r-pill);background:var(--btn);color:var(--btn-ink);cursor:pointer;flex:none}
+.prep__resume__note{margin:var(--s2) 0 0;font:400 var(--t1)/1.4 var(--sans);color:var(--text2)}
 .draft .lede{font:400 var(--t2)/1.5 var(--sans);color:var(--text2);margin:0 0 var(--s3)}
 .draft .out{font:400 var(--t2)/1.62 var(--sans);color:var(--text);margin:var(--s3) 0 0;
   white-space:pre-wrap;max-height:230px;overflow:auto}
@@ -1043,33 +1049,59 @@ const SCREENS = {
 
   /* Each section calls the endpoint site/apply.html calls, with the same
      body, so this is the real output and not a sample of one. */
+  /* THE PREPARE SCREEN (v3 stage 5 + the parallax pack): the score is the
+     ROSE, never prose; ONE filled button, always the next move, the lead step
+     from band.js; a step that cannot run because there is no résumé does not
+     explain - its button becomes "Add your résumé" and opens the field in
+     place, so the posting is never lost. */
   draft: () => {
     const p = current;
     if (!p) return `${head("matches")}<p class="empty">No posting chosen.</p>`;
+    const [word] = bandOf(p.fit), band = JBAND[word];
+    const blocked = !lastProfile;
+    const lead = JSBand.leadStep(word) === "resume" ? "resume" : "letter";
+    const ORDER = lead === "resume" ? ["resume", "letter", "answers"] : ["letter", "resume", "answers"];
+    const next = ORDER.find(id => !(draftState[id] || {}).html) || null;   /* the one filled button */
     const sec = (id, title, lede, verb) => {
       const st = draftState[id] || {};
-      return `<div class="draft">
+      const solid = id === next ? " solid" : "";
+      return `<div class="draft"${blocked ? ' data-blocked="resume"' : ""}>
         <h3>${title}</h3><p class="lede">${lede}</p>
         ${st.busy
           ? `<div class="bar"><img class="cmark" src="claude-mark.png" alt="">
                <span class="lbl">Claude is ${esc(st.busy)}&hellip;</span></div>`
           : st.html
             ? `<div class="bar">
-                 <button class="mini-cta solid" data-open="${id}">Read it</button>
+                 <button class="mini-cta" data-open="${id}">Read it</button>
                  <button class="mini-cta" data-draft="${id}">Redo</button></div>`
-            : `<div class="bar"><button class="mini-cta solid" data-draft="${id}">${verb}</button></div>`}
+            : blocked
+              ? `<div class="bar"><button class="mini-cta${solid} btn--unblock" type="button" data-unblock>Add your r\u00e9sum\u00e9 <span aria-hidden="true">\u2192</span></button></div>`
+              : `<div class="bar"><button class="mini-cta${solid}" data-draft="${id}">${verb}</button></div>`}
         ${st.err ? `<p class="err">${esc(st.err)}</p>` : ""}
       </div>`;
     };
     return `${head("apply")}
-      <h2 class="big">${esc(p.title)}</h2>
-      <p class="sub">${esc(p.company)} &middot; fit ${p.fit}</p>
+      <h2 class="big dt">${esc(p.title)}</h2>
+      <p class="sub">${esc(p.company)}${p.location ? ` &middot; ${esc(p.location)}` : ""}</p>
+      <article class="jcard jcard--detail" data-band="${band}" data-score="${p.fit}">
+        <div class="jcard__head">
+          <div class="jcard__score">${roseMarkup(44)}<span class="jcard__num num" role="img" aria-label="Score ${p.fit} out of 100, ${word}">${p.fit}</span></div>
+          <div class="jcard__meta meta"><span class="jcard__band tier1">${word.toUpperCase()}</span>${whenOf(p) ? `<span class="jcard__when tier3">${whenOf(p)}</span>` : ""}</div>
+        </div>
+      </article>
+      <p class="prep__lede">${lead === "resume"
+        ? "Aiming the r\u00e9sum\u00e9 first is worth more here than the letter."
+        : "The letter leads here; the r\u00e9sum\u00e9 already reads close to what this posting asks for."}</p>
+      ${blocked ? `<div class="prep__resume" id="prepResume" hidden>
+        <div class="mbox"><textarea id="draftResume" rows="3" placeholder="Paste your r\u00e9sum\u00e9&hellip;" aria-label="Paste your r\u00e9sum\u00e9"></textarea>
+          <b id="draftGo" role="button" tabindex="0" aria-label="Use this r\u00e9sum\u00e9">&#8594;</b></div>
+        <p class="prep__resume__note">Read in the browser and sent only to draft for this posting.</p></div>` : ""}
       ${sec("letter", "Cover letter",
-            "A short letter for this posting, grounded in your résumé.", "Write the letter")}
-      ${sec("resume", "Your résumé, aimed at it",
-            "The same experience, reworded toward what this posting asks for.", "Rebuild my résumé")}
+            "A short letter for this posting, grounded in your r\u00e9sum\u00e9.", "Write the letter")}
+      ${sec("resume", "Your r\u00e9sum\u00e9, aimed at it",
+            "The same experience, reworded toward what this posting asks for.", "Rebuild my r\u00e9sum\u00e9")}
       ${sec("answers", "Their screening questions",
-            "The questions on the employer's own form, answered from your résumé.",
+            "The questions on the employer's own form, answered from your r\u00e9sum\u00e9.",
             "Get their questions")}`;
   },
 
@@ -1245,6 +1277,8 @@ document.addEventListener("click", e => {
   if (op) return openSheet(op.dataset.open);
   const dr = e.target.closest("[data-draft]");
   if (dr) return runDraft(dr.dataset.draft);
+  if (e.target.closest("[data-unblock]")) { const f = $("#prepResume"); if (f) { f.hidden = false; f.scrollIntoView({ block: "center" }); $("#draftResume").focus({ preventScroll: true }); } return; }
+  if (e.target.closest("#draftGo")) { const v = ($("#draftResume").value || "").trim(); if (v.length >= 40) { lastProfile = v; paint(); } return; }
 
   const h = e.target.closest("[data-heart]");
   if (h) {

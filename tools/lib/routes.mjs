@@ -37,6 +37,19 @@ export const ROUTES = {
   states:  { url: "/saved.html", surface: "saved" },
 };
 
+/** The MOCKUP's prepare screen: home -> a card -> Prepare application. It is
+ *  where "fit 70", three filled buttons and a dead end all survived while the
+ *  checks looked at the site only. */
+export async function openMockupDraft(browser, theme = "light") {
+  const ctx = await browser.newContext({ viewport: { width: 1200, height: 1100 }, colorScheme: theme });
+  const page = await ctx.newPage();
+  await page.goto(SITE.replace(/\/site$/, "/mockups/mobile.html"), { waitUntil: "networkidle" });
+  await page.waitForSelector("#view .card.jcard", { timeout: 15000 }); await page.waitForTimeout(600);
+  await page.click("#view .card.jcard .jcard__link"); await page.waitForTimeout(600);
+  await page.click('#view [data-go="draft"]'); await page.waitForTimeout(1200);
+  return { page, ctx, surface: "prepare" };
+}
+
 /** Open a route in a fresh page at phone width, theme applied. */
 export async function openRoute(browser, name, theme, { width = 390, height = 844 } = {}) {
   const r = ROUTES[name];

@@ -11,14 +11,14 @@
  *   node tools/check_one_primary.mjs --mutate three-primaries | repeat-action
  */
 import { chromium } from "playwright";
-import { openRoute } from "./lib/routes.mjs";
+import { openRoute, openMockupDraft } from "./lib/routes.mjs";
 const args = process.argv.slice(2), opt = (k, d) => { const i = args.indexOf(k); return i < 0 ? d : args[i + 1]; };
 const MUTATE = opt("--mutate", null);
-const REGION = ".job, .step, .panel, .refusal, .hsheet, .jcard, .limited, .empty, .banner";
+const REGION = ".job, .step, .panel, .refusal, .hsheet, .jcard, .limited, .empty, .banner, .draft, .sheet";
 const fails = []; let scanned = 0;
 const b = await chromium.launch();
-for (const route of ["landing", "browse", "apply", "saved", "sheet", "states"]) {
-  const { page, ctx } = await openRoute(b, route, "light");
+for (const route of ["landing", "browse", "apply", "saved", "sheet", "states", "mockup-draft"]) {
+  const { page, ctx } = route === "mockup-draft" ? await openMockupDraft(b) : await openRoute(b, route, "light");
   if (MUTATE === "three-primaries") await page.evaluate(() => {
     const probe = document.createElement("span"); probe.style.color = "var(--action)"; document.body.appendChild(probe); const rgb = getComputedStyle(probe).color; probe.remove();
     const prim = [...document.querySelectorAll("button, a.btn")].find(el => getComputedStyle(el).backgroundColor === rgb && el.getBoundingClientRect().height);
@@ -33,7 +33,7 @@ for (const route of ["landing", "browse", "apply", "saved", "sheet", "states"]) 
     host.appendChild(mk()); document.body.appendChild(mk()); });
   const r = await page.evaluate(REGION => {
     const probe = document.createElement("span"); probe.style.color = "var(--action)"; document.body.appendChild(probe); const actionRGB = getComputedStyle(probe).color; probe.remove();
-    const filled = [...document.querySelectorAll("button, a.btn, a.applybtn, [role='button']")].filter(el => { const r = el.getBoundingClientRect(); return r.width && r.height && getComputedStyle(el).backgroundColor === actionRGB && !el.closest("[hidden]"); });
+    const filled = [...document.querySelectorAll("button, a.btn, a.applybtn, [role='button'], b[role='button']")].filter(el => { const r = el.getBoundingClientRect(); return r.width && r.height && getComputedStyle(el).backgroundColor === actionRGB && !el.closest("[hidden]"); });
     const name = el => (typeof el.className === "string" && el.className) || el.tagName;
     const byRegion = new Map();
     for (const el of filled) { const region = el.closest(REGION) || document.body; if (!byRegion.has(region)) byRegion.set(region, []); byRegion.get(region).push((el.textContent || "").trim().replace(/\s+/g, " ").slice(0, 40)); }

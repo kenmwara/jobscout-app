@@ -14,7 +14,7 @@
  *   node tools/check_dead_ends.mjs --mutate dead-end | system-blame
  */
 import { chromium } from "playwright";
-import { openRoute } from "./lib/routes.mjs";
+import { openRoute, openMockupDraft } from "./lib/routes.mjs";
 const args = process.argv.slice(2), opt = (k, d) => { const i = args.indexOf(k); return i < 0 ? d : args[i + 1]; };
 const MUTATE = opt("--mutate", null);
 const BLOCK = /\b(required|needed|missing|unavailable|not available|must (?:have|add|provide)|please (?:add|provide|upload)|cannot|can't|unable to|failed|error)\b/i;
@@ -23,15 +23,16 @@ const SYSTEM_OWNED = /\b(posting|listing|feed|sweep|scorer|server|worker|api)\b/
 const EXPLAINS = /\b(cannot fit|cannot fill|cannot disagree|is missing from your|nothing .* is missing)\b/i;
 const fails = []; let scanned = 0;
 const b = await chromium.launch();
-for (const route of ["landing", "browse", "apply", "saved", "sheet", "states"]) {
-  const { page, ctx } = await openRoute(b, route, "light");
+for (const route of ["landing", "browse", "apply", "saved", "sheet", "states", "mockup-draft"]) {
+  const { page, ctx } = route === "mockup-draft" ? await openMockupDraft(b) : await openRoute(b, route, "light");
   if (MUTATE === "dead-end") await page.evaluate(() => { const c = document.querySelector(".step, .job"); if (c) { const n = document.createElement("p"); n.textContent = "profile required"; c.appendChild(n); } });
   if (MUTATE === "system-blame") await page.evaluate(() => { const c = document.querySelector(".step, .job"); if (c) { const n = document.createElement("p"); n.textContent = "posting required"; const btn = document.createElement("button"); btn.className = "btn"; btn.textContent = "Retry"; c.setAttribute("data-blocked", "x"); c.appendChild(n); c.appendChild(btn); } });
   const r = await page.evaluate(({ blockSrc, blockFlags, sysSrc, sysFlags, exSrc, exFlags }) => {
     const BLOCK = new RegExp(blockSrc, blockFlags), SYS = new RegExp(sysSrc, sysFlags), EX = new RegExp(exSrc, exFlags);
     const out = { dead: [], blame: [] };
-    const CONTAINER = ".job, .step, .panel, .state, .refusal, .ev, .hsheet, .banner, .box, .limited, .empty, .jcard";
-    const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+    const CONTAINER = ".job, .step, .panel, .state, .refusal, .ev, .hsheet, .banner, .box, .limited, .empty, .jcard, .draft, .sheet";
+    /* the mockup harness explains itself outside the phone frame; only the product is judged */
+    const walker = document.createTreeWalker(document.querySelector(".screen") || document.body, NodeFilter.SHOW_TEXT);
     for (let n = walker.nextNode(); n; n = walker.nextNode()) {
       const t = n.textContent.trim(); if (!t || t.length < 4) continue;
       const el = n.parentElement; if (!el || el.closest("script, style, [hidden]")) continue;

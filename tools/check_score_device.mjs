@@ -15,15 +15,15 @@
  *   node tools/check_score_device.mjs --mutate bare-score   # must FAIL
  */
 import { chromium } from "playwright";
-import { openRoute } from "./lib/routes.mjs";
+import { openRoute, openMockupDraft } from "./lib/routes.mjs";
 const args = process.argv.slice(2), opt = (k, d) => { const i = args.indexOf(k); return i < 0 ? d : args[i + 1]; };
 const MUTATE = opt("--mutate", null);
 const PROSE = [/\bfit\s+\d{1,3}\b/i, /\bscore[:\s]+\d{1,3}\b/i, /\bmatch(?:es)?[:\s]+\d{1,3}\b/i, /\b\d{1,3}\s*\/\s*100\b/, /\b\d{1,3}\s+out of\s+100\b/i, /\b(?:rated|rating)\s+\d{1,3}\b/i];
 const fails = []; let scanned = 0;
 const b = await chromium.launch();
-for (const route of ["landing", "browse", "apply", "saved", "states"]) {
-  const { page, ctx } = await openRoute(b, route, "light");
-  if (MUTATE === "bare-score") await page.evaluate(() => { const o = document.querySelector(".job .co, #co, .row .t"); if (o) o.textContent = o.textContent + " · fit 70"; });
+for (const route of ["landing", "browse", "apply", "saved", "states", "mockup-draft"]) {
+  const { page, ctx } = route === "mockup-draft" ? await openMockupDraft(b) : await openRoute(b, route, "light");
+  if (MUTATE === "bare-score") await page.evaluate(() => { const o = document.querySelector(".job .co, #co, .row .t, #view p.sub"); if (o) o.textContent = o.textContent + " · fit 70"; });
   const r = await page.evaluate(src => {
     const out = { prose: [], roseless: [] };
     const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
