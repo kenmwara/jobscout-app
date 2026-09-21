@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="build" content="dev">
 <title>JobScout — an LLM reads the job market honestly</title>
 <meta name="description" content="Live demo: Claude scores this morning's real job postings against a real profile — honest verdicts, visible reasoning, and every gate decision shown as a receipt.">
 <!-- OpenGraph. Without these the site served a 200 and a <title> and nothing else, so
@@ -285,6 +286,7 @@ html.anim .job.settled .rose .lit{animation:rosebreathe var(--t-breathe) ease-in
    on --spring-arrive, 420ms, ONCE, when the card settles. NEAR-MISS has no
    rule at all - the absence is the design. */
 html.anim .job.settled[data-band="auto"] .route{animation:autopulse 420ms var(--spring-arrive) 1}
+.build{font:400 11px/1 var(--mono);color:var(--text3);margin:8px 0 0;letter-spacing:.02em}
 /* the rate-limited state (v2 stage 9) */
 .state h3{font:400 22px/1.25 var(--serif);margin:6px 0 8px;color:var(--ink)}
 .state p{margin:0 0 6px}
@@ -1220,6 +1222,10 @@ nav.main{margin-left:18px}
       </div>
     </div>
     <p class="sources" id="sources">&mdash;</p>
+    <!-- the build this page came from, so "is it stale?" has an answer on
+         screen: the deploy step writes the commit and the date into the
+         meta above and this line reads it -->
+    <p class="build" id="build"></p>
   </footer>
 </div>
 
@@ -2779,6 +2785,7 @@ reveal(); relight(); rotate();
   paint();
 })();
 </script>
+<script>document.getElementById("build").textContent = "build " + (document.querySelector('meta[name="build"]') || {}).content;</script>
 <script src="hsheet.js"></script>
 </body>
 </html>

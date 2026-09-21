@@ -71,6 +71,9 @@ jobs:
             echo "$js pinned to $H"
           done
           grep -ho 'src="[a-z]*\.js[^"]*"' site/*.html | sort -u
+          # And the build itself, visible in the footer: commit + UTC time.
+          sed -i "s|<meta name=\"build\" content=\"dev\">|<meta name=\"build\" content=\"${GITHUB_SHA::7} $(date -u +%Y-%m-%dT%H:%MZ)\">|" site/*.html
+          grep -ho '<meta name="build"[^>]*>' site/index.html
 
           npx --yes wrangler@4.95.0 pages deploy site \
             --project-name jobscout-app \
