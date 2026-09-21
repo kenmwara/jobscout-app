@@ -182,8 +182,13 @@ for (const theme of ["light", "dark"]) {
       return { x: Math.min(innerWidth - 1, Math.max(0, Math.round(big.left + big.width / 2))), y: Math.min(innerHeight - 1, Math.max(0, Math.round(big.top + big.height / 2))) }; });
     if (disc) {
       const i = (disc.y * png.width + disc.x) * 4, j = (890 * png.width + 20) * 4;
-      const inL = oklch([png.data[i], png.data[i + 1], png.data[i + 2]]).L, outL = oklch([png.data[j], png.data[j + 1], png.data[j + 2]]).L;
-      is(inL > outL, `light: the discs add light (inside a disc L=${inL.toFixed(3)} vs canvas L=${outL.toFixed(3)})`);
+      /* the light axis is HUE: inside a disc the field is clearly warmer
+         (chroma >= 1.8x the canvas) in the same hue family (+-15deg) - a
+         warm white measured invisible (L .972 vs .966), and a cool or grey
+         disc is the retired blob. Mutation: a white fill drops the ratio to ~1. */
+      const din = oklch([png.data[i], png.data[i + 1], png.data[i + 2]]), dout = oklch([png.data[j], png.data[j + 1], png.data[j + 2]]);
+      const dh = Math.abs(((din.h - dout.h + 540) % 360) - 180);
+      is(din.C >= dout.C * 1.8 && dh <= 15, `light: the discs are visibly warmer, same family (inside C=${din.C.toFixed(3)} h=${din.h.toFixed(0)} vs canvas C=${dout.C.toFixed(3)} h=${dout.h.toFixed(0)})`);
     }
     await p.close();
   }
