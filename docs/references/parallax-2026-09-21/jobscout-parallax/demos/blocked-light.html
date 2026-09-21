@@ -1,0 +1,54 @@
+<!doctype html><html lang="en" data-theme="light" data-market="ca"><head><meta charset="utf-8">
+<title>JobScout — blocked actions</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400&family=Inter:opsz,wght@14..32,400;14..32,500&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="tokens.css"><link rel="stylesheet" href="base.css">
+<link rel="stylesheet" href="components.css"><link rel="stylesheet" href="screens.css">
+<link rel="stylesheet" href="blocked.css">
+<style>
+ body{padding:30px 26px 44px}
+ h1{font:400 var(--t6)/1.15 var(--font-serif);margin-bottom:var(--s5)}
+ .row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--s5);max-width:1280px;margin:0 auto}
+ .cap{font:500 var(--t0)/1 var(--font-sans);letter-spacing:.14em;text-transform:uppercase;color:var(--text);margin:0 0 var(--s1)}
+ .sub{font:400 var(--t1)/1.5 var(--font-sans);color:var(--text-2);margin:0 0 var(--s4);min-height:64px}
+ .nowerr{margin-top:var(--s3);font:400 var(--t2)/1.4 var(--font-sans);color:var(--unsure-label)}
+ .prep__card{padding:var(--s3) var(--s4)}
+</style></head><body>
+<h1>A blocked action carries its own unblock</h1>
+<div class="row"><div class="col"><p class="cap">Now</p><p class="sub">An ember line that names a requirement and offers no way to meet it &mdash; the only ember on the screen, on the one thing that cannot be acted on.</p><article class="prep__card jcard u-surface">
+  <h2 class="prep__t">Cover letter</h2>
+  <p class="prep__d">A short letter for this posting, grounded in your r&eacute;sum&eacute;.</p>
+  <div class="prep__a"><button class="btn btn--primary">Write the letter</button></div>
+  <p class="nowerr">profile + posting required</p>
+</article></div><div class="col"><p class="cap">Blocked</p><p class="sub">The button becomes the unblock. Same information, stated as something the reader can do.</p><article class="prep__card jcard u-surface" data-blocked="resume">
+  <h2 class="prep__t">Cover letter</h2>
+  <p class="prep__d">A short letter for this posting, grounded in your r&eacute;sum&eacute;.</p>
+  <div class="prep__a">
+    <button class="btn btn--primary">Write the letter</button>
+    <button class="btn btn--primary btn--unblock">Add your r&eacute;sum&eacute; <span class="btn__arrow" aria-hidden="true">&rarr;</span></button>
+  </div>
+  <div class="prep__resume">
+    <div class="hero__field">
+      <input class="hero__input" placeholder="Paste your r&eacute;sum&eacute;&hellip;" aria-label="Paste your r&eacute;sum&eacute;">
+      <button class="hero__clip" aria-label="Attach a file"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><path d="M21.4 11.05 12.25 20.2a5.5 5.5 0 0 1-7.78-7.78l9.19-9.19a3.67 3.67 0 1 1 5.19 5.19l-9.2 9.19a1.83 1.83 0 1 1-2.59-2.6l8.49-8.48"/></svg></button>
+      <button class="hero__go" aria-label="Save">&rarr;</button>
+    </div>
+    <p class="prep__resume__note">Saved to your profile, so the next posting scores straight away.</p>
+  </div>
+</article></div><div class="col"><p class="cap">Opened</p><p class="sub">The r&eacute;sum&eacute; field opens in place &mdash; the same component the hero uses &mdash; and focus moves into it. The posting is never lost.</p><article class="prep__card jcard u-surface" data-blocked="resume" data-open="1">
+  <h2 class="prep__t">Cover letter</h2>
+  <p class="prep__d">A short letter for this posting, grounded in your r&eacute;sum&eacute;.</p>
+  <div class="prep__a">
+    <button class="btn btn--primary">Write the letter</button>
+    <button class="btn btn--primary btn--unblock">Add your r&eacute;sum&eacute; <span class="btn__arrow" aria-hidden="true">&rarr;</span></button>
+  </div>
+  <div class="prep__resume">
+    <div class="hero__field">
+      <input class="hero__input" placeholder="Paste your r&eacute;sum&eacute;&hellip;" aria-label="Paste your r&eacute;sum&eacute;">
+      <button class="hero__clip" aria-label="Attach a file"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><path d="M21.4 11.05 12.25 20.2a5.5 5.5 0 0 1-7.78-7.78l9.19-9.19a3.67 3.67 0 1 1 5.19 5.19l-9.2 9.19a1.83 1.83 0 1 1-2.59-2.6l8.49-8.48"/></svg></button>
+      <button class="hero__go" aria-label="Save">&rarr;</button>
+    </div>
+    <p class="prep__resume__note">Saved to your profile, so the next posting scores straight away.</p>
+  </div>
+</article></div></div>
+<script type="module" src="blocked.js"></script>
+</body></html>

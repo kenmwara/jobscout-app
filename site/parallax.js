@@ -40,6 +40,19 @@
     addEventListener("scroll", release, { passive: true });
   }
 
+  /* THE SWEEP. A list that grows in chunks while the reader scrolls can leave
+     a chunk's cards pending ABOVE the viewport when the observer's first look
+     at them and the reader's scroll cross in the same frame: present in the
+     DOM, opacity 0, never intersecting again. check_parallax assertion D
+     found six such cards at once. On every scroll, one rAF-throttled pass
+     lands anything pending that the reader has already passed. */
+  let sweeping = false;
+  addEventListener("scroll", () => {
+    if (sweeping) return; sweeping = true;
+    requestAnimationFrame(() => { sweeping = false;
+      document.querySelectorAll('[data-arrive="pending"]').forEach(c => { if (c.getBoundingClientRect().bottom < 0) c.setAttribute("data-arrive", "in"); }); });
+  }, { passive: true });
+
   /* the observer's ROOT is the element that actually scrolls these cards - a
      list inside an overflow container (the mockup's phone frame) never
      intersects the viewport, and its cards would stay pending forever */

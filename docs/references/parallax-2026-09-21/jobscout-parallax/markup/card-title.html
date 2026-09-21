@@ -1,0 +1,20 @@
+<!-- The ONLY markup change parallax needs: none.
+     An earlier draft required a <span class="jcard__t"> inside the anchor to
+     carry the title's depth. That draft is gone — see css/parallax.css — so
+     the card markup is unchanged from v3. This file exists to say so. -->
+
+<article class="jcard u-surface" data-band="ping">
+  <div class="jcard__head">
+    <div class="score score--card" data-rose="52"><!-- rose --><span class="score__num u-num">70</span></div>
+    <div class="jcard__id">
+      <p class="jcard__org">Sun Life <span class="sep">·</span> Toronto, Ontario</p>
+      <!-- No transform may ever be applied to .jcard__title, .jcard__id or
+           .jcard__head. Any of them becoming a containing block shrinks the
+           stretched link to its own box and silently kills the card's click
+           target. tools/check_parallax.mjs assertion C guards this. -->
+      <h3 class="jcard__title u-t4"><a class="jcard__link" href="#">Senior Associate, SLC Accounting and Controls</a></h3>
+    </div>
+  </div>
+  <div class="jcard__meta meta">…</div>
+  <div class="jcard__actions">…</div>
+</article>

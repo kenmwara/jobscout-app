@@ -1,0 +1,243 @@
+/* ===========================================================================
+   JobScout — the card's parallax. Replaces the title underline.
+   Requires tokens.css. Load AFTER components.css.
+
+   WHAT IT REPLACES
+   The title underlined on hover — a fourth signal for an event the card
+   already reported by lifting, brightening its edge, changing surface and
+   lighting the rose's next dot. The underline was the only one of the four
+   carrying no information.
+
+   WHAT IT IS
+   Real parallax: the card tilts toward the pointer and its contents sit at
+   different depths, so they separate as it moves. Not a fake — the rose is
+   genuinely 30px closer to the viewer than the metadata row, and the browser
+   computes the perspective.
+
+   THE THREE INPUTS, one per platform reality
+     pointer     tilt + depth, tracked live          (hover: hover)
+     touch       press + depth, on the press         (hover: none)
+     both        ARRIVAL — layers land at staggered depths on first sight
+
+   EVERY LAYER USES THE EXISTING SPRINGS. Nothing here adds a colour, a
+   duration or an easing that is not already in tokens.json.
+   =========================================================================== */
+
+:root {
+  /* Drama, tuned. 10deg is the point where a 390pt card starts to read as a
+     playing card rather than a surface; 7 keeps it a surface that moved. */
+  --tilt-max: 7deg;
+  --tilt-perspective: 900px;
+
+  /* Depth, in the order the eye should meet them. The score is nearest
+     because it is the thing the card is about. */
+  --z-rose:    34px;
+  --z-org:      8px;
+  --z-meta:    12px;
+  --z-evidence: 6px;
+  --z-actions: 40px;   /* and the actions above THAT */
+
+  /* How far a layer falls back when it arrives. */
+  --z-arrive: -60px;
+}
+
+/* ---------------------------------------------------------------------------
+   PERSPECTIVE LIVES ON THE CARD, in its own transform function.
+
+   The first draft put `perspective` on the list container, on the argument
+   that one vanishing point for the whole list is truer than one per card.
+   That argument is thin in a single column — and the implementation is
+   fragile in a way that cost an hour: the `perspective` property only
+   reaches DIRECT children, so the moment anything wraps a card (a grid cell,
+   an animation wrapper, a virtualised row) the rotation renders with no
+   perspective at all and degrades into a nearly invisible 2D skew. It looks
+   like the effect is "too subtle" rather than broken, which is the worst
+   kind of bug.
+
+   `transform: perspective(...)` inside the card's own transform cannot be
+   broken by nesting. Use it.
+   --------------------------------------------------------------------------- */
+
+.jcard {
+  transform-style: preserve-3d;
+  /* --mx/--my are the pointer's offset from centre, -1..1, set by parallax.js.
+     They default to 0 so the card is correct with JS disabled. */
+  --mx: 0; --my: 0;
+  transition:
+    transform    var(--t-settle) var(--spring-settle),
+    box-shadow   var(--t-settle) var(--spring-settle),
+    border-color var(--t-settle) var(--spring-settle),
+    background   var(--t-settle) var(--spring-settle);
+}
+
+/* =========================================================================
+   THE TITLE GETS NO DEPTH, AND THAT IS A CONSTRAINT, NOT A CHOICE.
+
+   The stretched link is `.jcard__link::after { position:absolute; inset:0 }`,
+   and it resolves against the nearest ancestor that establishes a containing
+   block. `transform` does that — and so does `transform-style: preserve-3d`,
+   which is the part that cost two rounds here:
+
+     draft 1  translateZ on .jcard__title  -> the link shrank to the title's
+              own box. The card's padding and its whole lower half silently
+              stopped being clickable. Invisible on screen and in screenshots.
+     draft 2  depth moved to a span inside the anchor, with preserve-3d run
+              down the chain so it would reach the card's 3D space -> the
+              preserve-3d on the anchor became the containing block and the
+              link shrank again, the same way, for a different reason.
+
+   So: NO ancestor of the anchor may be transformed, and the anchor may not
+   be preserve-3d, which means the title cannot be lifted in Z at all while
+   the link is stretched from a pseudo on it.
+
+   The link is functional and the title's depth is decorative, so the link
+   wins. The drama is unaffected — it lives in the rose (34px), the actions
+   (40px) and the metadata (12px), and the title still separates from the org
+   line by contrast. check_parallax.mjs assertion C is what found both.
+   ========================================================================= */
+.jcard .score      { transform: translateZ(var(--z-rose)); }
+.jcard__org        { transform: translateZ(var(--z-org)); }
+.jcard__meta       { transform: translateZ(var(--z-meta)); }
+.jcard .ev         { transform: translateZ(var(--z-evidence)); }
+.jcard__actions    { transform: translateZ(var(--z-actions)); }
+.jcard .score, .jcard__org, .jcard__meta, .jcard .ev, .jcard__actions {
+  transition: transform var(--t-settle) var(--spring-settle),
+              opacity   var(--t-settle) linear;
+}
+
+/* The title loses its underline. This is the one line that must ship. */
+.jcard__link { text-decoration: none; }
+
+/* ---------------------------------------------------------------------------
+   POINTER — tilt toward the cursor, lift, and let the layers separate.
+   Only on devices that actually hover. A touch device never runs this.
+   --------------------------------------------------------------------------- */
+@media (hover: hover) and (pointer: fine) {
+  .jcard:hover,
+  .jcard:focus-within {
+    transform:
+      perspective(var(--tilt-perspective))
+      translateY(var(--travel-liftHover))
+      rotateX(calc(var(--my) * var(--tilt-max) * -1))
+      rotateY(calc(var(--mx) * var(--tilt-max)));
+    box-shadow: var(--sh-hover);
+    border-color: var(--edge-hover);
+    background: var(--surface-hover);
+  }
+  /* While tracking, the tilt must follow the pointer with no lag, so the
+     transform transition is dropped mid-hover and restored on exit. The
+     ASYMMETRY LAW still holds: the return is --t-settle, the follow is 0. */
+  .jcard.is-tracking { transition-property: box-shadow, border-color, background; }
+
+  /* The org line falls back as the title comes forward — the depth cue that
+     makes the separation read as depth rather than as movement. */
+  .jcard:hover .jcard__org,
+  .jcard:focus-within .jcard__org { transform: translateZ(0); opacity: .68; }
+
+  /* Keyboard gets the same thing, centred: no pointer, so no tilt, but the
+     lift and the depth are identical. A hover with no focus equivalent is a
+     hover that excludes people. */
+  .jcard:focus-within:not(:hover) { --mx: 0; --my: 0; }
+}
+
+/* ---------------------------------------------------------------------------
+   TOUCH — no hover exists, so the drama attaches to the PRESS. The card
+   compresses and the layers sink toward the surface, which is the same
+   parallax played backwards. Exit timing, and it never overshoots.
+   --------------------------------------------------------------------------- */
+@media (hover: none) {
+  .jcard:active {
+    transform: perspective(var(--tilt-perspective)) scale(var(--press-card)) rotateX(3deg);
+    box-shadow: var(--sh-press);
+    transition-duration: var(--t-exit);
+    transition-timing-function: var(--spring-exit);
+  }
+  .jcard:active .score    { transform: translateZ(calc(var(--z-rose) * .35)); }
+  .jcard:active .jcard__actions{ transform: translateZ(calc(var(--z-actions) * .5)); }
+  .jcard:active .score, .jcard:active .jcard__actions {
+    transition-duration: var(--t-exit);
+    transition-timing-function: var(--spring-exit);
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   ARRIVAL — both platforms. A card entering the viewport lands its layers
+   from behind, in reading order, on --spring-arrive. This is where most of
+   the drama lives on a phone, because it is the one moment a touch device
+   gets a transition for free.
+
+   --card-i staggers the cards; the layer delays stagger within a card. Total
+   for a card is 3 x --stagger-row = 84ms, so a screenful never feels queued.
+   --------------------------------------------------------------------------- */
+.jcard[data-arrive="pending"] .score,
+.jcard[data-arrive="pending"] .jcard__title,
+.jcard[data-arrive="pending"] .jcard__org,
+.jcard[data-arrive="pending"] .jcard__meta,
+.jcard[data-arrive="pending"] .ev,
+.jcard[data-arrive="pending"] .jcard__actions {
+  opacity: 0;
+  transform: translateZ(var(--z-arrive)) translateY(var(--travel-row));
+}
+.jcard[data-arrive="in"] .score,
+.jcard[data-arrive="in"] .jcard__title,
+.jcard[data-arrive="in"] .jcard__org,
+.jcard[data-arrive="in"] .jcard__meta,
+.jcard[data-arrive="in"] .ev,
+.jcard[data-arrive="in"] .jcard__actions {
+  transition: transform var(--t-arrive) var(--spring-arrive),
+              opacity   var(--t-arrive) linear;
+}
+.jcard[data-arrive="in"] .score       { transition-delay: calc(var(--card-i, 0) * var(--stagger-row) + 0ms); }
+.jcard[data-arrive="in"] .jcard__title{ transition-delay: calc(var(--card-i, 0) * var(--stagger-row) + 40ms); }
+.jcard[data-arrive="in"] .jcard__org  { transition-delay: calc(var(--card-i, 0) * var(--stagger-row) + 56ms); }
+.jcard[data-arrive="in"] .jcard__meta { transition-delay: calc(var(--card-i, 0) * var(--stagger-row) + 72ms); }
+.jcard[data-arrive="in"] .ev          { transition-delay: calc(var(--card-i, 0) * var(--stagger-row) + 88ms); }
+.jcard[data-arrive="in"] .jcard__actions { transition-delay: calc(var(--card-i, 0) * var(--stagger-row) + 104ms); }
+
+/* ---------------------------------------------------------------------------
+   THE STRETCHED LINK still has to work — and a correction to what an earlier
+   draft of this comment claimed.
+
+   The thing that keeps the heart and the buttons clickable is
+   `.jcard__actions { position: relative; z-index: 2 }` in components.css.
+   z-index decides paint and hit order within a stacking context; translateZ
+   does NOT override it. This draft first asserted that --z-actions was what
+   kept them reachable, and the mutation written to prove it could not break
+   the check — because burying the layer in Z changes nothing while the
+   z-index stands.
+
+   In fact the reachability is OVER-DETERMINED: DOM order, that z-index and
+   this translateZ all point the same way, and .jcard__head flattens its own
+   subtree so the overlay cannot climb out of it. Three separate attempts to
+   break it in check_parallax.mjs failed, which is how you find out what is
+   really holding a thing up.
+   The assertion stays because the regression that DOES happen is someone
+   'making the whole card clickable' with a fixed, high-z overlay — and that
+   is a bug you cannot see in a screenshot.
+   --------------------------------------------------------------------------- */
+/* The overlay stays FLAT, at z 0, and the passive layers simply stop taking
+   the pointer. Layering the overlay in 3D was the wrong instinct: it turns a
+   simple hit-testing question into a question about 3D sorting through four
+   levels of preserve-3d, and it did not work. Depth is a VISUAL property
+   here; reachability is settled by pointer-events, which is one line and has
+   no interaction with transforms at all. */
+.jcard .score,
+.jcard__org,
+.jcard__meta,
+.jcard .ev          { pointer-events: none; }
+/* Everything genuinely interactive keeps them. */
+.jcard__actions,
+.jcard__actions *   { pointer-events: auto; }
+
+/* ---------------------------------------------------------------------------
+   REDUCED MOTION — no motion, same information. Every layer resolves flat and
+   instantly; the card still answers a press, the rose still shows its count.
+   --------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  .jcard, .jcard * { transform: none !important; transition-duration: 1ms !important;
+                     transition-delay: 0ms !important; }
+  .jcard[data-arrive] .score, .jcard[data-arrive] .jcard__title,
+  .jcard[data-arrive] .jcard__org, .jcard[data-arrive] .jcard__meta,
+  .jcard[data-arrive] .ev, .jcard[data-arrive] .jcard__actions { opacity: 1 !important; }
+  .jcard:hover { transform: none !important; box-shadow: var(--sh-hover); }
+}

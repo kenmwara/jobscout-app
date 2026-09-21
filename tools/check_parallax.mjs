@@ -84,9 +84,14 @@ for (const target of ["mockup", "site"]) {
     /* a card that is still less than 8% inside the viewport at the final
        scroll position is legitimately pending; everything passed or in view
        must have arrived */
-    const op = await p.evaluate(([sel, t]) => [...document.querySelectorAll(sel)].slice(0, 40).map(c => { const el = c.querySelector(t), r = c.getBoundingClientRect(); const due = r.top < innerHeight * 0.92 - r.height * 0.08; return el && due ? +getComputedStyle(el).opacity : 1; }), [all, title]);
-    const stuck = op.filter(o => o < 0.95).length;
-    if (stuck) fails.push(`${target} D/arrival: ${stuck} title(s) still below opacity 1 after scrolling past — cards are stranded pending`);
+    /* a busy machine delays the staggered transitions; a card still fading is
+       not stranded, so a non-zero count is re-measured once. The failure names
+       each stranded card's state so a real stranding is diagnosable. */
+    const measure = () => p.evaluate(([sel, t]) => [...document.querySelectorAll(sel)].slice(0, 40).map((c, i) => { const el = c.querySelector(t), r = c.getBoundingClientRect(); const due = r.top < innerHeight * 0.92 - r.height * 0.08; const o = el && due ? +getComputedStyle(el).opacity : 1; return { i, o, top: Math.round(r.top), arrive: c.dataset.arrive || "-" }; }), [all, title]);
+    let op = await measure();
+    if (op.some(x => x.o < 0.95)) { await p.waitForTimeout(2500); op = await measure(); }
+    const stuckCards = op.filter(x => x.o < 0.95);
+    if (stuckCards.length) fails.push(`${target} D/arrival: ${stuckCards.length} title(s) still below opacity 1 after scrolling past — cards are stranded pending (${stuckCards.slice(0, 6).map(x => `#${x.i} top=${x.top} ${x.arrive} o=${x.o}`).join("; ")})`);
     await ctx.close(); }
 }
 await b.close();

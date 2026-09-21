@@ -1,0 +1,114 @@
+/* ===========================================================================
+   JobScout — the title's hover. Replaces the underline, web and mobile.
+
+   TWO DIFFERENT PROBLEMS, one of which is not a hover at all:
+
+   1. WEB — the title underlines on hover, which is a SECOND signal for an
+      event the card's own material already reports: it lifts 2px, brightens
+      its edge, changes surface, and the rose lights its next dot. Four
+      signals for one event, and the underline is the only one that carries
+      no information.
+
+   2. MOBILE — the title is underlined AT REST. There is no hover on touch, so
+      the underline is not a state, it is decoration; and because the whole
+      card is a target via the stretched link, it also lies about WHAT is
+      clickable. It reads as "this text is the link" when the whole card is.
+
+   Both fix the same way: the mark comes off the title. What replaces it on
+   the web is below. On touch nothing replaces it — the press scale and the
+   rose are the feedback, which is what every native list does.
+   =========================================================================== */
+
+/* The one line both platforms need. */
+.jcard__link { text-decoration: none; }
+
+/* ---------------------------------------------------------------------------
+   THE RECOMMENDATION — parallax. The title outruns the card by 1px on
+   --spring-snap while the card settles on --spring-settle, and the org line
+   lags half a pixel and dims. The card gains depth for the length of the
+   hover and nothing is added to the page: no mark, no colour, no new idea.
+
+   It costs two rules and it is the only candidate that adds life without
+   adding meaning. A hover should not have to say anything — the card already
+   said it.
+   --------------------------------------------------------------------------- */
+.jcard__title,
+.jcard__org {
+  transition: transform var(--t-snap) var(--spring-snap),
+              opacity   var(--t-snap) linear;
+}
+.jcard:hover .jcard__title,
+.jcard:focus-within .jcard__title { transform: translateY(-1px); }
+.jcard:hover .jcard__org,
+.jcard:focus-within .jcard__org   { transform: translateY(.5px); opacity: .72; }
+
+/* ---------------------------------------------------------------------------
+   OPTIONAL — the arrow arrives. Add this INSTEAD of nothing if the hover
+   should say where the tap goes. It is honest: it points, it does not claim.
+   Needs <span class="jcard__go" aria-hidden="true">→</span> at the end of the
+   link text so it sits on the last line, not floating after the block.
+   --------------------------------------------------------------------------- */
+.jcard__go {
+  display: inline-block; margin-left: 4px;
+  opacity: 0; transform: translateX(-4px);
+  transition: opacity var(--t-snap) linear,
+              transform var(--t-snap) var(--spring-snap);
+}
+.jcard:hover .jcard__go,
+.jcard:focus-within .jcard__go { opacity: .55; transform: translateX(0); }
+
+/* ---------------------------------------------------------------------------
+   NOT RECOMMENDED — "the reach". Kept here with its reasoning because it is
+   the idea that looks best in a still and is worst in the system.
+
+   A 2px rule on a fixed 140px track, drawn as far as the score. Fixed rather
+   than a percentage of the title, because a percentage makes the same score
+   draw a different length on every card — a meter that lies.
+
+   Even fixed, it is a THIRD display of one value. The numeral says 70, the
+   rose says PING in six dots, and this says 70 again, less precisely, in a
+   place the eye reads as decoration. The product's own rule is one signal per
+   channel, and the rose owns the score channel.
+
+   Uncomment only if the rose is ever removed from the card.
+   --------------------------------------------------------------------------- */
+/*
+.jcard__title { position: relative; display: inline-block; }
+.jcard__title::before {
+  content: ""; position: absolute; left: 0; bottom: -5px; height: 2px;
+  width: 140px; background: var(--text); opacity: 0;
+  transition: opacity var(--t-settle) var(--spring-settle);
+}
+.jcard:hover .jcard__title::before { opacity: .08; }
+.jcard__title::after {
+  content: ""; position: absolute; left: 0; bottom: -5px; height: 2px;
+  width: calc(140px * var(--fit, 0) / 100);
+  background: var(--band);
+  transform: scaleX(0); transform-origin: left center;
+  transition: transform var(--t-settle) var(--spring-settle);
+}
+.jcard:hover .jcard__title::after { transform: scaleX(1); }
+.jcard:not([data-band]) .jcard__title::before,
+.jcard:not([data-band]) .jcard__title::after { display: none; }
+*/
+
+/* ---------------------------------------------------------------------------
+   KEYBOARD — a hover that has no focus equivalent is a hover that excludes
+   people. Every rule above fires on :focus-within, and the card keeps its
+   visible outline.
+   --------------------------------------------------------------------------- */
+
+/* ---------------------------------------------------------------------------
+   TOUCH — hover media queries are the honest guard. A device with no hover
+   never runs the hover rules, so the title never moves on a tap-and-hold.
+   --------------------------------------------------------------------------- */
+@media (hover: none) {
+  .jcard__title, .jcard__org, .jcard__go { transition: none; transform: none; }
+  .jcard__go { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .jcard__title, .jcard__org, .jcard__go {
+    transition-duration: 1ms !important; transition-delay: 0ms !important;
+  }
+}

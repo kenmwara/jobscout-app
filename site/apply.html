@@ -94,6 +94,10 @@
   .step .state.part{background:var(--b-unsure-bg);color:var(--b-unsure);border-color:transparent}
   .prep__lede{margin:var(--s3) 0 0;font:400 var(--t2)/1.45 var(--sans);color:var(--text2);max-width:64ch}
   .step .lede{font:400 var(--t3)/1.6 var(--sans);color:var(--text2);margin:0 0 var(--s4);max-width:64ch}
+  /* the unblock replaces the step's primary while the step is blocked; it IS the primary in that state */
+  .btn--unblock{display:none}
+  .step[data-blocked] .acts .btn:not(.btn--unblock){display:none}
+  .step[data-blocked] .btn--unblock{display:inline-flex}
   .step .acts{display:flex;gap:var(--s2);flex-wrap:wrap;margin-top:var(--s4);align-items:center}
   .step .grounded{font:400 var(--t2)/1.5 var(--sans);color:var(--text3);margin:0;max-width:40ch}
 
@@ -370,6 +374,7 @@ nav.main{margin-left:auto;display:flex;gap:var(--s2);align-items:center}
         <div class="out" id="out-letter"></div>
         <div class="acts">
           <button class="btn" type="button" id="do-letter">Write the letter</button>
+          <button class="btn btn--unblock" type="button" data-unblock>Add your résumé <span aria-hidden="true">→</span></button>
           <button class="btn2" type="button" id="cp-letter" hidden>Copy</button>
           <button class="btn2" type="button" id="dl-letter" hidden>Download</button>
           <p class="grounded" id="gr-letter"></p>
@@ -384,6 +389,7 @@ nav.main{margin-left:auto;display:flex;gap:var(--s2);align-items:center}
         <div class="out" id="out-tailor"></div>
         <div class="acts">
           <button class="btn" type="button" id="do-tailor">Rebuild my résumé</button>
+          <button class="btn btn--unblock" type="button" data-unblock>Add your résumé <span aria-hidden="true">→</span></button>
           <button class="btn2" type="button" id="dl-tailor" hidden>Download .docx</button>
           <button class="btn2" type="button" id="dt-tailor" hidden>Download .txt</button>
           <button class="btn2" type="button" id="cp-tailor" hidden>Copy</button>
@@ -397,6 +403,7 @@ nav.main{margin-left:auto;display:flex;gap:var(--s2);align-items:center}
         <div class="out" id="out-answers"></div>
         <div class="acts">
           <button class="btn" type="button" id="do-answers">Get their questions</button>
+          <button class="btn btn--unblock" type="button" data-unblock>Add your résumé <span aria-hidden="true">→</span></button>
           <button class="btn2" type="button" id="cp-answers" hidden>Copy all</button>
           <p class="grounded" id="gr-answers"></p>
         </div>
@@ -565,9 +572,18 @@ function render(){
      everything below argues your case from what you have actually done, and claims nothing you have not. Where a
      step lists something the posting asks for and your résumé does not cover, that is a line to add if it is true
      of you, and a good use of ten minutes before you send.</div>`);
-  if (S.profile) $("#steps").hidden = false;
-  else $("#needProfile").hidden = false;
+  /* A BLOCKED ACTION CARRIES ITS OWN UNBLOCK (Chat, 2026-09-21). The steps
+     are never hidden: without a résumé each card is a normal card whose
+     button asks for the one thing it needs, and pressing it moves focus into
+     the résumé field above. The posting is never lost. */
+  $("#steps").hidden = false;
+  if (!S.profile) { $("#needProfile").hidden = false; document.querySelectorAll("#steps .step").forEach(st => st.dataset.blocked = "resume"); }
 }
+document.addEventListener("click", e => {
+  const u = e.target.closest(".btn--unblock"); if (!u) return;
+  const box = $("#profileBox"); $("#needProfile").hidden = false;
+  box.scrollIntoView({ behavior: "smooth", block: "center" }); box.focus({ preventScroll: true });
+});
 /* Identical to the handler on index.html, against the same endpoint. The
    file is streamed as the body with its type and name in headers - not
    multipart - because that is what /api/extract reads. */
@@ -606,6 +622,8 @@ $("#useProfile").onclick = () => {
   try { sessionStorage.setItem("jobscout.apply", JSON.stringify(S)); } catch (e) {}
   $("#needProfile").hidden = true;
   $("#steps").hidden = false;
+  document.querySelectorAll("#steps .step[data-blocked]").forEach(st => st.removeAttribute("data-blocked"));
+  promoteNext();
 };
 function applied(){
   const b = $("#markApplied");

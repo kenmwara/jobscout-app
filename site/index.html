@@ -564,7 +564,17 @@ html.anim #pop.on{animation:popin .16s var(--ease)}
 
 /* save */
 .job .role a{color:inherit;text-decoration:none}
-.job .role a:hover{text-decoration:underline;text-underline-offset:3px}
+/* THE TITLE'S HOVER (Chat, 2026-09-21): no underline - a fourth signal for an
+   event the card already reports by lifting, brightening its edge and lighting
+   the rose's next dot. In its place the title outruns the card by 1px on the
+   snap spring while the org line settles back: depth, no new mark. The site's
+   title is a plain link (no stretched pseudo), so moving it is safe here. */
+.job .role a:hover{text-decoration:none}
+.job h3.role{transition:transform var(--t-snap) var(--spring-snap)}
+@media (hover:hover) and (pointer:fine){
+  html .job:hover h3.role,html .job:focus-within h3.role{transform:translateY(-1px)}
+  html .job:hover .co,html .job:focus-within .co{transform:translateZ(0) translateY(.5px);opacity:.68}
+}
 .job{cursor:pointer}
 .savebtn{
   appearance:none;background:transparent;border:0;cursor:pointer;padding:var(--s1);
