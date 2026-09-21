@@ -211,7 +211,8 @@ caption anyway.
 > after 06:32Z, webhook- or API-triggered, on an Active pay-as-you-go account
 > with minutes accruing and the status page green (the only visible change:
 > free macOS minutes crossed 500). The `v0.9.1` release build sat `queued`
-> with no message; Codemagic support ticket #20160. Play publishing is
+> with no message; Codemagic support ticket #20160 (support asked for a
+> cancel-and-retrigger on 09-20; the fresh build #25 queued the same way). Play publishing is
 > **manual** (no `publishing:` block): download the AAB from the build's
 > artifacts and upload it in the Play Console.
 
