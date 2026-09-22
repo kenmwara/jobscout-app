@@ -170,6 +170,28 @@ for market in ("Canada", "Kenya"):
           "the landing offers the bar: a way to hand over a resume")
     check("open" in t, "the sector tiles carry their counts")
 
+    # A SWEPT ROW OPENS THE POSTING, NOT A PAGE. 0.9.3 handed the row's URL to
+    # the info-page opener, so every row on the landing and in Browse opened
+    # Privacy (Ken, 2026-09-21 - "every link leads to Privacy"). The first
+    # row sits two nodes after the count line: company, then the title.
+    ns = nodes()
+    idx = next((i for i, n in enumerate(ns) if "swept this morning" in n["t"]), None)
+    if idx is not None and idx + 2 < len(ns):
+        title = ns[idx + 2]["t"]
+        sh("shell", "input", "tap", str(ns[idx + 2]["cx"]), str(ns[idx + 2]["cy"]))
+        time.sleep(4.0)
+        after = text()
+        top = sh("shell", "dumpsys", "activity", "activities").stdout.decode("utf-8", "replace")
+        in_browser = "topResumedActivity" in top and PKG not in top.split("topResumedActivity", 1)[1].split("
+", 1)[0]
+        check(in_browser or ("Privacy" not in after and "How JobScout works" not in after),
+              "a swept row opens the posting, not a page (%s)" % title[:36])
+        # come back: the browser is another app
+        sh("shell", "am", "start", "-n", f"{PKG}/.MainActivity"); time.sleep(3.0)
+        swipe_top()
+    else:
+        check(False, "could not find the first swept row to tap")
+
     # a sector tile opens Browse, narrowed
     # Browse leads with the sector grid, not with the sweep title — the tile
     # marks itself selected and the list below narrows to it. (The first cut of

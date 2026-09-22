@@ -611,6 +611,7 @@ fun DemoScreen(vm: DemoVm = viewModel()) {
                         },
                         onMatches = { screen = Screen.MATCHES },
                         onOpen = { page -> infoPage = page },
+                        onUrl = { u -> runCatching { uriHandler.openUri(u) } },
                         // A tile is a way INTO the sweep, narrowed to it —
                         // exactly what clicking one does on the web.
                         onSector = { sec -> sector = sec; screen = Screen.BROWSE },
@@ -619,6 +620,7 @@ fun DemoScreen(vm: DemoVm = viewModel()) {
                         ui, feed, policy, query, sector, scope, dismissed,
                         onClear = { query = null; sector = null },
                         onOpen = { page -> infoPage = page },
+                        onUrl = { u -> runCatching { uriHandler.openUri(u) } },
                         onSector = { sec -> sector = if (sector == sec) null else sec },
                         onScope = { scope = it },
                         onWatch = { k, h, sec -> vm.toggleWatch(k, h, sec) },
@@ -680,6 +682,10 @@ private fun LazyListScope.landing(
     ui: Ui, feed: Feed?, vm: DemoVm, policy: String?, onPolicy: (String?) -> Unit,
     onUpload: () -> Unit, onSearch: (String) -> Unit, onMatches: () -> Unit,
     onOpen: (String) -> Unit, onSector: (String) -> Unit,
+    /* A posting opens in the BROWSER. Until 0.9.4 the row handed its URL to
+       `onOpen`, which is the info-page opener - and a page named by a URL is
+       not "how", so every swept row opened Privacy (Ken, 2026-09-21). */
+    onUrl: (String) -> Unit,
 ) {
     item {
         MHero(
@@ -738,7 +744,7 @@ private fun LazyListScope.landing(
     feed?.passers?.take(4)?.forEach { p ->
         item {
             MJob(p.title, p.company, policy = p.remote_policy,
-                 onClick = p.url.takeIf { it.isNotEmpty() }?.let { u -> ({ onOpen(u) }) })
+                 onClick = p.url.takeIf { it.isNotEmpty() }?.let { u -> ({ onUrl(u) }) })
         }
     }
     /* Two postings is what the mockup's 620px frame holds. A real phone is 2340px,
@@ -763,6 +769,7 @@ private fun LazyListScope.browse(
     ui: Ui, feed: Feed?, policy: String?, query: String?, sector: String?, scope: String,
     dismissed: List<String>,
     onClear: () -> Unit, onOpen: (String) -> Unit, onSector: (String) -> Unit,
+    onUrl: (String) -> Unit,
     onScope: (String) -> Unit, onDismiss: (String, String) -> Unit,
     onWatch: (String, String, String) -> Unit,
     undo: Pair<String, String>?, onUndo: () -> Unit,
@@ -864,7 +871,7 @@ private fun LazyListScope.browse(
                 title = name,
                 company = "${ps.size} open today  ·  ${ps.count { it.remote_policy == "remote" }} remote",
                 policy = null,
-                onClick = ps.firstOrNull { it.url.isNotEmpty() }?.url?.let { u -> ({ onOpen(u) }) },
+                onClick = ps.firstOrNull { it.url.isNotEmpty() }?.url?.let { u -> ({ onUrl(u) }) },
             )
         }
         item { MFoot(onOpen) }
@@ -901,7 +908,7 @@ private fun LazyListScope.browse(
     // Same hole as the web had: a browse row that does nothing when tapped.
     items(rows, key = { it.id }) { p ->
         MJob(p.title, p.company, policy = p.remote_policy,
-             onClick = p.url.takeIf { it.isNotEmpty() }?.let { u -> ({ onOpen(u) }) },
+             onClick = p.url.takeIf { it.isNotEmpty() }?.let { u -> ({ onUrl(u) }) },
              onDismiss = { onDismiss(p.id, p.title) })
     }
 }
