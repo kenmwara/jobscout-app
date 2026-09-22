@@ -132,6 +132,12 @@ def main():
         say("  FAIL  could not read the live database.")
         say("        wrangler said: " + msg)
         say("        using: " + " ".join(_WRANGLER))
+        if "7403" in msg or "not authorized" in msg.lower():
+            say("")
+            say("        Code 7403 means the token reached Cloudflare and was REFUSED for D1.")
+            say("        A deploy token is not enough: this needs D1 read on the account.")
+            say("        Cloudflare dashboard > My Profile > API Tokens > edit the token,")
+            say("        add permission  Account > D1 > Edit,  and save. Nothing else changes.")
         raise SystemExit(1)
     say(f"  live: {sum(live.values())} rows across {len(live)} table(s)")
 
