@@ -107,6 +107,14 @@ def step(label, expect, msg, wait=2.5):
     return t
 
 
+def open_menu(msg):
+    """Press the "..." and prove the sheet is up (its GO TO label); a press that
+    lands while another window still holds focus opens nothing, so try twice."""
+    for _ in range(2):
+        if tap("⋯", wait=1.5) and "GO TO" in text():
+            check(True, msg); return True
+    check(False, msg); return False
+
 sh("shell", "am", "force-stop", PKG)
 sh("shell", "am", "start", "-n", f"{PKG}/.MainActivity")
 time.sleep(10)
@@ -116,7 +124,7 @@ for market in ("Canada", "Kenya"):
     swipe_top()
     # 0.9.3: the market lives in the menu sheet behind the "..." (the web's
     # phone header). Open it, pick the market, the sheet closes itself.
-    check(tap("\u22ef", wait=1.5), "the menu button is on screen")
+    open_menu("the menu opens from the header")
     code = {"Canada": "CA", "Kenya": "KE"}[market]
     step(market, code, f"the {market} row switches market (the chip reads its code)", wait=9)
     # Picking the market the app is already on presses a disabled segment and
@@ -185,9 +193,16 @@ for market in ("Canada", "Kenya"):
         in_browser = "topResumedActivity" in top and PKG not in top.split("topResumedActivity", 1)[1].splitlines()[0]
         check(in_browser or ("Privacy" not in after and "How JobScout works" not in after),
               "a swept row opens the posting, not a page (%s)" % title[:36])
-        # come back: the browser is another app
-        sh("shell", "am", "start", "-n", f"{PKG}/.MainActivity"); time.sleep(3.0)
-        swipe_top()
+        # come back: the browser is another app on top of ours. BACK leaves it
+        # (Chrome's first-run screen included); then make sure we are home,
+        # because a sheet opened while the browser still had focus was the
+        # cause of three "control not found" reds in run 7.
+        # HOME first, then relaunch: BACK alone left Chrome's first-run screen
+        # holding focus for the next tap (run 9: the menu would not open until
+        # a second block had come round).
+        sh("shell", "input", "keyevent", "KEYCODE_HOME"); time.sleep(1.5)
+        sh("shell", "am", "start", "-n", f"{PKG}/.MainActivity"); time.sleep(5.0)
+        tap("JobScout", wait=2.0); swipe_top()
     else:
         check(False, "could not find the first swept row to tap")
 
@@ -205,7 +220,7 @@ for market in ("Canada", "Kenya"):
     step("JobScout", "Find the work", "the wordmark goes home from Browse")
 
     # Saved opens from the sheet and closes
-    check(tap("\u22ef", wait=1.5), "the menu opens from the landing")
+    open_menu("the menu opens from the landing")
     step("Saved", "kept", "Saved opens the kept list from the menu")
     if not tap("Close", 2.0):
         sh("shell", "input", "keyevent", "KEYCODE_BACK")
@@ -251,7 +266,7 @@ swipe_top()
 
 def pick_theme(label):
     """Open the sheet, press a segment, close the sheet (back)."""
-    if not tap("\u22ef", wait=1.5):
+    if not (tap("\u22ef", wait=1.5) and "GO TO" in text()) and not (tap("\u22ef", wait=1.5) and "GO TO" in text()):
         return False
     ok = tap(label, wait=1.2)
     sh("shell", "input", "keyevent", "KEYCODE_BACK")
@@ -260,7 +275,7 @@ def pick_theme(label):
     return ok
 
 
-check(tap("\u22ef", wait=1.5), "the menu opens for the theme")
+open_menu("the menu opens for the theme")
 seen = [l for l in ("Light", "Device", "Dark") if l in text()]
 check(len(seen) == 3, "the three theme states are in the sheet (%s)" % (seen or "NOT FOUND"))
 sh("shell", "input", "keyevent", "KEYCODE_BACK"); time.sleep(1.2)
