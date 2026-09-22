@@ -49,9 +49,30 @@ everyone, so the only lever is *what the product is willing to do for a stranger
 | A deploy ships behind a red suite | **Closed 2026-09-22.** Both deploy jobs need the checks | the gate itself |
 | A check quietly stops testing anything | Closed. Mutations run nightly, and "asleep" is its own verdict | `sanity.mjs --mutations` |
 | The database is lost | **Partly closed.** A daily backup, restored and compared, kept off Cloudflare | `backup_check.py` |
-| **CORS is a wildcard** | **Open**, carried over from the July audit | nothing |
-| **Feed tokens do not expire** | **Open**, same audit | nothing |
+| CORS is a wildcard | **Closed 2026-09-22.** An allowlist, and a request with no Origin is still answered | `check_cors.mjs` |
 | A phone requirement is unproven because CI has no emulator | **Named, not closed.** `--skip-device` prints the seven that rest on it, every run | `specs.py --check` |
+
+## A correction to this page, and why it is left visible
+
+The first version of this table carried two rows marked open "from the July audit": a wildcard
+CORS, and feed tokens that never expire. **Both belonged to the tbot dashboard, not to JobScout.**
+The July audit was of `dashboard/api.py` and `subscribers.json`, and the rows were copied here as
+though they described this product.
+
+One of them was true by coincidence: this worker really did answer every origin on the internet,
+and that is now closed. **The other does not exist.** JobScout issues no tokens of any kind — the
+only things called tokens in this repository are CSS design tokens, the model's token counts, and
+the public board identifiers in a Greenhouse URL. There was nothing to expire.
+
+This is the same failure the spec ledger was built to stop, one document over: a finding was
+restated from memory instead of read from its source, and the restatement became the record. It is
+corrected rather than quietly deleted, because a threat model that has been wrong once should say
+so — the next reader deserves to know which rows were checked against the code and which were
+inherited from a summary.
+
+The tbot items remain genuinely open, in tbot. They are deferred judgment calls there, with a
+warning attached that a naive https-only allowlist would break the Capacitor app. That warning is
+why the allowlist here answers a request with **no** Origin at all rather than refusing it.
 
 ## The lesson this model was written after
 

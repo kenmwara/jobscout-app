@@ -47,6 +47,9 @@ const CHECKS = [
   { id: "footer",    file: "tools/check_footer.mjs", mutations: ["squashed", "short-target"], guards: "no two footer links share a line, and every one is still a 44px target" },
   { id: "rosescale", file: "tools/check_rose_scale.mjs", mutations: ["fixed-numeral", "duplicate-width"], guards: "the fit numeral scales with its ring, and .rose has ONE width declaration" },
   { id: "fieldphone",file: "tools/check_field_phone.mjs", mutations: ["oval", "crushed", "clip-adrift", "empty-grew"], guards: "a hero field with content is a well, not a stretched oval; the empty bar is untouched" },
+  /* The API's own guard, and the only check here that is not about the page.
+     The worker answered every origin on the internet until 2026-09-22. */
+  { id: "cors",      file: "worker/tools/check_cors.mjs", mutations: ["wildcard", "startswith", "block-null"], guards: "only this project's pages are answered, and a request with no Origin is still answered" },
 ];
 const run = (file, argv, py) => new Promise(res => {
   const c = spawn(py ? "python" : process.execPath, [join(ROOT, file), ...argv], { cwd: ROOT, env: process.env });

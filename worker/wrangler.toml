@@ -7,3 +7,8 @@ workers_dev = true
 binding = "DB"
 database_name = "jobscout-app"
 database_id = "744fec23-fba7-44d4-843c-54df8f27d174"
+# Wrangler's own migration bookkeeping (it tracks what it has applied in a
+# d1_migrations table), rather than a runner of our own:
+#   npx wrangler d1 migrations list  jobscout-app --remote
+#   npx wrangler d1 migrations apply jobscout-app --remote
+migrations_dir = "migrations"
