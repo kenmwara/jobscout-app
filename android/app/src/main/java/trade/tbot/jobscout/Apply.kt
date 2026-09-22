@@ -57,6 +57,7 @@ fun ApplyScreen(vm: DemoVm, a: Apply, onClose: () -> Unit, onUpload: () -> Unit)
     val ui by vm.ui.collectAsState()
     val ins = WindowInsets.safeDrawing.asPaddingValues()
     val uri = LocalUriHandler.current
+    val clipboard = LocalClipboardManager.current
     val p = a.posting
     val score = ui.scores.firstOrNull { it.id == p.id }
     val band = T.bandWord(a.fit)
@@ -223,6 +224,50 @@ fun ApplyScreen(vm: DemoVm, a: Apply, onClose: () -> Unit, onUpload: () -> Unit)
                         }
                     }
                 }
+
+                /* SEND IT. Ken's ruling, 2026-09-22: "Enable applications from
+                   the applications page without necessarily having to go to the
+                   posting itself." Greenhouse and Ashby each publish the form at
+                   a URL of its own, so this goes straight there and the posting
+                   never opens. What it stops short of is pressing Submit: both
+                   boards take an application through their API only with the
+                   EMPLOYER's key. So the pack travels instead. */
+                item {
+                    val pack = buildPack(a)
+                    val direct = formUrl(p.url) != p.url
+                    Column(Modifier.fillMaxWidth().background(T.surface, Card).padding(Space.s4)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text("Send it", style = H2, fontSize = Type.t4, color = T.ink, modifier = Modifier.weight(1f))
+                            Text(if (pack.isEmpty()) "" else "${done.count { it.value }} of 3 ready",
+                                 color = T.text3, fontSize = Type.t1, fontWeight = FontWeight.Medium, letterSpacing = 0.08.em)
+                        }
+                        Spacer(Modifier.height(Space.s2))
+                        Text("Everything above travels with you, in the order the form asks for it, and the posting is not in the way.",
+                             color = T.text2, fontSize = Type.t2, lineHeight = 20.sp)
+                        Spacer(Modifier.height(Space.s3))
+                        if (blocked) MButton("Add your résumé →", primary = false) { wantFocus = true }
+                        else Row(horizontalArrangement = Arrangement.spacedBy(Space.s2)) {
+                            MButton("Open " + (p.company.takeIf { it.isNotBlank() } ?: "the employer") + "'s form ↗",
+                                    primary = next == null) {
+                                if (pack.isNotEmpty()) clipboard.setText(AnnotatedString(pack))
+                                score?.let { vm.setStage(trackedFor(it, p), "applied") }
+                                runCatching { uri.openUri(formUrl(p.url)) }
+                            }
+                            if (pack.isNotEmpty()) MButton("Copy everything", primary = false) {
+                                clipboard.setText(AnnotatedString(pack))
+                            }
+                        }
+                        Spacer(Modifier.height(Space.s2))
+                        Text(
+                            when {
+                                pack.isEmpty() -> "Draft at least one of the three above and this hands the whole pack over in one move."
+                                direct -> "The form opens directly, not the posting, and everything above goes to your clipboard in the order it asks for. Pressing Submit stays yours: this employer's board only accepts an application through its own form."
+                                else -> "This employer does not publish a form that can be opened on its own, so this opens their posting with everything above already on your clipboard."
+                            },
+                            color = T.text3, fontSize = Type.t1, lineHeight = 17.sp,
+                        )
+                    }
+                }
             }
         }
 
@@ -232,6 +277,33 @@ fun ApplyScreen(vm: DemoVm, a: Apply, onClose: () -> Unit, onUpload: () -> Unit)
             "resume" -> a.resume.data?.let { d -> DraftSheet("Your résumé, aimed at it", resumeText(d), { reading = null }) { RebuiltResume(d) } }
             "answers" -> a.answers.data?.let { d -> DraftSheet("Their screening questions", answersText(d), { reading = null }) { Answers(d) } }
         }
+    }
+}
+
+/* The APPLICATION FORM's own URL, where the board publishes one. Greenhouse
+   puts the form on the job page behind an anchor; Ashby gives it a page of its
+   own. Anything else falls back to the posting, and the screen says so rather
+   than pretending. The two patterns are the worker's own (readForm). */
+private val GH_FORM = Regex("""^https?://(?:job-boards|boards)\.greenhouse\.io/([^/?#]+)/jobs/(\d+)""")
+private val ASHBY_FORM = Regex("""^https?://jobs\.ashbyhq\.com/([^/?#]+)/([0-9a-f-]{36})""")
+
+fun formUrl(u: String): String {
+    GH_FORM.find(u)?.let { return "https://job-boards.greenhouse.io/${it.groupValues[1]}/jobs/${it.groupValues[2]}#app" }
+    ASHBY_FORM.find(u)?.let { return "https://jobs.ashbyhq.com/${it.groupValues[1]}/${it.groupValues[2]}/application" }
+    return u
+}
+
+/** The letter, the rebuilt résumé and the answered questions, in the order a
+ *  form asks for them. Empty when nothing has been drafted. */
+fun buildPack(a: Apply): String = buildString {
+    a.letter.data?.let { append("COVER LETTER\n\n").append(it.trim()) }
+    a.resume.data?.let {
+        if (isNotEmpty()) append("\n\n\n")
+        append("RÉSUMÉ, AIMED AT THIS POSTING\n\n").append(resumeText(it).trim())
+    }
+    a.answers.data?.let {
+        if (isNotEmpty()) append("\n\n\n")
+        append("THEIR SCREENING QUESTIONS, ANSWERED\n\n").append(answersText(it).trim())
     }
 }
 
@@ -320,15 +392,26 @@ private fun <T> StepPanel(
 private fun DraftSheet(title: String, plain: String, onClose: () -> Unit, body: @Composable () -> Unit) {
     val clip = LocalClipboardManager.current
     val ins = WindowInsets.safeDrawing.asPaddingValues()
-    Box(Modifier.fillMaxSize().background(T.ink.copy(alpha = .38f)).clickable(onClick = onClose)) {
+/* CENTRED. Ken's ruling, 2026-09-22: "Centre all popups." It was a bottom
+   sheet, argued for in a comment nobody outside this repo ever read. The
+   objection that argument raised is answered by geometry instead of by
+   anchoring: full width minus one gutter, 88% of the height so a long
+   document still has room, rounded on all four corners so nothing reads as
+   sliced, and the scrim on every side is the way out. */
+    Box(
+        Modifier.fillMaxSize().background(T.ink.copy(alpha = .38f))
+            .clickable(onClick = onClose).padding(ins).padding(Space.s3),
+        contentAlignment = Alignment.Center,
+    ) {
         Column(
-            Modifier.align(Alignment.BottomCenter).fillMaxWidth().fillMaxHeight(0.9f)
-                .clip(RoundedCornerShape(topStart = Radius.sheet, topEnd = Radius.sheet))
+            Modifier.fillMaxWidth().fillMaxHeight(0.88f)
+                .clip(RoundedCornerShape(Radius.sheet))
                 .background(T.surface)
                 .clickable(enabled = false) {}
                 .padding(top = Space.s3),
         ) {
-            Box(Modifier.align(Alignment.CenterHorizontally).size(width = 36.dp, height = 4.dp).clip(Pill9999).background(T.hair2))
+            // No grab handle: a centred window does not drag, and an
+            // affordance that lies is worse than none.
             Row(Modifier.fillMaxWidth().padding(horizontal = Space.s4, vertical = Space.s2), verticalAlignment = Alignment.CenterVertically) {
                 Text(title, style = H2, fontSize = Type.t5, color = T.ink, modifier = Modifier.weight(1f))
                 Box(Modifier.size(TARGET).clip(Pill9999).clickable(onClick = onClose), contentAlignment = Alignment.Center) {
@@ -337,7 +420,7 @@ private fun DraftSheet(title: String, plain: String, onClose: () -> Unit, body: 
             }
             Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = Space.s4, vertical = Space.s2)) { body() }
             Row(
-                Modifier.fillMaxWidth().padding(start = Space.s4, end = Space.s4, top = Space.s3, bottom = ins.calculateBottomPadding() + Space.s4),
+                Modifier.fillMaxWidth().padding(start = Space.s4, end = Space.s4, top = Space.s3, bottom = Space.s4),
                 horizontalArrangement = Arrangement.spacedBy(Space.s2),
             ) {
                 MButton("Copy all", primary = true) { clip.setText(AnnotatedString(plain)) }

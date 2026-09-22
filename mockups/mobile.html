@@ -343,24 +343,29 @@ html.anim .card.settled[data-band="auto"] .jcard__band{animation:autopulse 420ms
 .heart[aria-pressed="true"]{color:var(--accent)}
 .heart[aria-pressed="true"] svg{fill:currentColor}
 
-/* A BOTTOM SHEET, not a centred dialog. Inset on all four sides gave a
-   ~600px reading window with a second scrollbar inside a phone that already
-   scrolls, and its top edge sliced the heading behind it in half. A long
-   document on a phone rises from the bottom: full width, ~90% tall, rounded
-   at the top only, flat to the bottom edge. The strip of page left showing
-   is what says "this is on top of something" - and it is the tap target. */
-.sheet{position:absolute;inset:0;z-index:30;display:flex;align-items:flex-end;
+/* CENTRED. Ken's ruling, 2026-09-22: "Centre all popups." This was a bottom
+   sheet, and the note that used to sit here argued for it: an inset on all
+   four sides gave a ~600px reading window with a second scrollbar inside a
+   phone that already scrolls, and the top edge sliced the heading behind it.
+   That argument was never put to him - it was made here and left. The
+   objection is answered by geometry rather than by anchoring to the bottom:
+   the window keeps its full width minus one gutter, still takes 88% of the
+   height so a long document has room, and is rounded on all four corners so
+   nothing reads as sliced. The scrim on every side is the tap target now. */
+.sheet{position:absolute;inset:0;z-index:30;display:flex;
+  align-items:center;justify-content:center;padding:var(--s3);
   background:var(--scrim)}
 .sheet[hidden]{display:none}
 .sheet .win{
-  width:100%;max-height:90%;display:flex;flex-direction:column;
+  width:100%;max-height:88%;display:flex;flex-direction:column;
   background:var(--surface);
-  border-radius:var(--radius-sheet) var(--radius-sheet) 0 0;
-  border:1px solid var(--sheet-edge);border-bottom:0;
+  border-radius:var(--radius-sheet);
+  border:1px solid var(--sheet-edge);
   box-shadow:var(--shadow-sheet);overflow:hidden}
-/* The affordance that says this scrolls and can be dragged away. */
-.sheet .grab{width:34px;height:4px;border-radius:2px;background:var(--hair2);
-  margin:var(--s2) auto 0;flex:0 0 auto}
+/* No grab handle on a centred window: it does not drag anywhere, and an
+   affordance that lies is worse than none. The site's own .docwin hides it
+   for exactly this reason. */
+.sheet .grab{display:none}
 .sheet .wtop{display:flex;align-items:center;gap:var(--s2);padding:var(--s3) var(--s4) var(--s3);
   border-bottom:1px solid var(--hair)}
 /* Newsreader. A sheet header is a title, and titles are the serif. */

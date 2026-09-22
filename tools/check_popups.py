@@ -210,6 +210,22 @@ if go:
                "claimed one at t+%ss with nothing tapped" % again)
             ck("D' Read it is there to reopen a closed draft", "Read it" in labels(nodes()))
 
+            # --- E. SEND IT: the form, not the posting -------------------------
+            # Ken's ruling 2026-09-22: "Enable applications from the applications
+            # page without necessarily having to go to the posting itself."
+            for _ in range(6):
+                sh("shell", "input", "swipe", "540", "1800", "540", "700", "300")
+                time.sleep(0.9)
+            tx = labels(nodes())
+            ck("E the send panel is on the prepare screen", "Send it" in tx)
+            ck("E it opens the EMPLOYER'S FORM, naming them",
+               any(t.startswith("Open ") and "form" in t for t in tx),
+               ", ".join(list(tx)[:4]))
+            ck("E it counts what is ready rather than what is missing",
+               any("of 3 ready" in t for t in tx))
+            ck("E it states where Submit stops",
+               any("Pressing Submit stays yours" in t or "already on your clipboard" in t for t in tx))
+
 say("check_popups: %d assertions on %s" % (checks, PKG))
 for f in fails:
     say("  FAIL  " + f)

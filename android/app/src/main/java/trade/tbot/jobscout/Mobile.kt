@@ -46,6 +46,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
@@ -154,18 +157,29 @@ fun MenuSheet(
     onMarket: (String) -> Unit, onTheme: (String?) -> Unit,
     onGo: (String) -> Unit, onClose: () -> Unit,
 ) {
-    Box(Modifier.fillMaxSize().background(T.ink.copy(alpha = .38f)).clickable(onClick = onClose)) {
-        val ins = WindowInsets.safeDrawing.asPaddingValues()
+/* CENTRED. Ken's ruling, 2026-09-22: "Centre all popups." It was a bottom
+   sheet, argued for in a comment nobody outside this repo ever read. The
+   objection that argument raised is answered by geometry instead of by
+   anchoring: full width minus one gutter, 88% of the height so a long
+   document still has room, rounded on all four corners so nothing reads as
+   sliced, and the scrim on every side is the way out. */
+    val ins = WindowInsets.safeDrawing.asPaddingValues()
+    // The menu is short on a tall phone and long on a short one, so it is
+    // capped and scrolls rather than running off a centred window's edges.
+    val maxH = LocalConfiguration.current.screenHeightDp.dp * 0.88f
+    Box(
+        Modifier.fillMaxSize().background(T.ink.copy(alpha = .38f))
+            .clickable(onClick = onClose).padding(ins).padding(Space.s3),
+        contentAlignment = Alignment.Center,
+    ) {
         Column(
-            Modifier.align(Alignment.BottomCenter).fillMaxWidth()
-                .clip(RoundedCornerShape(topStart = Radius.sheet, topEnd = Radius.sheet))
+            Modifier.fillMaxWidth().heightIn(max = maxH)
+                .clip(RoundedCornerShape(Radius.sheet))
                 .background(T.surface)
                 .clickable(enabled = false) {}
-                .padding(start = Space.s4, end = Space.s4, top = Space.s3,
-                         bottom = ins.calculateBottomPadding() + Space.s4),
+                .verticalScroll(rememberScrollState())
+                .padding(start = Space.s4, end = Space.s4, top = Space.s3, bottom = Space.s4),
         ) {
-            Box(Modifier.align(Alignment.CenterHorizontally).size(width = 36.dp, height = 4.dp)
-                .clip(Pill9999).background(T.hair2))
             Row(Modifier.fillMaxWidth().padding(top = Space.s2), verticalAlignment = Alignment.CenterVertically) {
                 Text("Menu", style = H2, fontSize = Type.t5, color = T.ink, modifier = Modifier.weight(1f))
                 Box(Modifier.size(TARGET).clip(Pill9999).clickable(onClick = onClose), contentAlignment = Alignment.Center) {

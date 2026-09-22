@@ -16,9 +16,6 @@ Audited **2026-09-22**. Source: every message Ken sent, pulled from the session 
 
 | | Requirement | Said | Surface | Proven by |
 |---|---|---|---|---|
-| **RULING** | `card-bloom-direction`<br><sub>2026-09-19</sub> | my idea was to have each card's bloom targeting a different direction from the rest - NW, NE, SE, SW | web | **none** |
-| **RULING** | `apply-from-our-page`<br><sub>2026-09-19</sub> | I should be able to apply from our apply page without necessarily having to go to the posting itself | web | **none** |
-| **RULING** | `centre-the-popup`<br><sub>2026-09-20</sub> | Centre the popup | web | **none** |
 | OK | `hero-box`<br><sub>2026-09-18</sub> | The large hero title with a text box/resume upload box on the landing page | web | `node tools/check_field_chrome.mjs` |
 | OK | `market-switch`<br><sub>2026-09-18</sub> | CA/KE flip switch at the top with 2 completely different design languages - light/dark | web | `node tools/check_lightdark.mjs` |
 | OK | `hero-tabs`<br><sub>2026-09-18</sub> | Useful tabs with relevant options - Full time, Contract, AI training, Remote... | web | **none** |
@@ -31,9 +28,11 @@ Audited **2026-09-22**. Source: every message Ken sent, pulled from the session 
 | OK | `posted-date`<br><sub>2026-09-19</sub> | Include posting date - that's super important! | web | **none** |
 | OK | `claude-icon-running`<br><sub>2026-09-19</sub> | Keep the claude icon when generating results | web+phone | **none** |
 | OK | `halo-everywhere`<br><sub>2026-09-19</sub> | Keep the background hero glow on subsequent pages as in image uploaded | web+phone | `node tools/check_halo_ext.mjs` |
+| OK | `card-bloom-direction`<br><sub>2026-09-19</sub> | my idea was to have each card's bloom targeting a different direction from the rest - NW, NE, SE, SW | web | `node tools/check_motion.mjs` |
 | OK | `filters-filter-the-run`<br><sub>2026-09-19</sub> | I can't filter results to remote only: instead, clicking on the remote button, gives me all the remote jobs available for all sectors, not as per my resume. | web | **none** |
 | OK | `no-links-on-cards`<br><sub>2026-09-19</sub> | remove the cover letter and tailor resume links on the results card as they are still reflected in the application step | web | **none** |
 | OK | `back-keeps-searches`<br><sub>2026-09-19</sub> | When I click back from any part of these pages, instead of being directed to the previous page I'm being taken straight back to the landing page - losing all my previous searches. | web | **none** |
+| OK | `apply-from-our-page`<br><sub>2026-09-19</sub> | I should be able to apply from our apply page without necessarily having to go to the posting itself | web | `python tools/check_popups.py` |
 | OK | `phone-market-button`<br><sub>2026-09-19</sub> | There's no KE button | phone | **none** |
 | OK | `upload-stretches-the-bar`<br><sub>2026-09-19</sub> | Upload is fitting the whole resume text into the text bar and stretching it all the way down | web+phone | `node tools/check_field_phone.mjs && python tools/check_popups.py` |
 | OK | `prepare-button`<br><sub>2026-09-19</sub> | There is no prepare application button | phone | `python tools/check_popups.py` |
@@ -41,6 +40,7 @@ Audited **2026-09-22**. Source: every message Ken sent, pulled from the session 
 | OK | `copy-per-answer`<br><sub>2026-09-19</sub> | the answers to those questions should each come with their own copy mechanism and icon so it's easier for the candidate to drop in answers one by one | web+phone | **none** |
 | OK | `reload-lands-on-matches`<br><sub>2026-09-20</sub> | Bug - Refreshing on loading page takes me to matches | web+phone | **none** |
 | OK | `straight-to-popup`<br><sub>2026-09-20</sub> | Resume and cover page helper should go straight to popup | web+phone | `python tools/check_popups.py` |
+| OK | `centre-the-popup`<br><sub>2026-09-20</sub> | Centre the popup | web | `python tools/check_popups.py` |
 | OK | `click-outside-closes`<br><sub>2026-09-20</sub> | Clicking outside the popup should exit the popup | web+phone | **none** |
 | OK | `pulsing-claude-mark`<br><sub>2026-09-20</sub> | Resume builder is taking way too long - have the claude icon pulsing to let the candidate know it's working not frozen | web+phone | **none** |
 | OK | `saved-built-out`<br><sub>2026-09-20</sub> | Saved sweep is great, just needs to be built out properly and in the same design language | phone | **none** |
@@ -65,10 +65,4 @@ Audited **2026-09-22**. Source: every message Ken sent, pulled from the session 
 | OK | `footer-one-per-line`<br><sub>2026-09-22</sub> | (not reported as such - found while auditing 'everything's squashed up') | web | `node tools/check_footer.mjs` |
 
 ## What is not settled
-
-**`card-bloom-direction`** - NEEDS KEN'S RULING. The directional bloom exists and is documented in site/index.html, but press feedback was REMOVED FROM THE CARDS on 2026-09-20 and kept on the chips only: the motif is laid out at 150% of its host, which on a chip is a press and on a card is large circles sweeping through the title for over a second. That was a judgement made without telling him, on a thing he had asked for twice.
-
-**`apply-from-our-page`** - NEEDS KEN'S RULING, and he was told at the time: Greenhouse and Ashby need the EMPLOYER's key to post an application and Workday needs an account per tenant, so the ceiling is having every answer ready before the form is opened. That ceiling has not moved.
-
-**`centre-the-popup`** - NEEDS KEN'S RULING. Centred on the web. On the phone it is a bottom sheet, deliberately and with the reason written into the mockup: an inset-on-four-sides window gave a ~600px reading pane inside a phone that already scrolls, and its top edge sliced the heading behind it in half. He has seen and used the bottom sheet since.
 

@@ -409,6 +409,22 @@ nav.main{margin-left:auto;display:flex;gap:var(--s2);align-items:center}
           <p class="grounded" id="gr-answers"></p>
         </div>
       </section>
+
+      <!-- THE FORM, NOT THE POSTING. Ken's ruling, 2026-09-22: "Enable
+           applications from the applications page without necessarily having
+           to go to the posting itself." -->
+      <section class="step panel" id="s-send">
+        <div class="bar"><h2>Send it</h2><span class="state" id="st-send">nothing drafted yet</span></div>
+        <p class="lede">Everything above travels with you, in the order the form asks for it, and the posting is not in the way.</p>
+        <div class="acts">
+          <button class="btn" type="button" id="do-send">Open <span id="send-co">the employer&rsquo;s</span> form &#8599;</button>
+          <!-- Every .step is given data-blocked="resume" until there is one, which
+               hides .btn and shows this. Without it this section went blank. -->
+          <button class="btn btn--unblock" type="button" data-unblock>Add your r&eacute;sum&eacute; <span aria-hidden="true">&rarr;</span></button>
+          <button class="btn2" type="button" id="cp-send">Copy everything</button>
+        </div>
+        <p class="note" id="send-note"></p>
+      </section>
     </div>
   </div>
 </main>
@@ -506,6 +522,9 @@ function promoteNext(){
 function render(){
   $("#co").textContent = p.company || "";
   $("#role").textContent = p.title || p.id;
+  // The send section names the employer, and states what it holds from the start.
+  $("#send-co").textContent = p.company ? p.company + "’s" : "the employer’s";
+  syncSend();
   /* design system v3, stage 2: the three tiers - the verdict (band pill),
      the facts (location, policy) sunken, the date bare. */
   const sc0 = S.fit !== null && S.fit !== undefined && S.fit !== "" && Number.isFinite(+S.fit);
@@ -632,12 +651,28 @@ function applied(){
   b.textContent = "Marked as applied";
   b.disabled = true;
 }
-$("#markApplied").onclick = () => {
+function markApplied(){
   const t = tracker[p.id] || (tracker[p.id] = { id: p.id, title: p.title, company: p.company, url: p.url,
     fit: S.fit, saved: new Date().toISOString().slice(0,10) });
   t.status = "applied";
   try { localStorage.setItem(TKEY, JSON.stringify({ v:2, items: tracker })); } catch (e) {}
   applied();
+}
+$("#markApplied").onclick = markApplied;
+
+$("#cp-send").onclick = () => copyInto($("#cp-send"), packText(), "send");
+/* One move: the pack onto the clipboard, the job marked applied, and the
+   employer's own form open. In that order, so a blocked popup still leaves
+   the candidate holding everything. */
+$("#do-send").onclick = async () => {
+  const text = packText();
+  if (text){ try { await navigator.clipboard.writeText(text); } catch (e) {} }
+  markApplied();
+  /* No `ev()` here: that helper lives on index.html, not on this page, and the
+     ReferenceError it threw stopped the line below from ever running - the
+     button marked the job applied and then opened nothing, which reads exactly
+     like a dead button. */
+  window.open(formUrl(p.url), "_blank", "noopener");
 };
 
 /* Each step is the same shape: ask once, show the result, offer it back as
@@ -773,8 +808,55 @@ async function copyInto(cp, plain, id){
   cp.textContent = out ? "Selected — press Ctrl+C" : "Select and copy";
 }
 
+/* ── the pack, and the form it goes to ────────────────────────────────────
+   Ken's ruling, 2026-09-22: "Enable applications from the applications page
+   without necessarily having to go to the posting itself."
+
+   Greenhouse and Ashby each publish the APPLICATION FORM at a URL of its own,
+   so this page goes straight there. The posting never opens.
+
+   What it stops short of is pressing Submit, and the reason is not a missing
+   feature: both boards accept an application through their API only with the
+   EMPLOYER's own key, and a browser cannot type into their page from ours. So
+   the pack travels instead - the letter, the rebuilt résumé and every answered
+   question, in the order the form asks, already on the clipboard. Nothing is
+   ever sent in the candidate's name by us. */
+const PACK = { letter: "", tailor: "", answers: "" };
+const PACK_TITLE = { letter: "COVER LETTER", tailor: "RÉSUMÉ, AIMED AT THIS POSTING",
+                     answers: "THEIR SCREENING QUESTIONS, ANSWERED" };
+const GH_FORM = /^https?:\/\/(?:job-boards|boards)\.greenhouse\.io\/([^/?#]+)\/jobs\/(\d+)/;
+const ASHBY_FORM = /^https?:\/\/jobs\.ashbyhq\.com\/([^/?#]+)\/([0-9a-f-]{36})/;
+function formUrl(u){
+  const gh = GH_FORM.exec(u || "");
+  if (gh) return `https://job-boards.greenhouse.io/${gh[1]}/jobs/${gh[2]}#app`;
+  const as = ASHBY_FORM.exec(u || "");
+  if (as) return `https://jobs.ashbyhq.com/${as[1]}/${as[2]}/application`;
+  return u || "";
+}
+function packText(){
+  return ["letter", "tailor", "answers"].filter(k => PACK[k])
+    .map(k => `${PACK_TITLE[k]}\n\n${PACK[k].trim()}`).join("\n\n\n");
+}
+/* The section states what it has, never what it lacks: "2 of 3 ready" is a
+   count of work done, and the button stays live because a letter alone is a
+   real application at some employers. */
+function syncSend(){
+  const have = ["letter", "tailor", "answers"].filter(k => PACK[k]);
+  const st = $("#st-send"), note = $("#send-note"), go = $("#do-send"), cp = $("#cp-send");
+  if (!st) return;
+  st.textContent = have.length ? `${have.length} of 3 ready` : "nothing drafted yet";
+  cp.disabled = !have.length;
+  const direct = formUrl(p.url) !== (p.url || "");
+  note.textContent = have.length
+    ? (direct
+        ? "The form opens directly, not the posting, and everything above is on your clipboard in the order it asks for. Pressing Submit stays yours: this employer's board only accepts an application through its own form."
+        : "This employer does not publish a form we can open on its own, so this opens their posting with everything above already on your clipboard.")
+    : "Draft at least one of the three above and this hands the whole pack over in one move.";
+}
+
 function offer(id, plain, name){
   const cp = $("#cp-" + id), dl = $("#dl-" + id);
+  PACK[id] = plain; syncSend();
   cp.hidden = false;
   cp.onclick = () => copyInto(cp, plain, id);
   if (dl){
@@ -962,6 +1044,7 @@ $("#do-tailor").onclick = async () => {
     $("#dt-tailor").onclick = () => download(
       new Blob([plain], { type: "text/plain;charset=utf-8" }), `resume-${slug}.txt`);
     const cp = $("#cp-tailor");
+    PACK.tailor = plain; syncSend();
     cp.hidden = false;
     cp.onclick = () => copyInto(cp, plain, "tailor");
     readable("tailor", "Your résumé, rebuilt for this job", true);
