@@ -1,5 +1,8 @@
 {
   "devDependencies": {
-    "playwright": "^1.62.1"
-  }
+    "playwright": "^1.62.1",
+    "pngjs": "^7.0.0"
+  },
+  "name": "jobscout-app",
+  "private": true
 }
