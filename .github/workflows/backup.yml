@@ -1,0 +1,60 @@
+# A backup that is PROVEN, daily.
+#
+# An export nobody has restored is not a backup, so this does not stop at the
+# export: it loads the dump into an empty database and compares the row counts
+# table by table against the live one. A difference fails the run.
+#
+# The dump leaves Cloudflare and is kept as a build artifact, so a loss of the
+# account does not take the only copy with it.
+#
+# NEEDS ONE REPOSITORY SECRET: CLOUDFLARE_API_TOKEN, with D1 read on the
+# account that owns the `jobscout-app` database. Settings → Secrets → Actions.
+# Without it the run fails loudly rather than passing on an empty export.
+name: backup
+
+on:
+  schedule:
+    - cron: "17 2 * * *"      # 02:17 UTC daily, off the hour so it does not queue behind everyone
+  workflow_dispatch:           # and on demand, which is how a restore gets rehearsed
+
+permissions:
+  contents: read
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: The token is present
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          if [ -z "$CLOUDFLARE_API_TOKEN" ]; then
+            echo "::error::CLOUDFLARE_API_TOKEN is not set. Add it in Settings > Secrets > Actions, with D1 read on the account that owns the jobscout-app database. Until then there is NO backup of the run history and the sweep feed."
+            exit 1
+          fi
+
+      - name: Export, restore into an empty database, and compare
+        working-directory: worker
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: 2e6bc4972886886c791bf361387b051d
+        run: python tools/backup_check.py jobscout-app --out "$GITHUB_WORKSPACE/backups"
+
+      - name: Keep the dump off Cloudflare
+        uses: actions/upload-artifact@v4
+        with:
+          name: jobscout-app-d1-${{ github.run_number }}
+          path: backups/*.sql
+          retention-days: 90
+          if-no-files-found: error
