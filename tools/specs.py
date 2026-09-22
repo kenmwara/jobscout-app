@@ -8,6 +8,10 @@ true, because a ledger nobody runs is a document, and a document drifts.
 
     python tools/specs.py            the status table
     python tools/specs.py --check    run every named check; exit 1 on any red
+    python tools/specs.py --check --skip-device
+                                     ... except the ones that drive a phone,
+                                     which CI cannot run. They are LISTED, by
+                                     name, with what rests on them
     python tools/specs.py --new      Ken's messages since the audit date that look
                                      like requirements and are NOT in the ledger
     python tools/specs.py --render   rewrite docs/SPECS.md from the ledger
@@ -81,6 +85,13 @@ def table(d):
 
 
 # --------------------------------------------------------------------------
+# A check that drives a PHONE. Continuous integration has no emulator, so these
+# cannot run there. They are NOT quietly dropped: --skip-device lists them by
+# name every run, with the requirements that rest on them, so "the gate is
+# green" never comes to mean "everything is proven".
+NEEDS_A_DEVICE = ("check_popups.py",)
+
+
 def check(d):
     """Run every distinct check named in the ledger. Red anywhere fails."""
     cmds = []
@@ -88,6 +99,22 @@ def check(d):
         c = s.get("check")
         if c and c != "none" and c not in cmds:
             cmds.append(c)
+
+    # An explicit flag, not an inferred environment: CI= is easy to lose through
+    # a wrapper, and that failure is silent — the run looks complete while two
+    # requirements went unproven.
+    device = [c for c in cmds if any(n in c for n in NEEDS_A_DEVICE)]
+    if "--skip-device" in sys.argv and device:
+        cmds = [c for c in cmds if c not in device]
+        say("NOT RUN HERE — these drive a phone, and this is not a phone:")
+        for c in device:
+            rows = [s["id"] for s in d["specs"] if s.get("check") == c]
+            say("  %s" % c)
+            say("     proves: %s" % ", ".join(rows))
+        say("  Run them on a device before a store build. They are not optional;")
+        say("  they are simply not runnable from here.")
+        say("")
+
     say("Running %d distinct checks named by the ledger.\n" % len(cmds))
     bad = []
     for c in cmds:

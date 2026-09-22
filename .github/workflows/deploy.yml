@@ -72,8 +72,12 @@ jobs:
       - name: The suite
         run: node tools/sanity.mjs
 
+      # --skip-device, and it PRINTS what it skipped and what rests on it. Two
+      # phone requirements are proven by an emulator walk that no runner has;
+      # naming them every run is what stops "the gate is green" quietly coming
+      # to mean "everything is proven".
       - name: Every requirement still has the check that proves it
-        run: python tools/specs.py --check
+        run: python tools/specs.py --check --skip-device
 
   deploy:
     needs: checks
