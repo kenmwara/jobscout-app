@@ -20,7 +20,11 @@
 import { chromium } from "playwright";
 const args = process.argv.slice(2), opt = (k, d) => { const i = args.indexOf(k); return i < 0 ? d : args[i + 1]; };
 const MUTATE = opt("--mutate", null);
-const SITE = process.env.SITE || "file:///C:/Workspaces/jobscout-app/site";
+// http, not file://, and NOT an absolute path from the machine it was written
+// on. The first CI run of this check died on
+// `file:///C:/Workspaces/...` — it had only ever been green because it was
+// only ever run here. Same origin as every other check in the suite.
+const SITE = process.env.SITE || "http://localhost:8765/site";
 const RESUME = "Ken Kariuki\nCybersecurity - Vulnerability Management, Threat Hunting, OT/ICS Security\n" +
   "Vancouver BC Canada | kenmwara@gmail.com\n\nEXPERIENCE\nT BOT Platform - founder. Built and operated five " +
   "autonomous trading surfaces on Cloudflare Workers, D1 and DigitalOcean with 14-layer risk guards.\n";

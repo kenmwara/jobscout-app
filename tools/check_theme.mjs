@@ -20,7 +20,10 @@
 import { chromium } from "playwright";
 
 const LIVE = process.argv.includes("--live");
-const BASE = LIVE ? "https://jobscout.page" : "http://localhost:8787";
+// 8765, the port every other check and the suite's own instructions use.
+// This one wanted 8787 and so passed only on a machine that happened to
+// have both running.
+const BASE = LIVE ? "https://jobscout.page" : "http://localhost:8765/site";
 const KE = LIVE ? "https://nairobi.jobscout.page" : `${BASE}/index.html?market=ke`;
 const CA = LIVE ? BASE : `${BASE}/index.html?market=ca`;
 
