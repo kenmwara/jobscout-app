@@ -41,6 +41,12 @@ const CHECKS = [
   { id: "bar",       file: "tools/check_bar_bleed.mjs", mutations: ["inset-bar"], guards: "a bar that paints reaches both edges of its container" },
   { id: "theme",     file: "tools/check_theme.mjs", guards: "the three-state theme truth table" },
   { id: "palette",   file: "tools/check_palette.py", py: true, guards: "the colour law, and the three clients held to tokens.json" },
+  /* 2026-09-22. Three that were written the day a green suite sat beside four
+     real defects, because each one measured what it was written for and was
+     blind to what broke. They are in the suite so that cannot happen twice. */
+  { id: "footer",    file: "tools/check_footer.mjs", mutations: ["squashed", "short-target"], guards: "no two footer links share a line, and every one is still a 44px target" },
+  { id: "rosescale", file: "tools/check_rose_scale.mjs", mutations: ["fixed-numeral", "duplicate-width"], guards: "the fit numeral scales with its ring, and .rose has ONE width declaration" },
+  { id: "fieldphone",file: "tools/check_field_phone.mjs", mutations: ["oval", "crushed", "clip-adrift", "empty-grew"], guards: "a hero field with content is a well, not a stretched oval; the empty bar is untouched" },
 ];
 const run = (file, argv, py) => new Promise(res => {
   const c = spawn(py ? "python" : process.execPath, [join(ROOT, file), ...argv], { cwd: ROOT, env: process.env });

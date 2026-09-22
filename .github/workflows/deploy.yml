@@ -27,18 +27,56 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # THE GATE. Until 2026-09-22 this repository had 41 check tools, 19 of them
+  # re-provable on demand, and continuous integration ran exactly one of them:
+  # the token generator below. The suite was a habit, not a gate — which is how
+  # four real defects shipped while every check anyone happened to run was
+  # green. Nothing deploys now unless the suite passes.
+  #
+  # `sanity.mjs` runs the checks. `--mutations` proves the checks still BITE and
+  # is slower, so it runs nightly in checks-nightly.yml rather than on every
+  # push; a check that has quietly stopped testing anything is caught within a
+  # day instead of never.
+  checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "22" }
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+
+      - name: Dependencies
+        run: |
+          npm ci --no-audit --no-fund || npm install --no-audit --no-fund
+          npx playwright install --with-deps chromium
+
+      # Several checks open the site over HTTP rather than from the file system,
+      # because a file:// origin has no service worker and no fetch to the API.
+      - name: Serve the repository
+        run: |
+          python -m http.server 8765 >/dev/null 2>&1 &
+          for i in $(seq 1 30); do curl -sf -o /dev/null http://127.0.0.1:8765/site/index.html && break; sleep 1; done
+
+      - name: The generated tokens match tokens.json
+        run: node tokens/generate.mjs --check
+
+      - name: The suite
+        run: node tools/sanity.mjs
+
+      - name: Every requirement still has the check that proves it
+        run: python tools/specs.py --check
+
   deploy:
+    needs: checks
     runs-on: ubuntu-latest
     permissions:
       contents: read
     steps:
       - uses: actions/checkout@v4
-
-      # Design system v3: tokens.json is the single source of truth and
-      # site/tokens.css + the two native token files are generated from it.
-      # A hand-edited output fails here and nothing deploys.
-      - name: The generated tokens match tokens.json
-        run: node tokens/generate.mjs --check
 
       - name: Deploy site/ to Cloudflare Pages
         env:
@@ -92,6 +130,7 @@ jobs:
   # the Pages-only template this job fails and the site job does not, which is the right
   # failure: the page's counters are fire-and-forget, so an old worker just drops them.
   worker:
+    needs: checks
     runs-on: ubuntu-latest
     permissions:
       contents: read
