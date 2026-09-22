@@ -204,6 +204,8 @@ data class ExtractResponse(
 @Serializable private data class LetterBody(
     val profile: String, val posting: Posting, val fit: Int,
     val stretch: Boolean = fit < FIT_FLOOR,
+    /* claims the reader has already seen refused: the worker keeps them out of the rewrite */
+    val exclude: List<String>? = null,
 )
 
 object Api {
@@ -216,6 +218,12 @@ object Api {
         .writeTimeout(30, TimeUnit.SECONDS)
         .callTimeout(120, TimeUnit.SECONDS)
         .build()
+
+    /* Decode OFF the main thread. The GitHub releases JSON took the main thread
+       past the 5 s input-dispatch limit on a cold start (ANR trace, 2026-09-21:
+       "main" Runnable in StringJsonLexer via Api.latestRelease) - the
+       network call was already on IO, the parse was not. */
+    private suspend inline fun <reified T> decodeIO(s: String): T = withContext(Dispatchers.IO) { json.decodeFromString<T>(s) }
 
     private suspend fun call(req: Request): String = withContext(Dispatchers.IO) {
         http.newCall(req).execute().use { resp ->
@@ -250,53 +258,53 @@ object Api {
     }
 
     suspend fun feed(market: String = "ca"): Feed =
-        json.decodeFromString(call(Request.Builder().url("$API_BASE/api/feed?market=$market").build()))
+        decodeIO(call(Request.Builder().url("$API_BASE/api/feed?market=$market").build()))
 
     suspend fun score(profile: String, postings: List<Posting>, market: String = "ca"): ScoreResponse =
-        json.decodeFromString(call(
+        decodeIO(call(
             Request.Builder().url("$API_BASE/api/score")
                 .post(json.encodeToString(ScoreBody(profile, postings, market)).toRequestBody(jsonMedia))
                 .build()
         ))
 
-    suspend fun letter(profile: String, posting: Posting, fit: Int): LetterResponse =
-        json.decodeFromString(call(
+    suspend fun letter(profile: String, posting: Posting, fit: Int, exclude: List<String>? = null): LetterResponse =
+        decodeIO(call(
             Request.Builder().url("$API_BASE/api/letter")
-                .post(json.encodeToString(LetterBody(profile, posting, fit)).toRequestBody(jsonMedia))
+                .post(json.encodeToString(LetterBody(profile, posting, fit, exclude = exclude?.takeIf { it.isNotEmpty() })).toRequestBody(jsonMedia))
                 .build()
         ))
 
     suspend fun tailor(profile: String, posting: Posting, fit: Int): TailorResponse =
-        json.decodeFromString(call(
+        decodeIO(call(
             Request.Builder().url("$API_BASE/api/tailor")
                 .post(json.encodeToString(LetterBody(profile, posting, fit)).toRequestBody(jsonMedia))
                 .build()
         ))
 
     /** Same body as letter/tailor — the worker's one guard reads {profile, posting, fit}. */
-    suspend fun resume(profile: String, posting: Posting, fit: Int): ResumeResponse =
-        json.decodeFromString(call(
+    suspend fun resume(profile: String, posting: Posting, fit: Int, exclude: List<String>? = null): ResumeResponse =
+        decodeIO(call(
             Request.Builder().url("$API_BASE/api/resume")
-                .post(json.encodeToString(LetterBody(profile, posting, fit)).toRequestBody(jsonMedia))
+                .post(json.encodeToString(LetterBody(profile, posting, fit, exclude = exclude?.takeIf { it.isNotEmpty() })).toRequestBody(jsonMedia))
                 .build()
         ))
 
     suspend fun answers(profile: String, posting: Posting, fit: Int): AnswersResponse =
-        json.decodeFromString(call(
+        decodeIO(call(
             Request.Builder().url("$API_BASE/api/answers")
                 .post(json.encodeToString(LetterBody(profile, posting, fit)).toRequestBody(jsonMedia))
                 .build()
         ))
 
     suspend fun latestRelease(): LatestRelease =
-        json.decodeFromString(call(
+        decodeIO(call(
             Request.Builder().url("https://api.github.com/repos/kenmwara/jobscout-app/releases/latest")
                 .header("accept", "application/vnd.github+json").build()
         ))
 
     /** Raw file bytes in, extracted text out. The worker never stores or logs the content. */
     suspend fun extract(bytes: ByteArray, mime: String, name: String): ExtractResponse =
-        json.decodeFromString(call(
+        decodeIO(call(
             Request.Builder().url("$API_BASE/api/extract")
                 // OkHttp rejects non-ASCII header values; the name only sniffs the extension anyway.
                 .header("x-filename", name.filter { it.code in 32..126 })

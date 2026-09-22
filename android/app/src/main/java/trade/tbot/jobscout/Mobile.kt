@@ -21,6 +21,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -301,7 +302,7 @@ fun ResumeField(
         BasicTextField(
             value = value, onValueChange = onChange,
             modifier = Modifier.weight(1f).then(if (focus != null) Modifier.focusRequester(focus) else Modifier)
-                .then(if (well) Modifier.heightIn(min = 72.dp) else Modifier),
+                .then(if (well) Modifier.heightIn(min = 72.dp) else Modifier.padding(vertical = Space.s2)), // web: .field--bar .field__area padding s2 0 (the pill's radius clears the first glyph)
             minLines = if (well) 3 else 1,
             maxLines = if (well) 10 else 5,
             textStyle = TextStyle(fontFamily = Sans, fontSize = Type.t2, lineHeight = 19.sp, color = T.text),
@@ -409,6 +410,43 @@ fun Heart(saved: Boolean, onClick: () -> Unit) {
             .clickable(onClick = onClick),
         contentAlignment = Alignment.Center,
     ) { Text(if (saved) "♥" else "♡", fontSize = Type.t3, color = if (saved) T.accent else T.text2) }
+}
+
+/**
+ * The hourly cap, as a STATE (mockup .state.limited): what happened and when,
+ * a countdown in tabular mono so it never reflows, and two real routes.
+ */
+@Composable
+fun MLimited(at: Long, hasRun: Boolean, onLast: () -> Unit, onBrowse: () -> Unit) {
+    var now by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(System.currentTimeMillis()) }
+    androidx.compose.runtime.LaunchedEffect(at) {
+        while (true) { kotlinx.coroutines.delay(1000); now = System.currentTimeMillis() }
+    }
+    val left = ((at + 3_600_000L - now) / 1000L).coerceAtLeast(0L)
+    val cal = java.util.Calendar.getInstance().apply { timeInMillis = at }
+    val hh = "%02d:%02d".format(cal.get(java.util.Calendar.HOUR_OF_DAY), cal.get(java.util.Calendar.MINUTE))
+    Column(
+        Modifier.fillMaxWidth().clip(CardShape).background(T.surface).border(1.dp, T.hair, CardShape).padding(Space.s4),
+    ) {
+        Text("HOURLY LIMIT", fontSize = Type.t0, letterSpacing = 0.09.em, fontWeight = FontWeight.Medium, color = T.bUnsure)
+        Spacer(Modifier.height(Space.s2))
+        Text("The hourly cap was reached at $hh.", style = H2, fontSize = Type.t4, lineHeight = 24.sp, color = T.ink)
+        Spacer(Modifier.height(Space.s2))
+        Text("The demo scores for everyone from one budget, so each reader gets a fixed number of runs an hour. Nothing was lost \u2014 your last run is still here.",
+             fontSize = Type.t2, lineHeight = 19.sp, color = T.text2)
+        Spacer(Modifier.height(Space.s3))
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Space.s2)) {
+            Text("NEXT RUN", fontSize = Type.t0, letterSpacing = 0.09.em, fontWeight = FontWeight.Medium, color = T.text3)
+            Text("%02d:%02d".format(left / 60, left % 60), fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
+                 fontSize = Type.t3, fontWeight = FontWeight.Medium, color = T.ink)
+            Text("from now", fontSize = Type.t1, color = T.text3)
+        }
+        Spacer(Modifier.height(Space.s3))
+        Row(horizontalArrangement = Arrangement.spacedBy(Space.s2)) {
+            if (hasRun) MButton("Open your last run", primary = true, onClick = onLast)
+            MButton("Browse the sweep meanwhile", primary = !hasRun, onClick = onBrowse)
+        }
+    }
 }
 
 /** .mcount */

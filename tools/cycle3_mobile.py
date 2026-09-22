@@ -187,8 +187,15 @@ for market in ("Canada", "Kenya"):
     # the info-page opener, so every row on the landing and in Browse opened
     # Privacy (Ken, 2026-09-21 - "every link leads to Privacy"). The first
     # row sits two nodes after the count line: company, then the title.
-    ns = nodes()
-    idx = next((i for i, n in enumerate(ns) if "swept this morning" in n["t"]), None)
+    # The sweep list is a lazy list under the sector tiles: the tiles can be on
+    # screen a few seconds before the count line and the rows are (run 12, the
+    # host-GPU emulator: one dump missed it). Poll, as the taps do.
+    for _ in range(6):
+        ns = nodes()
+        idx = next((i for i, n in enumerate(ns) if "swept this morning" in n["t"]), None)
+        if idx is not None:
+            break
+        time.sleep(3.0)
     if idx is not None and idx + 2 < len(ns):
         title = ns[idx + 2]["t"]
         sh("shell", "input", "tap", str(ns[idx + 2]["cx"]), str(ns[idx + 2]["cy"]))

@@ -3,9 +3,13 @@ package trade.tbot.jobscout
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import android.content.Intent
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.SelectionContainer
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -18,6 +22,7 @@ import kotlinx.coroutines.delay
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
@@ -27,19 +32,22 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
+import trade.tbot.jobscout.design.Radius
 import trade.tbot.jobscout.design.Space
 import trade.tbot.jobscout.design.Type
 
 /**
- * One application, on its own screen: the mockup's apply + draft screens in one.
+ * One application: the mockup's TWO screens.
  *
- * The posting is the card expanded - the rose, the tiers, STRONGEST and what to
- * answer, the way to the employer's page, the heart - and under it the three
- * steps in the order the band says they are worth doing (band.js leadStep: the
- * résumé leads for unsure and near-miss, the letter for the rest). ONE filled
- * button on the page: the next step. A step that cannot run because there is no
- * résumé does not explain - its button becomes "Add your résumé" and opens the
- * well in place, so the posting is never lost.
+ *   detail   the card expanded - title, org, the rose with the tiers, STRONGEST
+ *            and what to answer, ONE filled primary (Prepare application / Apply
+ *            anyway), Open the posting, the heart.
+ *   prepare  the same head, then the lede that says which step leads (band.js:
+ *            the résumé for unsure and near-miss, the letter otherwise), the
+ *            steps in that order with ONE filled button - the next step. A step
+ *            with no résumé says "Add your résumé" and focuses the well. A
+ *            finished draft does not print inline: its bar reads "Read it" and
+ *            "Redo", and Read it opens the draft in a sheet with Copy all.
  *
  * Nothing here submits anything. Greenhouse and Ashby need the EMPLOYER's key
  * to post an application, and Workday needs an account per tenant. The ceiling
@@ -47,13 +55,22 @@ import trade.tbot.jobscout.design.Type
  */
 @Composable
 fun ApplyScreen(vm: DemoVm, a: Apply, onClose: () -> Unit, onUpload: () -> Unit) {
-    BackHandler(onBack = onClose)
     val ui by vm.ui.collectAsState()
     val ins = WindowInsets.safeDrawing.asPaddingValues()
     val uri = LocalUriHandler.current
     val p = a.posting
     val score = ui.scores.firstOrNull { it.id == p.id }
     val band = T.bandWord(a.fit)
+    var prepare by remember { mutableStateOf(false) }
+    /** Which draft is open in the reading sheet: "letter", "resume", "answers" or null. */
+    var reading by remember { mutableStateOf<String?>(null) }
+    BackHandler {
+        when {
+            reading != null -> reading = null
+            prepare -> prepare = false
+            else -> onClose()
+        }
+    }
     val blocked = ui.resume.trim().length <= 40
     val lead = if (band == "unsure" || band == "near-miss") "resume" else "letter"
     val order = if (lead == "resume") listOf("resume", "letter", "answers") else listOf("letter", "resume", "answers")
@@ -71,11 +88,11 @@ fun ApplyScreen(vm: DemoVm, a: Apply, onClose: () -> Unit, onUpload: () -> Unit)
         ) {
             item {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    MButton("← Back", primary = false, onClick = onClose)
+                    MButton("← " + if (prepare) "Back to the match" else "Back", primary = false) { if (prepare) prepare = false else onClose() }
                 }
             }
 
-            // The card, expanded: title, org, the rose with the tiers, the evidence.
+            // The head: title, org, and the card with the rose and the tiers.
             item {
                 Column {
                     Text(p.title, style = H2, fontSize = Type.t6, lineHeight = 32.sp, letterSpacing = (-0.02).em, color = T.ink)
@@ -91,108 +108,128 @@ fun ApplyScreen(vm: DemoVm, a: Apply, onClose: () -> Unit, onUpload: () -> Unit)
                                 if (p.remote_policy.isNotBlank()) Tier2(policyLabel(p.remote_policy))
                             }
                         }
-                        score?.strongest?.takeIf { it.isNotBlank() }?.let {
+                        if (!prepare) {
+                            score?.strongest?.takeIf { it.isNotBlank() }?.let {
+                                Spacer(Modifier.height(Space.s2))
+                                MEvidence("Strongest", it, T.bAuto, T.evidenceRuleStrongest, T.strongestBody)
+                            }
+                            score?.weakest?.takeIf { it.isNotBlank() }?.let {
+                                Spacer(Modifier.height(Space.s2))
+                                MEvidence("↓ What to answer", it, T.bUnsure, T.evidenceRuleAnswer, T.answerBody)
+                            }
                             Spacer(Modifier.height(Space.s2))
-                            MEvidence("Strongest", it, T.bAuto, T.evidenceRuleStrongest, T.strongestBody)
-                        }
-                        score?.weakest?.takeIf { it.isNotBlank() }?.let {
-                            Spacer(Modifier.height(Space.s2))
-                            MEvidence("↓ What to answer", it, T.bUnsure, T.evidenceRuleAnswer, T.answerBody)
-                        }
-                        Spacer(Modifier.height(Space.s2))
-                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Space.s2)) {
-                            if (p.url.isNotEmpty()) MButton("Open the posting ↗", primary = false) { runCatching { uri.openUri(p.url) } }
-                            Spacer(Modifier.weight(1f))
-                            if (score != null) Heart(ui.tracker.containsKey(p.id)) {
-                                if (ui.tracker.containsKey(p.id)) vm.untrack(p.id) else vm.setStage(trackedFor(score, p), "survivor")
+                            /* ONE filled primary on the detail: the way to the steps. Below the
+                               floor it says so plainly rather than disappearing - the reader
+                               decides, not the score. */
+                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Space.s2)) {
+                                MButton(if (a.fit < FIT_FLOOR) "Apply anyway →" else "Prepare application →", primary = true) { prepare = true }
+                                Spacer(Modifier.weight(1f))
+                                if (score != null) Heart(ui.tracker.containsKey(p.id)) {
+                                    if (ui.tracker.containsKey(p.id)) vm.untrack(p.id) else vm.setStage(trackedFor(score, p), "survivor")
+                                }
+                            }
+                            if (p.url.isNotEmpty()) {
+                                Spacer(Modifier.height(Space.s2))
+                                MButton("Open the posting ↗", primary = false) { runCatching { uri.openUri(p.url) } }
                             }
                         }
                     }
                 }
             }
 
-            /* A stretch is never mistaken for the recommendation. */
-            if (a.fit < FIT_FLOOR) item {
-                Column(Modifier.fillMaxWidth().background(bandFill(a.fit).copy(alpha = .14f), Card).padding(14.dp)) {
-                    Text(
-                        "A stretch on paper, at ${a.fit} out of 100 — so everything below argues your case " +
-                            "from what you have actually done, and claims nothing you have not. Where a step names " +
-                            "something the posting asks for and your résumé does not cover, that is a line to add " +
-                            "if it is true of you, and a good use of ten minutes before you send.",
-                        color = T.text2, fontSize = Type.t2, lineHeight = 20.sp,
-                    )
-                }
-            }
-
-            // The lede says which step leads, and why - one sentence, from the band.
-            item {
-                Text(
-                    if (lead == "resume") "Aiming the résumé first is worth more here than the letter."
-                    else "The letter leads here; the résumé already reads close to what this posting asks for.",
-                    color = T.text2, fontSize = Type.t3, lineHeight = 23.sp,
-                )
-            }
-
-            /* The well: only when there is no résumé to write from. Read on this
-               phone and sent only to draft for this posting. */
-            if (blocked) item {
-                Column {
-                    ResumeField(
-                        value = ui.resume, onChange = vm::setResume, onGo = { /* the steps read it as it is */ },
-                        onAttach = onUpload, uploading = ui.uploading, well = true,
-                        placeholder = "Paste your résumé — or attach a file", focus = wellFocus,
-                    )
-                    ui.uploadStatus?.let {
-                        Spacer(Modifier.height(Space.s1))
-                        Text(it, color = T.text2, fontSize = Type.t1, lineHeight = 17.sp)
+            if (prepare) {
+                /* A stretch is never mistaken for the recommendation. */
+                if (a.fit < FIT_FLOOR) item {
+                    Column(Modifier.fillMaxWidth().background(bandFill(a.fit).copy(alpha = .14f), Card).padding(14.dp)) {
+                        Text(
+                            "A stretch on paper, at ${a.fit} out of 100 — so everything below argues your case " +
+                                "from what you have actually done, and claims nothing you have not. Where a step names " +
+                                "something the posting asks for and your résumé does not cover, that is a line to add " +
+                                "if it is true of you, and a good use of ten minutes before you send.",
+                            color = T.text2, fontSize = Type.t2, lineHeight = 20.sp,
+                        )
                     }
-                    Spacer(Modifier.height(Space.s1))
-                    Text("Read on this phone and sent only to draft for this posting.",
-                         color = T.text3, fontSize = Type.t1, lineHeight = 17.sp)
                 }
-            }
 
-            order.forEach { id ->
+                // The lede says which step leads, and why - one sentence, from the band.
                 item {
-                    when (id) {
-                        "letter" -> StepPanel(
-                            title = "Cover letter",
-                            idle = "A short letter for this posting, grounded in your résumé.",
-                            busy = "Drafting from the profile only — it cannot invent experience…",
-                            step = a.letter, action = "Write the letter", primary = next == id, blocked = blocked,
-                            onRun = vm::draftLetter, onUnblock = { wantFocus = true },
-                        ) { LongText(it) }
-                        "resume" -> StepPanel(
-                            title = "Your résumé, aimed at it",
-                            idle = "The same experience, reworded toward what this posting asks for.",
-                            busy = "Rewriting the whole résumé, then checking every name and number against your own…",
-                            step = a.resume, action = "Rebuild my résumé", primary = next == id, blocked = blocked,
-                            onRun = vm::buildResume, onUnblock = { wantFocus = true },
-                        ) { RebuiltResume(it) }
-                        else -> StepPanel(
-                            title = "Their screening questions",
-                            idle = "The questions on the employer's own form, answered from your résumé.",
-                            busy = "Reading the employer's own form…",
-                            step = a.answers, action = "Get their questions", primary = next == id, blocked = blocked,
-                            onRun = vm::readAnswers, onUnblock = { wantFocus = true },
-                        ) { Answers(it) }
+                    Text(
+                        if (lead == "resume") "Aiming the résumé first is worth more here than the letter."
+                        else "The letter leads here; the résumé already reads close to what this posting asks for.",
+                        color = T.text2, fontSize = Type.t3, lineHeight = 23.sp,
+                    )
+                }
+
+                /* The well: only when there is no résumé to write from. */
+                if (blocked) item {
+                    Column {
+                        ResumeField(
+                            value = ui.resume, onChange = vm::setResume, onGo = { },
+                            onAttach = onUpload, uploading = ui.uploading, well = true,
+                            placeholder = "Paste your résumé — or attach a file", focus = wellFocus,
+                        )
+                        ui.uploadStatus?.let {
+                            Spacer(Modifier.height(Space.s1))
+                            Text(it, color = T.text2, fontSize = Type.t1, lineHeight = 17.sp)
+                        }
+                        Spacer(Modifier.height(Space.s1))
+                        Text("Read on this phone and sent only to draft for this posting.",
+                             color = T.text3, fontSize = Type.t1, lineHeight = 17.sp)
+                    }
+                }
+
+                order.forEach { id ->
+                    item {
+                        when (id) {
+                            "letter" -> StepPanel(
+                                title = "Cover letter",
+                                idle = "A short letter for this posting, grounded in your résumé.",
+                                busy = "Drafting from the profile only — it cannot invent experience…",
+                                step = a.letter, action = "Write the letter", primary = next == id, blocked = blocked,
+                                onRun = { vm.draftLetter() }, onUnblock = { wantFocus = true }, onRead = { reading = "letter" },
+                                onRewrite = { vm.draftLetter(it) }, onAddThem = onClose,
+                            )
+                            "resume" -> StepPanel(
+                                title = "Your résumé, aimed at it",
+                                idle = "The same experience, reworded toward what this posting asks for.",
+                                busy = "Rewriting the whole résumé, then checking every name and number against your own…",
+                                step = a.resume, action = "Rebuild my résumé", primary = next == id, blocked = blocked,
+                                onRun = { vm.buildResume() }, onUnblock = { wantFocus = true }, onRead = { reading = "resume" },
+                                onRewrite = { vm.buildResume(it) }, onAddThem = onClose,
+                            )
+                            else -> StepPanel(
+                                title = "Their screening questions",
+                                idle = "The questions on the employer's own form, answered from your résumé.",
+                                busy = "Reading the employer's own form…",
+                                step = a.answers, action = "Get their questions", primary = next == id, blocked = blocked,
+                                onRun = vm::readAnswers, onUnblock = { wantFocus = true }, onRead = { reading = "answers" },
+                            )
+                        }
                     }
                 }
             }
+        }
+
+        // The reading sheet: one draft at a time, with Copy all in its foot.
+        when (reading) {
+            "letter" -> a.letter.data?.let { d -> DraftSheet("Cover letter", d, { reading = null }) { LongText(d) } }
+            "resume" -> a.resume.data?.let { d -> DraftSheet("Your résumé, aimed at it", resumeText(d), { reading = null }) { RebuiltResume(d) } }
+            "answers" -> a.answers.data?.let { d -> DraftSheet("Their screening questions", answersText(d), { reading = null }) { Answers(d) } }
         }
     }
 }
 
 /**
- * A step is idle, running, refused or done - and a refusal is worth as much screen
- * as a result. One filled button on the page: `primary` marks the next move; a
- * blocked step offers "Add your résumé" and opens the well instead of explaining.
+ * A step is idle, running, refused or done. `primary` marks the one filled button
+ * on the page (the next move). A finished draft shows "Read it" and "Redo", not
+ * the draft itself - the mockup's bar - and Read it opens the sheet.
  */
 @Composable
 private fun <T> StepPanel(
     title: String, idle: String, busy: String, step: Step<T>, action: String,
     primary: Boolean, blocked: Boolean,
-    onRun: () -> Unit, onUnblock: () -> Unit, body: @Composable (T) -> Unit,
+    onRun: () -> Unit, onUnblock: () -> Unit, onRead: () -> Unit,
+    onRewrite: (List<String>) -> Unit = {}, onAddThem: () -> Unit = {},
 ) {
     Column(Modifier.fillMaxWidth().background(T.surface, Card).padding(Space.s4)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -208,23 +245,83 @@ private fun <T> StepPanel(
             )
         }
         Spacer(Modifier.height(Space.s2))
+        Text(idle, color = T.text2, fontSize = Type.t2, lineHeight = 20.sp)
+        Spacer(Modifier.height(Space.s3))
         when {
             step.busy -> Row(verticalAlignment = Alignment.CenterVertically) {
                 CircularProgressIndicator(Modifier.size(16.dp), color = T.accent, strokeWidth = 2.dp)
                 Spacer(Modifier.width(10.dp))
                 Text(busy, color = T.text2, fontSize = Type.t2, lineHeight = 20.sp)
             }
+            /* A grounded refusal is the product WORKING (mockup .refusal): it leads
+               with what was done, quotes each claim it could not find, and offers
+               two routes - never a number, never a bare error. */
+            step.invented.isNotEmpty() -> Column {
+                val n = step.invented.size
+                Text("The document was written, then checked.", style = H2, fontSize = Type.t4, lineHeight = 24.sp, color = T.ink)
+                Spacer(Modifier.height(Space.s2))
+                Text((if (n == 1) "One of its claims is" else "$n of its claims are") +
+                     " not in your résumé, so it is not being shown as yours. Nothing here is a judgement about you — only about what the résumé says.",
+                     color = T.text2, fontSize = Type.t2, lineHeight = 20.sp)
+                Spacer(Modifier.height(Space.s3))
+                Text("NOT IN THE RÉSUMÉ", fontSize = Type.t0, letterSpacing = 0.09.em, fontWeight = FontWeight.Medium, color = T.bUnsure)
+                Spacer(Modifier.height(Space.s1))
+                step.invented.forEachIndexed { i, q ->
+                    Text("${i + 1}.  “$q” — the résumé does not say it.", color = T.text2, fontSize = Type.t2, lineHeight = 20.sp,
+                         modifier = Modifier.padding(bottom = Space.s1))
+                }
+                Spacer(Modifier.height(Space.s3))
+                MButton("Rewrite without " + (if (n == 1) "that one" else if (n == 2) "those two" else "those $n") + " →", primary = true) { onRewrite(step.invented.take(12)) }
+                Spacer(Modifier.height(Space.s2))
+                MButton("Add them to the résumé and re-run →", primary = false, onClick = onAddThem)
+            }
             step.error != null -> Column {
                 Text(step.error, color = T.bUnsure, fontSize = Type.t2, lineHeight = 20.sp)
                 Spacer(Modifier.height(Space.s3))
                 MButton("Try again", primary = primary, onClick = onRun)
             }
-            step.data != null -> body(step.data)
-            else -> Column {
-                Text(idle, color = T.text2, fontSize = Type.t2, lineHeight = 20.sp)
-                Spacer(Modifier.height(Space.s3))
+            step.data != null -> Row(horizontalArrangement = Arrangement.spacedBy(Space.s2)) {
+                MButton("Read it", primary = false, onClick = onRead)
+                MButton("Redo", primary = false, onClick = onRun)
+            }
+            else -> {
                 if (blocked) MButton("Add your résumé →", primary = primary, onClick = onUnblock)
                 else MButton(action, primary = primary, onClick = onRun)
+            }
+        }
+    }
+}
+
+/**
+ * The drafting sheet: the mockup's window - a title, the draft, and Copy all in
+ * the foot. An overlay in the activity's own window, like the menu sheet.
+ */
+@Composable
+private fun DraftSheet(title: String, plain: String, onClose: () -> Unit, body: @Composable () -> Unit) {
+    val clip = LocalClipboardManager.current
+    val ins = WindowInsets.safeDrawing.asPaddingValues()
+    Box(Modifier.fillMaxSize().background(T.ink.copy(alpha = .38f)).clickable(onClick = onClose)) {
+        Column(
+            Modifier.align(Alignment.BottomCenter).fillMaxWidth().fillMaxHeight(0.9f)
+                .clip(RoundedCornerShape(topStart = Radius.sheet, topEnd = Radius.sheet))
+                .background(T.surface)
+                .clickable(enabled = false) {}
+                .padding(top = Space.s3),
+        ) {
+            Box(Modifier.align(Alignment.CenterHorizontally).size(width = 36.dp, height = 4.dp).clip(Pill9999).background(T.hair2))
+            Row(Modifier.fillMaxWidth().padding(horizontal = Space.s4, vertical = Space.s2), verticalAlignment = Alignment.CenterVertically) {
+                Text(title, style = H2, fontSize = Type.t5, color = T.ink, modifier = Modifier.weight(1f))
+                Box(Modifier.size(TARGET).clip(Pill9999).clickable(onClick = onClose), contentAlignment = Alignment.Center) {
+                    Text("×", fontSize = 20.sp, color = T.text2)
+                }
+            }
+            Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = Space.s4, vertical = Space.s2)) { body() }
+            Row(
+                Modifier.fillMaxWidth().padding(start = Space.s4, end = Space.s4, top = Space.s3, bottom = ins.calculateBottomPadding() + Space.s4),
+                horizontalArrangement = Arrangement.spacedBy(Space.s2),
+            ) {
+                MButton("Copy all", primary = true) { clip.setText(AnnotatedString(plain)) }
+                ShareButton("Share", title, plain)
             }
         }
     }
@@ -244,18 +341,10 @@ private fun ShareButton(label: String, subject: String, text: String) {
     }
 }
 
-/** Selectable so it can be copied into the employer's form, plus a one-tap copy. */
+/** Selectable so it can be copied into the employer's form. */
 @Composable
 private fun LongText(text: String) {
-    val clip = LocalClipboardManager.current
-    Column {
-        SelectionContainer { Text(text, color = T.ink, fontSize = Type.t3, lineHeight = 24.sp) }
-        Spacer(Modifier.height(Space.s3))
-        Row(horizontalArrangement = Arrangement.spacedBy(Space.s2)) {
-            MButton("Copy", primary = false) { clip.setText(AnnotatedString(text)) }
-            ShareButton("Share", "Cover letter", text)
-        }
-    }
+    SelectionContainer { Text(text, color = T.ink, fontSize = Type.t3, lineHeight = 24.sp) }
 }
 
 /**
@@ -265,8 +354,6 @@ private fun LongText(text: String) {
  */
 @Composable
 private fun RebuiltResume(r: ResumeResponse) {
-    val clip = LocalClipboardManager.current
-    val plain = remember(r) { resumeText(r) }
     Column {
         SelectionContainer {
             Column {
@@ -305,11 +392,6 @@ private fun RebuiltResume(r: ResumeResponse) {
             }
             Text("Yours to add, and only if true — they are deliberately left out of the document above.",
                 color = T.text3, fontSize = Type.t1, lineHeight = 18.sp)
-        }
-        Spacer(Modifier.height(Space.s3))
-        Row(horizontalArrangement = Arrangement.spacedBy(Space.s2)) {
-            MButton("Copy the résumé", primary = false) { clip.setText(AnnotatedString(plain)) }
-            ShareButton("Share", "Resume", plain)
         }
     }
 }
@@ -350,7 +432,6 @@ private fun CopyChip(text: String) {
  */
 @Composable
 private fun Answers(r: AnswersResponse) {
-    val clip = LocalClipboardManager.current
     if (r.unsupported) {
         Text(
             "This employer keeps its application form behind a login, so the questions cannot be read ahead of time by anyone — not us, and not you. Open the posting when you are ready and answer them there: the letter and the rebuilt résumé above are what most of those boxes ask for anyway.",
@@ -392,7 +473,6 @@ private fun Answers(r: AnswersResponse) {
                 }
             }
         }
-        MButton("Copy the answers", primary = false) { clip.setText(AnnotatedString(answersText(r))) }
     }
 }
 

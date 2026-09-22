@@ -82,7 +82,11 @@ const val NO_RESUME = "Add your résumé above — upload a file, or paste the t
 
 
 /** One of the three drafts: not asked for, running, arrived, or refused. */
-data class Step<T>(val busy: Boolean = false, val data: T? = null, val error: String? = null)
+data class Step<T>(
+    val busy: Boolean = false, val data: T? = null, val error: String? = null,
+    /** A grounded refusal: the claims the draft made that the résumé does not contain. */
+    val invented: List<String> = emptyList(),
+)
 
 /**
  * One application, being prepared. Mirrors site/apply.html: a cover letter, the
@@ -102,6 +106,8 @@ data class Ui(
     val feed: Feed? = null,
     val market: String = "ca",
     val update: LatestRelease? = null,   // a newer GitHub release, sideloaded copies only
+    /** When the worker's hourly cap tripped (ms), or 0. A STATE, not a wall: it counts down. */
+    val limitedAt: Long = 0L,
     val resume: String = "",          // pasted/extracted resume text — in-memory only, never persisted
     val uploading: Boolean = false,
     val uploadStatus: String? = null,
@@ -321,11 +327,14 @@ class DemoVm(app: Application) : AndroidViewModel(app) {
                             _ui.update { it.copy(phase = Phase.DONE, banner = r.detail,
                                 scores = cached, meta = r.cached?.meta, fromCache = true) }
                         }
+                        /* The hourly cap is a state with a countdown and two routes
+                           (mockup, motion v2 stage 9), not a banner. */
+                        r.error == "rate_limited" -> _ui.update { it.copy(phase = Phase.DONE, banner = null, limitedAt = System.currentTimeMillis()) }
                         r.error != null -> _ui.update { it.copy(phase = Phase.DONE, banner = r.detail ?: r.error) }
                         else -> {
                             _ui.update { u ->
                                 keepRun(u.copy(phase = Phase.DONE, scores = r.scores, meta = r.meta,
-                                               runStale = null))
+                                               runStale = null, limitedAt = 0L))
                             }
                         }
                     }
@@ -393,7 +402,7 @@ class DemoVm(app: Application) : AndroidViewModel(app) {
         name: String,
         get: (Apply) -> Step<T>,
         put: (Apply, Step<T>) -> Apply,
-        call: suspend (String, Posting, Int) -> Pair<T?, String?>,
+        call: suspend (String, Posting, Int) -> Step<T>,
     ) {
         val a = _ui.value.apply ?: return
         /* Every step is written FROM the resume, and the resume is whatever is in
@@ -414,19 +423,29 @@ class DemoVm(app: Application) : AndroidViewModel(app) {
         patch(id) { put(it, Step(busy = true)) }
         viewModelScope.launch {
             runCatching { call(profile, a.posting, a.fit) }
-                .onSuccess { (data, why) -> patch(id) { put(it, Step(data = data, error = why)) } }
+                .onSuccess { st -> patch(id) { put(it, st) } }
                 .onFailure { e -> patch(id) { put(it, Step(error = "That call didn't get through: ${e.message}")) } }
         }
     }
 
-    fun draftLetter() = draft("letter", { it.letter }, { a, s -> a.copy(letter = s) }) { p, post, fit ->
-        val r = Api.letter(p, post, fit)
-        if (r.breaker || r.error != null) null to (r.detail ?: r.error ?: "Unavailable.") else r.letter to null
+    /** debug harness only: pretend the cap was just reached */
+    fun debugLimited() = _ui.update { it.copy(limitedAt = System.currentTimeMillis()) }
+
+    fun draftLetter(exclude: List<String> = emptyList()) = draft("letter", { it.letter }, { a, s -> a.copy(letter = s) }) { p, post, fit ->
+        val r = Api.letter(p, post, fit, exclude)
+        if (r.breaker || r.error != null) Step(error = r.detail ?: r.error ?: "Unavailable.") else Step(data = r.letter)
     }
 
-    fun buildResume() = draft("tailor", { it.resume }, { a, s -> a.copy(resume = s) }) { p, post, fit ->
-        val r = Api.resume(p, post, fit)
-        if (r.breaker || r.error != null) null to (r.detail ?: r.error ?: "Unavailable.") else r to null
+    /* A grounded refusal (invented[]) is the product working: the claims are
+       quoted and the reader can rewrite without them, or add them to the
+       résumé if they are true. Never shown as a number, never as an error. */
+    fun buildResume(exclude: List<String> = emptyList()) = draft("tailor", { it.resume }, { a, s -> a.copy(resume = s) }) { p, post, fit ->
+        val r = Api.resume(p, post, fit, exclude)
+        when {
+            r.invented.isNotEmpty() -> Step(invented = r.invented, error = r.detail)
+            r.breaker || r.error != null -> Step(error = r.detail ?: r.error ?: "Unavailable.")
+            else -> Step(data = r)
+        }
     }
 
     /**
@@ -436,9 +455,9 @@ class DemoVm(app: Application) : AndroidViewModel(app) {
     fun readAnswers() = draft("apply_open", { it.answers }, { a, s -> a.copy(answers = s) }) { p, post, fit ->
         val r = Api.answers(p, post, fit)
         when {
-            r.unsupported -> r to null
-            r.breaker || r.error != null -> null to (r.detail ?: r.error ?: "Unavailable.")
-            else -> r to null
+            r.unsupported -> Step(data = r)
+            r.breaker || r.error != null -> Step(error = r.detail ?: r.error ?: "Unavailable.")
+            else -> Step(data = r)
         }
     }
 
@@ -531,6 +550,8 @@ fun DemoScreen(vm: DemoVm = viewModel()) {
     LaunchedEffect(Unit) {
         if (BuildConfig.DEBUG) (ctx as? android.app.Activity)?.intent?.getStringExtra("resume")
             ?.takeIf { it.isNotBlank() }?.let(vm::setResume)
+        // `--ez limited true` shows the hourly-limit state without burning the worker's cap.
+        if (BuildConfig.DEBUG && (ctx as? android.app.Activity)?.intent?.getBooleanExtra("limited", false) == true) vm.debugLimited()
     }
     val tokens = tokensFor(ui.market, ThemeChoice.isDark(themeChoice, isSystemInDarkTheme()))
     val uriHandler = LocalUriHandler.current
@@ -699,6 +720,10 @@ private fun LazyListScope.landing(
             policy = policy, onPolicy = onPolicy,
             onUpload = onUpload, uploading = ui.uploading, hint = ui.uploadStatus,
         )
+    }
+    /* The hourly cap: a state with a countdown and two routes, above the fold. */
+    if (limitedNow(ui)) item {
+        MLimited(ui.limitedAt, hasRun = ui.scores.isNotEmpty(), onLast = onMatches, onBrowse = { onSearch("") })
     }
     /* Forty seconds of silence reads as a dead button. */
     if (ui.phase == Phase.GATES || ui.phase == Phase.SCORING) item {
@@ -922,6 +947,9 @@ private fun LazyListScope.matches(
     val sorted = ui.scores.sortedByDescending { it.fit }
 
     item { MTitle("Your matches") }
+    if (limitedNow(ui)) item {
+        MLimited(ui.limitedAt, hasRun = false, onLast = {}, onBrowse = onRework)
+    }
     item { MCount("${sorted.size} scored of ${feed?.postings?.size ?: 0} swept · scored by Claude just now") }
     /* A run kept from another day is still useful — the reader decides. It is
        never passed off as today's. */
@@ -969,6 +997,9 @@ private fun LazyListScope.matches(
     }
     item { MFoot(onOpen) }
 }
+
+/** The cap tripped within the last hour. */
+fun limitedNow(ui: Ui): Boolean = ui.limitedAt > 0L && System.currentTimeMillis() < ui.limitedAt + 3_600_000L
 
 /** onsite covers everything that is neither remote nor hybrid, including unstated. */
 private fun matchesPolicy(p: Posting, id: String): Boolean = when (id) {
@@ -1080,8 +1111,8 @@ private fun InfoSheet(page: String, onClose: () -> Unit) {
             item {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(if (how) "How JobScout works" else "Privacy",
-                        style = H2, fontSize = 24.sp, color = T.ink, modifier = Modifier.weight(1f))
-                    PillButton("Close", onClick = onClose)
+                        style = H2, fontSize = 26.sp, color = T.ink, modifier = Modifier.weight(1f))
+                    MButton("Close", primary = false, onClick = onClose)
                 }
             }
             if (how) {

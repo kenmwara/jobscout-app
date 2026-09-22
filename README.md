@@ -161,6 +161,18 @@ STRONGEST-only cards with one filled primary and a heart, the lead step from
 The 0.9.2 release had changed the phone's numbers and none of what it draws,
 which is what the parity rule below exists to catch. iOS is next.
 
+**0.9.5 (2026-09-21, the same night): every flagged mockup piece, checked before the tag.**
+The application is two screens — the detail (the card expanded, one filled
+primary, Open the posting, the heart) and the prepare screen (the lede from
+`band.js`, the steps in lead order, one filled button) — and a finished draft
+sits behind **Read it / Redo**, with Read it opening the sheet (Copy all, Share).
+The hourly cap is a state with a countdown and two routes; a grounded refusal
+quotes each claim the résumé does not contain and offers "Rewrite without
+those". API responses decode off the main thread (an ANR trace had said so).
+Shipped only after the web suite with mutations, the palette and Swift
+checkers, an emulator walk of every new screen and the phone harness were all
+green. iOS is still next.
+
 All three surfaces draw the rose from the **same geometry** — a 104-unit box,
 eight dots on a ring of r=38 at 45° steps from bearing 000 — so the glyph is
 identical on the web, on Android and on iOS. Nothing rotates in it, which is
