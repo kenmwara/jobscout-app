@@ -23,7 +23,8 @@ on:
     # CHECK, or to the ledger of what the checks must prove, has to re-run the
     # gate. Without them the first fix to a check did not re-run the suite,
     # which is the gate failing to cover itself.
-    paths: ['site/**', 'worker/**', 'tokens/**', 'tools/**', 'docs/specs.json', '.github/workflows/deploy.yml']
+    paths: ['site/**', 'worker/**', 'tokens/**', 'tools/**', 'docs/specs.json',
+            'package.json', 'package-lock.json', '.github/workflows/deploy.yml']
   workflow_dispatch:
 
 concurrency:
