@@ -35,6 +35,11 @@ jobs:
         with:
           python-version: "3.12"
 
+      # Pinned and installed, not fetched by npx at run time: a bare npx prompts
+      # before downloading, and a prompt in CI is a hang.
+      - name: wrangler
+        run: npm install -g wrangler@4.95.0
+
       - name: The token is present
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}

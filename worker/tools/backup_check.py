@@ -58,12 +58,22 @@ def say(s):
     sys.stdout.flush()
 
 
+# `wrangler` if it is installed, else `npx -y wrangler`. The -y matters: a bare
+# npx PROMPTS before fetching a package it does not have, and a prompt in CI is
+# a hang that reports as a failure to read the database.
+_WRANGLER = (["wrangler"] if shutil.which("wrangler") else ["npx", "-y", "wrangler"])
+LAST_ERR = [""]
+
+
 def wr(*args, timeout=900):
     """wrangler, from the app directory, with its output captured."""
-    cmd = ["npx", "wrangler", *args]
-    r = subprocess.run(cmd, cwd=APP, capture_output=True, timeout=timeout,
-                       shell=(os.name == "nt"))
-    return r.returncode, r.stdout.decode("utf-8", "replace"), r.stderr.decode("utf-8", "replace")
+    r = subprocess.run([*_WRANGLER, *args], cwd=APP, capture_output=True,
+                       timeout=timeout, shell=(os.name == "nt"))
+    out = r.stdout.decode("utf-8", "replace")
+    err = r.stderr.decode("utf-8", "replace")
+    if r.returncode != 0:
+        LAST_ERR[0] = (err or out).strip()
+    return r.returncode, out, err
 
 
 def rows(db, sql, local):
@@ -114,7 +124,14 @@ def main():
     say("reading the live database …")
     live = counts(a.database, local=False)
     if live is None:
-        say("  FAIL  could not read the live database — is CLOUDFLARE_API_TOKEN set?")
+        # SAY WHAT HAPPENED. The first CI run blamed a missing token while the
+        # token was set and present in the environment; the real cause was a
+        # bare `npx` waiting for permission to fetch wrangler. A guess in a
+        # failure message sends the reader to the wrong place.
+        msg = " ".join(LAST_ERR[0].split())[:300] or "no error text from wrangler"
+        say("  FAIL  could not read the live database.")
+        say("        wrangler said: " + msg)
+        say("        using: " + " ".join(_WRANGLER))
         raise SystemExit(1)
     say(f"  live: {sum(live.values())} rows across {len(live)} table(s)")
 
