@@ -314,9 +314,18 @@ class DemoVm(app: Application) : AndroidViewModel(app) {
         else null)
     }
 
+    /**
+     * True once a run has been STARTED in this process. A run restored from
+     * disk must not move anyone: it is last night's answer, and arriving on
+     * it means the landing page is never seen again.
+     */
+    var ranThisSession = false
+        private set
+
     fun run() {
         val feed = _ui.value.feed ?: return
         if (_ui.value.phase == Phase.GATES || _ui.value.phase == Phase.SCORING) return
+        ranThisSession = true
         // A new run is a new answer; the opt-in belonged to the resume that earned it.
         _ui.update { it.copy(stretch = false) }
         val profile = profileText() ?: run {
@@ -569,9 +578,14 @@ fun DemoScreen(vm: DemoVm = viewModel()) {
     val tokens = tokensFor(ui.market, ThemeChoice.isDark(themeChoice, isSystemInDarkTheme()))
     val uriHandler = LocalUriHandler.current
 
-    // A run moves you to the matches, which is the mockup's third frame; nothing else
-    // navigates on its own.
-    LaunchedEffect(ui.scores.isNotEmpty()) { if (ui.scores.isNotEmpty()) screen = Screen.MATCHES }
+    /* A RUN moves you to the matches, which is the mockup's third frame. A
+       RESTORED run does not. Ken, 2026-09-20: "Bug - Refreshing on loading
+       page takes me to matches." The web was fixed the same day by putting
+       the view back from history; the phone kept navigating on the mere
+       PRESENCE of scores, and a cold start satisfies that the moment the
+       disk read lands — so every launch after a run skipped the landing
+       page entirely. The trigger is the tap, not the data. */
+    LaunchedEffect(ui.scores.isNotEmpty()) { if (ui.scores.isNotEmpty() && vm.ranThisSession) screen = Screen.MATCHES }
 
     /* Switching market throws the scores away — they were about the other
        country's feed. Staying on the matches frame then strands you on "0
@@ -1510,7 +1524,12 @@ private fun TrackerScreen(
                     Spacer(Modifier.height(4.dp))
                     MCount("${tracker.size + watched.size} kept · stays on this device")
                 }
-                if (tracker.isEmpty())
+                /* EMPTY MEANS EMPTY OF BOTH. The header counts postings AND saved
+                   searches, so gating this on the postings alone put "1 kept" and
+                   "Nothing kept yet." on screen together the moment a search was
+                   saved with no posting hearted. Ken, 2026-09-20: "Saved sweep is
+                   great, just needs to be built out properly." */
+                if (tracker.isEmpty() && watched.isEmpty())
                     item {
                         /* v2 stage 9: the empty state is the mark - eight unlit bearings
                            (still; an infinite seek would keep the window from idling) */

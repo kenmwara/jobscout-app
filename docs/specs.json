@@ -1,0 +1,463 @@
+{
+  "_README": [
+    "THE SPEC LEDGER. Every requirement Ken has given for JobScout, IN HIS OWN WORDS,",
+    "with what proves it is live.",
+    "",
+    "WHY THIS FILE EXISTS. On 2026-09-22 three releases in a row came back with the same",
+    "complaint and nothing reproduced, because the requirements only ever existed in the",
+    "chat transcript. Once that scrolled past, the only surviving record was Claude's own",
+    "summary - and the summary had recorded the IMPLEMENTATION ('drafts behind Read it /",
+    "Redo') as though it were the REQUIREMENT. Ken had asked for 'straight to popup' two",
+    "days earlier. Every check after that verified the build against itself, stayed green,",
+    "and the product stayed wrong.",
+    "",
+    "THE RULES THIS FILE ENFORCES:",
+    "  1. `said` is a VERBATIM quote. Never a paraphrase, never Claude's design language.",
+    "     A paraphrase is how a requirement turns into whatever was built.",
+    "  2. Every row names the `check` that proves it, or says `none` - and `none` is itself",
+    "     a finding, not a blank.",
+    "  3. `status` is one of: live (verified, with evidence), open (not done),",
+    "     changed (answered differently - NEEDS KEN'S RULING), unverified (believed done,",
+    "     not proven by a check today).",
+    "  4. A row is only `live` when something was RUN. Reading the code is `unverified`.",
+    "",
+    "  python tools/specs.py            the status table",
+    "  python tools/specs.py --check    run every named check, fail on any red",
+    "  python tools/specs.py --new      Ken's messages since the last row that look like",
+    "                                   requirements and are not in this file yet",
+    "  python tools/specs.py --render   rewrite docs/SPECS.md from this file"
+  ],
+  "audited": "2026-09-22",
+  "source": "every message Ken sent, pulled from the session transcripts under ~/.claude/projects/C--Workspaces-tbot-platform/*.jsonl, from the redesign brief of 2026-09-18T23:42 onward. Everything before that brief was superseded by it: 'Back to JobScout and we have a new re-design of the entire page.'",
+  "specs": [
+    {
+      "id": "hero-box",
+      "date": "2026-09-18",
+      "surface": "web",
+      "said": "The large hero title with a text box/resume upload box on the landing page",
+      "status": "live",
+      "check": "node tools/check_field_chrome.mjs",
+      "evidence": "the hero field is on the landing on both markets, both densities"
+    },
+    {
+      "id": "market-switch",
+      "date": "2026-09-18",
+      "surface": "web",
+      "said": "CA/KE flip switch at the top with 2 completely different design languages - light/dark",
+      "status": "live",
+      "check": "node tools/check_lightdark.mjs",
+      "evidence": "market chip on every route; 48 light-dark() calls, all two-argument"
+    },
+    {
+      "id": "hero-tabs",
+      "date": "2026-09-18",
+      "surface": "web",
+      "said": "Useful tabs with relevant options - Full time, Contract, AI training, Remote...",
+      "status": "live",
+      "check": "none",
+      "evidence": "Remote / Hybrid / On site / Any of those on the hero. The axes are the ones the feed actually has - narrower than the brief named, and said so at the time."
+    },
+    {
+      "id": "newsreader",
+      "date": "2026-09-18",
+      "surface": "web",
+      "said": "Use Newsreader",
+      "status": "live",
+      "check": "none",
+      "evidence": "the display and every heading are the serif"
+    },
+    {
+      "id": "drop-personas",
+      "date": "2026-09-19",
+      "surface": "web",
+      "said": "Remove \"No resume to hand? Score a sample: Maya · Riley · Priya 309 postings swept this morning · 17 sectors\"",
+      "status": "live",
+      "check": "none",
+      "evidence": "2026-09-22 probe of the live landing: no Maya, Riley, Priya, and no 'postings · 17 sectors'"
+    },
+    {
+      "id": "one-box-two-jobs",
+      "date": "2026-09-19",
+      "surface": "web",
+      "said": "How about enabling the same upload bar for job title search text box in the same handler",
+      "status": "live",
+      "check": "none",
+      "evidence": "modeOf() splits title from resume in one box; the hint states the guess before you commit"
+    },
+    {
+      "id": "title-placeholder",
+      "date": "2026-09-19",
+      "surface": "web",
+      "said": "Include type your job title... in the text box as well",
+      "status": "live",
+      "check": "none",
+      "evidence": "2026-09-22: the placeholder cycles 'Type your job title…' and 'Executive Assistant'"
+    },
+    {
+      "id": "page-order",
+      "date": "2026-09-19",
+      "surface": "web",
+      "said": "Move Browse by what the feed actually knows to be page 2 directly under the landing page, then How JobScout works can come after that - priorities!",
+      "status": "live",
+      "check": "none",
+      "evidence": "2026-09-22 heading order: hero, then 'Browse by what the feed actually knows', then 'How JobScout works'"
+    },
+    {
+      "id": "feed-then-sweep",
+      "date": "2026-09-19",
+      "surface": "web+phone",
+      "said": "Have the feed first, then the sweep following in both web & mobile",
+      "status": "live",
+      "check": "none",
+      "evidence": "2026-09-22: feed heading precedes 'Explore today's sweep' on the live landing and on the phone"
+    },
+    {
+      "id": "posted-date",
+      "date": "2026-09-19",
+      "surface": "web",
+      "said": "Include posting date - that's super important!",
+      "status": "live",
+      "check": "none",
+      "evidence": "2026-09-22 live cards read 'posted yesterday' and 'posted 4 weeks ago' on both markets"
+    },
+    {
+      "id": "claude-icon-running",
+      "date": "2026-09-19",
+      "surface": "web+phone",
+      "said": "Keep the claude icon when generating results",
+      "status": "live",
+      "check": "none",
+      "evidence": "MRunning draws the breathing mark during a run"
+    },
+    {
+      "id": "halo-everywhere",
+      "date": "2026-09-19",
+      "surface": "web+phone",
+      "said": "Keep the background hero glow on subsequent pages as in image uploaded",
+      "status": "live",
+      "check": "node tools/check_halo_ext.mjs",
+      "evidence": "16 route/theme/market cells, 160 ground samples: the halo reaches every route"
+    },
+    {
+      "id": "card-bloom-direction",
+      "date": "2026-09-19",
+      "surface": "web",
+      "said": "my idea was to have each card's bloom targeting a different direction from the rest - NW, NE, SE, SW",
+      "restated": "2026-09-20: Matches cad click is still a radial circular motif not the bolder, slower NW, NE... motif we'd discussed",
+      "status": "changed",
+      "check": "none",
+      "evidence": "NEEDS KEN'S RULING. The directional bloom exists and is documented in site/index.html, but press feedback was REMOVED FROM THE CARDS on 2026-09-20 and kept on the chips only: the motif is laid out at 150% of its host, which on a chip is a press and on a card is large circles sweeping through the title for over a second. That was a judgement made without telling him, on a thing he had asked for twice."
+    },
+    {
+      "id": "filters-filter-the-run",
+      "date": "2026-09-19",
+      "surface": "web",
+      "said": "I can't filter results to remote only: instead, clicking on the remote button, gives me all the remote jobs available for all sectors, not as per my resume.",
+      "status": "live",
+      "check": "none",
+      "evidence": "PROVEN 2026-09-22 with a real run on jobscout.page: the count read '8 scored of 320 swept', and clicking Remote changed it to '6 of your 8 matches'. scoredRows() narrows the run, browseRows() narrows the sweep, and the page says which it is doing."
+    },
+    {
+      "id": "no-links-on-cards",
+      "date": "2026-09-19",
+      "surface": "web",
+      "said": "remove the cover letter and tailor resume links on the results card as they are still reflected in the application step",
+      "status": "live",
+      "check": "none",
+      "evidence": "2026-09-22 live browse card carries title, org, policy, posted date and one action"
+    },
+    {
+      "id": "back-keeps-searches",
+      "date": "2026-09-19",
+      "surface": "web",
+      "said": "When I click back from any part of these pages, instead of being directed to the previous page I'm being taken straight back to the landing page - losing all my previous searches.",
+      "status": "live",
+      "check": "none",
+      "evidence": "snapshot()/restore() put the view, sector, query and filters back from history state"
+    },
+    {
+      "id": "apply-from-our-page",
+      "date": "2026-09-19",
+      "surface": "web",
+      "said": "I should be able to apply from our apply page without necessarily having to go to the posting itself",
+      "status": "changed",
+      "check": "none",
+      "evidence": "NEEDS KEN'S RULING, and he was told at the time: Greenhouse and Ashby need the EMPLOYER's key to post an application and Workday needs an account per tenant, so the ceiling is having every answer ready before the form is opened. That ceiling has not moved."
+    },
+    {
+      "id": "phone-market-button",
+      "date": "2026-09-19",
+      "surface": "phone",
+      "said": "There's no KE button",
+      "status": "live",
+      "check": "none",
+      "evidence": "the market chip is in the phone header on every screen"
+    },
+    {
+      "id": "upload-stretches-the-bar",
+      "date": "2026-09-19",
+      "surface": "web+phone",
+      "said": "Upload is fitting the whole resume text into the text bar and stretching it all the way down",
+      "restated": "2026-09-20: the design language is off - both the oval text box, and the clip / 2026-09-22: Landing page upload bar is still the same old oval one",
+      "status": "live",
+      "check": "node tools/check_field_phone.mjs && python tools/check_popups.py",
+      "evidence": "FIXED 2026-09-22, three days after it was first reported. Below 560px a bar with content takes the well's geometry. Verified on jobscout.page and nairobi.jobscout.page and on the phone."
+    },
+    {
+      "id": "prepare-button",
+      "date": "2026-09-19",
+      "surface": "phone",
+      "said": "There is no prepare application button",
+      "status": "live",
+      "check": "python tools/check_popups.py",
+      "evidence": "the walk reaches the steps through Prepare application on both screens"
+    },
+    {
+      "id": "how-it-works-in-app",
+      "date": "2026-09-19",
+      "surface": "phone",
+      "said": "How it works is currently pointing to my GH, while there's a page strip with that information right at the bottom of the landing page",
+      "status": "live",
+      "check": "none",
+      "evidence": "MFoot calls onPage(), which opens the in-app InfoSheet"
+    },
+    {
+      "id": "copy-per-answer",
+      "date": "2026-09-19",
+      "surface": "web+phone",
+      "said": "the answers to those questions should each come with their own copy mechanism and icon so it's easier for the candidate to drop in answers one by one",
+      "restated": "2026-09-20: Copy per answer - I feel like I'm just repeating myself here",
+      "status": "live",
+      "check": "none",
+      "evidence": "CopyChip per answer in Apply.kt"
+    },
+    {
+      "id": "reload-lands-on-matches",
+      "date": "2026-09-20",
+      "surface": "web+phone",
+      "said": "Bug - Refreshing on loading page takes me to matches",
+      "status": "live",
+      "check": "none",
+      "evidence": "Web was fixed the same day via history state. THE PHONE WAS NOT, and was still doing it on 2026-09-22 - a cold launch navigated on the mere presence of restored scores. Fixed and verified both ways: a run still moves you to the matches, a relaunch lands on the landing with the run still there."
+    },
+    {
+      "id": "straight-to-popup",
+      "date": "2026-09-20",
+      "surface": "web+phone",
+      "said": "Resume and cover page helper should go straight to popup",
+      "restated": "2026-09-20: Popups pls / Mirror above upgrades from web to mobile / 2026-09-22: cover letter, resume... won't popup at all",
+      "status": "live",
+      "check": "python tools/check_popups.py",
+      "evidence": "FIXED 2026-09-22. The mockup had obeyed since 09-20; the phone shipped a 'Read it' gate instead. The draft now opens itself when it lands; Read it and Redo reopen a closed one."
+    },
+    {
+      "id": "centre-the-popup",
+      "date": "2026-09-20",
+      "surface": "web",
+      "said": "Centre the popup",
+      "status": "changed",
+      "check": "none",
+      "evidence": "NEEDS KEN'S RULING. Centred on the web. On the phone it is a bottom sheet, deliberately and with the reason written into the mockup: an inset-on-four-sides window gave a ~600px reading pane inside a phone that already scrolls, and its top edge sliced the heading behind it in half. He has seen and used the bottom sheet since."
+    },
+    {
+      "id": "click-outside-closes",
+      "date": "2026-09-20",
+      "surface": "web+phone",
+      "said": "Clicking outside the popup should exit the popup",
+      "status": "live",
+      "check": "none",
+      "evidence": "the sheet's scrim is the tap target on both surfaces"
+    },
+    {
+      "id": "pulsing-claude-mark",
+      "date": "2026-09-20",
+      "surface": "web+phone",
+      "said": "Resume builder is taking way too long - have the claude icon pulsing to let the candidate know it's working not frozen",
+      "restated": "2026-09-20: a pulsing claude icon would help at that point / Even the pulsating arrow should have been the claude icon",
+      "status": "live",
+      "check": "none",
+      "evidence": "FIXED 2026-09-22. Asked for three times. The mark existed only inside the scoring screen, so the drafting steps still turned a material spinner. ClaudePulse is now one drawing with two callers."
+    },
+    {
+      "id": "saved-built-out",
+      "date": "2026-09-20",
+      "surface": "phone",
+      "said": "Saved sweep is great, just needs to be built out properly and in the same design language",
+      "restated": "2026-09-20: Saved sweeps are inaccessible in mobile",
+      "status": "live",
+      "check": "none",
+      "evidence": "The saved search IS listed on the phone's Saved screen, verified 2026-09-22 ('Searches you saved / Software & IT / watching since 2026-09-22'). One defect found while proving it and fixed the same day: the header counted postings AND searches while the empty state was gated on postings alone, so saving a search with nothing hearted put '1 kept' and 'Nothing kept yet.' on screen together."
+    },
+    {
+      "id": "how-jobscout-works-legible",
+      "date": "2026-09-20",
+      "surface": "web",
+      "said": "How JobScout works title is illegible",
+      "status": "live",
+      "check": "node tools/check_contrast.mjs",
+      "evidence": "the heading is rgb(8,3,49) at 34px on cream; 198 text/background pairs all clear AA"
+    },
+    {
+      "id": "privacy-foot-squashed",
+      "date": "2026-09-20",
+      "surface": "web",
+      "said": "when you actually go to the privacy page bottom end, then everything's squashed up",
+      "status": "live",
+      "check": "node tools/check_footer.mjs",
+      "evidence": "IT WAS REAL, and still live this morning. footer.site a{display:inline-flex} was added 210 lines below .fgrid a{display:block} to satisfy the 44px target law and silently won, so adjacent footer links shared a line with nothing between them: 'CanadaKenya', 'PrivacyWhat we count', 'Browse today's sweepRemote only'. Fixed to a block-level flex, which keeps the 44px box. check_gaps stayed green the whole time because it measured the target's height, which was never the broken part."
+    },
+    {
+      "id": "save-individual-matches",
+      "date": "2026-09-20",
+      "surface": "phone",
+      "said": "can't figure out how to save matches on mobile / I can save the sweep, but not individual matches",
+      "status": "live",
+      "check": "none",
+      "evidence": "a 44dp heart on every match card and on the application detail"
+    },
+    {
+      "id": "footer-links-in-app",
+      "date": "2026-09-20",
+      "surface": "phone",
+      "said": "Footer links are pointing to web",
+      "status": "live",
+      "check": "none",
+      "evidence": "MFoot opens the in-app InfoSheet, not a browser"
+    },
+    {
+      "id": "footer-on-every-page",
+      "date": "2026-09-20",
+      "surface": "phone",
+      "said": "Footer links are not in every page as they should",
+      "status": "live",
+      "check": "none",
+      "evidence": "the footer is on the landing, browse and matches; the menu sheet reaches both pages from anywhere"
+    },
+    {
+      "id": "phone-halo",
+      "date": "2026-09-20",
+      "surface": "phone",
+      "said": "There seems to be no background hallow in both mobile market designs",
+      "status": "live",
+      "check": "none",
+      "evidence": "Modifier.ground() on all four phone screens"
+    },
+    {
+      "id": "ke-titles-navy",
+      "date": "2026-09-20",
+      "surface": "phone",
+      "said": "KE market - applications titles are not clear in the navy color",
+      "status": "live",
+      "check": "none",
+      "evidence": "MEASURED 2026-09-22 on the phone in the Kenya market: the application title is rgb(8,3,49) on rgb(249,240,226), 17.41:1."
+    },
+    {
+      "id": "default-light",
+      "date": "2026-09-20",
+      "surface": "web",
+      "said": "Default loading should be light for all 4",
+      "status": "live",
+      "check": "none",
+      "evidence": "2026-09-22: with no data-theme stored, html paints rgb(248,243,235) under BOTH prefers-color-scheme light and dark. NOTE: docs/THEME.md still says an absent data-theme follows the OS. The behaviour follows Ken; the spec document is stale and should be corrected."
+    },
+    {
+      "id": "theme-without-hard-reset",
+      "date": "2026-09-20",
+      "surface": "web",
+      "said": "For some reason, I have to do a hard reset before I can change light/dark modes...",
+      "status": "live",
+      "check": "none",
+      "evidence": "assets are content-stamped at deploy, so a reader cannot hold new HTML against a four-hour-old stylesheet"
+    },
+    {
+      "id": "halo-in-saved",
+      "date": "2026-09-20",
+      "surface": "web",
+      "said": "the same background halo in web matches should also be in saved, both dark and light",
+      "status": "live",
+      "check": "node tools/check_halo_ext.mjs",
+      "evidence": "the saved route is one of the 16 cells and it passes"
+    },
+    {
+      "id": "header-hover-highlight",
+      "date": "2026-09-20",
+      "surface": "web",
+      "said": "that highlight to be fixed as it should not be showing on hover across the entire title bar",
+      "status": "live",
+      "check": "none",
+      "evidence": "2026-09-22: hovering a header control leaves the bar's own background transparent with no outline"
+    },
+    {
+      "id": "discs-in-light",
+      "date": "2026-09-21",
+      "surface": "web",
+      "said": "Background discs are barely visible in light mode",
+      "status": "live",
+      "check": "none",
+      "evidence": "2026-09-22 live landing in light: 54 discs, opacity 1, indigo fill"
+    },
+    {
+      "id": "rose-small-on-apply",
+      "date": "2026-09-21",
+      "surface": "web",
+      "said": "There seems to be a bug in the rose number on the applications page - it always appears small",
+      "status": "live",
+      "check": "node tools/check_rose_scale.mjs",
+      "evidence": "IT WAS REAL, and it was the MOCKUP's. .jcard__score grows from a 44px ring on a card to 52px on the application screens while .jcard__num sat on a fixed --t3, so the bigger ring wore the smaller number; the ratio is now anchored on the card, so cards are untouched and only the ring that grew got a numeral that grew. The SITE was NOT broken: its numeral is SVG text in user units, so the viewBox already scales it (19px of glyph in a 52px ring, 25px in a 64px one) - a first attempt to 'fix' it there put 19.2px on the page, off the type scale, and the sanity suite caught it. Android already derives its numeral from the diameter. check_rose passed throughout because it checks the dots and the band, which were never the broken part."
+    },
+    {
+      "id": "dots-centred",
+      "date": "2026-09-21",
+      "surface": "phone",
+      "said": "The three dots ... need to be centered",
+      "status": "live",
+      "check": "none",
+      "evidence": "MEASURED 2026-09-22 on the phone: the glyph's centre is 0.5px horizontally and 0px vertically off its tap target's centre."
+    },
+    {
+      "id": "menu-brand-language",
+      "date": "2026-09-21",
+      "surface": "phone",
+      "said": "That menu is not in brand language",
+      "status": "live",
+      "check": "none",
+      "evidence": "VERIFIED 2026-09-22 on the phone: serif 'Menu' heading, uppercase letterspaced section labels, pill segmented controls for market and theme, grab handle, icon close. It was rebuilt after he raised it."
+    },
+    {
+      "id": "resume-not-cached",
+      "date": "2026-09-21",
+      "surface": "web",
+      "said": "the web version seems to have saved a copy of my resume in its memory/cache - can't clear it not even with a hard reset",
+      "status": "live",
+      "check": "node tools/check_gaps.mjs --only privacy",
+      "evidence": "the resume text is never written to localStorage; a legacy record is scrubbed on load; 'forget my resume and these matches' clears everything"
+    },
+    {
+      "id": "clip-accessible-name",
+      "date": "2026-09-22",
+      "surface": "phone",
+      "said": "(not reported - found while auditing)",
+      "status": "live",
+      "check": "python tools/check_popups.py",
+      "evidence": "the phone's paperclip had no accessible name while the web's has carried one for weeks"
+    },
+    {
+      "id": "picker-cannot-fail-silently",
+      "date": "2026-09-22",
+      "surface": "phone",
+      "said": "(not reported - found while auditing)",
+      "status": "live",
+      "check": "python tools/check_popups.py",
+      "evidence": "picker.launch() was unguarded; where no document picker exists the paperclip did nothing at all, which is the shape of every 'won't popup' report"
+    },
+    {
+      "id": "footer-one-per-line",
+      "date": "2026-09-22",
+      "surface": "web",
+      "said": "(not reported as such - found while auditing 'everything's squashed up')",
+      "status": "live",
+      "check": "node tools/check_footer.mjs",
+      "evidence": "a footer link is a column entry, one per line, and still a 44px target. The check measures whether two links share a baseline, which is the thing that broke, and measures the target by offsetHeight because the footer is below the fold on its reveal spring and a 44px box reads 42 by rect."
+    }
+  ]
+}

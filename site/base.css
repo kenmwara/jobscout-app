@@ -379,11 +379,24 @@
    Each dot carries its own arrival transition on --spring-arrive, one
    --stagger-dot apart, so a card that goes from swept to scored fills in
    place. The numeral is data: mono, tabular, centred in the ring. */
-.rose{display:block;flex:0 0 auto;width:52px;height:52px;overflow:visible}
+/* ONE size declaration, and the numeral derives from it. Ken, 2026-09-21:
+   "There seems to be a bug in the rose number on the applications page - it
+   always appears small." It was two bugs in one line. This stylesheet
+   declared `.rose` width twice - 52px here and 64px again in the shared
+   components block below - so the later one silently won everywhere, and the
+   numeral sat on a fixed --t0 that did not move when the ring grew. A rose
+   that scales and a numeral that does not is a numeral that shrinks. */
+.rose{--rose:52px;display:block;flex:0 0 auto;width:var(--rose);height:var(--rose);overflow:visible}
 .rose .d{fill:var(--rose-empty);opacity:.14;transform-box:fill-box;transform-origin:center;transform:scale(.55);
   transition:transform var(--t-arrive) var(--spring-arrive),opacity var(--t-arrive) var(--ease);
   transition-delay:calc(var(--i) * var(--stagger-dot))}
 .rose .d.lit{opacity:1;transform:scale(1)}
+/* --t0, NOT a calc off --rose. An SVG numeral's font-size is in USER UNITS,
+   so it is already scaled by the viewBox and tracks the ring for free: 19px
+   of glyph in a 52px ring, 25px in a 64px one. Deriving it from the pixel
+   width put 19.2px on the page, which is not on the type scale and the
+   sanity suite caught it. The fixed-numeral defect Ken reported was the
+   MOCKUP's, where the numeral is an HTML span in px. */
 .rose .fitnum{font:500 var(--t0)/1 var(--mono);text-anchor:middle;dominant-baseline:central;
   font-variant-numeric:tabular-nums;fill:var(--text)}
 .rose.unlit .fitnum{fill:var(--text3)}
@@ -564,7 +577,7 @@ footer.site{padding:var(--s12) 0 var(--s8);border-top:1px solid var(--hair);marg
 /* ── components every page shares ────────────────────────────────────────
    Copied out of index.html so a saved score, an application and the demo
    all draw the same rose and the same band pill. */
-.rose{width:64px;height:64px;flex:0 0 auto;display:block}
+.rose{--rose:64px}   /* the shared-components rose is bigger; the numeral follows it now */
 .route{font:500 var(--t0)/1 var(--sans);letter-spacing:.09em;text-transform:uppercase;
   border-radius:var(--r-pill);padding:var(--s1) var(--s2);display:inline-block;white-space:nowrap}
 .verdict{font:500 var(--t2)/1.35 var(--sans);color:var(--text2)}
@@ -761,7 +774,17 @@ html :is(input,textarea,select):focus-visible:not(.field *){outline:2px solid va
    takes the dark theme's accent as a constant (2.32:1 in indigo, measured) */
 .hero h1.display .dot{color:var(--hero-accent)}
 /* the footer's link lists are targets too (GAPS #8): 44px rows, the type unchanged */
-footer.site a{display:inline-flex;align-items:center;min-height:44px}
+/* ONE PER LINE, AND STILL A 44px TARGET. This rule used to read
+   `footer.site a{display:inline-flex}` and, sitting 210 lines below
+   `.fgrid a{display:block}`, it silently won - so adjacent footer links sat
+   on the same line with nothing between them: "CanadaKenya", "PrivacyWhat we
+   count", "Browse today's sweepRemote only". Ken, 2026-09-20: "when you
+   actually go to the privacy page bottom end, then everything's squashed
+   up." A BLOCK-level flex keeps the 44px box the target law wants and takes
+   the line back. check_gaps stayed green throughout because it measured the
+   target's height, which was never the broken part. */
+.fgrid a{display:flex;align-items:center;min-height:44px}
+footer.site .fbrand a{display:inline-flex;align-items:center;min-height:44px}
 /* every word on the hero wears --hero-ink: the wash is dark in both themes, so
    the ink is a constant, never a theme token (contrast check, mutation hero-ink) */
 .hero .inner,.hero .inner h1.display,.hero .inner .sub,.hero .inner p,.hero .inner label{color:var(--hero-ink)}
