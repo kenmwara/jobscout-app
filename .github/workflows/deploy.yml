@@ -19,7 +19,11 @@ name: deploy site
 on:
   push:
     branches: [main]
-    paths: ['site/**', 'worker/**', 'tokens/**', '.github/workflows/deploy.yml']
+    # tools/** and docs/specs.json are IN the filter on purpose: a change to a
+    # CHECK, or to the ledger of what the checks must prove, has to re-run the
+    # gate. Without them the first fix to a check did not re-run the suite,
+    # which is the gate failing to cover itself.
+    paths: ['site/**', 'worker/**', 'tokens/**', 'tools/**', 'docs/specs.json', '.github/workflows/deploy.yml']
   workflow_dispatch:
 
 concurrency:
