@@ -117,7 +117,12 @@ def open_menu(msg):
 
 sh("shell", "am", "force-stop", PKG)
 sh("shell", "am", "start", "-n", f"{PKG}/.MainActivity")
-time.sleep(10)
+# Launch on this emulator takes 17-22 s on a loaded host (run 10 pressed the
+# menu on a half-drawn screen). Wait for the header, up to 45 s, not a fixed 10.
+for _ in range(15):
+    time.sleep(3.0)
+    if "JobScout" in text(): break
+time.sleep(2.0)
 
 for market in ("Canada", "Kenya"):
     say(f"\n-- {market} --")
