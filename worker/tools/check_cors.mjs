@@ -8,7 +8,9 @@
  * real all the same, and this is the check that keeps it closed.
  *
  * It imports the worker's own allowOrigin, so it tests the shipping decision
- * rather than a copy of it. No server, no network, no D1.
+ * rather than a copy of it. No server, no network, no D1 - and from
+ * src/cors.js rather than src/index.js, because importing the worker drags
+ * in unpdf and fflate, which CI does not install for a static check.
  *
  * WHAT IT DELIBERATELY ASSERTS, beyond the happy path:
  *   - a suffix attack (jobscout.page.evil.com) is refused, because a
@@ -17,7 +19,7 @@
  *     native HTTP client, sends no Origin, and ignores CORS. Turning that into
  *     a block would break the app on every phone while every check stayed green.
  */
-import { allowOrigin as shipping } from "../src/index.js";
+import { allowOrigin as shipping } from "../src/cors.js";
 
 /* --mutate: prove this check is awake. Each stand-in is a plausible wrong
    implementation, and every one of them must turn the table below red. */
