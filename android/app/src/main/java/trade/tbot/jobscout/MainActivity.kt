@@ -234,6 +234,19 @@ class DemoVm(app: Application) : AndroidViewModel(app) {
        the product's work before it had done any. */
     private fun profileText(): String? = _ui.value.resume.trim().takeIf { it.length > 40 }
 
+    /**
+     * The file door could not be opened at all. `launch()` throws
+     * ActivityNotFoundException where no app answers ACTION_OPEN_DOCUMENT,
+     * and an unguarded throw makes the paperclip a control that does nothing
+     * when tapped - indistinguishable, to the person holding the phone, from
+     * a button that is simply broken. The other door is always open, so say
+     * which one to use.
+     */
+    fun pickerUnavailable() {
+        _ui.update { it.copy(uploading = false,
+            uploadStatus = "No app on this phone can pick a file — paste your résumé into the box instead.") }
+    }
+
     /** Storage Access Framework pick → worker /api/extract → resume text. Bytes live in memory only. */
     fun importResume(uri: Uri) {
         val cr = getApplication<Application>().contentResolver
@@ -622,7 +635,7 @@ fun DemoScreen(vm: DemoVm = viewModel()) {
                 when (screen) {
                     Screen.LANDING -> landing(
                         ui, feed, vm, policy,
-                        onUpload = { picker.launch(RESUME_MIMES) },
+                        onUpload = { runCatching { picker.launch(RESUME_MIMES) }.onFailure { vm.pickerUnavailable() } },
                         onSearch = { q -> query = q; screen = Screen.BROWSE },
                         onPolicy = { p ->
                             policy = p
@@ -670,7 +683,7 @@ fun DemoScreen(vm: DemoVm = viewModel()) {
                 onHome = { trackerOpen = false; screen = Screen.LANDING; sector = null; policy = null; query = "" },
             ) { trackerOpen = false }
             infoPage?.let { page -> InfoSheet(page) { infoPage = null } }
-            ui.apply?.let { a -> ApplyScreen(vm, a, vm::closeApply, onUpload = { picker.launch(RESUME_MIMES) }) }
+            ui.apply?.let { a -> ApplyScreen(vm, a, vm::closeApply, onUpload = { runCatching { picker.launch(RESUME_MIMES) }.onFailure { vm.pickerUnavailable() } }) }
             if (menuOpen) MenuSheet(
                 market = ui.market, themeChoice = themeChoice, saved = ui.tracker.size + ui.watched.size,
                 onMarket = { vm.setMarket(it); menuOpen = false },

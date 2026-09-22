@@ -10,7 +10,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -76,6 +75,23 @@ fun ApplyScreen(vm: DemoVm, a: Apply, onClose: () -> Unit, onUpload: () -> Unit)
     val order = if (lead == "resume") listOf("resume", "letter", "answers") else listOf("letter", "resume", "answers")
     val done = mapOf("letter" to (a.letter.data != null), "resume" to (a.resume.data != null), "answers" to (a.answers.data != null))
     val next = order.firstOrNull { done[it] != true }
+    /* STRAIGHT TO THE POPUP WHEN THE DRAFT LANDS - mockups/mobile.html does
+       exactly this ("if (draftState[id].html) openSheet(id)") and the phone
+       did not. Ken, 2026-09-20: "Resume and cover page helper should go
+       straight to popup", then "Mirror above upgrades from web to mobile",
+       then "Popups pls"; and on 09-22, of the shipped app: "cover letter,
+       resume... won't popup at all". A finished draft was sitting behind a
+       "Read it" tap nobody had been told to make. Read it and Redo stay -
+       they are how you reopen a draft you have closed - but the first sight
+       of a draft is the draft, not a button that admits one exists. */
+    var awaiting by remember { mutableStateOf<String?>(null) }
+    LaunchedEffect(a) {
+        val w = awaiting ?: return@LaunchedEffect
+        val st = when (w) { "letter" -> a.letter; "resume" -> a.resume; else -> a.answers }
+        if (st.busy) return@LaunchedEffect      // still running; wait for the next change
+        awaiting = null                          // settled either way, so stop watching
+        if (st.data != null) reading = w
+    }
     val wellFocus = remember { FocusRequester() }
     var wantFocus by remember { mutableStateOf(false) }
     LaunchedEffect(wantFocus) { if (wantFocus) { runCatching { wellFocus.requestFocus() }; wantFocus = false } }
@@ -186,23 +202,23 @@ fun ApplyScreen(vm: DemoVm, a: Apply, onClose: () -> Unit, onUpload: () -> Unit)
                                 idle = "A short letter for this posting, grounded in your résumé.",
                                 busy = "Drafting from the profile only — it cannot invent experience…",
                                 step = a.letter, action = "Write the letter", primary = next == id, blocked = blocked,
-                                onRun = { vm.draftLetter() }, onUnblock = { wantFocus = true }, onRead = { reading = "letter" },
-                                onRewrite = { vm.draftLetter(it) }, onAddThem = onClose,
+                                onRun = { awaiting = "letter"; vm.draftLetter() }, onUnblock = { wantFocus = true }, onRead = { reading = "letter" },
+                                onRewrite = { awaiting = "letter"; vm.draftLetter(it) }, onAddThem = onClose,
                             )
                             "resume" -> StepPanel(
                                 title = "Your résumé, aimed at it",
                                 idle = "The same experience, reworded toward what this posting asks for.",
                                 busy = "Rewriting the whole résumé, then checking every name and number against your own…",
                                 step = a.resume, action = "Rebuild my résumé", primary = next == id, blocked = blocked,
-                                onRun = { vm.buildResume() }, onUnblock = { wantFocus = true }, onRead = { reading = "resume" },
-                                onRewrite = { vm.buildResume(it) }, onAddThem = onClose,
+                                onRun = { awaiting = "resume"; vm.buildResume() }, onUnblock = { wantFocus = true }, onRead = { reading = "resume" },
+                                onRewrite = { awaiting = "resume"; vm.buildResume(it) }, onAddThem = onClose,
                             )
                             else -> StepPanel(
                                 title = "Their screening questions",
                                 idle = "The questions on the employer's own form, answered from your résumé.",
                                 busy = "Reading the employer's own form…",
                                 step = a.answers, action = "Get their questions", primary = next == id, blocked = blocked,
-                                onRun = vm::readAnswers, onUnblock = { wantFocus = true }, onRead = { reading = "answers" },
+                                onRun = { awaiting = "answers"; vm.readAnswers() }, onUnblock = { wantFocus = true }, onRead = { reading = "answers" },
                             )
                         }
                     }
@@ -248,8 +264,12 @@ private fun <T> StepPanel(
         Text(idle, color = T.text2, fontSize = Type.t2, lineHeight = 20.sp)
         Spacer(Modifier.height(Space.s3))
         when {
+            /* Claude's own mark, breathing - not a material spinner. The mockup's
+               busy bar is the mark and a line naming what it is doing, and Ken
+               asked for it three times on 2026-09-20. A spinner says "waiting";
+               the mark says who is working. */
             step.busy -> Row(verticalAlignment = Alignment.CenterVertically) {
-                CircularProgressIndicator(Modifier.size(16.dp), color = T.accent, strokeWidth = 2.dp)
+                ClaudePulse(20.dp)
                 Spacer(Modifier.width(10.dp))
                 Text(busy, color = T.text2, fontSize = Type.t2, lineHeight = 20.sp)
             }

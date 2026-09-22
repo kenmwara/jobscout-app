@@ -44,6 +44,9 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
@@ -295,16 +298,27 @@ fun ResumeField(
     focus: FocusRequester? = null,
 ) {
     val has = value.isNotBlank()
-    val shape = if (well) CardShape else Pill9999
+    /* PHONE PARITY WITH site/field.css: A BAR WITH CONTENT IS A WELL.
+       Ken, 2026-09-20, on the mobile mockup: "the design language is off -
+       both the oval text box, and the clip", and on 09-22 about the shipped
+       app: "Landing page upload bar is still the same old oval one". A pill
+       holding five rows of resume is an oval with a ten-character column of
+       text up its left side and the clip floating halfway up its right. So
+       the bar keeps its one line only while it is EMPTY, which is the whole
+       reason the bar density exists; the moment it carries text it takes the
+       geometry the well already defines. `well` stays the caller's request
+       for the always-well density; `stacked` is the geometry actually drawn. */
+    val stacked = well || has
+    val shape = if (stacked) CardShape else Pill9999
     val pulse = rememberInfiniteTransition(label = "clip")
     val k by pulse.animateFloat(1f, 0.45f, infiniteRepeatable(tween(700, easing = LinearEasing), RepeatMode.Reverse), label = "busy")
     val field: @Composable RowScope.() -> Unit = {
         BasicTextField(
             value = value, onValueChange = onChange,
             modifier = Modifier.weight(1f).then(if (focus != null) Modifier.focusRequester(focus) else Modifier)
-                .then(if (well) Modifier.heightIn(min = 72.dp) else Modifier.padding(vertical = Space.s2)), // web: .field--bar .field__area padding s2 0 (the pill's radius clears the first glyph)
-            minLines = if (well) 3 else 1,
-            maxLines = if (well) 10 else 5,
+                .then(if (stacked) Modifier.heightIn(min = 72.dp) else Modifier.padding(vertical = Space.s2)), // web: .field--bar .field__area padding s2 0 (the pill's radius clears the first glyph)
+            minLines = if (stacked) 3 else 1,
+            maxLines = if (stacked) 10 else 5,
             textStyle = TextStyle(fontFamily = Sans, fontSize = Type.t2, lineHeight = 19.sp, color = T.text),
             cursorBrush = SolidColor(T.accent),
             decorationBox = { inner ->
@@ -316,20 +330,22 @@ fun ResumeField(
     val foot: @Composable RowScope.() -> Unit = {
         Row(
             Modifier.heightIn(min = TARGET).clip(Pill9999)
+                // the web's aria-label; the phone's clip had no name at all
+                .semantics { contentDescription = "Attach your résumé as a PDF, Word file or text" }
                 .clickable(enabled = !uploading, onClick = onAttach)
-                .padding(horizontal = if (well) Space.s3 else 0.dp)
-                .then(if (well) Modifier else Modifier.width(TARGET))
+                .padding(horizontal = if (stacked) Space.s3 else 0.dp)
+                .then(if (stacked) Modifier else Modifier.width(TARGET))
                 .graphicsLayer { alpha = if (uploading) k else 1f },
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Center,
         ) {
             Paperclip(T.text2)
-            if (well) {
+            if (stacked) {
                 Spacer(Modifier.width(Space.s2))
                 Text(if (uploading) "Reading…" else "Attach a file", fontSize = Type.t1, fontWeight = FontWeight.Medium, color = T.text2)
             }
         }
-        if (well) Spacer(Modifier.weight(1f)) else Spacer(Modifier.width(Space.s1))
+        if (stacked) Spacer(Modifier.weight(1f)) else Spacer(Modifier.width(Space.s1))
         Box(
             Modifier.size(TARGET).clip(Pill9999)
                 .background(if (has) T.btn else T.canvas2)
@@ -337,7 +353,7 @@ fun ResumeField(
             contentAlignment = Alignment.Center,
         ) { Text("→", fontSize = Type.t3, color = if (has) T.btnInk else T.text3) }
     }
-    if (well) {
+    if (stacked) {
         Column(
             Modifier.fillMaxWidth().clip(shape).background(T.surface).border(1.dp, T.hair2, shape)
                 .padding(Space.s3),
@@ -512,24 +528,38 @@ fun MTax(label: String, count: Int, modifier: Modifier = Modifier, onClick: () -
     }
 }
 
-/** A run in progress: Claude's mark, breathing, and which half is running. */
+/**
+ * Claude's mark, breathing. ONE drawing, TWO callers: a run in progress and a
+ * draft being written. Ken asked for it three times on 2026-09-20 - "have the
+ * claude icon pulsing to let the candidate know it's working not frozen", "a
+ * pulsing claude icon would help", "Even the pulsating arrow should have been
+ * the claude icon" - and the drafting steps still shipped a plain spinner,
+ * because the mark lived inline in the one screen that had it.
+ */
 @Composable
-fun MRunning(scoring: Boolean, swept: Int, going: Int) {
-    val pulse = rememberInfiniteTransition(label = "run")
+fun ClaudePulse(size: Dp = 22.dp) {
+    val pulse = rememberInfiniteTransition(label = "claude")
     val k by pulse.animateFloat(
         initialValue = 1f, targetValue = 0.72f,
         animationSpec = infiniteRepeatable(tween(760, easing = LinearEasing), RepeatMode.Reverse),
         label = "breathe",
     )
+    Image(
+        painter = painterResource(R.drawable.claude_mark), contentDescription = null,
+        modifier = Modifier.size(size).clip(RoundedCornerShape(percent = 23))
+            .graphicsLayer { scaleX = k; scaleY = k; alpha = k },
+    )
+}
+
+/** A run in progress: Claude's mark, breathing, and which half is running. */
+@Composable
+fun MRunning(scoring: Boolean, swept: Int, going: Int) {
     Row(
         Modifier.fillMaxWidth().clip(CardShape).background(T.surface).border(1.dp, T.hair, CardShape).padding(14.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Image(
-            painter = painterResource(R.drawable.claude_mark), contentDescription = null,
-            modifier = Modifier.size(22.dp).clip(RoundedCornerShape(5.dp)).graphicsLayer { scaleX = k; scaleY = k; alpha = k },
-        )
+        ClaudePulse(22.dp)
         Column {
             Text(if (scoring) "Claude is scoring them" else "Dropping what cannot fit",
                  fontSize = Type.t2, fontWeight = FontWeight.Medium, color = T.ink)

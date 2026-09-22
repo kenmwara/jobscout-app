@@ -305,3 +305,50 @@ textarea { resize: none; }
 @media (prefers-reduced-motion: reduce) {
   .field, .field__go, .field__attach { transition-duration: 1ms; }
 }
+
+/* ---------------------------------------------------------------------------
+   PHONE: A BAR WITH CONTENT IS A WELL, NOT A STRETCHED OVAL.
+
+   Ken, 2026-09-20, on the mobile mockup: "the design language is off - both
+   the oval text box, and the clip". Measured at 390px, this is why. The bar is
+   `1fr auto`, and column 2 holds the clip (44), the go (44) and the hint that
+   says what Enter will do (~160, white-space:nowrap). That is ~260 of ~350,
+   so the text gets about ten characters a line inside a pill that has grown
+   five rows tall to hold them, with the clip floating halfway up its side.
+
+   The remedy is not a new component. This stylesheet already defines the other
+   density - the well - so a bar that has content borrows the well's geometry:
+   the text takes its own full-width row, the controls take the row beneath it,
+   and the radius steps down from a 1600px pill to the card. The empty bar is
+   untouched, because one line at the top of the landing page is the whole
+   reason the bar density exists.
+   --------------------------------------------------------------------------- */
+@media (max-width: 560px) {
+  .field--bar[data-state="typing"] {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto;
+    border-radius: var(--r-card);
+    padding: var(--s3);
+    gap: var(--s2);
+  }
+  .field--bar[data-state="typing"] .field__area {
+    grid-column: 1; grid-row: 1;
+    height: auto;
+    min-height: calc(1.45em * 3);
+    max-height: calc(1.45em * 8);
+    padding: 0;
+  }
+  .field--bar[data-state="typing"] .field__foot {
+    grid-column: 1; grid-row: 2;
+    display: flex; align-items: center; gap: var(--s2);
+    flex-wrap: wrap;            /* the hint drops to its own line before it crushes anything */
+  }
+  /* The clip LEADS its row - the other half of the same complaint. Floating
+     halfway up the side of an oval it was a glyph with no home; at the head
+     of the controls row it is the file door, beside the hint that says what
+     the go will do. It stays icon-only: with its label the row needs 306 of
+     326px and the go wraps to a line of its own. The go is pushed to the far
+     end rather than sitting mid-oval. */
+  .field--bar[data-state="typing"] .field__attach { order: -1; }
+  .field--bar[data-state="typing"] .field__go { margin-left: auto; }
+}
