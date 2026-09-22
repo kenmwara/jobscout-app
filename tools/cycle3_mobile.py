@@ -182,8 +182,7 @@ for market in ("Canada", "Kenya"):
         time.sleep(4.0)
         after = text()
         top = sh("shell", "dumpsys", "activity", "activities").stdout.decode("utf-8", "replace")
-        in_browser = "topResumedActivity" in top and PKG not in top.split("topResumedActivity", 1)[1].split("
-", 1)[0]
+        in_browser = "topResumedActivity" in top and PKG not in top.split("topResumedActivity", 1)[1].splitlines()[0]
         check(in_browser or ("Privacy" not in after and "How JobScout works" not in after),
               "a swept row opens the posting, not a page (%s)" % title[:36])
         # come back: the browser is another app
