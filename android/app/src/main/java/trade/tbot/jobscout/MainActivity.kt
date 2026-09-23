@@ -136,6 +136,14 @@ data class Ui(
     val stretch: Boolean = false,
     /** Set when the restored run was scored against an earlier day's sweep. */
     val runStale: String? = null,
+    /* Whether the run on screen was scored in THIS session or read back off
+       the disk. The header used to say "scored by Claude just now" on every
+       render, restored runs included, while the comment beside it claimed the
+       opposite - and runStale only fired when the DAY changed, so a run scored
+       at breakfast still said "just now" at midnight. Since the resume stopped
+       being persisted it was also saying it about a scoring the app can no
+       longer explain, which is what the operator noticed. */
+    val restored: Boolean = false,
 )
 
 class DemoVm(app: Application) : AndroidViewModel(app) {
@@ -147,6 +155,7 @@ class DemoVm(app: Application) : AndroidViewModel(app) {
                 // the saved market IS the market to open in, which setMarket does below.
                 market = r?.market ?: "ca",
                 scores = r?.scores ?: emptyList(),
+                restored = (r?.scores?.isNotEmpty() == true),
                 // The run survives a relaunch. The resume does not, and the box
                 // opens empty. Matching the web, which decided the same thing.
                 resume = "",
@@ -371,7 +380,7 @@ class DemoVm(app: Application) : AndroidViewModel(app) {
                         else -> {
                             _ui.update { u ->
                                 keepRun(u.copy(phase = Phase.DONE, scores = r.scores, meta = r.meta,
-                                               runStale = null, limitedAt = 0L))
+                                               runStale = null, limitedAt = 0L, restored = false))
                             }
                         }
                     }
@@ -992,10 +1001,25 @@ private fun LazyListScope.matches(
     if (limitedNow(ui)) item {
         MLimited(ui.limitedAt, hasRun = false, onLast = {}, onBrowse = onRework)
     }
-    item { MCount("${sorted.size} scored of ${feed?.postings?.size ?: 0} swept · scored by Claude just now") }
+    /* "just now" is a claim about WHEN, and it was hardcoded - so a run read off
+       the disk asserted it too. It is only true of a run scored in this session. */
+    item {
+        MCount("${sorted.size} scored of ${feed?.postings?.size ?: 0} swept · " +
+               if (ui.restored) "scored earlier, and kept" else "scored by Claude just now")
+    }
     /* A run kept from another day is still useful — the reader decides. It is
        never passed off as today's. */
     ui.runStale?.let { item { MCount(it, Modifier.padding(top = 2.dp)) } }
+    /* THE QUESTION THIS ANSWERS, asked by the operator on 2026-09-23: if the
+       resume is no longer kept, what were these scored against? A run outlives
+       the resume that earned it, on purpose - the matches are worth keeping and
+       the resume is not ours to store. Saying so is the difference between a
+       deliberate design and an app that looks like it has lost track of itself. */
+    if (ui.restored) item {
+        MCount("The résumé they were scored against is not kept on this phone. " +
+               "Paste it again to re-score against today's sweep.",
+               Modifier.padding(top = 2.dp))
+    }
 
     /* Below the floor nothing is recommended — and that used to be the end of
        it: one sentence and eight cards with no action on any of them. The

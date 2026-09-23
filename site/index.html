@@ -2313,6 +2313,15 @@ function browse(){
     $("#browseCount").insertAdjacentHTML("beforeend",
       ` <button class="allsweep" type="button">show the whole sweep instead</button>` +
       ` <button class="allsweep forget" type="button">forget my r\u00e9sum\u00e9 and these matches</button>`);
+    /* THE SAME QUESTION THE PHONE ANSWERS, asked by the operator 2026-09-23: if
+       the résumé is not kept, what were these scored against? A run outlives the
+       résumé that earned it on purpose — the matches are worth keeping and the
+       résumé is not ours to store. scoredProfile is cleared on every reload, so
+       an empty one beside a run IS a restored run. Without this the page keeps
+       offering to "forget my résumé" when it is not holding one. */
+    if (scored.length && !scoredProfile) $("#browseCount").insertAdjacentHTML("beforeend",
+      ` <span class="muted">The résumé these were scored against is not kept in this browser.` +
+      ` Paste it again to re-score against today's sweep.</span>`);
     /* A run kept from another day is still useful — the reader decides. It is
        never passed off as today's. */
     if (runStale) $("#browseCount").insertAdjacentHTML("beforeend",

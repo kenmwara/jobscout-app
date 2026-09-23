@@ -87,6 +87,23 @@ ok(/scoredProfile\s*=\s*"";/.test(web),
 ok(/"profile" in r/.test(web) && /delete r\.profile/.test(web),
    "web: a pre-09-21 record is still scrubbed");
 
+// ---- A run outlives its resume, and both surfaces SAY so ----------------
+// Keeping the matches while dropping the resume is deliberate: the run is worth
+// having and the resume is not ours to store. But it leaves a reader looking at
+// scores with nothing to explain them, which is exactly what the operator asked
+// about. Silence there reads as an app that has lost track of itself.
+ok(/not kept on this phone/.test(main),
+   "android: a restored run says the resume behind it is not kept",
+   "the matches would appear with nothing to explain them");
+ok(/not kept in this browser/.test(web),
+   "web: the same, and it stops the page offering to forget a resume it is not holding");
+
+// And the header must not claim WHEN it cannot know. "just now" was hardcoded,
+// so a run read off the disk asserted it too. The guard is what makes it true.
+ok(/if \(ui\.restored\) "scored earlier, and kept" else "scored by Claude just now"/.test(main.replace(/\s+/g, " ")),
+   "android: the just-now claim is guarded by whether this session scored it",
+   "an unguarded just-now is a claim about time the app cannot make about a restored run");
+
 say(`\ncheck_resume_privacy: ${checks} assertion(s) across both surfaces`);
 if (MUTATE) {
   if (!fails) {
