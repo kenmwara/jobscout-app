@@ -85,6 +85,18 @@ workflows:
       android_signing:
         - tbot_keystore
     scripts:
+      - name: The Play credentials are present
+        script: |
+          # Fail BEFORE the build, not after it. Without this a missing key
+          # gives a green build with artefacts and no release - which is
+          # indistinguishable, from the outside, from a release that worked.
+          if [ -z "$GCLOUD_SERVICE_ACCOUNT_CREDENTIALS" ]; then
+            echo "GCLOUD_SERVICE_ACCOUNT_CREDENTIALS is not set."
+            echo "Codemagic > this app > Environment variables: paste the Google Play"
+            echo "service account JSON, mark it Secure. Until then a tag builds a"
+            echo "bundle and nothing reaches the Alpha track."
+            exit 1
+          fi
       - name: Build signed release
         script: |
           cd android
@@ -103,6 +115,39 @@ workflows:
       - android/app/build/outputs/bundle/release/*.aab
       - android/app/build/outputs/apk/release/*.apk
       - android/app/build/outputs/apk/release/signing-fingerprints.txt
+
+    # ------------------------------------------------------------------
+    # PUT IT ON THE TRACK. Added 2026-09-23, and the reason is a mistake:
+    # this workflow had NO publishing block, so a tag produced a signed
+    # bundle and stopped. The step Codemagic calls "Publishing" publishes
+    # ARTEFACTS to the build page, and reading that step name as a release
+    # is how 0.9.7 came to be reported as live on the Alpha track while
+    # Play Console's Submission activity had never heard of it. Every
+    # release before this one reached Play because a human uploaded the
+    # .aab by hand.
+    #
+    # NEEDS ONE SECURE ENVIRONMENT VARIABLE in Codemagic:
+    #   GCLOUD_SERVICE_ACCOUNT_CREDENTIALS - the Google Play service
+    #   account JSON, pasted whole, marked Secure.
+    # The service account needs "Release apps to testing tracks" in Play
+    # Console under Users and permissions. It does NOT need production.
+    #
+    # Play refuses an API upload for an app that has never been uploaded by
+    # hand, and refuses any versionCode not higher than the last. The first
+    # is already satisfied; the second is why versionCode is BUILD_NUMBER,
+    # which only ever goes up.
+    publishing:
+      google_play:
+        credentials: $GCLOUD_SERVICE_ACCOUNT_CREDENTIALS
+        # alpha IS the closed testing track. internal is a different, smaller
+        # one, and beta is open testing - neither is where these testers are.
+        track: alpha
+        # A draft sits in the console waiting for someone to notice it, which
+        # is the failure this block exists to end.
+        submit_as_draft: false
+        # false = the release IS sent for review, which is what makes it
+        # reach a tester rather than sit in review limbo.
+        changes_not_sent_for_review: false
 
   # Portfolio screenshots: build, install on an emulator, drive the real
   # pipeline once, capture each stage (tools/native_screens.sh).
