@@ -70,6 +70,13 @@ const CHECKS = [
      reader names it once and the fingerprint remembers. The cap on that box
      is load-bearing: it is the one place a résumé could still land. */
   { id: "sweeps",    file: "tools/check_sweeps.mjs", mutations: ["web-uncapped", "web-name-by-text", "web-merge-by-name", "android-uncapped", "android-nogroup"], guards: "a sweep is kept and named by the résumé that earned it on both surfaces, grouped by fingerprint, and the name box is capped" },
+
+  /* 2026-09-23. Both markets are one project and one index.html, so the
+     Kenyan host previewed as the Canadian site - the market is decided in the
+     browser and an unfurler never runs that. site/_worker.js rewrites four
+     tags. What is asserted is not the copy but that a cosmetic worker in a
+     live request path cannot break the site. */
+  { id: "preview",   file: "tools/check_preview.mjs", mutations: ["no-failsafe", "all-hosts", "not-html", "no-url", "no-kenya"], guards: "the Kenyan host previews as Kenya, and the worker fails safe on an unknown host, a non-HTML response or any throw" },
 ];
 const run = (file, argv, py) => new Promise(res => {
   const c = spawn(py ? "python" : process.execPath, [join(ROOT, file), ...argv], { cwd: ROOT, env: process.env });
