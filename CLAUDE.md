@@ -63,6 +63,14 @@ A green check is evidence about one assertion, never about the product.
   1 with nothing printed, which looks exactly like a finding.
 - `node tools/sanity.mjs` is the web suite, `python tools/specs.py --check` runs every
   check the ledger names.
+- **The two suites are different doors, and the ledger is one of them.** `specs.py --check`
+  runs each row's `check` field AS A COMMAND, so a row must carry its runner:
+  `node tools/check_x.mjs`, not `tools/check_x.mjs`. On 2026-09-23 five new rows named the
+  file without `node`; sanity.mjs was 26/26 green and the deploy gate went red on four of
+  the same checks, for the only reason a green check can be red — **nothing ran it**, and
+  the web did not ship. A ledger row is not proof a check ran; it is a command, and a
+  command missing its interpreter is a typo that reads like a citation. **Run
+  `python tools/specs.py --check --skip-device` before claiming a push is deployed.**
 - Measure a tap target by `offsetHeight`, not by rect: anything below the fold is still
   on its reveal spring and a 44px box reads 42.
 - The emulator's keyboard delivers about one character in two hundred. Seed the résumé
