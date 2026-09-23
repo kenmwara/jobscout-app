@@ -46,7 +46,7 @@ const CHECKS = [
      blind to what broke. They are in the suite so that cannot happen twice. */
   { id: "footer",    file: "tools/check_footer.mjs", mutations: ["squashed", "short-target"], guards: "no two footer links share a line, and every one is still a 44px target" },
   { id: "rosescale", file: "tools/check_rose_scale.mjs", mutations: ["fixed-numeral", "duplicate-width"], guards: "the fit numeral scales with its ring, and .rose has ONE width declaration" },
-  { id: "fieldphone",file: "tools/check_field_phone.mjs", mutations: ["oval", "crushed", "clip-adrift", "empty-grew"], guards: "a hero field with content is a well, not a stretched oval; the empty bar is untouched" },
+  { id: "fieldphone",file: "tools/check_field_phone.mjs", mutations: ["oval", "crushed", "clip-adrift", "empty-oval"], guards: "the hero field is a rounded rectangle at rest and with content, at phone widths and on a laptop" },
   /* The API's own guard, and the only check here that is not about the page.
      The worker answered every origin on the internet until 2026-09-22. */
   { id: "cors",      file: "worker/tools/check_cors.mjs", mutations: ["wildcard", "startswith", "block-null"], guards: "only this project's pages are answered, and a request with no Origin is still answered" },
@@ -55,6 +55,10 @@ const CHECKS = [
      SharedPreferences every run. This checks BOTH surfaces, because covering
      one is what made the gap invisible. */
   { id: "resume",    file: "tools/check_resume_privacy.mjs", mutations: ["android-save", "android-restore", "android-noscrub", "web-keeps"], guards: "neither surface writes a résumé to storage, and a record written before the fix is scrubbed" },
+  /* 2026-09-23. The web offered "Apply anyway" on every below-floor card; the
+     phone drew no button at all until the candidate found the near-miss band.
+     Same promise, two answers - so this asserts the promise on both. */
+  { id: "parity",    file: "tools/check_apply_parity.mjs", mutations: ["android-gated", "android-nolabel", "web-drops", "web-relabels"], guards: "a low score can be applied to from either surface, and a stretch is named as one on both" },
 ];
 const run = (file, argv, py) => new Promise(res => {
   const c = spawn(py ? "python" : process.execPath, [join(ROOT, file), ...argv], { cwd: ROOT, env: process.env });

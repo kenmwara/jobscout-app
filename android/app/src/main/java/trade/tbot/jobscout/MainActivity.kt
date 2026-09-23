@@ -1039,10 +1039,20 @@ private fun LazyListScope.matches(
     }
     items(sorted, key = { it.id }) { s ->
         val p = byId[s.id]
-        /* Below the floor the card acts only once the candidate has asked it to.
-           A run restored from disk opens too: the application screen carries
-           the well, so a missing résumé is added THERE, beside the posting. */
-        val open = p != null && (s.fit >= FIT_FLOOR || ui.stretch)
+        /* EVERY match can be applied to, the way the web has always done it.
+           This card used to act only after the candidate pressed the band's
+           "Apply to these anyway", so a below-floor posting on the phone was a
+           dead tile while the same posting on the web carried a quiet "Apply
+           anyway". Ken, 2026-09-23: "Web has an 'apply anyway' button for low
+           scores, while mobile doesn't - should be standardized across both."
+
+           Nothing else had to move: the worker's stretch flag is derived from
+           the fit in LetterBody, exactly as the web derives it, so a
+           below-floor fit arriving here already IS the anyway. The band's pill
+           stays - it is a different affordance, and the web shows both too.
+           A run restored from disk opens as well: the application screen
+           carries the well, so a missing résumé is added THERE. */
+        val open = p != null
         MJob(
             title = p?.title ?: s.id,
             company = p?.company.orEmpty(),
