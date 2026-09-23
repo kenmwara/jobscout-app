@@ -102,8 +102,20 @@ object RunStore {
 
     fun load(ctx: Context): SavedRun? {
         val raw = prefs(ctx).getString(KEY, null) ?: return null
-        return runCatching { json.decodeFromString<SavedRun>(raw) }.getOrNull()
+        val run = runCatching { json.decodeFromString<SavedRun>(raw) }.getOrNull()
             ?.takeIf { it.scores.isNotEmpty() }
+        // SCRUB A RECORD WRITTEN BEFORE 2026-09-23. Until then `profile` carried
+        // the whole resume in plain text, and every phone that ever ran this app
+        // still has one sitting in SharedPreferences. Stopping the write only
+        // helps the next run; this clears what is already there, on the next
+        // launch, without waiting for one. The web does the same for its own
+        // pre-09-21 records.
+        if (run != null && run.profile.isNotEmpty()) {
+            val clean = run.copy(profile = "")
+            save(ctx, clean)
+            return clean
+        }
+        return run
     }
 
     fun save(ctx: Context, run: SavedRun?) = prefs(ctx).edit().let { e ->

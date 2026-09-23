@@ -25,9 +25,14 @@ everyone, so the only lever is *what the product is willing to do for a stranger
 ## What the product assumes
 
 1. **A résumé is the most sensitive thing here, and it is not kept.** It is read for one run,
-   scored, and never written to storage. The earlier version DID keep it in the browser, where a
-   hard reset would not clear it; that was found and closed, and `check_gaps --only privacy` fails
-   the build if it comes back.
+   scored, and never written to storage. **This page claimed that before it was true.** The browser
+   kept one, which was found and fixed on 2026-09-21 — and the claim was then written here for the
+   PRODUCT, while the Android app went on writing the whole résumé into SharedPreferences in plain
+   text on every run and reading it back into the box at launch. Found on 2026-09-23, when the
+   operator asked why his own résumé was in the upload bar when he opened the app. Both surfaces
+   now store a fingerprint and never the text, a record written before the fix is scrubbed on the
+   next launch, and `check_resume_privacy.mjs` asserts it on BOTH — because covering only the web,
+   which is what `check_gaps --only privacy` did, is exactly what made the gap invisible.
 2. **Telemetry must not become a profile.** `demo_runs` holds a hashed address for rate limiting.
    `ev`, the counted product events, deliberately has no address column, so the two cannot be
    joined and a counted step cannot be tied back to a network address. That is a schema decision,

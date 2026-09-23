@@ -147,7 +147,9 @@ class DemoVm(app: Application) : AndroidViewModel(app) {
                 // the saved market IS the market to open in, which setMarket does below.
                 market = r?.market ?: "ca",
                 scores = r?.scores ?: emptyList(),
-                resume = r?.profile.orEmpty(),
+                // The run survives a relaunch. The resume does not, and the box
+                // opens empty. Matching the web, which decided the same thing.
+                resume = "",
             )
         }
     )
@@ -291,7 +293,15 @@ class DemoVm(app: Application) : AndroidViewModel(app) {
     private fun keepRun(u: Ui): Ui {
         RunStore.save(getApplication(), if (u.scores.isEmpty()) null else SavedRun(
             day = u.feed?.day.orEmpty(), market = u.market,
-            fp = fingerprint(u.resume), profile = u.resume, scores = u.scores,
+            // THE FINGERPRINT, NEVER THE TEXT. `profile` used to carry the whole
+            // resume into SharedPreferences, in plain text, and the launch path
+            // read it straight back into the box - which is why the app opened
+            // with someone's resume already in it. The web was fixed for this on
+            // 2026-09-21 and the phone was not, so the product went on promising
+            // in its threat model and its privacy page that a resume is never
+            // written to storage while this surface wrote it every run.
+            // The fingerprint is all the staleness check ever needed.
+            fp = fingerprint(u.resume), profile = "", scores = u.scores,
         ))
         return u
     }
@@ -304,7 +314,12 @@ class DemoVm(app: Application) : AndroidViewModel(app) {
     private fun vetRestoredRun(u: Ui): Ui {
         val saved = RunStore.load(getApplication()) ?: return u
         if (u.scores.isEmpty()) return u
-        if (saved.fp != fingerprint(u.resume)) {
+        // Only compare when there is something to compare. After the resume
+        // stopped being persisted the box opens empty, and an empty box has a
+        // different fingerprint from every run ever scored - so this dropped
+        // the restored run on every single launch, which is a worse bug than
+        // the one being fixed.
+        if (u.resume.isNotEmpty() && saved.fp != fingerprint(u.resume)) {
             RunStore.save(getApplication(), null)
             return u.copy(scores = emptyList(), runStale = null)
         }
