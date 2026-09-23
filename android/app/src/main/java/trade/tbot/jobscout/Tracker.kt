@@ -124,6 +124,107 @@ object RunStore {
     }
 }
 
+/**
+ * A scored run kept whole, and named by the résumé that earned it.
+ *
+ * Ken, 2026-09-23: "There's still no way to save a matched sweep, but I can
+ * save individual jobs through the heart", and the part that makes it more
+ * than a bookmark: "Name the sweep by the resume that earned it as one name
+ * could have different resumes, thus different sweeps e.g. I've got three
+ * resumes!"
+ *
+ * THE NAME CANNOT BE READ OFF THE RÉSUMÉ. The text is never written to
+ * storage — that is the promise check_resume_privacy holds, and the reason
+ * SavedRun.profile is scrubbed above — so there is nothing on disk to name a
+ * sweep from. The obvious derivation would not work anyway: the first line of
+ * all three of his résumés says the same name. What tells them apart is what
+ * each is AIMED at, which is a judgement only he can make.
+ *
+ * So the reader names it once and the FINGERPRINT remembers. Every run already
+ * carries `fp` — a hash of the résumé, not the résumé — so the second sweep
+ * from the same résumé arrives already named and the first from a different
+ * one asks. This is site/sweeps.js's logic, same keys, same cap, because a
+ * reader with the app and the site open should not meet two different ideas of
+ * what a kept sweep is.
+ */
+@Serializable
+data class KeptSweep(
+    val id: String = "",
+    val name: String = "",
+    val fp: String = "",
+    val day: String = "",
+    val market: String = "ca",
+    val note: String = "",
+    val at: String = "",
+    val scores: List<Score> = emptyList(),
+)
+
+object SweepStore {
+    private const val KEY = "jobscout.sweeps"
+    private const val NAMES = "jobscout.sweepnames"
+    const val CAP = 12          // kept sweeps; the oldest falls off
+    const val NAME_MAX = 60
+    private val json = Json { ignoreUnknownKeys = true; encodeDefaults = true }
+    private fun prefs(ctx: Context) = ctx.getSharedPreferences("jobscout", Context.MODE_PRIVATE)
+
+    fun all(ctx: Context): List<KeptSweep> {
+        val raw = prefs(ctx).getString(KEY, null) ?: return emptyList()
+        return runCatching { json.decodeFromString<List<KeptSweep>>(raw) }.getOrDefault(emptyList())
+            .filter { it.id.isNotEmpty() }
+    }
+
+    private fun names(ctx: Context): Map<String, String> {
+        val raw = prefs(ctx).getString(NAMES, null) ?: return emptyMap()
+        return runCatching { json.decodeFromString<Map<String, String>>(raw) }.getOrDefault(emptyMap())
+    }
+
+    /** What this résumé's sweeps were called last time, or "". */
+    fun nameFor(ctx: Context, fp: String): String = names(ctx)[fp].orEmpty()
+
+    /* Capped, because a box beside a résumé is a box somebody will paste a
+       résumé into, and this must never become the place the résumé ends up
+       after everywhere else stopped keeping it. */
+    private fun clean(s: String) = s.replace(Regex("\\s+"), " ").trim().take(NAME_MAX)
+
+    private fun remember(ctx: Context, fp: String, name: String): String {
+        val n = clean(name)
+        if (fp.isEmpty() || n.isEmpty()) return n
+        prefs(ctx).edit().putString(NAMES, json.encodeToString(names(ctx) + (fp to n))).apply()
+        return n
+    }
+
+    private fun idOf(run: SavedRun) = "${run.fp.ifEmpty { "x" }}-${run.day}-${run.market}"
+
+    fun kept(ctx: Context, run: SavedRun?): Boolean =
+        run != null && run.scores.isNotEmpty() && all(ctx).any { it.id == idOf(run) }
+
+    /**
+     * Keep this run. Keeping twice from the same résumé on the same day
+     * REPLACES rather than stacks: two identical rows an hour apart is a list
+     * nobody can read.
+     */
+    fun keep(ctx: Context, run: SavedRun, note: String, name: String, today: String): KeptSweep? {
+        if (run.scores.isEmpty()) return null
+        val n = remember(ctx, run.fp, name).ifEmpty { clean(name) }.ifEmpty { "Unnamed résumé" }
+        val rec = KeptSweep(idOf(run), n, run.fp, run.day, run.market, note, today, run.scores)
+        val rest = all(ctx).filter { it.id != rec.id }
+        prefs(ctx).edit().putString(KEY, json.encodeToString((listOf(rec) + rest).take(CAP))).apply()
+        return rec
+    }
+
+    /** Renaming a résumé renames every sweep it earned — they are one résumé's runs. */
+    fun rename(ctx: Context, fp: String, name: String) {
+        val n = remember(ctx, fp, name)
+        if (n.isEmpty()) return
+        prefs(ctx).edit()
+            .putString(KEY, json.encodeToString(all(ctx).map { if (it.fp == fp) it.copy(name = n) else it }))
+            .apply()
+    }
+
+    fun remove(ctx: Context, id: String) =
+        prefs(ctx).edit().putString(KEY, json.encodeToString(all(ctx).filter { it.id != id })).apply()
+}
+
 object TrackerStore {
     private const val KEY = "jobscout.tracker"
     private val json = Json { ignoreUnknownKeys = true; encodeDefaults = true }

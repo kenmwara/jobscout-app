@@ -20,8 +20,9 @@
  *             focus-visible style that differs from rest
  *             mutation: tiny-target | no-focus
  *
- *   privacy   the résumé text is never written to storage; the forget control
- *             clears the run          mutation: keep-resume
+ *   privacy   the résumé text is never written to storage, the stored run
+ *             carries a fingerprint instead, and nothing offers to forget a
+ *             résumé the page does not hold     mutation: keep-resume
  *
  *   node tools/check_gaps.mjs [--only heading,pill] [--mutate <name>]
  */
@@ -122,7 +123,7 @@ if (want("fold")) {
   }
 }
 
-/* ---- privacy: the résumé text is never written to storage; forget clears the run ---- */
+/* ---- privacy: the résumé text never reaches storage; a fingerprint stands in ---- */
 if (want("privacy")) {
   const { page, ctx } = await openRoute(b, "browse", "light");
   if (MUTATE === "keep-resume") await page.evaluate(() => { keepRun = function () { localStorage.setItem("jobscout.run", JSON.stringify({ v: 1, scored, profile: scoredProfile, note: scoredNote })); }; });
@@ -133,13 +134,22 @@ if (want("privacy")) {
     const leaked = [localStorage, sessionStorage].some(st => Object.keys(st).some(k => (st.getItem(k) || "").includes(SECRET)));
     browse();
     const btn = document.querySelector("#browseCount .forget");
-    if (btn) btn.click();
-    return { leaked, hadButton: !!btn, runAfter: localStorage.getItem("jobscout.run"), scoredAfter: scored, textAfter: scoredProfile };
+    const stored = localStorage.getItem("jobscout.run") || "";
+    return { leaked, hadButton: !!btn, storedHasFp: /"fp":/.test(stored), storedHasProfile: /"profile":/.test(stored) };
   });
   n++;
   if (r.leaked) fails.push("privacy/browse: the résumé text was written to browser storage by keepRun");
-  if (!r.hadButton) fails.push("privacy/browse: no forget control under the results");
-  else if (r.runAfter !== null || r.scoredAfter !== null || r.textAfter) fails.push(`privacy/browse: forget did not clear the run (${r.runAfter ? "stored" : "cleared"}, scored ${r.scoredAfter ? "kept" : "null"}, text ${r.textAfter ? "kept" : "empty"})`);
+  /* THIS USED TO REQUIRE THE FORGET BUTTON, and the button is gone. Ken,
+     2026-09-23: "Remove this entire line on web". It only ever made sense
+     while the résumé WAS in storage; since the 09-21 fix there is nothing here
+     to forget, so a control offering to was the confusion rather than the
+     remedy. The promise this cell exists for - the text never reaches storage
+     - is the line above, and it is unchanged. What replaces the button
+     assertions is the shape that has to hold instead: no such control, and a
+     stored run carrying a FINGERPRINT where the résumé used to be. */
+  if (r.hadButton) fails.push("privacy/browse: a forget control is back under the results, offering to forget a résumé the page does not hold");
+  if (!r.storedHasFp) fails.push("privacy/browse: the stored run carries no fingerprint — the staleness check has nothing to compare");
+  if (r.storedHasProfile) fails.push("privacy/browse: the stored run still has a `profile` key");
   await ctx.close();
 }
 

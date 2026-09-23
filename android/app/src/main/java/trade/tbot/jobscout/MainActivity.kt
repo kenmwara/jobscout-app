@@ -144,6 +144,10 @@ data class Ui(
        being persisted it was also saying it about a scoring the app can no
        longer explain, which is what the operator noticed. */
     val restored: Boolean = false,
+    /* Sweeps kept whole, grouped by the résumé that earned them. Read once at
+       launch and kept in step by the actions below, so the Saved screen never
+       has to touch SharedPreferences while it is drawing. */
+    val sweeps: List<KeptSweep> = emptyList(),
 )
 
 class DemoVm(app: Application) : AndroidViewModel(app) {
@@ -151,6 +155,7 @@ class DemoVm(app: Application) : AndroidViewModel(app) {
         RunStore.load(app).let { r ->
             Ui(
                 tracker = TrackerStore.load(app), watched = WatchStore.load(app),
+                sweeps = SweepStore.all(app),
                 // The market is checked against the run when the feed lands, not here:
                 // the saved market IS the market to open in, which setMarket does below.
                 market = r?.market ?: "ca",
@@ -297,6 +302,56 @@ class DemoVm(app: Application) : AndroidViewModel(app) {
     }
 
     fun allowStretch() = _ui.update { it.copy(stretch = true) }
+
+    /* ── KEEPING A SWEEP ──────────────────────────────────────────────────
+       Ken, 2026-09-23: "There's still no way to save a matched sweep, but I
+       can save individual jobs through the heart" and "Name the sweep by the
+       resume that earned it as one name could have different resumes, thus
+       different sweeps e.g. I've got three resumes!"
+
+       The naming lives in SweepStore, with why it cannot be derived from a
+       résumé nobody keeps. Here is only the bridge: the run being looked at
+       is the run that gets kept, and the current sector note travels with it
+       so a row can say what the sweep was. */
+    private fun currentRun(u: Ui) = SavedRun(
+        day = u.feed?.day.orEmpty(), market = u.market,
+        fp = fingerprint(u.resume), profile = "", scores = u.scores,
+    )
+
+    /** What this résumé's sweeps are called, or "" if it has never been named. */
+    fun sweepName(): String = SweepStore.nameFor(getApplication(), fingerprint(_ui.value.resume))
+
+    /** Is the run on screen already kept? */
+    fun sweepKept(): Boolean = SweepStore.kept(getApplication(), currentRun(_ui.value))
+
+    fun keepSweep(name: String) = _ui.update { u ->
+        if (u.scores.isEmpty()) return@update u
+        SweepStore.keep(getApplication(), currentRun(u), u.selection?.label.orEmpty(), name, java.time.LocalDate.now().toString())
+        u.copy(sweeps = SweepStore.all(getApplication()))
+    }
+
+    fun renameSweep(fp: String, name: String) = _ui.update { u ->
+        SweepStore.rename(getApplication(), fp, name)
+        u.copy(sweeps = SweepStore.all(getApplication()))
+    }
+
+    fun removeSweep(id: String) = _ui.update { u ->
+        SweepStore.remove(getApplication(), id)
+        u.copy(sweeps = SweepStore.all(getApplication()))
+    }
+
+    /**
+     * Put a kept sweep back as the run on screen. It goes through keepRun() so
+     * the restored one IS the saved run afterwards - reopening the app lands on
+     * the sweep the reader last opened, not on the one they last scored.
+     *
+     * `restored = true` because that is exactly what it is: matches without the
+     * résumé that earned them, which the header already knows how to say.
+     */
+    fun openSweep(id: String) = _ui.update { u ->
+        val s = SweepStore.all(getApplication()).firstOrNull { it.id == id } ?: return@update u
+        keepRun(u.copy(scores = s.scores, market = s.market, restored = true, stretch = false))
+    }
 
     /** Write the run to disk and return the state unchanged, so it can sit inside an update {}. */
     private fun keepRun(u: Ui): Ui {
@@ -727,7 +782,7 @@ fun DemoScreen(vm: DemoVm = viewModel()) {
 
           }
             if (trackerOpen) TrackerScreen(
-                vm, ui.tracker, ui.watched,
+                vm, ui.tracker, ui.watched, ui.sweeps,
                 onBrowse = { trackerOpen = false; screen = Screen.BROWSE },
                 onHome = { trackerOpen = false; screen = Screen.LANDING; sector = null; policy = null; query = "" },
             ) { trackerOpen = false }
@@ -1021,6 +1076,40 @@ private fun LazyListScope.matches(
     /* A run kept from another day is still useful — the reader decides. It is
        never passed off as today's. */
     ui.runStale?.let { item { MCount(it, Modifier.padding(top = 2.dp)) } }
+    /* KEEP THIS SWEEP, the phone's half of the web's control on the same line.
+       Two shapes: a press when this résumé already has a name, and a box when
+       it does not — see SweepStore for why the name cannot be read off a
+       résumé nobody keeps. */
+    if (sorted.isNotEmpty()) item {
+        var naming by remember { mutableStateOf(false) }
+        var typed by remember { mutableStateOf("") }
+        val known = remember(ui.sweeps, ui.resume) { vm.sweepName() }
+        val kept = remember(ui.sweeps, ui.resume, ui.scores) { vm.sweepKept() }
+        Column(Modifier.padding(top = 6.dp)) {
+            if (naming) {
+                EditableText(
+                    value = typed, onChange = { typed = it }, well = true,
+                    placeholder = "which résumé was this?",
+                )
+                Spacer(Modifier.height(6.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    MButton("Keep it", primary = true) {
+                        if (typed.isNotBlank()) { vm.keepSweep(typed); naming = false }
+                    }
+                    MButton("Cancel", primary = false) { naming = false }
+                }
+            } else if (kept) {
+                /* A state, not a control: there is nothing left to press, and a
+                   link that does nothing is worse than a sentence. */
+                MCount("kept as ${known.ifEmpty { "a sweep" }} · find it under Saved")
+            } else LinkText(
+                if (known.isNotEmpty()) "keep this sweep as $known" else "keep this sweep"
+            ) {
+                if (known.isNotEmpty()) vm.keepSweep(known) else { typed = ""; naming = true }
+            }
+        }
+    }
+
     /* THE QUESTION THIS ANSWERS, asked by the operator on 2026-09-23: if the
        resume is no longer kept, what were these scored against? A run outlives
        the resume that earned it, on purpose - the matches are worth keeping and
@@ -1558,12 +1647,15 @@ private fun TrackerScreen(
     vm: DemoVm,
     tracker: Map<String, Tracked>,
     watched: List<Watch>,
+    sweeps: List<KeptSweep>,
     onBrowse: () -> Unit,
     onHome: () -> Unit,
     onClose: () -> Unit,
 ) {
+    val ctx = LocalContext.current
     var confirmClear by remember { mutableStateOf(false) }
     var savedOpen by remember { mutableStateOf(false) }
+    var renaming by remember { mutableStateOf<String?>(null) }
     // An overlay in the activity's own window, not a Dialog: a Dialog gets its own
     // window, which never received the light system-bar style, so Saved jobs
     // opened under a grey status bar with white icons. Back closes it.
@@ -1582,14 +1674,14 @@ private fun TrackerScreen(
                         MButton("Close", primary = false, onClick = onClose)
                     }
                     Spacer(Modifier.height(4.dp))
-                    MCount("${tracker.size + watched.size} kept · stays on this device")
+                    MCount("${tracker.size + watched.size + sweeps.size} kept · stays on this device")
                 }
                 /* EMPTY MEANS EMPTY OF BOTH. The header counts postings AND saved
                    searches, so gating this on the postings alone put "1 kept" and
                    "Nothing kept yet." on screen together the moment a search was
                    saved with no posting hearted. Ken, 2026-09-20: "Saved sweep is
                    great, just needs to be built out properly." */
-                if (tracker.isEmpty() && watched.isEmpty())
+                if (tracker.isEmpty() && watched.isEmpty() && sweeps.isEmpty())
                     item {
                         /* v2 stage 9: the empty state is the mark - eight unlit bearings
                            (still; an infinite seek would keep the window from idling) */
@@ -1607,6 +1699,52 @@ private fun TrackerScreen(
                             MButton("Run a fresh sweep", primary = false, onClick = onHome)
                         }
                     }
+                /* SWEEPS KEPT WHOLE, above the kept jobs, because a sweep is
+                   the thing a kept job came out of. Grouped by the résumé that
+                   earned them — Ken, 2026-09-23: "one name could have different
+                   resumes, thus different sweeps e.g. I've got three resumes!"
+
+                   Grouped on the FINGERPRINT and not the name: two résumés
+                   given the same name are still two résumés, and merging them
+                   would quietly claim a run was scored against something it
+                   was not. The name is only the heading. */
+                if (sweeps.isNotEmpty()) {
+                    sweeps.groupBy { it.fp }.forEach { (fp, rows) ->
+                        item {
+                            Spacer(Modifier.height(10.dp))
+                            Text(rows.first().name.ifEmpty { "Unnamed résumé" },
+                                 style = H2, fontSize = 19.sp, color = T.ink)
+                            Spacer(Modifier.height(4.dp))
+                            Text("${rows.size} sweep${if (rows.size == 1) "" else "s"} scored against one résumé.",
+                                 color = T.text3, fontSize = 13.sp, lineHeight = 19.sp)
+                        }
+                        items(rows, key = { it.id }) { s ->
+                            Column(
+                                Modifier.fillMaxWidth().background(T.surface, Card)
+                                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                            ) {
+                                Text(
+                                    "${s.scores.size} match${if (s.scores.size == 1) "" else "es"}" +
+                                        (if (s.note.isNotEmpty()) "  ·  ${s.note}" else "") +
+                                        (if (s.market == "ke") "  ·  Kenya" else ""),
+                                    color = T.ink, fontSize = 14.sp, fontWeight = FontWeight.Medium, maxLines = 1,
+                                )
+                                Text(if (s.day.isNotEmpty()) "swept ${s.day}" else "kept ${s.at}",
+                                     color = T.text3, fontSize = 12.sp)
+                                Spacer(Modifier.height(8.dp))
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    MButton("Open these matches", primary = true) {
+                                        vm.openSweep(s.id); onClose()
+                                    }
+                                    Spacer(Modifier.weight(1f))
+                                    LinkText("rename") { renaming = fp }
+                                    Spacer(Modifier.width(12.dp))
+                                    LinkText("remove") { vm.removeSweep(s.id) }
+                                }
+                            }
+                        }
+                    }
+                }
                 // A few, then the rest behind a tap - an unbounded saved list is
                 // the thing that made this unreadable in the first place.
                 val all = tracker.values.sortedByDescending { it.fit }
@@ -1646,6 +1784,33 @@ private fun TrackerScreen(
                     }
                 }
             }
+        }
+        /* Renaming a résumé renames every sweep it earned, because they are one
+           résumé's runs and leaving the others behind is how a list stops being
+           trustworthy. The field is the language's own, capped the same way. */
+        renaming?.let { fp ->
+            var typed by remember(fp) { mutableStateOf(SweepStore.nameFor(ctx, fp)) }
+            AlertDialog(
+                onDismissRequest = { renaming = null },
+                containerColor = T.surface, shape = Card,
+                confirmButton = {
+                    TextButton(onClick = {
+                        if (typed.isNotBlank()) vm.renameSweep(fp, typed)
+                        renaming = null
+                    }) { Text("Rename", color = T.ink) }
+                },
+                dismissButton = { TextButton(onClick = { renaming = null }) { Text("Cancel", color = T.text2) } },
+                title = { Text("Name this résumé", style = H2, fontSize = 22.sp, color = T.ink) },
+                text = {
+                    Column {
+                        Text("Every sweep scored against it takes this name.",
+                             color = T.text2, fontSize = 13.5.sp, lineHeight = 20.sp)
+                        Spacer(Modifier.height(10.dp))
+                        EditableText(value = typed, onChange = { typed = it.take(SweepStore.NAME_MAX) },
+                                     well = true, placeholder = "which résumé was this?")
+                    }
+                },
+            )
         }
         if (confirmClear) AlertDialog(
             onDismissRequest = { confirmClear = false },

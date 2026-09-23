@@ -64,6 +64,12 @@ const CHECKS = [
      is the visible half; the read path - Copy and Download still holding the
      text as DELIVERED - is the half that fails in front of an employer. */
   { id: "editable",  file: "tools/check_drafts_editable.mjs", mutations: ["web-readonly", "web-stale-copy", "web-no-empty-box", "android-readonly", "android-stale"], guards: "the letter, the résumé and every screening answer are editable on both surfaces, and Copy/Download/.docx carry the edit" },
+
+  /* 2026-09-23. A sweep can be kept whole and is named by the résumé that
+     earned it - which cannot be read off a résumé nobody stores, so the
+     reader names it once and the fingerprint remembers. The cap on that box
+     is load-bearing: it is the one place a résumé could still land. */
+  { id: "sweeps",    file: "tools/check_sweeps.mjs", mutations: ["web-uncapped", "web-name-by-text", "web-merge-by-name", "android-uncapped", "android-nogroup"], guards: "a sweep is kept and named by the résumé that earned it on both surfaces, grouped by fingerprint, and the name box is capped" },
 ];
 const run = (file, argv, py) => new Promise(res => {
   const c = spawn(py ? "python" : process.execPath, [join(ROOT, file), ...argv], { cwd: ROOT, env: process.env });

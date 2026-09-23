@@ -925,6 +925,17 @@ nav.main{margin-left:var(--s4)}
 .allsweep{appearance:none;background:transparent;border:0;padding:0 0 0 var(--s1);cursor:pointer;
   font:500 var(--t2)/1 var(--sans);color:var(--link);text-decoration:underline;text-underline-offset:3px}
 .allsweep:hover{color:var(--ink)}
+/* Naming a sweep is one field and one press, so it happens in the line that
+   counts the matches rather than in a dialog. The box borrows the field's own
+   geometry - --r-chip, the hairline, the accent focus ring - because the
+   design language already has a text input and this is that input, short. */
+.namesweep{display:inline-flex;align-items:center;gap:var(--s1);padding-left:var(--s1);
+  vertical-align:baseline}
+.namesweep input{appearance:none;font:500 var(--t2)/1.4 var(--sans);color:var(--ink);
+  background:var(--surface);border:1px solid var(--hair2);border-radius:var(--r-chip);
+  padding:2px var(--s2);min-width:16ch;max-width:26ch}
+.namesweep input::placeholder{color:var(--text3)}
+.namesweep input:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:var(--accent)}
 .stalerun{display:block;margin-top:var(--s1);font:400 var(--t2)/1.5 var(--sans);color:var(--b-unsure)}
 .job .applybtn,.job .plink{
   appearance:none;cursor:pointer;background:transparent;border:1px solid var(--hair2);
@@ -1066,6 +1077,7 @@ nav.main{margin-left:var(--s4)}
 <script src="band.js"></script>
 <script src="evidence.js"></script>
 <script src="rose.js"></script>
+<script src="sweeps.js"></script>
 <main>
 <div id="v-landing">
   <div class="wrap">
@@ -2319,6 +2331,14 @@ function browse(){
        confusion the sentence was written for. */
     $("#browseCount").insertAdjacentHTML("beforeend",
       ` <button class="allsweep" type="button">show the whole sweep instead</button>`);
+    /* KEEP THIS SWEEP. Ken, 2026-09-23: "There's still no way to save a matched
+       sweep, but I can save individual jobs through the heart."
+
+       The name is the reader's, asked for once per résumé and remembered by
+       fingerprint after that — see sweeps.js for why it cannot be read off the
+       résumé itself. So the control has two shapes: a press when this résumé
+       already has a name, and a box when it does not. */
+    wireSaveSweep();
     /* A run kept from another day is still useful — the reader decides. It is
        never passed off as today's. */
     if (runStale) $("#browseCount").insertAdjacentHTML("beforeend",
@@ -2497,6 +2517,72 @@ function keepRun(){
 /* Why a run is not being shown, when there is one stored. Null means it is
    usable; anything else is a sentence for the reader. */
 let runStale = null;
+
+/* ── KEEPING A SWEEP ───────────────────────────────────────────────────────
+   Ken, 2026-09-23: "There's still no way to save a matched sweep, but I can
+   save individual jobs through the heart", and the part that makes it more
+   than a bookmark: "Name the sweep by the resume that earned it as one name
+   could have different resumes, thus different sweeps e.g. I've got three
+   resumes!"
+
+   The naming lives in sweeps.js, along with why it cannot be derived from the
+   résumé. Here is only the control, and it has two shapes: when this résumé
+   has been named before, one press keeps the sweep under that name; when it
+   has not, the control becomes a box that asks. Either way it is the same
+   `.allsweep` word beside "show the whole sweep instead", because a sweep is
+   kept from the line that counts it. */
+function currentRun(){
+  try{ return JSON.parse(localStorage.getItem(RUNKEY) || "null"); }catch(e){ return null; }
+}
+function sweepWord(){
+  const run = currentRun();
+  const known = run && JSSweeps.nameFor(run.fp);
+  if (run && JSSweeps.saved(run)) return `kept as ${known || "a sweep"}`;
+  return known ? `keep this sweep as ${known}` : "keep this sweep";
+}
+function wireSaveSweep(){
+  const host = $("#browseCount");
+  if (!host || !scored?.length) return;
+  host.insertAdjacentHTML("beforeend",
+    ` <button class="allsweep keepsweep" type="button">${esc(sweepWord())}</button>`);
+  const btn = host.querySelector(".keepsweep");
+  btn.onclick = () => {
+    const run = currentRun();
+    if (!run?.scored?.length) return;
+    const known = JSSweeps.nameFor(run.fp);
+    if (known){ JSSweeps.save(run, known); ev("sweep_keep"); btn.textContent = `kept as ${known}`; return; }
+    askSweepName(btn, run);
+  };
+}
+/* The box, when this résumé has no name yet. It replaces the control in
+   place rather than opening anything: naming a sweep is one field and one
+   press, and a dialog for that is a dialog for nothing. */
+function askSweepName(btn, run){
+  const wrap = document.createElement("span");
+  wrap.className = "namesweep";
+  wrap.innerHTML = `<input type="text" maxlength="${JSSweeps.NAME_MAX}" `
+    + `aria-label="Name the résumé these matches were scored against" `
+    + `placeholder="which résumé was this?">`
+    + `<button class="allsweep" type="button">keep it</button>`;
+  btn.replaceWith(wrap);
+  const box = wrap.querySelector("input"), go = wrap.querySelector("button");
+  const done = () => {
+    const name = box.value.trim();
+    if (!name){ box.focus(); return; }
+    JSSweeps.save(run, name);
+    ev("sweep_keep");
+    const said = document.createElement("button");
+    said.className = "allsweep keepsweep"; said.type = "button";
+    said.textContent = `kept as ${name}`;
+    wrap.replaceWith(said);
+    /* Named once, and every later sweep from this résumé arrives with it. */
+    said.onclick = () => { location.href = "saved#sweeps"; };
+  };
+  go.onclick = done;
+  box.onkeydown = e => { if (e.key === "Enter"){ e.preventDefault(); done(); } };
+  box.focus();
+}
+
 
 function recallRun(){
   runStale = null;

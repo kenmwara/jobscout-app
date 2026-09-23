@@ -109,7 +109,11 @@
   .plink{font-size:var(--t2);font-weight:500;color:var(--midnight);text-decoration:none;border:1.5px solid var(--hair2);border-radius:1600px;padding:var(--s2) var(--s4);
     transition:border-color .2s var(--ease),background .2s var(--ease),color .2s var(--ease)}
   .plink:hover{background:var(--indigo);border-color:var(--indigo);color:#fff}
-  .rm{background:none;border:none;color:var(--text3);padding:var(--s1) var(--s1);font:500 var(--t2) var(--sans);cursor:pointer}
+  /* rename sits with remove: both are quiet controls on a row, and a kept
+     sweep's name is the one thing about it the reader owns. */
+  .rm,.rn{background:none;border:none;color:var(--text3);padding:var(--s1) var(--s1);font:500 var(--t2) var(--sans);cursor:pointer}
+  .rm:hover,.rn:hover{color:var(--ink)}
+  .rm:focus-visible,.rn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
   /* what happened next - the only thing on this page the person fills in themselves */
   .st{font:500 var(--t2) var(--sans);color:var(--midnight);background:var(--surface);cursor:pointer;
     border:1.5px solid var(--hair2);border-radius:1600px;padding:var(--s2) var(--s3)}
@@ -138,6 +142,7 @@ nav.main{margin-left:auto;display:flex;gap:var(--s2);align-items:center}
 <script src="band.js"></script>
 <script src="evidence.js"></script>
 <script src="rose.js"></script>
+<script src="sweeps.js"></script>
 </head>
 <body>
 <!-- THE PAGE MARK: the eight-dot rose at page scale, pinned to the viewport
@@ -176,6 +181,9 @@ nav.main{margin-left:auto;display:flex;gap:var(--s2);align-items:center}
   <p class="eyebrow">Saved</p>
   <h1 id="h1">The ones you kept.</h1>
   <p class="sub" id="sub">Sorted by fit, best first. Applying is always your click.</p>
+  <!-- Sweeps kept whole, grouped by the résumé that earned them. ABOVE the
+       kept jobs, because a sweep is the thing a kept job came out of. -->
+  <div id="sweeps"></div>
   <div id="list"></div>
   <!-- Searches being watched. Kept on this device; nothing is emailed. -->
   <div id="watched"></div>
@@ -210,6 +218,72 @@ const MARKSVG = `<svg class="wmark" viewBox="0 0 104 104" aria-hidden="true">` +
     return `<circle cx="${(52 + 38 * Math.cos(th)).toFixed(2)}" cy="${(52 + 38 * Math.sin(th)).toFixed(2)}"` +
            ` r="${(3.4 + i * 0.62).toFixed(2)}"/>`;
   }).join("") + `</svg>`;
+
+/* SWEEPS YOU KEPT. Ken, 2026-09-23: "There's still no way to save a matched
+   sweep, but I can save individual jobs through the heart."
+
+   Above the kept jobs, because a sweep is the thing a kept job came out of,
+   and grouped by the résumé that earned it — "one name could have different
+   resumes, thus different sweeps e.g. I've got three resumes!" The grouping
+   is the point: three résumés make three headings, and a run under the wrong
+   one would be worse than not keeping it at all.
+
+   Opening one puts it back as the current run and goes to the matches, which
+   is the same record index.html reads on any reload — so a kept sweep and a
+   fresh one are the same thing to every other part of the page. */
+function renderSweeps(){
+  const host = document.getElementById("sweeps");
+  if (!host) return;
+  const items = JSSweeps.all();
+  if (!items.length){ host.innerHTML = ""; return; }
+  /* Grouped by fingerprint, not by name: two résumés a reader gave the same
+     name are still two résumés, and merging them would quietly claim a run
+     was scored against something it was not. The name is the heading. */
+  const by = new Map();
+  for (const s of items){
+    if (!by.has(s.fp)) by.set(s.fp, []);
+    by.get(s.fp).push(s);
+  }
+  host.innerHTML = [...by.entries()].map(([fp, rows]) => {
+    const name = rows[0].name || "Unnamed résumé";
+    return `<section class="group"><h2>${esc(name)}<small>${rows.length} sweep${rows.length === 1 ? "" : "s"}</small></h2>`
+      + `<p>Scored against one résumé. Opening one puts those matches back on the demo page.</p>`
+      + `<div class="rows">`
+      + rows.map(s => `<div class="row">${roseSVG(Math.max(...s.scored.map(x => x.fit || 0)))}
+          <div class="t">${s.scored.length} match${s.scored.length === 1 ? "" : "es"}${s.note ? ` <span class="co">· ${esc(s.note)}</span>` : ""}${s.market === "ke" ? ` <span class="co">· Kenya</span>` : ""}</div>
+          <div class="m">${s.day ? "swept " + esc(s.day) : "kept " + esc(s.at)}</div>
+          <div class="ctl"><button class="plink go open" type="button" data-open="${esc(s.id)}">Open these matches →</button>
+            <button class="rn" type="button" data-fp="${esc(fp)}">rename</button>
+            <button class="rm" type="button" data-sw="${esc(s.id)}">remove ×</button></div>
+        </div>`).join("")
+      + `</div></section>`;
+  }).join("");
+
+  host.querySelectorAll("[data-open]").forEach(b => b.onclick = () => {
+    const s = JSSweeps.all().find(x => x.id === b.dataset.open);
+    if (!s) return;
+    try{
+      localStorage.setItem("jobscout.run", JSON.stringify({
+        v: 2, scored: s.scored, note: s.note, day: s.day, market: s.market, fp: s.fp,
+      }));
+    }catch(e){}
+    location.href = s.market === "ke" ? "https://nairobi.jobscout.page/#browse" : "./#browse";
+  });
+  host.querySelectorAll("[data-sw]").forEach(b => b.onclick = () => {
+    JSSweeps.remove(b.dataset.sw); renderSweeps();
+  });
+  /* Renaming a résumé renames every sweep it earned, because they are one
+     résumé's runs and leaving the others behind is how a list stops being
+     trustworthy. */
+  host.querySelectorAll(".rn").forEach(b => b.onclick = () => {
+    const fp = b.dataset.fp;
+    const now = JSSweeps.nameFor(fp);
+    const next = prompt("What should this résumé's sweeps be called?", now);
+    if (next === null) return;
+    JSSweeps.rename(fp, next);
+    renderSweeps();
+  });
+}
 
 function renderWatched(){
   const host = document.getElementById("watched");
@@ -270,17 +344,28 @@ const GROUPS = [
     note: "Kept before the pipeline read your résumé against it." },
 ];
 function render(){
+  renderSweeps();
   renderWatched();
   const items = Object.values(tracker).sort((x, y) => (y.fit||0) - (x.fit||0));
   const unscored = t => t.fit === null || t.fit === undefined || t.fit === "";
   $("#clear").hidden = !items.length;
-  $("#h1").innerHTML = items.length ? `The <span class="n">${items.length}</span> you kept.` : "Nothing kept yet.";
+  /* "Nothing kept yet." was printed above three kept sweeps the first time
+     this page rendered them: the headline only ever counted jobs. It counts
+     what is on the page now. */
+  const sweeps = JSSweeps.all().length;
+  $("#h1").innerHTML = items.length ? `The <span class="n">${items.length}</span> you kept.`
+    : sweeps ? `<span class="n">${sweeps}</span> sweep${sweeps === 1 ? "" : "s"} kept.`
+    : "Nothing kept yet.";
   /* A sort order is not a thing to say about an empty list. */
   $("#sub").textContent = items.length
     ? "Sorted by fit, best first. Applying is always your click."
+    : sweeps ? "Open one to put those matches back, then keep the ones worth keeping."
     : "Anything you keep lands here — on this device, and nowhere else.";
   if (!items.length){
-    $("#list").innerHTML = `<div class="empty">${roseSVG(null, 96).replace('class="rose unlit"', 'class="rose unlit seek"')}<p class="big">Your shortlist starts on the demo page.</p>
+    /* The full empty state belongs to a page with nothing on it. With sweeps
+       above, it would be a second, louder "you have nothing" under a list of
+       things the reader has. */
+    $("#list").innerHTML = sweeps ? "" : `<div class="empty">${roseSVG(null, 96).replace('class="rose unlit"', 'class="rose unlit seek"')}<p class="big">Your shortlist starts on the demo page.</p>
       <p>Score a sweep, then tap <b>Save</b> on any match to keep it here.</p><div class="foot" style="justify-content:center;margin-top:0"><a class="btn" href="./#browse">Browse the sweep</a><a class="btn quiet" href="./">Run a fresh sweep</a></div></div>`;
     return;
   }
