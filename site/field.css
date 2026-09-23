@@ -233,7 +233,14 @@
   grid-template-rows: auto;
   align-items: center;
   gap: var(--s2);
-  border-radius: var(--r-pill);
+  /* A rounded rectangle, not a pill, in EVERY state. --r-pill on a 54px box
+     rounds the ends into a full half-circle, and Ken, 2026-09-23: "The web
+     landing page upload box is oval in shape as opposed to being rectangular
+     with rounded corners." He is looking at the EMPTY bar - that is what the
+     landing page loads with - so the fix belongs here on the base and not on
+     a content state he never sees first. --r-card is the same token the well
+     and every panel already use. */
+  border-radius: var(--r-card);
   padding: var(--s1) var(--s1) var(--s1) var(--s4);
 }
 .field--bar .field__area {
@@ -323,11 +330,11 @@ textarea { resize: none; }
    untouched, because one line at the top of the landing page is the whole
    reason the bar density exists.
    --------------------------------------------------------------------------- */
+
 @media (max-width: 560px) {
   .field--bar[data-state="typing"] {
     grid-template-columns: 1fr;
     grid-template-rows: auto auto;
-    border-radius: var(--r-card);
     padding: var(--s3);
     gap: var(--s2);
   }
