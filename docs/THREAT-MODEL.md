@@ -48,7 +48,9 @@ everyone, so the only lever is *what the product is willing to do for a stranger
 | Risk | Standing | What catches it |
 |---|---|---|
 | The demo is used to run up a model bill | Closed. An hourly cap per address, enforced server side | the worker's own tests |
-| A résumé is retained | Closed. Never written; a legacy record is scrubbed on load | `check_gaps --only privacy` |
+| A résumé is retained | Closed. Never written on either surface; a legacy record is scrubbed on load | `check_resume_privacy.mjs`, `check_gaps --only privacy` |
+| A résumé arrives through the one box that IS kept | **Named and capped 2026-09-23.** Naming a saved sweep writes the reader's own words to storage — the only text field on either surface whose contents persist. It is capped at 60 characters on both, because a box beside a résumé is a box someone pastes a résumé into. A cap is a mitigation, not a closure: 60 characters of a résumé is still 60 characters of a résumé | `check_sweeps.mjs` (`web-uncapped`, `android-uncapped`) |
+| A kept sweep is attributed to the wrong résumé | Closed. Sweeps group on the fingerprint, never the name, so two résumés a reader gave one name stay two histories | `check_sweeps.mjs` (`web-merge-by-name`, `android-nogroup`) |
 | Telemetry re-identifies a reader | Closed by construction: no address column on `ev` | the schema |
 | The product claims something it did not measure | Closed. A gap may not lead a card, a line may not persuade | `check_honesty.mjs` |
 | A deploy ships behind a red suite | **Closed 2026-09-22.** Both deploy jobs need the checks | the gate itself |

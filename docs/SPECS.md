@@ -16,6 +16,8 @@ Audited **2026-09-22**. Source: every message Ken sent, pulled from the session 
 
 | | Requirement | Said | Surface | Proven by |
 |---|---|---|---|---|
+| **OPEN** | `drafts-editable-phone`<br><sub>2026-09-23</sub> | There should be an edit capability on the popups in mobile at cover letter writing, re-write resume and screening questions. Currently, they're all write-protected (which doesn't makesense) | android | `tools/check_drafts_editable.mjs` |
+| **OPEN** | `design-language-is-chats`<br><sub>2026-09-23</sub> | For any and all upgrades, ensure that you strictly stick to the design architecture & language provided by chat. Do not deviate as that just costs us a whole other build!! | both | **none** |
 | OK | `hero-box`<br><sub>2026-09-18</sub> | The large hero title with a text box/resume upload box on the landing page | web | `node tools/check_field_chrome.mjs` |
 | OK | `market-switch`<br><sub>2026-09-18</sub> | CA/KE flip switch at the top with 2 completely different design languages - light/dark | web | `node tools/check_lightdark.mjs` |
 | OK | `hero-tabs`<br><sub>2026-09-18</sub> | Useful tabs with relevant options - Full time, Contract, AI training, Remote... | web | **none** |
@@ -63,6 +65,15 @@ Audited **2026-09-22**. Source: every message Ken sent, pulled from the session 
 | OK | `clip-accessible-name`<br><sub>2026-09-22</sub> | (not reported - found while auditing) | phone | `python tools/check_popups.py` |
 | OK | `picker-cannot-fail-silently`<br><sub>2026-09-22</sub> | (not reported - found while auditing) | phone | `python tools/check_popups.py` |
 | OK | `footer-one-per-line`<br><sub>2026-09-22</sub> | (not reported as such - found while auditing 'everything's squashed up') | web | `node tools/check_footer.mjs` |
+| OK | `save-a-sweep`<br><sub>2026-09-23</sub> | There's still no way to save a matched sweep, but I can save individual jobs through the heart | both | `tools/check_sweeps.mjs` |
+| OK | `matches-explain-themselves`<br><sub>2026-09-23</sub> | I still have the "<-your 8 matches" button on loading the landing page - not sure what those are being scored against if my resume is not persistent anymore | both | `node tools/check_resume_privacy.mjs` |
+| OK | `landing-box-not-oval`<br><sub>2026-09-23</sub> | The web landing page upload box is oval in shape as opposed to being rectangular with rounded corners | web | `tools/check_field_phone.mjs` |
+| OK | `apply-anyway-both-surfaces`<br><sub>2026-09-23</sub> | Web has an "apply anyway" button for low scores, while mobile doesn't - should be standardized across both | both | `tools/check_apply_parity.mjs` |
+| OK | `drafts-editable-web`<br><sub>2026-09-23</sub> | Applications page is also write-protected in web - again, makes absolutely no sense! Should have capability to edit cover letter, resume and answer those screening questions | web | `tools/check_drafts_editable.mjs` |
 
 ## What is not settled
+
+**`drafts-editable-phone`** - Built: EditableText (the well ResumeField draws, without the paperclip and go), vm.editDraft -> patch() so an edit reaches the kept draft, and all three sheets wired. 23 source assertions pass and 5 mutations bite; compileDebugKotlin and assembleDebug are green. STILL OPEN because none of that is the app running: not yet driven on a device.
+
+**`design-language-is-chats`** - A STANDING CONSTRAINT, not a task - it stays open on purpose. What it decided on 09-23: the design language has NO editing affordance and no saved-sweep component in it, and inventing either is the deviation this row forbids. So every control added today is built from what Chat already drew - the drafts are the RENDERED elements made editable in place (web) and the well ResumeField draws minus its two doors (phone); the keep-sweep control is the same `.allsweep` word as “show the whole sweep instead”; the name box borrows --r-chip, the hairline and the accent focus ring; the Saved page's sweeps reuse the `.group`/`.row` markup the watched searches already use. No new component on either surface. If Chat has patterns for these, they drop in over the top without moving the logic.
 
