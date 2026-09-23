@@ -2,7 +2,7 @@
  * check_preview — the link-preview card is right for the market it is shared from.
  *
  *   node tools/check_preview.mjs
- *   node tools/check_preview.mjs --mutate no-failsafe | all-hosts | no-url
+ *   node tools/check_preview.mjs --mutate no-failsafe | all-hosts | no-url | all-paths | bare-title
  *                                         | not-html | no-kenya
  *   SITE=https://nairobi.jobscout.page node tools/check_preview.mjs --live
  *
@@ -51,7 +51,9 @@ if (MUTATE === "no-failsafe") w = w.replace(/\n\s*} catch \{\n\s*return res;\n\s
 if (MUTATE === "all-hosts") w = w.replace(/if \(!market\) return res;/, "");
 if (MUTATE === "not-html") w = w.replace(/if \(!\(res\.headers\.get\("content-type"\).*\n/, "");
 if (MUTATE === "no-url") w = w.replace(/if \(key === "og:url"\).*\n/, "");
-if (MUTATE === "no-kenya") w = w.replace(/JobScout Kenya/, "JobScout");
+if (MUTATE === "no-kenya") w = w.replace(/title: "JobScout Kenya/, 'title: "JobScout');
+if (MUTATE === "all-paths") w = w.replace(/if \(url\.pathname !== "\/".*\n/, "");
+if (MUTATE === "bare-title") w = w.replace(/"head > title"/, '"title"');
 
 if (!LIVE) {
   ok(!!w, "site/_worker.js was found",
@@ -70,6 +72,15 @@ if (!LIVE) {
   ok(/\} catch \{[\s\S]{0,40}return res;/.test(w),
      "any throw returns the untouched response",
      "this is the whole reason a cosmetic rewrite is allowed in a live request path");
+  /* The regression this check exists to have caught: the first version rewrote
+     every HTML response on the host, so /privacy came back titled with the
+     landing page's card. */
+  ok(/url\.pathname !== "\/" && url\.pathname !== "\/index\.html"/.test(w),
+     "only the root document is rewritten",
+     "/apply, /saved and /privacy would all be re-titled with the landing page's card");
+  ok(/\.on\("head > title"/.test(w),
+     "the title selector is scoped to the head",
+     "a bare `title` selector also matches an inline SVG's <title>, which is its accessibility label");
 
   // ---- and it actually covers the tags an unfurler reads --------------------
   for (const k of ["og:url", "og:title", "twitter:title", "description", "og:description", "twitter:description"]) {
@@ -77,8 +88,14 @@ if (!LIVE) {
   }
   ok(/"nairobi\.jobscout\.page": \{/.test(w) && /url: "https:\/\/nairobi\.jobscout\.page\/"/.test(w),
      "the Kenyan host maps to its own origin, not the Canadian one");
-  ok(/JobScout Kenya/.test(w),
-     "and its card says Kenya",
+  /* ANCHORED TO THE MAPPING, not to the words. The first version tested for
+     /JobScout Kenya/ anywhere in the file, and a comment in the worker
+     quotes that same string - so the mutation changed the title the host
+     actually serves and the check went on passing against the prose
+     describing it. It reported ASLEEP, which is the only reason this is
+     not a green line guarding nothing. */
+  ok(/title: "JobScout Kenya/.test(w),
+     "and the title it maps to says Kenya",
      "the card is the entire point: a generic title is the state this fixed");
 } else {
   // ---- the real proof, after a deploy ---------------------------------------
@@ -100,6 +117,17 @@ if (!LIVE) {
      `saw "${ca.tag("og:title")}" / "${ca.tag("og:url")}"`);
   ok(ke.tag("og:image") === ca.tag("og:image") && !!ke.tag("og:image"),
      "live: both still carry the same reachable card image");
+
+  /* PAGE FOR PAGE. The root's card was right and every other page on the
+     Kenyan host had been given the root's title - which a check that only ever
+     looked at the root could not see. */
+  for (const path of ["apply", "saved", "privacy"]) {
+    const k = await grab(`https://nairobi.jobscout.page/${path}`);
+    const c = await grab(`https://jobscout.page/${path}`);
+    ok(k.title === c.title && !!c.title,
+       `live: /${path} keeps its own title on both hosts`,
+       `ke "${k.title}" vs ca "${c.title}"`);
+  }
 }
 
 say(`\ncheck_preview: ${checks} assertion(s)${LIVE ? " against the live hosts" : ""}`);

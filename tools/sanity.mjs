@@ -76,7 +76,7 @@ const CHECKS = [
      browser and an unfurler never runs that. site/_worker.js rewrites four
      tags. What is asserted is not the copy but that a cosmetic worker in a
      live request path cannot break the site. */
-  { id: "preview",   file: "tools/check_preview.mjs", mutations: ["no-failsafe", "all-hosts", "not-html", "no-url", "no-kenya"], guards: "the Kenyan host previews as Kenya, and the worker fails safe on an unknown host, a non-HTML response or any throw" },
+  { id: "preview",   file: "tools/check_preview.mjs", mutations: ["no-failsafe", "all-hosts", "not-html", "no-url", "no-kenya", "all-paths", "bare-title"], guards: "the ROOT of the Kenyan host previews as Kenya, every other page keeps its own title, and the worker fails safe on an unknown host, a non-HTML response or any throw" },
 ];
 const run = (file, argv, py) => new Promise(res => {
   const c = spawn(py ? "python" : process.execPath, [join(ROOT, file), ...argv], { cwd: ROOT, env: process.env });

@@ -70,11 +70,26 @@ export default {
     // Whatever Pages would have served, headers and _headers rules included.
     const res = await env.ASSETS.fetch(request);
     try {
-      const market = MARKETS[new URL(request.url).hostname];
+      const url = new URL(request.url);
+      const market = MARKETS[url.hostname];
       if (!market) return res;
       if (!(res.headers.get("content-type") || "").includes("text/html")) return res;
+      /* THE ROOT ONLY, and this was wrong for twenty minutes. These tags
+         describe the landing page, and the first version rewrote every HTML
+         response on the host - so /privacy, /apply and /saved on the Kenyan
+         side all came back titled "JobScout Kenya - an LLM reads the job
+         market honestly". Caught by diffing the two hosts page for page after
+         the deploy; the live check now does that diff so it cannot come back.
+         The root is the URL that gets shared, and it is the only one whose
+         card this has any business touching. */
+      if (url.pathname !== "/" && url.pathname !== "/index.html") return res;
+      /* `head > title`, never a bare `title`: an inline SVG's <title> is its
+         accessibility label, and a bare selector would silently overwrite one
+         with the page's name. None is in the served HTML today - the rose is
+         built by rose.js in the browser - which is exactly the kind of thing
+         that is true until someone inlines an icon. */
       return new HTMLRewriter()
-        .on("title", new Title(market))
+        .on("head > title", new Title(market))
         .on("meta", new Tags(market))
         .transform(res);
     } catch {
