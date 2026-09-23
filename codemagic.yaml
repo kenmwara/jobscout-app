@@ -84,6 +84,14 @@ workflows:
       java: 17
       android_signing:
         - tbot_keystore
+      # The Play credential is an APP-level variable in a GROUP, and a group
+      # is only injected into a workflow that names it. Codemagic is removing
+      # global variables from personal accounts, so app-level is the only
+      # place it can live - and without this line the variable simply is not
+      # there at build time, which the pre-check would report as a missing
+      # key when it had been entered correctly.
+      groups:
+        - google_play
     scripts:
       - name: The Play credentials are present
         script: |
