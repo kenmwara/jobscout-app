@@ -71,6 +71,13 @@ A green check is evidence about one assertion, never about the product.
 ## Shipping
 
 - A push touching `site/**` auto-deploys the web. A push touching `android/**` queues a
-  paid Codemagic build. A `v*` tag cuts a signed release — **never tag without being asked.**
+  paid Codemagic build. **A `v*` tag builds AND PUBLISHES to the Alpha closed track** — since
+  2026-09-23 there is no human step between the tag and the testers, so a tag is a release
+  decision rather than a build. **Never tag without being asked.**
+- **A green Codemagic build is a claim; Play Console's Submission activity is the record.**
+  0.9.7 was reported as live on the strength of a step named *Publishing* — which publishes
+  artefacts to the build page — while Play had never heard of it, and the API had said so:
+  empty `publish`, nothing for Google Play. Do not call a release published without a
+  submission ID. 0.9.8 is #18.
 - After a web push, re-measure on the live hosts, both markets:
   `SITE=https://jobscout.page node tools/check_field_phone.mjs`
