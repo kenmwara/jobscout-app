@@ -16,7 +16,7 @@ Audited **2026-09-22**. Source: every message Ken sent, pulled from the session 
 
 | | Requirement | Said | Surface | Proven by |
 |---|---|---|---|---|
-| **OPEN** | `drafts-editable-phone`<br><sub>2026-09-23</sub> | There should be an edit capability on the popups in mobile at cover letter writing, re-write resume and screening questions. Currently, they're all write-protected (which doesn't makesense) | android | `tools/check_drafts_editable.mjs` |
+| **OPEN** | `drafts-editable-phone`<br><sub>2026-09-23</sub> | There should be an edit capability on the popups in mobile at cover letter writing, re-write resume and screening questions. Currently, they're all write-protected (which doesn't makesense) | android | `node tools/check_drafts_editable.mjs` |
 | **OPEN** | `design-language-is-chats`<br><sub>2026-09-23</sub> | For any and all upgrades, ensure that you strictly stick to the design architecture & language provided by chat. Do not deviate as that just costs us a whole other build!! | both | **none** |
 | OK | `hero-box`<br><sub>2026-09-18</sub> | The large hero title with a text box/resume upload box on the landing page | web | `node tools/check_field_chrome.mjs` |
 | OK | `market-switch`<br><sub>2026-09-18</sub> | CA/KE flip switch at the top with 2 completely different design languages - light/dark | web | `node tools/check_lightdark.mjs` |
@@ -36,7 +36,7 @@ Audited **2026-09-22**. Source: every message Ken sent, pulled from the session 
 | OK | `back-keeps-searches`<br><sub>2026-09-19</sub> | When I click back from any part of these pages, instead of being directed to the previous page I'm being taken straight back to the landing page - losing all my previous searches. | web | **none** |
 | OK | `apply-from-our-page`<br><sub>2026-09-19</sub> | I should be able to apply from our apply page without necessarily having to go to the posting itself | web | `python tools/check_popups.py` |
 | OK | `phone-market-button`<br><sub>2026-09-19</sub> | There's no KE button | phone | **none** |
-| OK | `upload-stretches-the-bar`<br><sub>2026-09-19</sub> | Upload is fitting the whole resume text into the text bar and stretching it all the way down | web+phone | `node tools/check_field_phone.mjs && python tools/check_popups.py` |
+| OK | `upload-stretches-the-bar`<br><sub>2026-09-19</sub> | Upload is fitting the whole resume text into the text bar and stretching it all the way down | web+phone | `python node tools/check_field_phone.mjs && python tools/check_popups.py` |
 | OK | `prepare-button`<br><sub>2026-09-19</sub> | There is no prepare application button | phone | `python tools/check_popups.py` |
 | OK | `how-it-works-in-app`<br><sub>2026-09-19</sub> | How it works is currently pointing to my GH, while there's a page strip with that information right at the bottom of the landing page | phone | **none** |
 | OK | `copy-per-answer`<br><sub>2026-09-19</sub> | the answers to those questions should each come with their own copy mechanism and icon so it's easier for the candidate to drop in answers one by one | web+phone | **none** |
@@ -65,11 +65,11 @@ Audited **2026-09-22**. Source: every message Ken sent, pulled from the session 
 | OK | `clip-accessible-name`<br><sub>2026-09-22</sub> | (not reported - found while auditing) | phone | `python tools/check_popups.py` |
 | OK | `picker-cannot-fail-silently`<br><sub>2026-09-22</sub> | (not reported - found while auditing) | phone | `python tools/check_popups.py` |
 | OK | `footer-one-per-line`<br><sub>2026-09-22</sub> | (not reported as such - found while auditing 'everything's squashed up') | web | `node tools/check_footer.mjs` |
-| OK | `save-a-sweep`<br><sub>2026-09-23</sub> | There's still no way to save a matched sweep, but I can save individual jobs through the heart | both | `tools/check_sweeps.mjs` |
+| OK | `save-a-sweep`<br><sub>2026-09-23</sub> | There's still no way to save a matched sweep, but I can save individual jobs through the heart | both | `node tools/check_sweeps.mjs` |
 | OK | `matches-explain-themselves`<br><sub>2026-09-23</sub> | I still have the "<-your 8 matches" button on loading the landing page - not sure what those are being scored against if my resume is not persistent anymore | both | `node tools/check_resume_privacy.mjs` |
-| OK | `landing-box-not-oval`<br><sub>2026-09-23</sub> | The web landing page upload box is oval in shape as opposed to being rectangular with rounded corners | web | `tools/check_field_phone.mjs` |
-| OK | `apply-anyway-both-surfaces`<br><sub>2026-09-23</sub> | Web has an "apply anyway" button for low scores, while mobile doesn't - should be standardized across both | both | `tools/check_apply_parity.mjs` |
-| OK | `drafts-editable-web`<br><sub>2026-09-23</sub> | Applications page is also write-protected in web - again, makes absolutely no sense! Should have capability to edit cover letter, resume and answer those screening questions | web | `tools/check_drafts_editable.mjs` |
+| OK | `landing-box-not-oval`<br><sub>2026-09-23</sub> | The web landing page upload box is oval in shape as opposed to being rectangular with rounded corners | web | `node tools/check_field_phone.mjs` |
+| OK | `apply-anyway-both-surfaces`<br><sub>2026-09-23</sub> | Web has an "apply anyway" button for low scores, while mobile doesn't - should be standardized across both | both | `node tools/check_apply_parity.mjs` |
+| OK | `drafts-editable-web`<br><sub>2026-09-23</sub> | Applications page is also write-protected in web - again, makes absolutely no sense! Should have capability to edit cover letter, resume and answer those screening questions | web | `node tools/check_drafts_editable.mjs` |
 
 ## What is not settled
 

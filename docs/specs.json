@@ -202,7 +202,7 @@
       "said": "Upload is fitting the whole resume text into the text bar and stretching it all the way down",
       "restated": "2026-09-20: the design language is off - both the oval text box, and the clip / 2026-09-22: Landing page upload bar is still the same old oval one",
       "status": "live",
-      "check": "node tools/check_field_phone.mjs && python tools/check_popups.py",
+      "check": "python node tools/check_field_phone.mjs && python tools/check_popups.py",
       "evidence": "FIXED 2026-09-22, three days after it was first reported. Below 560px a bar with content takes the well's geometry. Verified on jobscout.page and nairobi.jobscout.page and on the phone."
     },
     {
@@ -468,7 +468,7 @@
       "surface": "both",
       "said": "There's still no way to save a matched sweep, but I can save individual jobs through the heart",
       "status": "live",
-      "check": "tools/check_sweeps.mjs",
+      "check": "node tools/check_sweeps.mjs",
       "evidence": "A sweep is kept whole on both surfaces and named by the résumé that earned it. The name cannot be read off the résumé - the text is never stored, and all three of his résumés open with the same line - so the reader names it ONCE and the fingerprint remembers: the second sweep from that résumé arrives pre-named and keeps in one press. Verified in the browser end to end: named “Cybersecurity”, a second sweep from the same fp offered “keep this sweep as Cybersecurity”, a different fp asked again, the Saved page grouped 3 sweeps under 2 résumés, and Open put the matches back (4 cards, correct sector). 15 assertions, 5 mutations. Phone compiles; not yet driven on a device."
     },
     {
@@ -486,7 +486,7 @@
       "surface": "web",
       "said": "The web landing page upload box is oval in shape as opposed to being rectangular with rounded corners",
       "status": "live",
-      "check": "tools/check_field_phone.mjs",
+      "check": "node tools/check_field_phone.mjs",
       "evidence": "site/field.css: the bar's radius moved from --r-pill to --r-card on the BASE rule, so it is a rounded rectangle at rest and with content, at every width. Measured at 1280: empty 16px, typing 16px (it was 1600px empty). check_field_phone rule D asserted the opposite until today, which is why this shipped twice; its `empty-oval` mutation now fails at all four widths."
     },
     {
@@ -495,7 +495,7 @@
       "surface": "both",
       "said": "Web has an \"apply anyway\" button for low scores, while mobile doesn't - should be standardized across both",
       "status": "live",
-      "check": "tools/check_apply_parity.mjs",
+      "check": "node tools/check_apply_parity.mjs",
       "evidence": "MainActivity.kt: `val open = p != null` - the card's action is no longer gated on the fit or on the near-miss band's opt-in, so a below-floor posting carries “Apply anyway →” on the phone exactly as it does on the web. The worker's stretch flag was already derived from the fit on both, so nothing else moved. 8 assertions, 4 mutations."
     },
     {
@@ -504,7 +504,7 @@
       "surface": "android",
       "said": "There should be an edit capability on the popups in mobile at cover letter writing, re-write resume and screening questions. Currently, they're all write-protected (which doesn't makesense)",
       "status": "open",
-      "check": "tools/check_drafts_editable.mjs",
+      "check": "node tools/check_drafts_editable.mjs",
       "evidence": "Built: EditableText (the well ResumeField draws, without the paperclip and go), vm.editDraft -> patch() so an edit reaches the kept draft, and all three sheets wired. 23 source assertions pass and 5 mutations bite; compileDebugKotlin and assembleDebug are green. STILL OPEN because none of that is the app running: not yet driven on a device."
     },
     {
@@ -513,7 +513,7 @@
       "surface": "web",
       "said": "Applications page is also write-protected in web - again, makes absolutely no sense! Should have capability to edit cover letter, resume and answer those screening questions",
       "status": "live",
-      "check": "tools/check_drafts_editable.mjs",
+      "check": "node tools/check_drafts_editable.mjs",
       "evidence": "site/apply.html: the letter, every line of the rebuilt résumé and every screening answer - including the unanswered ones - are editable in place, with no new component. Copy, Download, the .txt and the .docx read the live value; the .docx is rebuilt from readDoc(). Verified in the browser: an edited letter, an edited bullet, a cleared bullet and a newly answered question all reached packText(); the count went to “all 2 answered” and back on clear."
     },
     {
