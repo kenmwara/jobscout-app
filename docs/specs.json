@@ -461,6 +461,24 @@
       "status": "live",
       "check": "node tools/check_footer.mjs",
       "evidence": "a footer link is a column entry, one per line, and still a 44px target. The check measures whether two links share a baseline, which is the thing that broke, and measures the target by offsetHeight because the footer is below the fold on its reveal spring and a 44px box reads 42 by rect."
+    },
+    {
+      "id": "save-a-sweep",
+      "date": "2026-09-23",
+      "surface": "both",
+      "said": "There's still no way to save a matched sweep, but I can save individual jobs through the heart",
+      "status": "open",
+      "check": "",
+      "evidence": "Nothing is built. A run survives a relaunch on the phone and a reload on the web, but it is ONE run - the current one - and the next run replaces it. The heart saves a posting, not a scoring. Saving a sweep means keeping several scored runs and choosing between them, which is a store and a way to name and pick them, not a flag."
+    },
+    {
+      "id": "matches-explain-themselves",
+      "date": "2026-09-23",
+      "surface": "both",
+      "said": "I still have the \"<-your 8 matches\" button on loading the landing page - not sure what those are being scored against if my resume is not persistent anymore",
+      "status": "live",
+      "check": "node tools/check_resume_privacy.mjs",
+      "evidence": "A restored run now says the resume it was scored against is not kept, on both surfaces, and the phone's \"scored by Claude just now\" is guarded by whether this session did the scoring rather than hardcoded."
     }
   ]
 }
