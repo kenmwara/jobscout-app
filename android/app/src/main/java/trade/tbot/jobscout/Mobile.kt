@@ -30,6 +30,8 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
@@ -297,6 +299,62 @@ fun Paperclip(tint: Color, size: androidx.compose.ui.unit.Dp = 18.dp) {
             drawPath(path, tint, style = Stroke(width = 1.8f, cap = StrokeCap.Round, join = StrokeJoin.Round))
         }
     }
+}
+
+/* ── THE DRAFTS ARE THE CANDIDATE'S ───────────────────────────────────────
+   Ken, 2026-09-23: "There should be an edit capability on the popups in
+   mobile at cover letter writing, re-write resume and screening questions.
+   Currently, they're all write-protected (which doesn't makesense)."
+
+   It never was a decision to lock them: the three sheets render what the
+   model returned inside a SelectionContainer, which makes text copyable and
+   nothing more, so the last word on a candidate's own letter belonged to a
+   model.
+
+   NO NEW COMPONENT. The design language has no editing affordance in it and
+   inventing one is the deviation that costs a whole other build, so this is
+   the WELL that ResumeField already draws — CardShape, T.surface, a hair2
+   hairline, s3 padding, the accent cursor — with the two doors left off,
+   because a paperclip and a go arrow belong to a résumé box and not to a
+   cover letter. `well = false` is the same field with the box removed, for
+   the résumé's own lines, where a box around every bullet would be noise;
+   there the cue is the focus tint, which is the phone's answer to the web's
+   focus ring. */
+@Composable
+fun EditableText(
+    value: String,
+    onChange: (String) -> Unit,
+    modifier: Modifier = Modifier,
+    placeholder: String = "",
+    well: Boolean = false,
+    minLines: Int = 1,
+    style: TextStyle = TextStyle(fontFamily = Sans, fontSize = Type.t2, lineHeight = 20.sp, color = T.text2),
+) {
+    var focused by remember { mutableStateOf(false) }
+    val box = if (well)
+        Modifier.fillMaxWidth().clip(CardShape).background(T.surface)
+            .border(1.dp, if (focused) T.accent else T.hair2, CardShape).padding(Space.s3)
+    else
+        Modifier.fillMaxWidth().clip(CardShape)
+            .background(if (focused) T.chip else Color.Transparent)
+    BasicTextField(
+        value = value,
+        onValueChange = onChange,
+        modifier = modifier.then(box).onFocusChanged { focused = it.isFocused },
+        minLines = minLines,
+        textStyle = style,
+        cursorBrush = SolidColor(T.accent),
+        decorationBox = { inner ->
+            /* An empty box has nothing to tap and nothing to read. The
+               placeholder is the same sentence the dead "yours to answer"
+               line used to be, in the same unsure colour, so a question left
+               for the candidate still says so - it just has somewhere to put
+               the answer now. */
+            if (value.isEmpty() && placeholder.isNotEmpty())
+                Text(placeholder, fontSize = style.fontSize, lineHeight = style.lineHeight, color = T.bUnsure)
+            inner()
+        },
+    )
 }
 
 /**

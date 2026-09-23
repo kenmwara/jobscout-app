@@ -406,6 +406,17 @@ class DemoVm(app: Application) : AndroidViewModel(app) {
         )
     }
 
+    /* An edit the candidate made to a draft they are looking at. It goes
+       through patch(), so it reaches BOTH the open application and the kept
+       copy in `drafts` - a letter rewritten, the sheet closed and reopened,
+       and the model's version back on screen would be worse than no editing
+       at all. buildPack() and the Copy controls read a.*.data, so nothing
+       else has to know this happened. */
+    fun editDraft(f: (Apply) -> Apply) {
+        val id = _ui.value.apply?.posting?.id ?: return
+        patch(id, f)
+    }
+
     /** Watch this slice of the day, or stop. Mirrors the web's bell exactly:
      *  kept on the device, listed on the Saved screen, nothing emailed. */
     fun toggleWatch(key: String, human: String, sector: String) {

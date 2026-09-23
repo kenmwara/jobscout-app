@@ -16,6 +16,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.runtime.setValue
 import kotlinx.coroutines.delay
 import androidx.compose.runtime.remember
@@ -273,9 +274,25 @@ fun ApplyScreen(vm: DemoVm, a: Apply, onClose: () -> Unit, onUpload: () -> Unit)
 
         // The reading sheet: one draft at a time, with Copy all in its foot.
         when (reading) {
-            "letter" -> a.letter.data?.let { d -> DraftSheet("Cover letter", d, { reading = null }) { LongText(d) } }
-            "resume" -> a.resume.data?.let { d -> DraftSheet("Your résumé, aimed at it", resumeText(d), { reading = null }) { RebuiltResume(d) } }
-            "answers" -> a.answers.data?.let { d -> DraftSheet("Their screening questions", answersText(d), { reading = null }) { Answers(d) } }
+            /* `plain` is recomputed from the SAME data the body edits, so the
+               sheet's Copy all hands over what is on the screen rather than
+               what the model returned - the web had the identical bug waiting
+               in offer(), where the handlers closed over the delivered text. */
+            "letter" -> a.letter.data?.let { d ->
+                DraftSheet("Cover letter", d, { reading = null }) {
+                    LongText(d) { t -> vm.editDraft { it.copy(letter = it.letter.copy(data = t)) } }
+                }
+            }
+            "resume" -> a.resume.data?.let { d ->
+                DraftSheet("Your résumé, aimed at it", resumeText(d), { reading = null }) {
+                    RebuiltResume(d) { next -> vm.editDraft { it.copy(resume = it.resume.copy(data = next)) } }
+                }
+            }
+            "answers" -> a.answers.data?.let { d ->
+                DraftSheet("Their screening questions", answersText(d), { reading = null }) {
+                    Answers(d) { next -> vm.editDraft { it.copy(answers = it.answers.copy(data = next)) } }
+                }
+            }
         }
     }
 }
@@ -444,44 +461,99 @@ private fun ShareButton(label: String, subject: String, text: String) {
     }
 }
 
-/** Selectable so it can be copied into the employer's form. */
+/** The letter, and it is the candidate's to rewrite. */
 @Composable
-private fun LongText(text: String) {
-    SelectionContainer { Text(text, color = T.ink, fontSize = Type.t3, lineHeight = 24.sp) }
+private fun LongText(text: String, onEdit: ((String) -> Unit)? = null) {
+    if (onEdit == null) { SelectionContainer { Text(text, color = T.ink, fontSize = Type.t3, lineHeight = 24.sp) }; return }
+    EditableText(
+        value = text, onChange = onEdit, well = true, minLines = 6,
+        style = TextStyle(fontFamily = Sans, fontSize = Type.t3, lineHeight = 24.sp, color = T.ink),
+    )
 }
 
 /**
  * The rebuilt résumé, laid out rather than run together as one blob. The gaps sit
  * OUTSIDE the document on purpose: they are what the résumé does not say, and the
  * only hand that may put them in is the candidate's.
+ *
+ * Every line of the document is editable when `onEdit` is given. The gaps are
+ * NOT: they are a list of what is missing, not part of the document, and
+ * making them typeable would invite exactly the invention the whole grounding
+ * rule exists to prevent.
  */
 @Composable
-private fun RebuiltResume(r: ResumeResponse) {
+private fun RebuiltResume(r: ResumeResponse, onEdit: ((ResumeResponse) -> Unit)? = null) {
     Column {
-        SelectionContainer {
+        /* A SelectionContainer around text fields swallows their own gestures,
+           so the read-only path keeps it and the editable path does not. */
+        val doc: @Composable () -> Unit = {
             Column {
-                if (r.name.isNotEmpty()) Text(r.name, style = H2, fontSize = Type.t5, color = T.ink)
-                if (r.contact.isNotEmpty()) Text(r.contact, color = T.text3, fontSize = Type.t2)
-                if (r.headline.isNotEmpty())
-                    Text(r.headline, color = T.ink, fontSize = Type.t3, lineHeight = 23.sp, modifier = Modifier.padding(top = Space.s2))
-                r.sections.filter { it.items.isNotEmpty() }.forEach { sec ->
-                    Text(
+                if (onEdit == null) {
+                    if (r.name.isNotEmpty()) Text(r.name, style = H2, fontSize = Type.t5, color = T.ink)
+                    if (r.contact.isNotEmpty()) Text(r.contact, color = T.text3, fontSize = Type.t2)
+                    if (r.headline.isNotEmpty())
+                        Text(r.headline, color = T.ink, fontSize = Type.t3, lineHeight = 23.sp, modifier = Modifier.padding(top = Space.s2))
+                } else {
+                    EditableText(r.name, { onEdit(r.copy(name = it)) },
+                        style = TextStyle(fontFamily = Serif, fontSize = Type.t5, lineHeight = 30.sp, color = T.ink))
+                    EditableText(r.contact, { onEdit(r.copy(contact = it)) },
+                        style = TextStyle(fontFamily = Sans, fontSize = Type.t2, lineHeight = 20.sp, color = T.text3))
+                    EditableText(r.headline, { onEdit(r.copy(headline = it)) },
+                        modifier = Modifier.padding(top = Space.s2),
+                        style = TextStyle(fontFamily = Sans, fontSize = Type.t3, lineHeight = 23.sp, color = T.ink))
+                }
+                r.sections.forEachIndexed { si, sec ->
+                    if (sec.items.isEmpty()) return@forEachIndexed
+                    val putSec: (ResumeSection) -> Unit = { next ->
+                        onEdit?.invoke(r.copy(sections = r.sections.toMutableList().also { it[si] = next }))
+                    }
+                    if (onEdit == null) Text(
                         sec.heading.uppercase(), color = T.accent, fontSize = Type.t1,
                         fontWeight = FontWeight.Medium, letterSpacing = 0.08.em,
                         modifier = Modifier.padding(top = Space.s4, bottom = 6.dp),
+                    ) else EditableText(
+                        sec.heading, { putSec(sec.copy(heading = it)) },
+                        modifier = Modifier.padding(top = Space.s4, bottom = 6.dp),
+                        style = TextStyle(fontFamily = Sans, fontSize = Type.t1, lineHeight = 16.sp,
+                            fontWeight = FontWeight.Medium, letterSpacing = 0.08.em, color = T.accent),
                     )
-                    sec.items.forEach { it ->
-                        Text(it.title, color = T.ink, fontSize = Type.t3, fontWeight = FontWeight.Medium, lineHeight = 22.sp)
-                        if (it.meta.isNotEmpty()) Text(it.meta, color = T.text3, fontSize = Type.t2, lineHeight = 20.sp)
-                        it.bullets.forEach { b ->
-                            Text("•  $b", color = T.text2, fontSize = Type.t2, lineHeight = 20.sp,
-                                modifier = Modifier.padding(top = 3.dp))
+                    sec.items.forEachIndexed { ii, item ->
+                        val putItem: (ResumeItem) -> Unit = { next ->
+                            putSec(sec.copy(items = sec.items.toMutableList().also { it[ii] = next }))
+                        }
+                        if (onEdit == null) {
+                            Text(item.title, color = T.ink, fontSize = Type.t3, fontWeight = FontWeight.Medium, lineHeight = 22.sp)
+                            if (item.meta.isNotEmpty()) Text(item.meta, color = T.text3, fontSize = Type.t2, lineHeight = 20.sp)
+                            item.bullets.forEach { b ->
+                                Text("•  $b", color = T.text2, fontSize = Type.t2, lineHeight = 20.sp,
+                                    modifier = Modifier.padding(top = 3.dp))
+                            }
+                        } else {
+                            EditableText(item.title, { putItem(item.copy(title = it)) },
+                                style = TextStyle(fontFamily = Sans, fontSize = Type.t3, lineHeight = 22.sp,
+                                    fontWeight = FontWeight.Medium, color = T.ink))
+                            EditableText(item.meta, { putItem(item.copy(meta = it)) },
+                                style = TextStyle(fontFamily = Sans, fontSize = Type.t2, lineHeight = 20.sp, color = T.text3))
+                            item.bullets.forEachIndexed { bi, b ->
+                                Row(Modifier.padding(top = 3.dp)) {
+                                    Text("•  ", color = T.text2, fontSize = Type.t2, lineHeight = 20.sp)
+                                    /* An emptied bullet is a DELETED bullet, the same rule
+                                       the web applies: a blank line in a document an
+                                       employer opens is a defect. */
+                                    EditableText(b, { t ->
+                                        val next = item.bullets.toMutableList()
+                                        if (t.isBlank()) next.removeAt(bi) else next[bi] = t
+                                        putItem(item.copy(bullets = next))
+                                    })
+                                }
+                            }
                         }
                         Spacer(Modifier.height(10.dp))
                     }
                 }
             }
         }
+        if (onEdit == null) SelectionContainer { doc() } else doc()
         if (r.gaps.isNotEmpty()) Column(
             Modifier.padding(top = Space.s2).background(T.chip, Card).padding(14.dp)
         ) {
@@ -534,7 +606,7 @@ private fun CopyChip(text: String) {
  * personal and plain identity fields - and each says so in its own words.
  */
 @Composable
-private fun Answers(r: AnswersResponse) {
+private fun Answers(r: AnswersResponse, onEdit: ((AnswersResponse) -> Unit)? = null) {
     if (r.unsupported) {
         Text(
             "This employer keeps its application form behind a login, so the questions cannot be read ahead of time by anyone — not us, and not you. Open the posting when you are ready and answer them there: the letter and the rebuilt résumé above are what most of those boxes ask for anyway.",
@@ -543,30 +615,54 @@ private fun Answers(r: AnswersResponse) {
         return
     }
     Column {
+        /* `drafted` is what the model settled, and it does not move. The count
+           that matters once the boxes are typeable is how many are answered
+           NOW, so it is derived rather than read off the response - a header
+           still saying "2 answered" after the candidate has filled the other
+           three is the sheet disagreeing with the screen. */
+        val answered = r.questions.count { it.answer.isNotBlank() }
         Text(
             "${r.questions.size} question${if (r.questions.size == 1) "" else "s"} on ${r.source.ifEmpty { "the form" }}" +
-                " — ${r.drafted} answered from your résumé.",
+                " — $answered answered" + if (onEdit == null) " from your résumé." else
+                ", ${r.drafted} of them from your résumé.",
             color = T.text3, fontSize = Type.t2, lineHeight = 20.sp,
         )
         Spacer(Modifier.height(Space.s3))
-        r.questions.forEach { q ->
+        r.questions.forEachIndexed { qi, q ->
             Column(Modifier.padding(bottom = 14.dp)) {
                 Text(
                     q.label + if (q.required) "  ·  required" else "",
                     color = T.ink, fontSize = Type.t2, fontWeight = FontWeight.Medium, lineHeight = 20.sp,
                 )
-                when {
+                if (onEdit != null) {
+                    /* EVERY question gets a box, answered or not. The ones the
+                       résumé did not settle used to get a dead line reading
+                       "yours to answer" - naming the work and then giving the
+                       candidate nowhere to do it. That line is the placeholder
+                       now, in the same unsure colour, inside a box. */
+                    Box(Modifier.padding(top = Space.s1)) {
+                        EditableText(
+                            value = q.answer,
+                            onChange = { t ->
+                                onEdit(r.copy(questions = r.questions.toMutableList().also {
+                                    it[qi] = q.copy(answer = t)
+                                }))
+                            },
+                            well = true,
+                            placeholder = q.why.ifEmpty { "yours to answer" },
+                        )
+                    }
+                    /* Nothing to copy until there is something of theirs to
+                       copy: a chip that pastes "yours to answer" into an
+                       employer's textarea is a trap, not a convenience. */
+                    if (q.answer.isNotBlank()) CopyChip(q.answer)
+                } else when {
                     q.answer.isNotEmpty() -> {
                         SelectionContainer {
                             Text(q.answer, color = T.text2, fontSize = Type.t2, lineHeight = 20.sp,
                                 modifier = Modifier.padding(top = Space.s1))
                         }
                         CopyChip(q.answer)
-                        if (q.from.isNotEmpty()) Text(
-                            "from your résumé: “${q.from}”",
-                            color = T.text3, fontSize = Type.t1, lineHeight = 18.sp,
-                            modifier = Modifier.padding(top = 3.dp),
-                        )
                     }
                     else -> Text(
                         q.why.ifEmpty { "yours to answer" },
@@ -574,6 +670,11 @@ private fun Answers(r: AnswersResponse) {
                         modifier = Modifier.padding(top = Space.s1),
                     )
                 }
+                if (q.from.isNotEmpty() && q.answer.isNotEmpty()) Text(
+                    "from your résumé: “${q.from}”",
+                    color = T.text3, fontSize = Type.t1, lineHeight = 18.sp,
+                    modifier = Modifier.padding(top = 3.dp),
+                )
             }
         }
     }

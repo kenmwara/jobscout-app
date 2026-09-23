@@ -59,6 +59,11 @@ const CHECKS = [
      phone drew no button at all until the candidate found the near-miss band.
      Same promise, two answers - so this asserts the promise on both. */
   { id: "parity",    file: "tools/check_apply_parity.mjs", mutations: ["android-gated", "android-nolabel", "web-drops", "web-relabels"], guards: "a low score can be applied to from either surface, and a stretch is named as one on both" },
+  /* 2026-09-23. Both surfaces rendered the three drafts and stopped, so the
+     last word on a candidate's own letter belonged to a model. The write path
+     is the visible half; the read path - Copy and Download still holding the
+     text as DELIVERED - is the half that fails in front of an employer. */
+  { id: "editable",  file: "tools/check_drafts_editable.mjs", mutations: ["web-readonly", "web-stale-copy", "web-no-empty-box", "android-readonly", "android-stale"], guards: "the letter, the résumé and every screening answer are editable on both surfaces, and Copy/Download/.docx carry the edit" },
 ];
 const run = (file, argv, py) => new Promise(res => {
   const c = spawn(py ? "python" : process.execPath, [join(ROOT, file), ...argv], { cwd: ROOT, env: process.env });

@@ -145,6 +145,56 @@
   .q .yours{font:400 var(--t2)/1.5 var(--sans);color:var(--b-unsure);margin:var(--s1) 0 0}
   .q .cite{font:400 var(--t2)/1.5 var(--sans);color:var(--text3);margin:var(--s2) 0 0}
 
+  /* ── EDITABLE DRAFTS ───────────────────────────────────────────────────
+     Ken, 2026-09-23: "Applications page is also write-protected in web -
+     again, makes absolutely no sense! Should have capability to edit cover
+     letter, resume and answer those screening questions."
+
+     He is right, and it was never a decision - the three panels render the
+     model's output and stop, so the last word on a candidate's own letter
+     belonged to a model. It does not.
+
+     NO NEW COMPONENT. The design language has no editing affordance in it,
+     and inventing one is exactly the deviation that costs a whole other
+     build, so the elements Chat already draws are made editable IN PLACE and
+     the cue is built from tokens that are already load-bearing here:
+     --sunken is the field chip's ground, --r-chip its radius, and the accent
+     outline is the same focus ring .qcopy already uses.
+     ------------------------------------------------------------------- */
+  [contenteditable="true"], [contenteditable="plaintext-only"]{
+    border-radius:var(--r-chip);
+    /* the box is claimed on hover and focus, not drawn permanently: three
+       panels of outlined boxes would read as a form to fill, and it is a
+       finished document that happens to be yours. */
+    outline:1px dashed transparent;outline-offset:3px;
+    transition:outline-color .12s ease,background-color .12s ease}
+  @media (prefers-reduced-motion:reduce){
+    [contenteditable="true"],[contenteditable="plaintext-only"]{transition:none}}
+  [contenteditable]:hover{outline-color:var(--edge-hover)}
+  [contenteditable]:focus{outline:2px solid var(--accent);outline-offset:3px;
+    background:var(--sunken)}
+  /* An empty answer has nothing to click, so it keeps a line's worth of box
+     and says what it is. :empty is the only state that gets a placeholder. */
+  .q .ans:empty::before{content:attr(data-ph);color:var(--text3)}
+  /* The rule down the left of .ans is --b-auto, the answered colour. An empty
+     box wearing it would say the résumé settled a question nobody has
+     answered, so an empty one wears the unsure colour the dead "yours to
+     answer" line used to. */
+  .q .ans:empty{min-height:1.6em;border-left-color:var(--b-unsure)}
+  /* Said once per panel, beside the actions, in the type the panel already
+     uses for its provenance line. */
+  /* Its own row in the .acts flex, so it reads as a note about the document
+     rather than a fourth control beside Copy and Download - which is exactly
+     how it landed the first time, inline between the buttons. */
+  /* Its own row in the .acts flex, so it reads as a note about the document
+     rather than a fourth control beside Copy and Download - which is exactly
+     how it landed the first time, inline between the buttons. A max-width
+     here is what kept it there: flexbox clamps the 100% basis to it, the
+     hypothetical size fit the row, and nothing wrapped. The measure is kept
+     short by the copy instead. */
+  .yours-now{flex:1 0 100%;font:400 var(--t2)/1.5 var(--sans);color:var(--text3);
+    margin:var(--s2) 0 0}
+
   .waiting{display:flex;align-items:center;gap:var(--s3);font:400 var(--t3)/1.5 var(--sans);color:var(--text2);padding:var(--s1) 0 var(--s1)}
   .waiting small{display:block;color:var(--text3);font-size:var(--t2);margin-top:var(--s0)}
   .cmark{display:block;flex:0 0 auto;border-radius:4px}
@@ -679,6 +729,71 @@ $("#do-send").onclick = async () => {
    text. A step that has already run is never asked again. */
 const slug = (`${p?.company || ""}-${p?.title || ""}`).toLowerCase()
   .replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 60);
+/* ── the reader's own words ────────────────────────────────────────────────
+   Ken, 2026-09-23: "Applications page is also write-protected in web - again,
+   makes absolutely no sense! Should have capability to edit cover letter,
+   resume and answer those screening questions."
+
+   Nothing here was a decision to lock anything: the three panels render what
+   the model returned and stop, which left the last word on a candidate's own
+   letter with a model. `editable` is the whole mechanism — the element Chat
+   already draws becomes the input, so no new component enters the language.
+
+   plaintext-only keeps a paste from carrying another page's markup into a
+   document that is about to reach an employer; Firefox only learned it in
+   136, so the assignment is checked rather than assumed. */
+const editable = (el, onEdit) => {
+  if (!el) return el;
+  el.contentEditable = "plaintext-only";
+  if (el.contentEditable !== "plaintext-only") el.contentEditable = "true";
+  el.spellcheck = true;
+  el.addEventListener("input", onEdit);
+  return el;
+};
+/* One line per panel saying the document is the reader's to change, placed
+   beside that panel's provenance line because they answer the same question:
+   where this came from, and whose it is now. Idempotent — a panel redrawn by
+   a rewrite must not stack two of them. */
+const yoursNow = (id, text) => {
+  const acts = document.querySelector("#s-" + id + " .acts");
+  if (!acts) return;
+  let n = acts.querySelector(".yours-now");
+  if (!n){
+    n = document.createElement("p");
+    n.className = "yours-now";
+    acts.insertBefore(n, acts.querySelector(".grounded"));
+  }
+  n.textContent = text;
+};
+/* innerText, not textContent: the letter is <p> blocks, and textContent would
+   run them together into one paragraph the moment it was copied. */
+const liveText = el => el.innerText.replace(/\r/g, "").replace(/\n{3,}/g, "\n\n").trim();
+/* Read the rebuilt résumé back out of the DOM it was rendered into, so the
+   .docx and the .txt are built from what the reader is looking at rather than
+   from what the model returned. Same shape the worker sends, so resumeText()
+   and docx() are untouched. */
+const readDoc = (root, base) => ({
+  ...base,
+  name: root.querySelector(".dname")?.innerText.trim() || "",
+  contact: root.querySelector(".dcontact")?.innerText.trim() || "",
+  headline: root.querySelector(".dhead")?.innerText.trim() || "",
+  sections: [...root.querySelectorAll(".dsec")].map(sec => ({
+    heading: sec.querySelector("h5")?.innerText.trim() || "",
+    items: [...sec.querySelectorAll(".ditem")].map(it => ({
+      title: it.querySelector(".dtitle")?.innerText.trim() || "",
+      meta: it.querySelector(".dmeta")?.innerText.trim() || "",
+      /* An emptied bullet is a DELETED bullet: a reader who clears a line
+         means it gone, and a blank <li> in a .docx is a defect an employer
+         sees. */
+      bullets: [...it.querySelectorAll("li")].map(li => li.innerText.trim()).filter(Boolean),
+    })),
+  })),
+});
+/* The pack's answers block, built in one place because it is needed twice:
+   once when the questions arrive and again after every keystroke. */
+const answersText = qs => qs.map(q =>
+  `${q.label}${q.required ? " [required]" : ""}\n${q.answer || "— " + (q.why || "yours to answer")}`).join("\n\n");
+
 const asProse = t => String(t).split(/\n{2,}/).map(x => x.trim())
   .filter(x => x && !/^-{3,}$/.test(x))
   .map(x => `<p>${esc(x).replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>").replace(/\n/g, "<br>")}</p>`).join("");
@@ -858,10 +973,16 @@ function offer(id, plain, name){
   const cp = $("#cp-" + id), dl = $("#dl-" + id);
   PACK[id] = plain; syncSend();
   cp.hidden = false;
-  cp.onclick = () => copyInto(cp, plain, id);
+  /* PACK[id], never the `plain` this was called with. These two handlers used
+     to close over the text as it was DELIVERED, so once the panels became
+     editable a reader could rewrite a letter, press Copy, and be handed the
+     model's draft instead of their own - silently, and only discovered in
+     front of the employer. Everything that leaves this page reads the live
+     value: Copy, Download, and "Copy everything" through packText(). */
+  cp.onclick = () => copyInto(cp, PACK[id], id);
   if (dl){
     dl.hidden = false;
-    dl.onclick = () => download(new Blob([plain], { type: "text/plain;charset=utf-8" }), name);
+    dl.onclick = () => download(new Blob([PACK[id]], { type: "text/plain;charset=utf-8" }), name);
   }
 }
 
@@ -998,9 +1119,14 @@ $("#do-letter").onclick = async () => {
     const { r, d } = await post("/api/letter");
     if (!d.letter) return failed("letter", d.detail || d.error || "Letter drafting is unavailable right now.", "Write the letter", d);
     $("#out-letter").innerHTML = asProse(d.letter);
+    /* The draft is the reader's the moment it exists. PACK.letter is what
+       Copy, Download and the whole pack read, so it is updated on the
+       keystroke rather than on a Save nobody would press. */
+    editable($("#out-letter"), () => { PACK.letter = liveText($("#out-letter")); syncSend(); });
     $("#st-letter").textContent = "drafted"; $("#st-letter").className = "state done";
     $("#do-letter").hidden = true; promoteNext();
     $("#gr-letter").textContent = "Grounded only in the résumé you gave.";
+    yoursNow("letter", "Click into the letter and type. Copy and Download take what is on screen.");
     offer("letter", d.letter, `cover-letter-${slug}.txt`);
     readable("letter", "Cover letter", true);
   }catch(e){ failed("letter", "Letter API unreachable: " + e, "Write the letter"); }
@@ -1036,17 +1162,27 @@ $("#do-tailor").onclick = async () => {
     $("#st-tailor").className = "state " + (d.gaps?.length ? "part" : "done");
     $("#do-tailor").hidden = true; promoteNext();
     $("#gr-tailor").textContent = "Your own résumé, reordered and reworded. Every employer, date and number in it came from the copy you gave.";
+    yoursNow("tailor", "Click into any line to change it. Clearing a bullet removes it, and the .docx is built from what you leave.");
 
-    const plain = resumeText(d);
+    /* D is the live document. The three outputs below build from it, not from
+       `d` as delivered, so an edited heading reaches the .docx an employer
+       opens and not only the preview the reader edited it in. */
+    let D = d;
+    const box = $("#out-tailor");
+    box.querySelectorAll(".dname, .dcontact, .dhead, .dsec h5, .dtitle, .dmeta, .ditem li")
+       .forEach(el => editable(el, () => {
+         D = readDoc(box, d);
+         PACK.tailor = resumeText(D); syncSend();
+       }));
+    PACK.tailor = resumeText(D); syncSend();
     $("#dl-tailor").hidden = false;
-    $("#dl-tailor").onclick = () => download(docx(d), `resume-${slug}.docx`);
+    $("#dl-tailor").onclick = () => download(docx(D), `resume-${slug}.docx`);
     $("#dt-tailor").hidden = false;
     $("#dt-tailor").onclick = () => download(
-      new Blob([plain], { type: "text/plain;charset=utf-8" }), `resume-${slug}.txt`);
+      new Blob([PACK.tailor], { type: "text/plain;charset=utf-8" }), `resume-${slug}.txt`);
     const cp = $("#cp-tailor");
-    PACK.tailor = plain; syncSend();
     cp.hidden = false;
-    cp.onclick = () => copyInto(cp, plain, "tailor");
+    cp.onclick = () => copyInto(cp, PACK.tailor, "tailor");
     readable("tailor", "Your résumé, rebuilt for this job", true);
   }catch(e){ failed("tailor", "Résumé API unreachable: " + e, "Rebuild my résumé"); }
 };
@@ -1076,14 +1212,26 @@ $("#do-answers").onclick = async () => {
     if (!Array.isArray(d.questions))
       return failed("answers", d.detail || d.error || "The form could not be read right now.", "Get their questions");
     const qs = d.questions;
+    /* EVERY question gets a box, answered or not. It used to get one only
+       when the model had settled it, and the rest got a grey line reading
+       "yours to answer" — which named the work and then gave the reader
+       nowhere to do it. The unanswered ones are the whole point of Ken's
+       "answer those screening questions": the box is empty, the placeholder
+       is the same sentence that used to be the dead line, and the border
+       stays the unsure colour until there is something in it.
+
+       The copy button is rendered for every row and hidden while the row is
+       empty, so it appears the moment there is something of the reader's to
+       copy — and never offers to paste "yours to answer" into an employer's
+       textarea, which is the trap the old condition existed to avoid. */
     $("#out-answers").innerHTML = qs.map((q, i) => `
       <div class="q">
         <div class="qtop">
           <p class="lbl">${esc(q.label)}${q.required ? ' <i>required</i>' : ""}</p>
-          ${q.answer ? `<button class="qcopy" type="button" data-q="${i}"
-             aria-label="Copy the answer to &quot;${esc(q.label)}&quot;">${COPYICON}<span>Copy</span></button>` : ""}
+          <button class="qcopy" type="button" data-q="${i}"${q.answer ? "" : " hidden"}
+             aria-label="Copy the answer to &quot;${esc(q.label)}&quot;">${COPYICON}<span>Copy</span></button>
         </div>
-        ${q.answer ? `<p class="ans">${esc(q.answer)}</p>` : `<p class="yours">${esc(q.why || "yours to answer")}</p>`}
+        <p class="ans" data-q="${i}" data-ph="${esc(q.why || "yours to answer")}" aria-label="Your answer to &quot;${esc(q.label)}&quot;">${esc(q.answer || "")}</p>
         ${q.from ? `<p class="cite">from your resume: &ldquo;${esc(q.from)}&rdquo;</p>` : ""}
       </div>`).join("");
     /* One field at a time is how a form is actually filled. Only answered
@@ -1106,9 +1254,27 @@ $("#do-answers").onclick = async () => {
       b.classList.add("ok");
       setTimeout(() => { label.textContent = "Copy"; b.classList.remove("ok"); }, 1600);
     });
-    const left = qs.filter(q => !q.answer).length;
-    $("#st-answers").textContent = left ? `${qs.length - left} of ${qs.length} answered` : `all ${qs.length} answered`;
-    $("#st-answers").className = "state " + (left ? "part" : "done");
+    /* The count is a function now, because it is no longer true once and
+       done: every keystroke can turn an unanswered question into an answered
+       one, and a header still reading "2 of 5 answered" after the reader has
+       filled the other three is the page disagreeing with the screen. */
+    const recount = () => {
+      const left = qs.filter(q => !q.answer).length;
+      $("#st-answers").textContent = left ? `${qs.length - left} of ${qs.length} answered` : `all ${qs.length} answered`;
+      $("#st-answers").className = "state " + (left ? "part" : "done");
+      PACK.answers = answersText(qs); syncSend();
+    };
+    $("#out-answers").querySelectorAll(".ans").forEach(el => editable(el, () => {
+      const i = +el.dataset.q;
+      qs[i].answer = liveText(el);
+      /* Clearing a box by hand leaves contenteditable's own <br> behind, so
+         :empty stops matching and the placeholder never comes back. Emptied
+         means empty. */
+      if (!qs[i].answer && el.innerHTML) el.innerHTML = "";
+      el.closest(".q").querySelector(".qcopy").hidden = !qs[i].answer;
+      recount();
+    }));
+    recount();
     $("#do-answers").hidden = true; promoteNext();
     /* Whose questions these are is not a detail. Presenting the standard set
        as the employer's own form would be the kind of quiet lie this product
@@ -1124,7 +1290,8 @@ $("#do-answers").onclick = async () => {
     } else {
       $("#gr-answers").textContent = "Read from the employer's own form. Anything your résumé does not settle is left for you.";
     }
-    offer("answers", qs.map(q => `${q.label}${q.required ? " [required]" : ""}\n${q.answer || "— " + (q.why || "yours to answer")}`).join("\n\n"), null);
+    yoursNow("answers", "Every answer is a box you can type in, including the ones left for you.");
+    offer("answers", answersText(qs), null);
     readable("answers", "Their screening questions", true);
   }catch(e){ failed("answers", "Answers API unreachable: " + e, "Get their questions"); }
 };
