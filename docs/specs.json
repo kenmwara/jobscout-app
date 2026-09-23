@@ -485,18 +485,18 @@
       "date": "2026-09-23",
       "surface": "web",
       "said": "The web landing page upload box is oval in shape as opposed to being rectangular with rounded corners",
-      "status": "open",
-      "check": "",
-      "evidence": ""
+      "status": "live",
+      "check": "tools/check_field_phone.mjs",
+      "evidence": "site/field.css: the bar's radius moved from --r-pill to --r-card on the BASE rule, so it is a rounded rectangle at rest and with content, at every width. Measured at 1280: empty 16px, typing 16px (it was 1600px empty). check_field_phone rule D asserted the opposite until today, which is why this shipped twice; its `empty-oval` mutation now fails at all four widths."
     },
     {
       "id": "apply-anyway-both-surfaces",
       "date": "2026-09-23",
       "surface": "both",
       "said": "Web has an \"apply anyway\" button for low scores, while mobile doesn't - should be standardized across both",
-      "status": "open",
-      "check": "",
-      "evidence": ""
+      "status": "live",
+      "check": "tools/check_apply_parity.mjs",
+      "evidence": "MainActivity.kt: `val open = p != null` - the card's action is no longer gated on the fit or on the near-miss band's opt-in, so a below-floor posting carries “Apply anyway →” on the phone exactly as it does on the web. The worker's stretch flag was already derived from the fit on both, so nothing else moved. 8 assertions, 4 mutations."
     },
     {
       "id": "drafts-editable-phone",
@@ -504,17 +504,17 @@
       "surface": "android",
       "said": "There should be an edit capability on the popups in mobile at cover letter writing, re-write resume and screening questions. Currently, they're all write-protected (which doesn't makesense)",
       "status": "open",
-      "check": "",
-      "evidence": ""
+      "check": "tools/check_drafts_editable.mjs",
+      "evidence": "Built: EditableText (the well ResumeField draws, without the paperclip and go), vm.editDraft -> patch() so an edit reaches the kept draft, and all three sheets wired. 23 source assertions pass and 5 mutations bite; compileDebugKotlin and assembleDebug are green. STILL OPEN because none of that is the app running: not yet driven on a device."
     },
     {
       "id": "drafts-editable-web",
       "date": "2026-09-23",
       "surface": "web",
       "said": "Applications page is also write-protected in web - again, makes absolutely no sense! Should have capability to edit cover letter, resume and answer those screening questions",
-      "status": "open",
-      "check": "",
-      "evidence": ""
+      "status": "live",
+      "check": "tools/check_drafts_editable.mjs",
+      "evidence": "site/apply.html: the letter, every line of the rebuilt résumé and every screening answer - including the unanswered ones - are editable in place, with no new component. Copy, Download, the .txt and the .docx read the live value; the .docx is rebuilt from readDoc(). Verified in the browser: an edited letter, an edited bullet, a cleared bullet and a newly answered question all reached packText(); the count went to “all 2 answered” and back on clear."
     },
     {
       "id": "design-language-is-chats",

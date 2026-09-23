@@ -3,7 +3,7 @@
  *
  *   node tools/check_resume_privacy.mjs
  *   node tools/check_resume_privacy.mjs --mutate android-save | android-restore
- *                                                | android-noscrub | web-keeps
+ *                                                | android-noscrub | web-keeps | web-offers-forget
  *
  * WHY THIS EXISTS, and it is the most expensive lesson in this repository.
  *
@@ -62,6 +62,9 @@ if (MUTATE === "android-noscrub") store = store.replace(/run\.profile\.isNotEmpt
 // Every occurrence, not the first: the page clears this in more than one
 // place, so replacing one left another standing and the check reported
 // itself asleep when it was the MUTATION that had done nothing.
+if (MUTATE === "web-offers-forget")
+  web = web.replace(/show the whole sweep instead<\/button>`\);/,
+    'show the whole sweep instead</button>` + ` <button class="allsweep forget">forget my resume</button>`);');
 if (MUTATE === "web-keeps") web = web.replace(/scoredProfile = "";/g, "scoredProfile = r.profile || \"\";");
 
 ok(!!main && !!store && !!web, "the sources this checks were all found",
@@ -95,8 +98,22 @@ ok(/"profile" in r/.test(web) && /delete r\.profile/.test(web),
 ok(/not kept on this phone/.test(main),
    "android: a restored run says the resume behind it is not kept",
    "the matches would appear with nothing to explain them");
-ok(/not kept in this browser/.test(web),
-   "web: the same, and it stops the page offering to forget a resume it is not holding");
+// The WEB's half of this is now satisfied by absence. Ken, 2026-09-23:
+// "Remove this entire line on web" - both the "forget my resume and these
+// matches" button and the sentence explaining that there was no resume here
+// to forget. A control offering to forget something the page does not hold
+// was the confusion; deleting the explanation and keeping the button would
+// have left it, so both went. What this asserts is the shape that remains.
+// Asserted on the MARKUP, not on the phrase: the first draft looked for
+// "forget my r" and matched the COMMENT that records why the button was
+// removed. A check that reads prose about a control cannot tell it from
+// the control.
+ok(!/class="allsweep forget"/.test(web) && !/function forgetRun/.test(web),
+   "web: the page does not offer to forget a resume it is not holding",
+   "the control and its dead handler both have to go, or the next reader meets the same question");
+ok(!/until you press forget/.test(web),
+   "web: and nothing still promises that button",
+   "the privacy copy outlived the control it described for exactly one commit");
 
 // And the header must not claim WHEN it cannot know. "just now" was hardcoded,
 // so a run read off the disk asserted it too. The guard is what makes it true.

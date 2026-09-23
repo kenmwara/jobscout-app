@@ -1134,7 +1134,7 @@ nav.main{margin-left:var(--s4)}
       <div class="grid3">
         <div class="card">
           <div class="mini">Résumé · read in the browser<span class="badge">read</span></div>
-          <div><h3>Your résumé, not a form</h3><p>Upload or paste it. It is read in the browser and scored; the text itself is not kept. Your scores stay on this device until you press forget — no account, no profile to keep current.</p></div>
+          <div><h3>Your résumé, not a form</h3><p>Upload or paste it. It is read in the browser and scored; the text itself is not kept. Your scores stay on this device until the next run replaces them — no account, no profile to keep current.</p></div>
         </div>
         <div class="card">
           <div class="mini"><span id="gateMini">the day, narrowed</span><span class="badge" id="gateCut">before a paid call</span></div>
@@ -2310,23 +2310,19 @@ function browse(){
     $("#browseCount").innerHTML = (rows.length === scored.length
       ? `${scored.length} scored of ${all} swept \u2014 ${esc(scoredNote)}`
       : `${rows.length} of your ${scored.length} matches`);
+    /* The "forget my résumé and these matches" control and the sentence that
+       explained it are both gone. Ken, 2026-09-23: "Remove this entire line on
+       web". It only ever made sense while the résumé WAS in storage; since the
+       09-21 fix there is no résumé here to forget, and the line spent its last
+       two days explaining why the button beside it could not do what it said.
+       Deleting the sentence and keeping the button would have left exactly the
+       confusion the sentence was written for. */
     $("#browseCount").insertAdjacentHTML("beforeend",
-      ` <button class="allsweep" type="button">show the whole sweep instead</button>` +
-      ` <button class="allsweep forget" type="button">forget my r\u00e9sum\u00e9 and these matches</button>`);
-    /* THE SAME QUESTION THE PHONE ANSWERS, asked by the operator 2026-09-23: if
-       the résumé is not kept, what were these scored against? A run outlives the
-       résumé that earned it on purpose — the matches are worth keeping and the
-       résumé is not ours to store. scoredProfile is cleared on every reload, so
-       an empty one beside a run IS a restored run. Without this the page keeps
-       offering to "forget my résumé" when it is not holding one. */
-    if (scored.length && !scoredProfile) $("#browseCount").insertAdjacentHTML("beforeend",
-      ` <span class="muted">The résumé these were scored against is not kept in this browser.` +
-      ` Paste it again to re-score against today's sweep.</span>`);
+      ` <button class="allsweep" type="button">show the whole sweep instead</button>`);
     /* A run kept from another day is still useful — the reader decides. It is
        never passed off as today's. */
     if (runStale) $("#browseCount").insertAdjacentHTML("beforeend",
       `<span class="stalerun">${esc(runStale)} Run it again for today’s.</span>`);
-    $("#browseCount").querySelector(".forget").onclick = forgetRun;
     $("#browseCount").querySelector(".allsweep").onclick = () => {
       // Hide them, never discard them. The run stays in sessionStorage.
       sweepOverride = true;
@@ -2522,16 +2518,6 @@ function recallRun(){
     scoredProfile = "";   /* the text is not kept across a reload; the apply page asks again */
     if ("profile" in r) { delete r.profile; r.v = 2; localStorage.setItem(RUNKEY, JSON.stringify(r)); }   /* scrub a pre-09-21 record */
   }catch(e){}
-}
-
-/* The control the reader asked for: one press forgets the résumé and the
-   matches on this device - the run, the apply payload, the text in the box. */
-function forgetRun(){
-  try{ localStorage.removeItem(RUNKEY); sessionStorage.removeItem("jobscout.apply"); }catch(e){}
-  scored = null; scoredProfile = ""; scoredNote = ""; runStale = null;
-  const el = $("#ownText"); if (el) el.value = "";
-  ev("forget");
-  browse();
 }
 
 /* Enough to put a view back the way it was found. */
