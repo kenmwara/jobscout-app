@@ -96,7 +96,7 @@ for (const c of CHECKS) {
   else { console.log(`  ${pad(c.id, 10)} ${pad("FAIL", 12)} ${c.guards}`); failed++; detail.push([c.id, r.out]); }
   if (WITH && r.code === 0 && c.mutations) for (const m of c.mutations) {
     const mr = await run(c.file, [...(c.argv || []), "--mutate", m], c.py);
-    if (mr.code !== 0) { console.log(`  ${pad("", 10)} ${pad("ASLEEP", 12)} mutation "${m}" did not break it`); asleep++; detail.push([`${c.id}/${m}`, mr.out]); }
+    if (mr.code !== 0 || /VERDICT: PASS/.test(mr.out)) { console.log(`  ${pad("", 10)} ${pad("ASLEEP", 12)} mutation "${m}" did not break it`); asleep++; detail.push([`${c.id}/${m}`, mr.out]); }
   }
 }
 console.log("─".repeat(72));

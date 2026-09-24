@@ -56,6 +56,7 @@ is(!!m && Number(m[1]) === shipping.DEMO_RUNS_KEEP_DAYS,
    `privacy.html states ${m ? m[1] : "no"} days; the code keeps ${shipping.DEMO_RUNS_KEEP_DAYS}`);
 
 console.log(`\ncheck_retention: demo_runs kept ${shipping.DEMO_RUNS_KEEP_DAYS} days`);
+if (MUTATE && fails) { console.log(`VERDICT: the "${MUTATE}" mutation was caught (${fails} failure(s)) - awake`); process.exit(0); }   // sanity.mjs reads exit 0 as caught
 if (fails) { console.log(`VERDICT: FAIL (${fails})`); process.exit(1); }
 if (MUTATE) { console.log(`VERDICT: ASLEEP — the "${MUTATE}" mutation did not fail this check`); process.exit(1); }
 console.log("VERDICT: PASS — the window is enforced, scheduled, and stated truthfully");

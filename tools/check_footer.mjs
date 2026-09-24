@@ -71,5 +71,10 @@ for (const route of ["index.html", "privacy.html", "saved.html"]) {
 await b.close();
 say(`check_footer: ${cells} assertions over 3 routes`);
 fails.forEach(f => say("  FAIL  " + f));
+if (MUTATE) {   // sanity.mjs --mutations reads exit 0 as caught, anything else as ASLEEP
+  say(fails.length ? `VERDICT: the "${MUTATE}" mutation was caught (${fails.length} failure(s)) - awake`
+                   : `VERDICT: ASLEEP - the "${MUTATE}" mutation did not fail this check`);
+  process.exit(fails.length ? 0 : 1);
+}
 say(fails.length ? `VERDICT: FAIL (${fails.length})` : "VERDICT: PASS");
 process.exit(fails.length ? 1 : 0);

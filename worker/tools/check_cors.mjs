@@ -72,6 +72,10 @@ for (const [origin, want, why] of CASES) {
   console.log(`  ${ok ? "ok  " : "FAIL"}  ${String(origin).padEnd(42)} -> ${String(got).padEnd(42)} ${why}`);
 }
 console.log(`\ncheck_cors: ${CASES.length} origins`);
+if (MUTATE && fails) {   // sanity.mjs --mutations reads exit 0 as caught
+  console.log(`VERDICT: the "${MUTATE}" mutation was caught (${fails} failure(s)) - awake`);
+  process.exit(0);
+}
 if (fails) { console.log(`VERDICT: FAIL (${fails})`); process.exit(1); }
 if (MUTATE) {
   console.log(`VERDICT: ASLEEP — the "${MUTATE}" mutation did not fail this check`);

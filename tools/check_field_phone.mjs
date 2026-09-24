@@ -103,5 +103,10 @@ await b.close();
 const say = s => { try { process.stdout.write(s + "\n"); } catch { process.stdout.write(s.replace(/[^\x00-\x7F]/g, "-") + "\n"); } };
 say(`check_field_phone: ${cells} assertions over 3 phone widths and a laptop`);
 fails.forEach(f => say("  FAIL  " + f));
+if (MUTATE) {   // sanity.mjs --mutations reads exit 0 as caught, anything else as ASLEEP
+  say(fails.length ? `VERDICT: the "${MUTATE}" mutation was caught (${fails.length} failure(s)) - awake`
+                   : `VERDICT: ASLEEP - the "${MUTATE}" mutation did not fail this check`);
+  process.exit(fails.length ? 0 : 1);
+}
 say(fails.length ? `VERDICT: FAIL (${fails.length})` : "VERDICT: PASS");
 process.exit(fails.length ? 1 : 0);

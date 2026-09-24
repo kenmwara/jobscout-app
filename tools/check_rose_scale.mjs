@@ -29,13 +29,15 @@ const fails = []; let cells = 0;
 const say = s => { try { process.stdout.write(s + "\n"); } catch { process.stdout.write(s.replace(/[^\x00-\x7F]/g, "-") + "\n"); } };
 
 // B. the cause: one size declaration, not two fighting each other.
-const css = readFileSync(new URL("../site/base.css", import.meta.url), "utf8");
-const widths = [...css.matchAll(/^\.rose\{[^}]*width:\s*(\d+)px/gm)].map(m => m[1]);
+let css = readFileSync(new URL("../site/base.css", import.meta.url), "utf8");
+if (MUTATE === "duplicate-width") css += "\n.rose{width:64px}";   // the 2026-09-21 defect, put back
+/* Any value, not just Npx: the fix moved it to width:var(--rose), and a
+   digits-only pattern then matched nothing and could never fire. Zero is a
+   failure too, so the pattern cannot go dead again unnoticed. */
+const widths = [...css.matchAll(/^\.rose\{(?:[^}]*;)?\s*width\s*:\s*([^;}]+)/gm)].map(m => m[1].trim());
 cells++;
-if (MUTATE !== "duplicate-width" && widths.length > 1)
-  fails.push(`site/base.css declares .rose width ${widths.length} times (${widths.join(", ")}px) — the later one wins silently`);
-if (MUTATE === "duplicate-width" && widths.length <= 1)
-  fails.push("mutation check: expected a duplicate .rose width and found none");
+if (widths.length !== 1)
+  fails.push(`site/base.css declares .rose width ${widths.length} times (${widths.join(", ") || "none"}) - want exactly one`);
 
 const READ = () => [...document.querySelectorAll("svg.rose, .jcard__score")].map(el => {
   const ring = Math.round(el.getBoundingClientRect().width);
@@ -95,5 +97,10 @@ for (const [surface, group] of Object.entries(bySurface)) {
 say(`check_rose_scale: ${cells} assertions`);
 seen.forEach(s => say(`        ${s.tag.padEnd(14)} ring ${String(s.ring).padStart(3)}px  numeral ${String(s.drawn).padStart(5)}px  ratio ${s.ratio}`));
 fails.forEach(f => say("  FAIL  " + f));
+if (MUTATE) {   // sanity.mjs --mutations reads exit 0 as caught, anything else as ASLEEP
+  say(fails.length ? `VERDICT: the "${MUTATE}" mutation was caught (${fails.length} failure(s)) - awake`
+                   : `VERDICT: ASLEEP - the "${MUTATE}" mutation did not fail this check`);
+  process.exit(fails.length ? 0 : 1);
+}
 say(fails.length ? `VERDICT: FAIL (${fails.length})` : "VERDICT: PASS");
 process.exit(fails.length ? 1 : 0);
