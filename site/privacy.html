@@ -171,7 +171,7 @@ if (!matchMedia("(prefers-reduced-motion: reduce)").matches) document.documentEl
   <h2>What the server records to keep the demo up</h2>
   <p>Two more things, both to keep a free public demo from being abused:</p>
   <ul>
-    <li><b>A salted SHA-256 hash of your IP address</b>, the time, and the token count and cost of each scoring run. The hash enforces a per-hour cap on runs and cannot be turned back into your address. No profile text, no résumé text, no scores are stored with it. It is kept in a separate table from the counted events above, and the two are never joined.</li>
+    <li><b>A salted SHA-256 hash of your IP address</b>, the time, and the token count and cost of each scoring run. The hash enforces a per-hour cap on runs and cannot be turned back into your address. No profile text, no résumé text, no scores are stored with it. It is kept in a separate table from the counted events above, and the two are never joined. <span id="retention-demo-runs">Each of these rows is deleted after <b>90 days</b>, by a daily job.</span></li>
     <li><b>A running total of the day's spend</b>, so the demo can stop calling Claude when its daily budget is used up and serve a cached showcase run instead. The cached run is one the operator seeded, not anyone's live input.</li>
   </ul>
   <p>Cloudflare, which hosts the API and this site, keeps its own standard request logs under <a href="https://www.cloudflare.com/privacypolicy/" rel="noopener">its privacy policy</a>.</p>
@@ -190,7 +190,7 @@ if (!matchMedia("(prefers-reduced-motion: reduce)").matches) document.documentEl
     <li>Use a built-in persona instead of your own résumé, and nothing about you reaches the API at all.</li>
     <li>Leave the <b>what happened?</b> box alone on the saved page and no outcome is ever counted.</li>
     <li>Delete saved jobs at any time with <b>Clear all</b>, or by uninstalling.</li>
-    <li>Questions or a deletion request: <a href="mailto:ken@tbot.trade">ken@tbot.trade</a>. Since no profile text is stored, there is nothing to delete server-side, but ask anyway and you'll get a straight answer.</li>
+    <li>Questions or a deletion request: <a href="mailto:support@tbot.trade">support@tbot.trade</a>. Since no profile text is stored, there is nothing to delete server-side, but ask anyway and you'll get a straight answer.</li>
   </ul>
 
   <h2>Changes</h2>

@@ -50,6 +50,8 @@ const CHECKS = [
   /* The API's own guard, and the only check here that is not about the page.
      The worker answered every origin on the internet until 2026-09-22. */
   { id: "cors",      file: "worker/tools/check_cors.mjs", mutations: ["wildcard", "startswith", "block-null"], guards: "only this project's pages are answered, and a request with no Origin is still answered" },
+  /* 2026-09-24. demo_runs had no retention rule at all. */
+  { id: "retention", file: "worker/tools/check_retention.mjs", mutations: ["page-drift", "no-cron", "no-handler", "keeps-forever"], guards: "demo_runs rows are deleted after the window the privacy page states, by a cron that exists" },
   /* 2026-09-23. The résumé-in-storage fix of 09-21 was applied to the web and
      recorded as closed FOR THE PRODUCT, while the phone went on writing one to
      SharedPreferences every run. This checks BOTH surfaces, because covering

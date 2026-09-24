@@ -9,6 +9,7 @@
 
 import { extractText, getDocumentProxy } from "unpdf";
 import { unzipSync } from "fflate";
+import { sweepDemoRuns } from "./retention.js";
 
 const MODEL = "claude-haiku-4-5-20251001";
 const MAX_SCORE_TOKENS = 400;
@@ -381,6 +382,10 @@ function parseJson(text) {
 }
 
 export default {
+  // Daily retention sweep (wrangler.toml [triggers]); the rule lives in retention.js.
+  async scheduled(controller, env, ctx) {
+    ctx.waitUntil(sweepDemoRuns(env.DB).then(n => console.log(`retention: deleted ${n} demo_runs rows`)));
+  },
   async fetch(request, env) {
     // One decision, at the boundary: every route below returns without
     // thinking about origins, and the answer is stamped on the way out.

@@ -63,3 +63,40 @@ jobs:
           path: backups/*.sql
           retention-days: 90
           if-no-files-found: error
+
+      # BACKUP MONITORING (2026-09-24). Every run, pass or fail, leaves a heartbeat in the private
+      # kenmwara/backup-heartbeats repo; the T BOT droplet's Morning Verify reads it daily, so a job that
+      # stops running at all (GitHub disables schedules on quiet repos) is caught, not just one that fails.
+      # A failed run also pings the ops Telegram at once.
+      - name: Heartbeat, and Telegram on failure
+        if: always()
+        env:
+          HB_KEY: ${{ secrets.HEARTBEAT_KEY }}
+          TG_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TG_CHAT: ${{ secrets.TELEGRAM_CHAT_ID }}
+          STATUS: ${{ job.status }}
+          NAME: jobscout
+        run: |
+          RUN="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+          if [ "$STATUS" != "success" ] && [ -n "$TG_TOKEN" ]; then
+            curl -s -o /dev/null -w "telegram HTTP %{http_code}\n" "https://api.telegram.org/bot${TG_TOKEN}/sendMessage" \
+              --data-urlencode "chat_id=${TG_CHAT}" \
+              --data-urlencode "text=🚨 ${NAME} backup: ${STATUS}. There is no fresh, proven copy until this is fixed. ${RUN}"
+          fi
+          if [ -z "$HB_KEY" ]; then echo "::warning::HEARTBEAT_KEY missing, no heartbeat written"; exit 0; fi
+          mkdir -p ~/.ssh && printf '%s\n' "$HB_KEY" > ~/.ssh/hb && chmod 600 ~/.ssh/hb
+          export GIT_SSH_COMMAND="ssh -i $HOME/.ssh/hb -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new"
+          OK=false; [ "$STATUS" = "success" ] && OK=true
+          for i in 1 2 3 4; do
+            rm -rf hb
+            if ! git clone -q --depth 1 git@github.com:kenmwara/backup-heartbeats.git hb 2>/dev/null; then
+              mkdir hb && git -C hb init -q -b main && git -C hb remote add origin git@github.com:kenmwara/backup-heartbeats.git
+            fi
+            printf '{"name": "%s", "ok": %s, "status": "%s", "ts": "%s", "run": "%s"}\n' \
+              "$NAME" "$OK" "$STATUS" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$RUN" > "hb/$NAME.json"
+            git -C hb add -A
+            git -C hb -c user.name=backup-heartbeat -c user.email=hb@tbot.trade commit -qm "$NAME: $STATUS"
+            if git -C hb push -q origin HEAD:main; then echo "heartbeat written: $NAME $STATUS"; break; fi
+            sleep $((i * 4))
+          done
+          rm -f ~/.ssh/hb

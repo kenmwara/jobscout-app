@@ -524,6 +524,15 @@
       "status": "open",
       "check": "",
       "evidence": "A STANDING CONSTRAINT, not a task - it stays open on purpose. What it decided on 09-23: the design language has NO editing affordance and no saved-sweep component in it, and inventing either is the deviation this row forbids. So every control added today is built from what Chat already drew - the drafts are the RENDERED elements made editable in place (web) and the well ResumeField draws minus its two doors (phone); the keep-sweep control is the same `.allsweep` word as “show the whole sweep instead”; the name box borrows --r-chip, the hairline and the accent focus ring; the Saved page's sweeps reuse the `.group`/`.row` markup the watched searches already use. No new component on either surface. If Chat has patterns for these, they drop in over the top without moving the logic."
+    },
+    {
+      "id": "demo-runs-retention",
+      "date": "2026-09-24",
+      "surface": "web",
+      "said": "Create a retention rule for demo_runs",
+      "status": "live",
+      "check": "node worker/tools/check_retention.mjs",
+      "evidence": "worker/src/retention.js: DEMO_RUNS_KEEP_DAYS = 90, swept by a daily cron (wrangler.toml [triggers], 03:23 UTC) through the worker's scheduled() handler. 90 because the IP hash is only needed for the one-hour cap and /api/stats reads at most 90 days. privacy.html states the same figure in #retention-demo-runs. The check runs the shipping sweep against a stand-in DB (SQL + cutoff), asserts the cron and the handler exist, and that the page's number equals the constant; four mutations (page-drift, no-cron, no-handler, keeps-forever) each turn it red. Oldest row on 2026-09-24 was 2026-09-03, so the first real deletion is due 2026-12-02."
     }
   ]
 }
