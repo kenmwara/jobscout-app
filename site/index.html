@@ -1445,6 +1445,10 @@ async function loadFeed(){
     const r = await fetch(API + "/api/feed?market=" + MARKET); feed = await r.json();
     const c = feed.counts || {};
     $("#sweepline").hidden = true;
+    // A one-place axis says nothing: Kenya's feed knows only "Kenya" (and Kenya has counties, not
+    // provinces). The tab shows only when the morning's postings name two places or more.
+    const pt = document.querySelector('[data-tax="place"]');
+    if (pt) pt.style.display = (feed.places?.options || []).length < 2 ? "none" : "";
   }catch(e){
     // the one thing worth saying up here, and only when it is true
     $("#sweepline").textContent = "The feed is unreachable right now. Scoring needs the API.";
