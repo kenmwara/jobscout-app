@@ -30,7 +30,8 @@ The two filters are built from the day's own sweep, not a hardcoded list, so a
 control can never offer a province the morning's postings cannot honour. A
 posting is kept if it is remote, or names your province, or names no province
 at all — that last clause matters, because around twenty-three postings a day
-say only "Canada". No card states a count until its own control is used: a
+say only "Canada". Kenya's feed names one place, so its Browse page shows no
+place tab at all: an axis with one tile says nothing. No card states a count until its own control is used: a
 number on an untouched control would read as the result of a search nobody ran.
 
 <img src="img/web-chooser.png" alt="The three setup cards: your resume, where you can work, remote only" width="520">
