@@ -8,21 +8,72 @@
 <meta name="robots" content="noindex">
 <link rel="icon" href="../site/icons/favicon.svg" type="image/svg+xml">
 <link rel="icon" href="../site/icons/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="icon" href="../site/icons/favicon-16.png" sizes="16x16" type="image/png">
 <link rel="apple-touch-icon" href="../site/icons/apple-touch-icon-180.png">
-<meta name="theme-color" content="#080331">
-<link rel="stylesheet" href="fonts-embedded.css">
+<meta name="theme-color" content="#f8f3eb" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0a0524" media="(prefers-color-scheme: dark)">
+<!-- 2026-09-25: the page moved out of site/ on 09-19 and kept its OLD stack: no tokens.css (so the mark
+     wore base.css's legacy pink --accent) and a fonts file that was not beside it (every line fell back
+     to the browser serif). Now the same three files, in the same order, as privacy.html. -->
+<link rel="stylesheet" href="../site/fonts-embedded.css">
+<link rel="stylesheet" href="../site/tokens.css">
 <link rel="stylesheet" href="../site/base.css">
-<script>/* The dark set is gated on data-market; every page has to stamp it or
-   nairobi serves Kenya content in Canada's colours. Same rule as index. */
-document.documentElement.setAttribute("data-market",
-  (new URLSearchParams(location.search).get("market") ||
-   (/^(nairobi|ke)\./.test(location.hostname) ? "ke" : "ca")).toLowerCase() === "ke" ? "ke" : "ca");</script>
+<script>/* Two independent attributes, stamped before first paint.
+
+   market: always written, from the hostname. The palette keys on
+   [data-market="ca"], not on the attribute being absent.
+
+   theme: written ONLY to force a theme. Its ABSENCE is the default and means
+   "follow the OS", which base.css expresses with light-dark() + color-scheme
+   and needs no JavaScript at all. This script exists purely so a reader who
+   has FORCED a theme does not get a cream flash on every navigation, which is
+   why it is inline in <head> ahead of the stylesheet.
+
+   Three states, and a toggle would need all three - removing the attribute is
+   the only way to hand control back to the OS, so a two-way switch cannot
+   express it. There is no toggle in the UI yet; `setTheme` is the whole
+   mechanism when one is added.
+
+   ?market= and ?theme= override for testing; ?theme=system clears a stored
+   choice, which is how the OS-following state gets verified. */
+(function(d,q){
+  var m=(q.get("market")||(/^(nairobi|ke)\./.test(location.hostname)?"ke":"ca")).toLowerCase();
+  d.setAttribute("data-market",m==="ke"?"ke":"ca");
+
+  /* Three states: "system" | "light" | "dark". Removing the attribute is the
+     only way to hand control back to the OS, so a two-way switch cannot
+     express it and the toggle needs all three.
+
+     It applies LIVE - no reload. An earlier version of this comment claimed
+     Chrome would not re-resolve light-dark() at runtime; that was measured
+     through `body{transition:background .45s}` in a hidden browser pane,
+     where transitions are paused at frame zero and every read returns the
+     START colour. With the transition suppressed, all three states resolve
+     synchronously, and so does an OS change with no attribute set. */
+  d.setTheme=function(choice){
+    var real = (choice==="light"||choice==="dark"||choice==="system") ? choice : "light";
+    try{
+      if(real==="light") localStorage.removeItem("jobscout.theme");   // the default
+      else localStorage.setItem("jobscout.theme",real);
+    }catch(e){}
+    if(real==="light") d.removeAttribute("data-theme");
+    else d.setAttribute("data-theme",real);
+    d.dispatchEvent(new CustomEvent("themechange",{detail:real}));
+  };
+
+  var q_t=q.get("theme");
+  if(q_t==="light"||q_t==="dark"||q_t==="system"){ d.setTheme(q_t); return; }
+  var t=null; try{t=localStorage.getItem("jobscout.theme")}catch(e){}
+  /* No stored choice writes no attribute, and no attribute is LIGHT - the
+     brand's own ground. "system" is stored like any other choice. */
+  if(t==="light"||t==="dark"||t==="system") d.setAttribute("data-theme",t);
+})(document.documentElement,new URLSearchParams(location.search))</script>
 
 <style>
 
   *{box-sizing:border-box}
-  body{margin:0;background:var(--canvas);color:var(--text);font-family:var(--sans);font-size:16px;line-height:1.6;
-    background-image:radial-gradient(rgba(8,3,49,.07) 1px,transparent 1px);background-size:24px 24px;-webkit-font-smoothing:antialiased}
+  /* one ground: only <html> paints it (base.css). This page used to paint its own on body. */
+  body{margin:0;color:var(--text);font-family:var(--sans);font-size:16px;line-height:1.6;-webkit-font-smoothing:antialiased}
   .wrap{max-width:860px;margin:0 auto;padding:0 20px 80px}
   header{padding:14px 0 0}
   header .pill{display:flex;align-items:center;gap:12px;background:var(--surface);border-radius:1600px;box-shadow:var(--sh);padding:12px 18px}
@@ -37,7 +88,7 @@ document.documentElement.setAttribute("data-market",
   .range button{font:500 14px var(--sans);color:var(--text2);background:var(--surface);cursor:pointer;
     border:1.5px solid var(--hair2);border-radius:1600px;padding:8px 16px;transition:all .2s var(--ease)}
   /* the selected range wears ink, not the accent: white on the pale accent read as a DISABLED button (Ken, 09-25) */
-  .range button.on{background:var(--ink);border-color:var(--ink);color:#fff}
+  .range button.on{background:var(--action);border-color:var(--action);color:var(--action-on)}   /* the site's own action pair: ink on light, cream on dark */
 
   /* the funnel: one bar per step, width proportional to the widest, so the drop-off is the shape */
   .funnel{background:var(--surface);border-radius:16px;box-shadow:var(--sh);padding:10px 22px 18px;margin:14px 0}
@@ -45,9 +96,12 @@ document.documentElement.setAttribute("data-market",
   .step:last-child{border-bottom:none}
   .step .lbl{font-size:14.5px;font-weight:500;color:var(--ink)}
   .step .lbl small{display:block;font-weight:400;font-size:12.5px;color:var(--text3)}
-  .bar{height:12px;border-radius:1600px;background:var(--info);min-width:3px;transition:width .6s var(--ease)}
-  .bar.act{background:var(--indigo)}
-  .bar.out{background:var(--meadow)}
+  /* colour law v2.3: band owns hue exclusively, so a bar never wears a band or the accent. Weight carries it:
+     the fact is sunken (visible on both themes; --info was white on white in light), the steps people
+     acted on are ink, outcomes the secondary tone. */
+  .bar{height:12px;border-radius:1600px;background:var(--sunken);min-width:3px;transition:width .6s var(--ease)}
+  .bar.act{background:var(--ink)}
+  .bar.out{background:var(--text2)}
   .step .n{text-align:right;font-variant-numeric:tabular-nums;font-size:14.5px;color:var(--ink)}
   .step .n small{color:var(--text3);font-size:12.5px}
 
@@ -60,7 +114,7 @@ document.documentElement.setAttribute("data-market",
   .chips li{font-size:13.5px;color:var(--midnight);background:var(--surface);border-radius:1600px;padding:8px 15px;box-shadow:var(--sh)}
   .chips b{color:var(--ink)}
   .note{font-size:13.5px;color:var(--text3);margin:10px 0 0;max-width:70ch}
-  .warn{background:var(--surface);border-left:4px solid var(--ember);border-radius:16px;box-shadow:var(--sh);padding:18px 22px;margin:14px 0;color:var(--text2)}
+  .warn{background:var(--surface);border-left:4px solid var(--ink);border-radius:16px;box-shadow:var(--sh);padding:18px 22px;margin:14px 0;color:var(--text2)}
   .empty{background:var(--surface);border-radius:16px;box-shadow:var(--sh);padding:26px;color:var(--text2)}
   .foot{margin-top:56px;padding-top:18px;border-top:1px solid var(--hair);font-size:13px;color:var(--text3)}
   @media (max-width:560px){ .step{grid-template-columns:104px minmax(0,1fr) 92px;gap:10px} .wrap{padding:0 16px 60px} }
@@ -71,13 +125,13 @@ document.documentElement.setAttribute("data-market",
 <div class="wrap">
   <header class="site">
     <div class="row">
-      <a class="brand" href="./">
+      <a class="brand" href="https://jobscout.page/">
         <svg viewBox="-3.5 -3.5 31 31" aria-hidden="true"><circle cx="12" cy="1" r="2.275"/><circle cx="19.7782" cy="4.2218" r="2.5694"/><circle cx="23" cy="12" r="2.8639"/><circle cx="19.7782" cy="19.7782" r="3.1583"/><circle cx="12" cy="23" r="3.4527"/><circle cx="4.2218" cy="19.7782" r="3.7471"/><circle cx="1" cy="12" r="4.0416"/><circle cx="4.2218" cy="4.2218" r="4.336"/></svg>
         JobScout
       </a>
       <nav class="main" style="margin-left:auto;display:flex;gap:8px;align-items:center">
-        <a href="./">Browse</a>
-        <a href="privacy">Privacy</a>
+        <a href="https://jobscout.page/">Browse</a>
+        <a href="https://jobscout.page/privacy">Privacy</a>
       </nav>
     </div>
   </header>
@@ -86,7 +140,7 @@ document.documentElement.setAttribute("data-market",
 <main>
   <p class="eyebrow">Evidence</p>
   <h1>What people actually do.</h1>
-  <p class="sub">Every step of the funnel, counted. Aggregates only — no personal data is recorded and none is shown here. What each event contains is written out on the <a href="privacy">privacy page</a>.</p>
+  <p class="sub">Every step of the funnel, counted. Aggregates only — no personal data is recorded and none is shown here. What each event contains is written out on the <a href="https://jobscout.page/privacy">privacy page</a>.</p>
 
   <div class="range" id="range"></div>
 
@@ -231,12 +285,12 @@ renderRange(); load();
   <footer class="site">
     <div class="fgrid">
       <div>
-        <p class="fbrand"><a href="./">JobScout</a></p>
+        <p class="fbrand"><a href="https://jobscout.page/">JobScout</a></p>
         <p class="fnote">Reads your resume, drops what cannot fit, and tells you why about the rest.</p>
       </div>
       <div>
         <h4>Find work</h4>
-        <a href="./">Browse today&rsquo;s sweep</a><a href="saved">Saved jobs</a>
+        <a href="https://jobscout.page/">Browse today&rsquo;s sweep</a><a href="https://jobscout.page/saved">Saved jobs</a>
       </div>
       <div>
         <h4>Markets</h4>
@@ -244,7 +298,7 @@ renderRange(); load();
       </div>
       <div>
         <h4>Legal</h4>
-        <a href="privacy">Privacy</a><a href="privacy#counted">What we count</a>
+        <a href="https://jobscout.page/privacy">Privacy</a><a href="https://jobscout.page/privacy#counted">What we count</a>
       </div>
     </div>
   </footer>
