@@ -22,7 +22,7 @@ Audited **2026-09-22**. Source: every message Ken sent, pulled from the session 
 | _?_ | `ev-bot-shaped-day`<br><sub>2026-09-25</sub> | add a check to the existing harnesses so a bot-shaped day (opens >> runs, pastes without runs) is flagged | web | `node worker/tools/check_ev_shape.mjs` |
 | _?_ | `soar-events`<br><sub>2026-09-25</sub> | maybe we should add JobScout to our soar | api | `node worker/tools/check_security.mjs` |
 | _?_ | `soar-ip-security-only`<br><sub>2026-09-25</sub> | IP in security events only | api | `node worker/tools/check_security.mjs` |
-| _?_ | `stats-gated`<br><sub>2026-09-25</sub> | gate /api/stats | api | `node worker/tools/check_security.mjs --live` |
+| _?_ | `stats-gated`<br><sub>2026-09-25</sub> | gate /api/stats | api | `node worker/tools/check_security.mjs` |
 | OK | `hero-box`<br><sub>2026-09-18</sub> | The large hero title with a text box/resume upload box on the landing page | web | `node tools/check_field_chrome.mjs` |
 | OK | `market-switch`<br><sub>2026-09-18</sub> | CA/KE flip switch at the top with 2 completely different design languages - light/dark | web | `node tools/check_lightdark.mjs` |
 | OK | `hero-tabs`<br><sub>2026-09-18</sub> | Useful tabs with relevant options - Full time, Contract, AI training, Remote... | web | **none** |
@@ -91,5 +91,5 @@ Audited **2026-09-22**. Source: every message Ken sent, pulled from the session 
 
 **`soar-ip-security-only`** - Only audit() (security.js) reads cf-connecting-ip into an event; the counted-events table still stores no IP. privacy.html#security-events says so and states 90 days; the ops read-api deletes project=jobscout security events after 90 days (SECURITY_EVENT_KEEP_DAYS, checked against the page).
 
-**`stats-gated`** - /api/stats needs Authorization: Bearer STATS_TOKEN (worker secret; unset = closed) and checks it before any query. A WRONG token is a SIEM event. ops/stats.html asks for the token once and keeps it in localStorage (the repo is public). api_sweep expects 401 without it; check_ev_shape --live and check_security --live read STATS_TOKEN from the nightly workflow's secret.
+**`stats-gated`** - /api/stats needs Authorization: Bearer STATS_TOKEN (worker secret; unset = closed) and checks it before any query. A WRONG token is a SIEM event. ops/stats.html asks for the token once and keeps it in localStorage (the repo is public). api_sweep expects 401 without it; check_ev_shape --live and check_security --live read STATS_TOKEN from the nightly workflow's secret. The gate runs the static half (it runs BEFORE the deploy, so --live would ask the old worker); --live runs nightly after deploy.
 

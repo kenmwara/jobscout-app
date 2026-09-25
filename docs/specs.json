@@ -576,8 +576,8 @@
       "surface": "api",
       "said": "gate /api/stats",
       "status": "unverified",
-      "check": "node worker/tools/check_security.mjs --live",
-      "evidence": "/api/stats needs Authorization: Bearer STATS_TOKEN (worker secret; unset = closed) and checks it before any query. A WRONG token is a SIEM event. ops/stats.html asks for the token once and keeps it in localStorage (the repo is public). api_sweep expects 401 without it; check_ev_shape --live and check_security --live read STATS_TOKEN from the nightly workflow's secret."
+      "check": "node worker/tools/check_security.mjs",
+      "evidence": "/api/stats needs Authorization: Bearer STATS_TOKEN (worker secret; unset = closed) and checks it before any query. A WRONG token is a SIEM event. ops/stats.html asks for the token once and keeps it in localStorage (the repo is public). api_sweep expects 401 without it; check_ev_shape --live and check_security --live read STATS_TOKEN from the nightly workflow's secret. The gate runs the static half (it runs BEFORE the deploy, so --live would ask the old worker); --live runs nightly after deploy."
     }
   ]
 }
