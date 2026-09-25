@@ -151,7 +151,7 @@ function render(d){
 
   $("#body").innerHTML = `
     ${suspect.length ? `<div class="warn" id="suspect"><b>Do not quote these numbers yet.</b>
-       ${suspect.length === 1 ? "One day" : suspect.length + " days"} in this window look like machines, not people:
+       ${suspect.length === 1 ? "One day in this window looks" : suspect.length + " days in this window look"} like machines, not people:
        <ul>${suspect.map(r => `<li><b>${esc(r.day)}</b> — ${r.suspect.map(esc).join("; ")}</li>`).join("")}</ul>
        Find and move them with <code>python worker/tools/ev_quarantine.py</code>.</div>` : ""}
     ${!any ? `<div class="empty"><b>Nothing counted yet in this window.</b><br>

@@ -38,7 +38,9 @@ def d1(sql=None, file=None):
     cmd = ["npx", "--yes", "wrangler@4.95.0", "d1", "execute", "jobscout-app", "--remote", "--json"]
     cmd += ["--file", file] if file else ["--command", sql]
     out = subprocess.run(cmd, cwd=WORKER, capture_output=True, text=True, shell=os.name == "nt", encoding="utf-8")
-    return json.loads(out.stdout)
+    if out.returncode:
+        sys.exit(f"wrangler failed: {out.stderr[-800:]}")
+    return None if file else json.loads(out.stdout)   # a --file run prints progress, not JSON; the counts are the proof
 
 
 def ci_windows():
@@ -110,8 +112,8 @@ def main():
         s = lambda k: sum(1 for (kk, x) in c if kk == k and x.startswith("sid:"))
         print(f"{day}  {s('human'):5} {n('human','open'):5} {n('human','paste'):5} {n('human','run'):4} "
               f"{n('human','scored'):5} {n('human','apply_open'):5}   | {s('machine'):6} {n('machine','open'):5} {n('machine','paste'):5}")
-    if "--apply" not in sys.argv:
-        print("\nreport only; --apply moves the machine rows to ev_machine")
+    if "--apply" not in sys.argv or not bad:
+        print("\nnothing to move" if not bad else "\nreport only; --apply moves the machine rows to ev_machine")
         return
     by_rule = collections.defaultdict(list)
     for sid, rule in bad.items():
@@ -125,11 +127,14 @@ def main():
             sql.append(f"DELETE FROM ev WHERE sid IN ({inl}) AND id IN (SELECT id FROM ev_machine);")
     with tempfile.NamedTemporaryFile("w", suffix=".sql", delete=False, encoding="utf-8") as f:
         f.write("\n".join(sql))
-    res = d1(file=f.name)
+    count = lambda: d1("SELECT (SELECT COUNT(*) FROM ev) ev, (SELECT COUNT(*) FROM ev_machine) machine")[0]["results"][0]
+    before, moving = count(), sum(1 for r in rows if r["sid"] in bad)
+    d1(file=f.name)
     os.unlink(f.name)
-    left = d1("SELECT (SELECT COUNT(*) FROM ev) ev, (SELECT COUNT(*) FROM ev_machine) machine")[0]["results"][0]
-    print(f"\nmoved. ev now {left['ev']} rows, ev_machine {left['machine']}  (before: {len(rows)})")
-    assert left["ev"] + 0 == len(rows) - sum(1 for r in rows if r["sid"] in bad), "row count does not reconcile"
+    after = count()
+    print(f"\nmoved {after['machine'] - before['machine']} rows (expected {moving}). "
+          f"ev {before['ev']} -> {after['ev']}, ev_machine {before['machine']} -> {after['machine']}")
+    assert after["machine"] - before["machine"] == moving, "the move does not reconcile"
 
 
 if __name__ == "__main__":

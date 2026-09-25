@@ -43,8 +43,8 @@ if (process.argv.includes("--live")) {
     is(!(r.suspect || []).length, `${r.day}  visits ${r.people}  pastes ${r.pastes ?? "?"}  runs ${r.runs}  peak10 ${r.peak10 ?? "?"}` +
       ((r.suspect || []).length ? `  <- ${r.suspect.join("; ")}` : ""));
   console.log(fails ? `\nVERDICT: FAIL - ${fails} machine-shaped day(s); run python worker/tools/ev_quarantine.py` : "\nVERDICT: PASS");
-  process.exit(fails ? 1 : 0);
-}
+  process.exitCode = fails ? 1 : 0;   // not process.exit(): with fetch's socket still open it crashes libuv on Windows
+} else {
 
 let pages = ["site/index.html", "site/saved.html"].map(p => [p, readFileSync(join(ROOT, p), "utf8")]);
 let worker = readFileSync(join(ROOT, "worker/src/index.js"), "utf8");
@@ -100,3 +100,5 @@ if (MUTATE && fails) { console.log(`VERDICT: the "${MUTATE}" mutation was caught
 if (MUTATE) { console.log(`VERDICT: ASLEEP — the "${MUTATE}" mutation did not fail this check`); process.exit(1); }
 if (fails) { console.log(`VERDICT: FAIL (${fails})`); process.exit(1); }
 console.log("VERDICT: PASS");
+
+}
