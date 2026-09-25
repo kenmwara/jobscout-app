@@ -18,3 +18,4 @@ android/.kotlin/
 
 # handover stills are shipped as a zip to the operator, not kept in git
 docs/handover/**/*.png
+__pycache__/
