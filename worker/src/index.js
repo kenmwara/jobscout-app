@@ -912,7 +912,8 @@ async function route(request, env) {
     if (url.pathname === "/ingest/feed" && request.method === "POST") {
       // droplet-side publisher (tools/publish_feed.py) — shared-secret gated
       if (!sameSecret(request.headers.get("x-feed-secret") || "", env.FEED_SECRET || "")) {
-        if (await once(env, `feed401|${await ipKey(request)}|${hourBucket()}`))
+        // a WRONG secret is someone guessing; no secret at all is a scanner, like /api/stats
+        if (request.headers.get("x-feed-secret") && await once(env, `feed401|${await ipKey(request)}|${hourBucket()}`))
           await audit(env, request, "warning", "wrong feed secret on /ingest/feed");
         return json(401, { error: "unauthorized" });
       }
@@ -929,7 +930,8 @@ async function route(request, env) {
       // SOAR playbook pause-scoring / resume-scoring (droplet tools/soar.py). Its own secret, not the
       // feed secret: the publisher can write the feed and nothing else.
       if (!sameSecret(request.headers.get("x-control-secret") || "", env.CONTROL_SECRET || "")) {
-        if (await once(env, `ctl401|${await ipKey(request)}|${hourBucket()}`))
+        // a WRONG secret is an event; a bare probe (the nightly --live check, scanners) is not
+        if (request.headers.get("x-control-secret") && await once(env, `ctl401|${await ipKey(request)}|${hourBucket()}`))
           await audit(env, request, "warning", "wrong control secret on /control/scoring");
         return json(401, { error: "unauthorized" });
       }

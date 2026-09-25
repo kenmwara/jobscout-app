@@ -12,7 +12,7 @@
  * caller with no credential.
  *
  *   node worker/tools/check_security.mjs [--live]
- *   node worker/tools/check_security.mjs --mutate <injection-blind|honest-flagged|stats-open|silent-429|no-pause|page-drift|no-binding|text-in-event>
+ *   node worker/tools/check_security.mjs --mutate <injection-blind|honest-flagged|stats-open|silent-429|no-pause|page-drift|no-binding|text-in-event|bare-probe-pages>
  */
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
@@ -21,7 +21,7 @@ import * as shipping from "../src/security.js";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(HERE, "..", "..");
-const MUTANTS = ["injection-blind", "honest-flagged", "stats-open", "silent-429", "no-pause", "page-drift", "no-binding", "text-in-event"];
+const MUTANTS = ["injection-blind", "honest-flagged", "stats-open", "silent-429", "no-pause", "page-drift", "no-binding", "text-in-event", "bare-probe-pages"];
 const MUTATE = process.argv.indexOf("--mutate") < 0 ? null : process.argv[process.argv.indexOf("--mutate") + 1];
 if (MUTATE && !MUTANTS.includes(MUTATE)) { console.log(`unknown mutation "${MUTATE}"`); process.exit(2); }
 
@@ -36,6 +36,7 @@ if (MUTATE === "silent-429") worker = worker.replace('await rateLimitEvent(reque
 if (MUTATE === "no-pause") worker = worker.replace("const isPaused = await paused(env);", "const isPaused = false;");
 if (MUTATE === "page-drift") page = page.replace(/(id="security-events"[\s\S]*?deleted after <b>)\d+( days<\/b>)/, "$130$2");
 if (MUTATE === "no-binding") toml = toml.replace(/\[\[services\]\][\s\S]*?service = "ingest-worker"/, "");
+if (MUTATE === "bare-probe-pages") worker = worker.replace('if (request.headers.get("x-control-secret") && await once', "if (await once");
 if (MUTATE === "text-in-event") worker = worker.replace("{ endpoint, markers, chars: profile.length, ip_hash: key }", "{ endpoint, markers, text: profile, ip_hash: key }");
 
 let fails = 0;
@@ -69,6 +70,10 @@ const nEvt = (worker.match(/await rateLimitEvent\(/g) || []).length;
 is(n429 > 0 && nEvt === n429, `every 429 is preceded by a rate-limit event (${nEvt} events for ${n429} refusals)`);
 is(/after >= DAILY_BUDGET_USD && after - costUsd < DAILY_BUDGET_USD[\s\S]{0,120}await audit\(/.test(worker), "the request that trips the daily budget reports it");
 is(/"\/ingest\/feed"[\s\S]{0,400}sameSecret[\s\S]{0,300}await audit\(/.test(worker), "a wrong feed secret is an event");
+is(/if \(request\.headers\.get\("x-feed-secret"\) && await once/.test(worker) &&
+   /if \(request\.headers\.get\("x-control-secret"\) && await once/.test(worker) &&
+   /if \(auth && await once/.test(worker),
+   "a bare probe with NO secret is not an event (the nightly --live check would page every night)");
 is(/\{ endpoint, markers, chars: profile\.length, ip_hash: key \}/.test(worker) && !/text:\s*profile/.test(worker),
    "an injection event names the patterns and the length, never the résumé text");
 is((worker.match(/await injectionEvent\(/g) || []).length >= 2, "both the scoring route and the drafting endpoints scan for injection");
