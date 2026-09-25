@@ -26,3 +26,19 @@ CREATE TABLE IF NOT EXISTS ev (
 );
 CREATE INDEX IF NOT EXISTS ev_day_name ON ev (day, name);
 CREATE INDEX IF NOT EXISTS ev_sid ON ev (sid);
+
+-- Counted sessions that were machines, moved out of ev by worker/tools/ev_quarantine.py
+-- (2026-09-25: our own browser checks had been counted as ~2,000 visitors a day). Same columns
+-- as ev plus the rule that caught it; moved, not deleted, so a wrong call can be moved back.
+CREATE TABLE IF NOT EXISTS ev_machine (
+  id      INTEGER PRIMARY KEY,    -- the row's id in ev
+  ts_ms   INTEGER NOT NULL,
+  day     TEXT NOT NULL,
+  market  TEXT NOT NULL,
+  surface TEXT NOT NULL,
+  name    TEXT NOT NULL,
+  detail  TEXT,
+  sid     TEXT NOT NULL,
+  rule    TEXT NOT NULL           -- burst | twin | fast | ci, see ev_quarantine.py
+);
+CREATE INDEX IF NOT EXISTS ev_machine_day ON ev_machine (day);

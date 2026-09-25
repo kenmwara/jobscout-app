@@ -52,6 +52,9 @@ const CHECKS = [
   { id: "cors",      file: "worker/tools/check_cors.mjs", mutations: ["wildcard", "startswith", "block-null"], guards: "only this project's pages are answered, and a request with no Origin is still answered" },
   /* 2026-09-24. demo_runs had no retention rule at all. */
   { id: "retention", file: "worker/tools/check_retention.mjs", mutations: ["page-drift", "no-cron", "no-handler", "keeps-forever"], guards: "demo_runs rows are deleted after the window the privacy page states, by a cron that exists" },
+  /* 2026-09-25. From 09-20 the stats page read ~2,000 visits a day, and they were THESE
+     checks: every Playwright page posted to the live worker as a new visitor. */
+  { id: "evshape",   file: "worker/tools/check_ev_shape.mjs", mutations: ["page-counts-bots", "worker-lets-bots", "ua-open", "shape-blind", "dash-hides"], guards: "a scripted browser, crawler or unfurler is never counted, and a machine-shaped day is flagged on the dashboard" },
   /* 2026-09-23. The résumé-in-storage fix of 09-21 was applied to the web and
      recorded as closed FOR THE PRODUCT, while the phone went on writing one to
      SharedPreferences every run. This checks BOTH surfaces, because covering

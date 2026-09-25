@@ -10,6 +10,7 @@
 import { extractText, getDocumentProxy } from "unpdf";
 import { unzipSync } from "fflate";
 import { sweepDemoRuns } from "./retention.js";
+import { isBotUA, botShaped } from "./counted.js";
 
 const MODEL = "claude-haiku-4-5-20251001";
 const MAX_SCORE_TOKENS = 400;
@@ -810,6 +811,8 @@ async function route(request, env) {
     if (url.pathname === "/api/ev" && request.method === "POST") {
       // Never fails loudly: a page must not break because a counter did.
       try{
+        // Crawlers, unfurlers and headless browsers are refused here; the UA is read, never stored.
+        if (isBotUA(request.headers.get("user-agent"))) return new Response(null, { status: 204, headers: CORS });
         // Parsed from text, not request.json(): the page sends text/plain so that sendBeacon
         // stays a simple request and never needs a preflight it cannot perform.
         const b = JSON.parse(await request.text());
@@ -830,15 +833,19 @@ async function route(request, env) {
       const days = Math.min(90, Math.max(1, parseInt(url.searchParams.get("days") || "14", 10)));
       const from = new Date(Date.now() - days * 86400_000).toISOString().slice(0, 10);
       const q = sql => env.DB.prepare(sql).bind(from).all().then(r => r.results || []);
-      const [funnel, daily, outcomes, sectors, markets, runs] = await Promise.all([
+      const [funnel, daily, outcomes, sectors, markets, runs, peaks] = await Promise.all([
         q("SELECT name, COUNT(*) n, COUNT(DISTINCT sid) people FROM ev WHERE day >= ? GROUP BY name"),
-        q("SELECT day, COUNT(DISTINCT sid) people, SUM(name='run') runs, SUM(name='apply') applies FROM ev WHERE day >= ? GROUP BY day ORDER BY day"),
+        q("SELECT day, COUNT(DISTINCT sid) people, SUM(name='run') runs, SUM(name='paste') pastes, SUM(name='apply') applies FROM ev WHERE day >= ? GROUP BY day ORDER BY day"),
         q("SELECT detail, COUNT(*) n FROM ev WHERE day >= ? AND name='outcome' GROUP BY detail"),
         q("SELECT detail, COUNT(*) n FROM ev WHERE day >= ? AND name='run' AND detail IS NOT NULL GROUP BY detail ORDER BY n DESC LIMIT 12"),
         q("SELECT market, COUNT(DISTINCT sid) people, COUNT(*) n FROM ev WHERE day >= ? GROUP BY market"),
         // demo_runs predates the event table and is the only history of real usage there is
         q("SELECT day, COUNT(*) scored, COUNT(DISTINCT ip_hash) ips, ROUND(SUM(cost_usd),4) usd FROM demo_runs WHERE day >= ? GROUP BY day ORDER BY day"),
+        // the most new visits in any ten minutes: a person-sized site never reaches the bar in counted.js
+        q("SELECT day, MAX(c) peak10 FROM (SELECT day, COUNT(DISTINCT sid) c FROM ev WHERE day >= ? AND name='open' GROUP BY day, ts_ms / 600000) GROUP BY day"),
       ]);
+      const peak = Object.fromEntries(peaks.map(r => [r.day, r.peak10]));
+      for (const r of daily) { r.peak10 = peak[r.day] || 0; r.suspect = botShaped(r); }
       const by = rows => Object.fromEntries(rows.map(r => [r.name, r]));
       return json(200, {
         days, from, funnel: by(funnel),

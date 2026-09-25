@@ -533,6 +533,24 @@
       "status": "live",
       "check": "node worker/tools/check_retention.mjs",
       "evidence": "worker/src/retention.js: DEMO_RUNS_KEEP_DAYS = 90, swept by a daily cron (wrangler.toml [triggers], 03:23 UTC) through the worker's scheduled() handler. 90 because the IP hash is only needed for the one-hour cap and /api/stats reads at most 90 days. privacy.html states the same figure in #retention-demo-runs. The check runs the shipping sweep against a stand-in DB (SQL + cutoff), asserts the cron and the handler exist, and that the page's number equals the constant; four mutations (page-drift, no-cron, no-handler, keeps-forever) each turn it red. Oldest row on 2026-09-24 was 2026-09-03, so the first real deletion is due 2026-12-02."
+    },
+    {
+      "id": "ev-bot-ingest",
+      "date": "2026-09-25",
+      "surface": "web",
+      "said": "if it is bots, filter at ingest (e.g. require a real interaction before counting 'open', drop known bot UAs, rate-limit per IP), without storing anything new that the privacy page does not allow",
+      "status": "changed",
+      "check": "node worker/tools/check_ev_shape.mjs",
+      "evidence": "The source was not outside bots: it was our own Playwright checks (deploy gate, nightly --mutations, local sanity runs), 9,990 of 10,430 sessions in bursts that line up with GitHub Actions runs, plus the Android emulator harness. Filtered at the source instead of with the two examples: the page's ev() returns when navigator.webdriver (every Playwright/Puppeteer/Selenium browser), the worker refuses crawler/unfurler/headless/script user agents before the INSERT (read, never stored), and the apps skip counting on the emulator/simulator. NOT done: 'require a real interaction before counting open' (a person who reads and leaves is a real visit; unfurlers run no JS) and 'rate-limit per IP' (ev deliberately has no IP; no outside abuse was found). Needs Ken's ruling on both."
+    },
+    {
+      "id": "ev-bot-shaped-day",
+      "date": "2026-09-25",
+      "surface": "web",
+      "said": "add a check to the existing harnesses so a bot-shaped day (opens >> runs, pastes without runs) is flagged",
+      "status": "unverified",
+      "check": "node worker/tools/check_ev_shape.mjs",
+      "evidence": "worker/src/counted.js botShaped(): flagged when 15+ new visits inside ten minutes, or 10+ pastes with fewer than one run per four, or 50+ visits with fewer than one run per fifty. /api/stats returns suspect per day, ops/stats.html leads with 'Do not quote these numbers yet' when any day is suspect. check_ev_shape.mjs tests the rule on the real 09-24 (flagged) and the real human remainder (not flagged), five mutations; --live runs nightly in checks-nightly.yml against the deployed /api/stats."
     }
   ]
 }

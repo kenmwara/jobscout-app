@@ -235,6 +235,9 @@ object Api {
         }
     }
 
+    private val onEmulator = android.os.Build.HARDWARE.let { it == "ranchu" || it == "goldfish" } ||
+        android.os.Build.FINGERPRINT.startsWith("generic")
+
     /**
      * One counted step. The same thirteen names the web page sends and the worker allows;
      * anything else is dropped server-side. Carries no resume, no posting, no device id and
@@ -243,6 +246,8 @@ object Api {
      * Fire and forget: a counter must never fail a screen, so every error is swallowed.
      */
     fun ev(name: String, detail: String? = null, market: String = "ca") {
+        // The emulator is where our own harness drives the app; it is not a visitor (2026-09-25).
+        if (onEmulator) return
         evScope.launch {
             try {
                 val d = if (detail == null) "null" else "\"" + detail.take(48) + "\""

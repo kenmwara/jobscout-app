@@ -46,3 +46,10 @@ jobs:
       # mutation. sanity.mjs reports it as "asleep" rather than as a pass.
       - name: Every check is still awake
         run: node tools/sanity.mjs --mutations
+
+      # 2026-09-25: from 09-20 the stats page counted our own checks as ~2,000 visitors a
+      # day. This reads the DEPLOYED /api/stats and goes red the first night any day in the
+      # last 30 looks like machines (worker/src/counted.js). Red = run ev_quarantine.py.
+      - name: The counted days still look like people
+        if: always()
+        run: node worker/tools/check_ev_shape.mjs --live

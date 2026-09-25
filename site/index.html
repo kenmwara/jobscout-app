@@ -1328,6 +1328,8 @@ try{
   }
 }catch(e){ SID = Math.random().toString(36).slice(2, 14); }
 function ev(n, d){
+  // A browser driven by a script (our own Playwright checks, or anyone's) is not a visitor.
+  if (navigator.webdriver) return;
   try{
     const body = JSON.stringify({ n, d: d == null ? null : String(d), m: MARKET, s: "web", sid: SID });
     // text/plain, NOT application/json: a Blob with a non-safelisted content type makes

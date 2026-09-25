@@ -60,6 +60,7 @@ document.documentElement.setAttribute("data-market",
   .chips li{font-size:13.5px;color:var(--midnight);background:var(--surface);border-radius:1600px;padding:8px 15px;box-shadow:var(--sh)}
   .chips b{color:var(--ink)}
   .note{font-size:13.5px;color:var(--text3);margin:10px 0 0;max-width:70ch}
+  .warn{background:var(--surface);border-left:4px solid var(--ember);border-radius:16px;box-shadow:var(--sh);padding:18px 22px;margin:14px 0;color:var(--text2)}
   .empty{background:var(--surface);border-radius:16px;box-shadow:var(--sh);padding:26px;color:var(--text2)}
   .foot{margin-top:56px;padding-top:18px;border-top:1px solid var(--hair);font-size:13px;color:var(--text3)}
   @media (max-width:560px){ .step{grid-template-columns:104px minmax(0,1fr) 92px;gap:10px} .wrap{padding:0 16px 60px} }
@@ -144,7 +145,15 @@ function render(d){
   const opens = f.open?.people || 0, ran = f.run?.people || 0, applied = f.apply?.people || 0;
   const pct = (a, b) => b ? Math.round(a / b * 100) + "%" : "—";
 
+  // Days the worker judges machine-shaped (worker/src/counted.js). Said first, because on
+  // 2026-09-25 the page showed ~2,000 "visits" a day that were our own browser checks.
+  const suspect = daily.filter(r => (r.suspect || []).length);
+
   $("#body").innerHTML = `
+    ${suspect.length ? `<div class="warn" id="suspect"><b>Do not quote these numbers yet.</b>
+       ${suspect.length === 1 ? "One day" : suspect.length + " days"} in this window look like machines, not people:
+       <ul>${suspect.map(r => `<li><b>${esc(r.day)}</b> — ${r.suspect.map(esc).join("; ")}</li>`).join("")}</ul>
+       Find and move them with <code>python worker/tools/ev_quarantine.py</code>.</div>` : ""}
     ${!any ? `<div class="empty"><b>Nothing counted yet in this window.</b><br>
        Events started on 18 September 2026, so a longer range or a little patience will fill this in.
        Scoring runs below go back further.</div>` : ""}
@@ -173,7 +182,7 @@ function render(d){
 
     ${daily.length ? `<h2>By day</h2>
     <table><thead><tr><th>Day</th><th>Visits</th><th>Runs</th><th>Went to apply</th></tr></thead><tbody>
-      ${daily.slice().reverse().map(r => `<tr><td>${esc(r.day)}</td><td>${r.people}</td><td>${r.runs || 0}</td><td>${r.applies || 0}</td></tr>`).join("")}
+      ${daily.slice().reverse().map(r => `<tr><td>${esc(r.day)}${(r.suspect || []).length ? " ⚠" : ""}</td><td>${r.people}</td><td>${r.runs || 0}</td><td>${r.applies || 0}</td></tr>`).join("")}
     </tbody></table>` : ""}
 
     ${(d.sectors || []).length ? `<h2>Sectors people ran</h2>

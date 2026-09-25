@@ -181,6 +181,9 @@ enum Api {
     /// its list. No resume, no posting, no device id, no address, and `evSid` is random per
     /// launch and never written to disk. Fire and forget: a counter must never fail a screen.
     static func ev(_ name: String, _ detail: String? = nil, market: String = "ca") {
+        #if targetEnvironment(simulator)
+        return  // the simulator is where our own harness drives the app; it is not a visitor (2026-09-25)
+        #endif
         var req = URLRequest(url: apiBase.appendingPathComponent("api/ev"))
         req.httpMethod = "POST"
         // text/plain keeps this a simple request, matching the page (see site/index.html)
