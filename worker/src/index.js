@@ -418,7 +418,10 @@ export default {
     // One decision, at the boundary: every route below returns without
     // thinking about origins, and the answer is stamped on the way out.
     const res = await route(request, env);
-    const origin = allowOrigin(request);
+    let origin = allowOrigin(request);
+    // ops/stats.html is opened from disk, so its origin is "null". /api/stats is token-gated (the token
+    // is the control, not the origin), so that page may read it; every other route still refuses "null".
+    if (!origin && request.headers.get("origin") === "null" && new URL(request.url).pathname === "/api/stats") origin = "null";
     if (!origin) return res;
     const headers = new Headers(res.headers);
     headers.set("Access-Control-Allow-Origin", origin);

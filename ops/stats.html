@@ -6,10 +6,9 @@
 <title>What people actually do — JobScout</title>
 <meta name="description" content="The JobScout funnel, counted: opens, runs, scores, applications and what happened next. Aggregates only.">
 <meta name="robots" content="noindex">
-<link rel="icon" href="/icons/favicon.svg" type="image/svg+xml">
-<link rel="icon" href="/icons/favicon-32.png" sizes="32x32" type="image/png">
-<link rel="apple-touch-icon" href="/icons/apple-touch-icon-180.png">
-<link rel="manifest" href="/site.webmanifest">
+<link rel="icon" href="../site/icons/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="../site/icons/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="../site/icons/apple-touch-icon-180.png">
 <meta name="theme-color" content="#080331">
 <link rel="stylesheet" href="fonts-embedded.css">
 <link rel="stylesheet" href="../site/base.css">
@@ -37,7 +36,8 @@ document.documentElement.setAttribute("data-market",
   .range{display:flex;gap:8px;margin:0 0 8px}
   .range button{font:500 14px var(--sans);color:var(--text2);background:var(--surface);cursor:pointer;
     border:1.5px solid var(--hair2);border-radius:1600px;padding:8px 16px;transition:all .2s var(--ease)}
-  .range button.on{background:var(--indigo);border-color:var(--indigo);color:#fff}
+  /* the selected range wears ink, not the accent: white on the pale accent read as a DISABLED button (Ken, 09-25) */
+  .range button.on{background:var(--ink);border-color:var(--ink);color:#fff}
 
   /* the funnel: one bar per step, width proportional to the widest, so the drop-off is the shape */
   .funnel{background:var(--surface);border-radius:16px;box-shadow:var(--sh);padding:10px 22px 18px;margin:14px 0}

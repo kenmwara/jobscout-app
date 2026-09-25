@@ -88,6 +88,13 @@ const st = worker.slice(worker.indexOf('url.pathname === "/api/stats"'));
 const gate = st.search(/if \(!sameSecret\(auth, env\.STATS_TOKEN/), firstQuery = st.indexOf("SELECT ");
 is(gate > 0 && gate < firstQuery, "/api/stats refuses a caller without the token before any query runs");
 
+// the disk-opened ops/stats.html (origin "null") may read /api/stats and nothing else; the token is the control
+is(/request\.headers\.get\("origin"\) === "null" && new URL\(request\.url\)\.pathname === "\/api\/stats"\) origin = "null"/.test(worker),
+   'origin "null" is answered on /api/stats only (the stats page opened from disk)');
+is(/Access-Control-Allow-Headers"[^
+]*authorization/.test(readFileSync(join(ROOT, "worker/src/cors.js"), "utf8")),
+   "the preflight allows the Authorization header the stats page sends");
+
 // 5. the events can reach the SIEM, and the page states the retention the SIEM enforces
 is(/\[\[services\]\]\s*binding = "INGEST"\s*service = "ingest-worker"/.test(toml), "wrangler.toml binds the ingest worker (a worker cannot fetch another's workers.dev URL)");
 const li = (page.match(/<li id="security-events">[\s\S]*?<\/li>/) || [""])[0];   // this line only: the demo-runs line says "90 days" too

@@ -48,6 +48,6 @@ export const allowOrigin = (request) => {
 // hands one caller another caller's headers.
 export const CORS = {
   "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-  "Access-Control-Allow-Headers": "content-type, x-filename",
+  "Access-Control-Allow-Headers": "content-type, x-filename, authorization",   // authorization: /api/stats (2026-09-25)
   "Vary": "Origin",
 };
