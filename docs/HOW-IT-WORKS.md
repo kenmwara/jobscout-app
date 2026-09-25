@@ -108,7 +108,10 @@ page does not invent one.
   `ops/stats.html`, which is not deployed; what each event can and
   cannot contain is written out on the
   [privacy page](https://jobscout.page/privacy). The page had been redesigned
-  three times on taste before this existed.
+  three times on taste before this existed. Scripted browsers, crawlers and link
+  unfurlers are not counted, and a day that looks like machines is flagged on
+  the stats page before any number (added 2026-09-25, after the project's own
+  test harnesses had been counted as ~2,000 visitors a day).
 - **Separated by design**: the public demo reads a sanitized feed published by
   the private pipeline; it can see titles and verdicts, never private data.
   In the private system, the same separation keeps the reporting path unable
