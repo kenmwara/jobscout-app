@@ -199,9 +199,26 @@ function renderRange(){
   document.querySelectorAll("#range button").forEach(b => b.onclick = () => { days = +b.dataset.d; renderRange(); load(); });
 }
 
+/* The API is operator-only since 2026-09-25. The token is asked for once and kept in this
+   browser only (localStorage), never in this file: the repo is public. */
+const TOKEN_KEY = "js.statsToken";
+function token(){ try { return localStorage.getItem(TOKEN_KEY) || ""; } catch { return ""; } }
+function askToken(msg){
+  const t = (prompt(msg || "Stats token (asked once, kept in this browser only):") || "").trim();
+  if (t) { try { localStorage.setItem(TOKEN_KEY, t); } catch {} }
+  return t;
+}
+
 async function load(){
   try{
-    const r = await fetch(`${API}/api/stats?days=${days}`);
+    let t = token() || askToken();
+    let r = await fetch(`${API}/api/stats?days=${days}`, { headers: { authorization: `Bearer ${t}` } });
+    if (r.status === 401) {
+      try { localStorage.removeItem(TOKEN_KEY); } catch {}
+      t = askToken("That token was refused. Paste the stats token again:");
+      r = await fetch(`${API}/api/stats?days=${days}`, { headers: { authorization: `Bearer ${t}` } });
+    }
+    if (r.status === 401) { $("#body").innerHTML = `<div class="empty">The stats API refused the token. Reload to try again.</div>`; return; }
     render(await r.json());
   }catch(e){
     $("#body").innerHTML = `<div class="empty">The stats API is unreachable right now.</div>`;

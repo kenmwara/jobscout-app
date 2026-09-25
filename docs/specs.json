@@ -551,6 +551,33 @@
       "status": "unverified",
       "check": "node worker/tools/check_ev_shape.mjs",
       "evidence": "worker/src/counted.js botShaped(): flagged when 15+ new visits inside ten minutes, or 10+ pastes with fewer than one run per four, or 50+ visits with fewer than one run per fifty. /api/stats returns suspect per day, ops/stats.html leads with 'Do not quote these numbers yet' when any day is suspect. check_ev_shape.mjs tests the rule on the real 09-24 (flagged) and the real human remainder (not flagged), five mutations; --live runs nightly in checks-nightly.yml against the deployed /api/stats."
+    },
+    {
+      "id": "soar-events",
+      "date": "2026-09-25",
+      "surface": "api",
+      "said": "maybe we should add JobScout to our soar",
+      "status": "unverified",
+      "check": "node worker/tools/check_security.mjs",
+      "evidence": "worker/src/security.js audit() → ingest-worker over a [[services]] binding (project jobscout, bot_event_type security) → ops.tbot.trade/soar + ops Telegram on warning. Events: rate-limit refusal (once per IP-hash per hour), the request that trips the $3 daily budget (once per day), a wrong feed/stats/control secret (once per IP per hour), prompt-injection markers in a pasted résumé (pattern names only, never the text), and yesterday's machine-shaped day (worker cron). SOAR playbook pause-scoring/resume-scoring = POST /control/scoring (own CONTROL_SECRET) → every paid model call answers like the spent budget. check_security.mjs: 7 attacks caught, 6 honest résumés pass, 8 mutations."
+    },
+    {
+      "id": "soar-ip-security-only",
+      "date": "2026-09-25",
+      "surface": "api",
+      "said": "IP in security events only",
+      "status": "unverified",
+      "check": "node worker/tools/check_security.mjs",
+      "evidence": "Only audit() (security.js) reads cf-connecting-ip into an event; the counted-events table still stores no IP. privacy.html#security-events says so and states 90 days; the ops read-api deletes project=jobscout security events after 90 days (SECURITY_EVENT_KEEP_DAYS, checked against the page)."
+    },
+    {
+      "id": "stats-gated",
+      "date": "2026-09-25",
+      "surface": "api",
+      "said": "gate /api/stats",
+      "status": "unverified",
+      "check": "node worker/tools/check_security.mjs --live",
+      "evidence": "/api/stats needs Authorization: Bearer STATS_TOKEN (worker secret; unset = closed) and checks it before any query. A WRONG token is a SIEM event. ops/stats.html asks for the token once and keeps it in localStorage (the repo is public). api_sweep expects 401 without it; check_ev_shape --live and check_security --live read STATS_TOKEN from the nightly workflow's secret."
     }
   ]
 }

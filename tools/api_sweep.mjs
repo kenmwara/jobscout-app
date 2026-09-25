@@ -51,9 +51,14 @@ for (const market of ["ca", "ke"]) {
   } catch (e) { bad(`/api/feed?market=${market} → ${e.message.slice(0, 40)}`); }
 }
 
-for (const path of ["/api/health", "/api/stats"]) {
-  const s = await head(API + path);
-  s === 200 ? ok(`${path} → 200`) : bad(`${path} → ${s}`);
+{
+  const s = await head(API + "/api/health");
+  s === 200 ? ok(`/api/health → 200`) : bad(`/api/health → ${s}`);
+}
+// operator-only since 2026-09-25: without the token it must refuse
+{
+  const s = await head(API + "/api/stats");
+  s === 401 ? ok(`/api/stats without a token → 401`) : bad(`/api/stats without a token → ${s} (want 401)`);
 }
 
 // /api/ev is the analytics beacon both apps fire; it must accept a known name

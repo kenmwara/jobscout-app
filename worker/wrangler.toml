@@ -16,3 +16,10 @@ migrations_dir = "migrations"
 # Daily retention sweep, 03:23 UTC (src/retention.js): demo_runs rows older than 90 days are deleted.
 [triggers]
 crons = ["23 3 * * *"]
+
+# 2026-09-25: security events go to the ops SIEM (ops.tbot.trade/soar). A service binding, because
+# a worker cannot fetch another worker's workers.dev URL. Secrets: INGEST_SECRET, STATS_TOKEN,
+# CONTROL_SECRET (wrangler secret put; never in this file).
+[[services]]
+binding = "INGEST"
+service = "ingest-worker"

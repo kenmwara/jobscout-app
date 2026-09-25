@@ -55,6 +55,9 @@ const CHECKS = [
   /* 2026-09-25. From 09-20 the stats page read ~2,000 visits a day, and they were THESE
      checks: every Playwright page posted to the live worker as a new visitor. */
   { id: "evshape",   file: "worker/tools/check_ev_shape.mjs", mutations: ["page-counts-bots", "worker-lets-bots", "ua-open", "shape-blind", "dash-hides"], guards: "a scripted browser, crawler or unfurler is never counted, and a machine-shaped day is flagged on the dashboard" },
+  /* 2026-09-25. The worker defended itself in silence: a 429, a spent budget or a wrong secret
+     was answered and nobody heard. Now each is a SIEM event on ops.tbot.trade/soar. */
+  { id: "security",  file: "worker/tools/check_security.mjs", mutations: ["injection-blind", "honest-flagged", "stats-open", "silent-429", "no-pause", "page-drift", "no-binding", "text-in-event"], guards: "every refusal and budget trip reports to the SIEM, the pause switch is honoured, /api/stats needs the token, and honest résumés are not flagged as injection" },
   /* 2026-09-23. The résumé-in-storage fix of 09-21 was applied to the web and
      recorded as closed FOR THE PRODUCT, while the phone went on writing one to
      SharedPreferences every run. This checks BOTH surfaces, because covering

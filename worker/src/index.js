@@ -11,6 +11,7 @@ import { extractText, getDocumentProxy } from "unpdf";
 import { unzipSync } from "fflate";
 import { sweepDemoRuns } from "./retention.js";
 import { isBotUA, botShaped } from "./counted.js";
+import { audit, once, hourBucket, injectionMarkers, paused, sameSecret } from "./security.js";
 
 const MODEL = "claude-haiku-4-5-20251001";
 const MAX_SCORE_TOKENS = 400;
@@ -96,6 +97,25 @@ async function recordRun(env, key, tokensIn, tokensOut, costUsd) {
   await env.DB.prepare(
     "INSERT INTO demo_runs (ip_hash, ts_ms, day, tokens_in, tokens_out, cost_usd) VALUES (?,?,?,?,?,?)"
   ).bind(key, Date.now(), day, tokensIn, tokensOut, costUsd).run();
+  // SOAR (2026-09-25): the request that carries the day over the budget says so, once. Real demand
+  // or someone burning the budget - either way the operator should hear it the day it happens.
+  const after = await todaySpendUsd(env);
+  if (after >= DAILY_BUDGET_USD && after - costUsd < DAILY_BUDGET_USD && await once(env, `breaker|${day}`))
+    await audit(env, null, "warning", `daily budget breaker tripped ($${after.toFixed(2)} of $${DAILY_BUDGET_USD})`,
+                { day, spend_usd: +after.toFixed(4), budget_usd: DAILY_BUDGET_USD });
+}
+
+// SOAR events for the two refusals and the one thing a résumé should never contain.
+async function rateLimitEvent(request, env, key, endpoint) {
+  if (await once(env, `429|${key}|${hourBucket()}`))
+    await audit(env, request, "warning", `rate limit refused ${endpoint} (${IP_RUNS_PER_HOUR} runs/hour cap)`, { endpoint, ip_hash: key });
+}
+async function injectionEvent(request, env, key, endpoint, profile) {
+  const markers = injectionMarkers(profile);
+  if (markers.length && await once(env, `inj|${key}|${hourBucket()}`))
+    await audit(env, request, "warning", `prompt-injection markers in a submitted résumé (${markers.join(", ")})`,
+                { endpoint, markers, chars: profile.length, ip_hash: key });   // the pattern names, never the text
+  return markers;
 }
 
 // Markets: the same guarded pipeline, a different sweep and rubric. "ca" is the
@@ -217,13 +237,18 @@ async function extractResume(kind, buf) {
 // Both guards, then the body: {key, spent, profile, p} or the Response to return.
 async function guarded(request, env, breakerNote) {
   const key = await ipKey(request);
-  if (await rateLimited(env, key))
+  if (await rateLimited(env, key)) {
+    await rateLimitEvent(request, env, key, new URL(request.url).pathname);
     return json(429, { error: "rate_limited", detail: `Demo cap: ${IP_RUNS_PER_HOUR} runs/hour.` });
+  }
+  if (await paused(env))
+    return json(200, { breaker: true, paused: true, detail: `Drafting is paused for maintenance — ${breakerNote}.` });
   const spent = await todaySpendUsd(env);
   if (spent >= DAILY_BUDGET_USD)
     return json(200, { breaker: true, detail: `Today's live-demo budget is spent — ${breakerNote}.` });
   const body = await request.json().catch(() => ({}));
   const profile = String(body.profile || "").slice(0, 6000);
+  await injectionEvent(request, env, key, new URL(request.url).pathname, profile);
   const p = body.posting || {};
   if (!profile || !p.title)
     return json(400, { error: "bad_request", detail: "profile + posting required" });
@@ -386,6 +411,8 @@ export default {
   // Daily retention sweep (wrangler.toml [triggers]); the rule lives in retention.js.
   async scheduled(controller, env, ctx) {
     ctx.waitUntil(sweepDemoRuns(env.DB).then(n => console.log(`retention: deleted ${n} demo_runs rows`)));
+    ctx.waitUntil(env.DB.prepare("DELETE FROM sec_seen WHERE ts_ms < ?").bind(Date.now() - 2 * 86400_000).run());
+    ctx.waitUntil(yesterdayShapeEvent(env));
   },
   async fetch(request, env) {
     // One decision, at the boundary: every route below returns without
@@ -398,6 +425,19 @@ export default {
     return new Response(res.body, { status: res.status, statusText: res.statusText, headers });
   },
 };
+
+// The nightly CI check only turns a run red; this makes a machine-shaped day an incident on the
+// SOAR page (2026-09-25). Same rule as /api/stats (counted.js botShaped), for the day just ended.
+async function yesterdayShapeEvent(env) {
+  const day = new Date(Date.now() - 86400_000).toISOString().slice(0, 10);
+  const d = await env.DB.prepare(
+    "SELECT COUNT(DISTINCT sid) people, SUM(name='run') runs, SUM(name='paste') pastes FROM ev WHERE day = ?").bind(day).first();
+  const p = await env.DB.prepare(
+    "SELECT MAX(c) peak10 FROM (SELECT COUNT(DISTINCT sid) c FROM ev WHERE day = ? AND name='open' GROUP BY ts_ms / 600000)").bind(day).first();
+  const why = botShaped({ ...d, peak10: p?.peak10 || 0 });
+  if (why.length && await once(env, `shape|${day}`))
+    await audit(env, null, "warning", `counted day ${day} looks like machines: ${why.join("; ")}`, { day, why });
+}
 
 async function route(request, env) {
     if (request.method === "OPTIONS") return new Response(null, { headers: CORS });
@@ -424,17 +464,21 @@ async function route(request, env) {
       // The regression harness (tools/demo_eval.py) presents the feed secret and skips the
       // per-IP cap only; the daily budget breaker below still applies to it (2026-09-17).
       const trusted = !!env.FEED_SECRET && request.headers.get("x-feed-secret") === env.FEED_SECRET;
-      if (!trusted && await rateLimited(env, key))
+      if (!trusted && await rateLimited(env, key)) {
+        await rateLimitEvent(request, env, key, "/api/score");
         return json(429, { error: "rate_limited", detail: `Demo cap: ${IP_RUNS_PER_HOUR} runs/hour.` });
+      }
 
       const spent = await todaySpendUsd(env);
-      if (spent >= DAILY_BUDGET_USD) {
+      const isPaused = await paused(env);
+      if (isPaused || spent >= DAILY_BUDGET_USD) {
         const { results } = await env.DB.prepare(
           "SELECT payload FROM cached_showcase ORDER BY id DESC LIMIT 1"
         ).all();
         return json(200, {
-          breaker: true,
-          detail: "Today's live-demo budget is spent — serving a cached showcase run. The breaker is the feature.",
+          breaker: true, ...(isPaused ? { paused: true } : {}),
+          detail: isPaused ? "Live scoring is paused for maintenance — serving a cached showcase run."
+                           : "Today's live-demo budget is spent — serving a cached showcase run. The breaker is the feature.",
           cached: results?.length ? JSON.parse(results[0].payload) : null,
         });
       }
@@ -445,6 +489,7 @@ async function route(request, env) {
       const m = market(body.market);
       if (!profile || !postings.length)
         return json(400, { error: "bad_request", detail: "profile + postings[] required" });
+      if (!trusted) await injectionEvent(request, env, key, "/api/score", profile);
 
       // concurrent: 8 sequential Haiku calls were 16-40 s of silence → client read timeouts
       const results = await Promise.all(postings.map(p => scoreOne(env, profile, p, m).catch(() => FAILED)));
@@ -829,6 +874,15 @@ async function route(request, env) {
     }
 
     if (url.pathname === "/api/stats") {
+      // Operator-only since 2026-09-25 (Ken): the page left the public site on 09-19 so evaluators
+      // would not read early numbers, but this API still answered anyone holding the URL. Bearer
+      // token; unset = closed. A WRONG token is an event; a bare scanner 401 is not worth one.
+      const auth = request.headers.get("authorization") || "";
+      if (!sameSecret(auth, env.STATS_TOKEN ? `Bearer ${env.STATS_TOKEN}` : "")) {
+        if (auth && await once(env, `stats401|${await ipKey(request)}|${hourBucket()}`))
+          await audit(env, request, "warning", "wrong token on /api/stats");
+        return json(401, { error: "unauthorized" });
+      }
       // Aggregates only — every row here is a COUNT, so the response cannot carry a person.
       const days = Math.min(90, Math.max(1, parseInt(url.searchParams.get("days") || "14", 10)));
       const from = new Date(Date.now() - days * 86400_000).toISOString().slice(0, 10);
@@ -857,8 +911,11 @@ async function route(request, env) {
 
     if (url.pathname === "/ingest/feed" && request.method === "POST") {
       // droplet-side publisher (tools/publish_feed.py) — shared-secret gated
-      if (request.headers.get("x-feed-secret") !== env.FEED_SECRET)
+      if (!sameSecret(request.headers.get("x-feed-secret") || "", env.FEED_SECRET || "")) {
+        if (await once(env, `feed401|${await ipKey(request)}|${hourBucket()}`))
+          await audit(env, request, "warning", "wrong feed secret on /ingest/feed");
         return json(401, { error: "unauthorized" });
+      }
       const payload = await request.text();
       const m = market(url.searchParams.get("market"));
       const day = new Date().toISOString().slice(0, 10) + (m === "ca" ? "" : `#${m}`);
@@ -866,6 +923,27 @@ async function route(request, env) {
         "INSERT OR REPLACE INTO feed (day, payload) VALUES (?,?)"
       ).bind(day, payload).run();
       return json(200, { ok: true, day, market: m });
+    }
+
+    if (url.pathname === "/control/scoring") {
+      // SOAR playbook pause-scoring / resume-scoring (droplet tools/soar.py). Its own secret, not the
+      // feed secret: the publisher can write the feed and nothing else.
+      if (!sameSecret(request.headers.get("x-control-secret") || "", env.CONTROL_SECRET || "")) {
+        if (await once(env, `ctl401|${await ipKey(request)}|${hourBucket()}`))
+          await audit(env, request, "warning", "wrong control secret on /control/scoring");
+        return json(401, { error: "unauthorized" });
+      }
+      if (request.method === "POST") {
+        const b = await request.json().catch(() => ({}));
+        const on = b.paused === true;
+        const reason = String(b.reason || "").slice(0, 200);
+        await env.DB.prepare("INSERT OR REPLACE INTO control (k, v, ts_ms, note) VALUES ('scoring_paused', ?, ?, ?)")
+          .bind(on ? "1" : "0", Date.now(), reason).run();
+        await audit(env, null, on ? "warning" : "info",
+                    on ? `live scoring PAUSED by SOAR: ${reason}` : `live scoring resumed by SOAR: ${reason}`, { reason });
+      }
+      const row = await env.DB.prepare("SELECT v, ts_ms, note FROM control WHERE k = 'scoring_paused'").first();
+      return json(200, { paused: row?.v === "1", since_ms: row?.ts_ms ?? null, note: row?.note ?? null });
     }
 
     return json(404, { error: "not_found" });

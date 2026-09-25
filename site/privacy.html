@@ -169,10 +169,11 @@ if (!matchMedia("(prefers-reduced-motion: reduce)").matches) document.documentEl
   <p>If you would rather not be counted, browser settings that block <code>sendBeacon</code>, or any content blocker, stop it, and the page works exactly the same.</p>
 
   <h2>What the server records to keep the demo up</h2>
-  <p>Two more things, both to keep a free public demo from being abused:</p>
+  <p>Three more things, all to keep a free public demo from being abused:</p>
   <ul>
     <li><b>A salted SHA-256 hash of your IP address</b>, the time, and the token count and cost of each scoring run. The hash enforces a per-hour cap on runs and cannot be turned back into your address. No profile text, no résumé text, no scores are stored with it. It is kept in a separate table from the counted events above, and the two are never joined. <span id="retention-demo-runs">Each of these rows is deleted after <b>90 days</b>, by a daily job.</span></li>
     <li><b>A running total of the day's spend</b>, so the demo can stop calling Claude when its daily budget is used up and serve a cached showcase run instead. The cached run is one the operator seeded, not anyone's live input.</li>
+    <li id="security-events"><b>A security event, only when something looks like abuse.</b> If a request is refused by the per-hour cap, presents a wrong secret to one of the operator's own endpoints, or a pasted résumé contains instructions aimed at the AI rather than at an employer (for example "ignore your previous instructions"), the server records what happened, the time, and <b>that request's IP address and country</b>, so an attack can be blocked. The résumé itself is still not stored: the event names which patterns matched, never the text. Ordinary use never produces one. Security events go to the operator's private security log and are deleted after <b>90 days</b>.</li>
   </ul>
   <p>Cloudflare, which hosts the API and this site, keeps its own standard request logs under <a href="https://www.cloudflare.com/privacypolicy/" rel="noopener">its privacy policy</a>.</p>
 

@@ -52,4 +52,14 @@ jobs:
       # last 30 looks like machines (worker/src/counted.js). Red = run ev_quarantine.py.
       - name: The counted days still look like people
         if: always()
+        env:
+          STATS_TOKEN: ${{ secrets.STATS_TOKEN }}   # /api/stats is operator-only since 2026-09-25
         run: node worker/tools/check_ev_shape.mjs --live
+
+      # 2026-09-25: JobScout reports to the SOAR. Live half: the deployed /api/stats and
+      # /control/scoring refuse a caller with no credential, and the token still opens the stats.
+      - name: The deployed worker refuses the unauthenticated
+        if: always()
+        env:
+          STATS_TOKEN: ${{ secrets.STATS_TOKEN }}
+        run: node worker/tools/check_security.mjs --live

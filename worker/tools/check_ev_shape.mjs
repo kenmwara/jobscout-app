@@ -37,7 +37,7 @@ const is = (ok, what) => { if (!ok) fails++; console.log(`  ${ok ? "ok  " : "FAI
 
 if (process.argv.includes("--live")) {
   const API = process.env.API || "https://jobscout-app-api.kenmwara.workers.dev";
-  const d = await (await fetch(`${API}/api/stats?days=30`)).json();
+  const d = await (await fetch(`${API}/api/stats?days=30`, { headers: { authorization: `Bearer ${process.env.STATS_TOKEN || ""}` } })).json();   // operator-only since 09-25
   is(Array.isArray(d.daily) && d.daily.every(r => Array.isArray(r.suspect)), "the deployed /api/stats carries a suspect list per day");
   for (const r of d.daily || [])
     is(!(r.suspect || []).length, `${r.day}  visits ${r.people}  pastes ${r.pastes ?? "?"}  runs ${r.runs}  peak10 ${r.peak10 ?? "?"}` +
