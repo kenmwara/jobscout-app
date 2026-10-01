@@ -262,7 +262,7 @@ fun MHero(
             ResumeField(
                 value = resume, onChange = onResume, onGo = onRun, onAttach = onUpload,
                 uploading = uploading, well = false,
-                placeholder = "Paste or drop your résumé",
+                placeholder = "Attach your résumé, or paste it",
             )
             hint?.let {
                 Spacer(Modifier.height(Space.s2))
@@ -405,17 +405,18 @@ fun ResumeField(
                 // the web's aria-label; the phone's clip had no name at all
                 .semantics { contentDescription = "Attach your résumé as a PDF, Word file or text" }
                 .clickable(enabled = !uploading, onClick = onAttach)
-                .padding(horizontal = if (stacked) Space.s3 else 0.dp)
-                .then(if (stacked) Modifier else Modifier.width(TARGET))
+                .padding(horizontal = if (stacked) Space.s3 else Space.s2)
                 .graphicsLayer { alpha = if (uploading) k else 1f },
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Center,
         ) {
+            /* UPLOAD FIRST, and it says so even on the empty bar: a file reads the
+               same on every device, a paste does not (Ken + Shyro, 2026-09-30: one
+               CV, phone vs web, different results - she pasted, he uploaded). */
             Paperclip(T.text2)
-            if (stacked) {
-                Spacer(Modifier.width(Space.s2))
-                Text(if (uploading) "Reading…" else "Attach a file", fontSize = Type.t1, fontWeight = FontWeight.Medium, color = T.text2)
-            }
+            Spacer(Modifier.width(if (stacked) Space.s2 else Space.s1))
+            Text(if (uploading) "Reading…" else if (stacked) "Attach a file" else "Attach",
+                 fontSize = Type.t1, fontWeight = FontWeight.Medium, color = T.text2)
         }
         if (stacked) Spacer(Modifier.weight(1f)) else Spacer(Modifier.width(Space.s1))
         Box(

@@ -164,6 +164,7 @@ data class Question(
     val answer: String = "",
     val from: String = "",      // the phrase in the profile that establishes it
     val why: String = "",       // set when it is the candidate's to answer
+    val src: String = "",       // "details" | "draft" (a motivation answer, theirs to make their own) | "resume"
 )
 
 @Serializable
@@ -206,6 +207,8 @@ data class ExtractResponse(
     val stretch: Boolean = fit < FIT_FLOOR,
     /* claims the reader has already seen refused: the worker keeps them out of the rewrite */
     val exclude: List<String>? = null,
+    /* your details (Kit.kt): sent with the questions only, to fill what a résumé never says */
+    val details: Map<String, String>? = null,
 )
 
 object Api {
@@ -294,10 +297,10 @@ object Api {
                 .build()
         ))
 
-    suspend fun answers(profile: String, posting: Posting, fit: Int): AnswersResponse =
+    suspend fun answers(profile: String, posting: Posting, fit: Int, details: Map<String, String> = emptyMap()): AnswersResponse =
         decodeIO(call(
             Request.Builder().url("$API_BASE/api/answers")
-                .post(json.encodeToString(LetterBody(profile, posting, fit)).toRequestBody(jsonMedia))
+                .post(json.encodeToString(LetterBody(profile, posting, fit, details = details.takeIf { it.isNotEmpty() })).toRequestBody(jsonMedia))
                 .build()
         ))
 

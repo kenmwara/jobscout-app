@@ -65,8 +65,13 @@ fun ApplyScreen(vm: DemoVm, a: Apply, onClose: () -> Unit, onUpload: () -> Unit)
     var prepare by remember { mutableStateOf(false) }
     /** Which draft is open in the reading sheet: "letter", "resume", "answers" or null. */
     var reading by remember { mutableStateOf<String?>(null) }
+    /** The employer's form, open inside the app (Kit.kt FormFill). */
+    var filling by remember { mutableStateOf(false) }
+    var saved by remember { mutableStateOf<String?>(null) }
+    val ctx = LocalContext.current
     BackHandler {
         when {
+            filling -> filling = false
             reading != null -> reading = null
             prepare -> prepare = false
             else -> onClose()
@@ -196,6 +201,22 @@ fun ApplyScreen(vm: DemoVm, a: Apply, onClose: () -> Unit, onUpload: () -> Unit)
                     }
                 }
 
+                /* YOUR DETAILS, asked once and kept on this phone: what every form
+                   asks and no résumé says (Ken + Shyro, 2026-09-30). */
+                item { DetailsPanel(ui.details, vm::setDetail, vm::clearDetails) }
+
+                /* ONE TAP for all three; no draft pops open while it runs (the web's KIT). */
+                if (!blocked) item {
+                    val kitDone = done.values.all { it }
+                    val running = a.letter.busy || a.resume.busy || a.answers.busy
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Space.s2)) {
+                        MButton(if (kitDone) "Prepared" else if (running) "Preparing…" else "Prepare everything",
+                                primary = !kitDone && done.values.none { it }, enabled = !kitDone && !running) { vm.prepareAll() }
+                        Text("The letter, your rebuilt résumé and their questions, in one go.",
+                             color = T.text3, fontSize = Type.t1, lineHeight = 17.sp, modifier = Modifier.weight(1f))
+                    }
+                }
+
                 order.forEach { id ->
                     item {
                         when (id) {
@@ -203,7 +224,7 @@ fun ApplyScreen(vm: DemoVm, a: Apply, onClose: () -> Unit, onUpload: () -> Unit)
                                 title = "Cover letter",
                                 idle = "A short letter for this posting, grounded in your résumé.",
                                 busy = "Drafting from the profile only — it cannot invent experience…",
-                                step = a.letter, action = "Write the letter", primary = next == id, blocked = blocked,
+                                step = a.letter, action = "Write the letter", primary = next == id && done.values.any { it }, blocked = blocked,
                                 onRun = { awaiting = "letter"; vm.draftLetter() }, onUnblock = { wantFocus = true }, onRead = { reading = "letter" },
                                 onRewrite = { awaiting = "letter"; vm.draftLetter(it) }, onAddThem = onClose,
                             )
@@ -211,7 +232,7 @@ fun ApplyScreen(vm: DemoVm, a: Apply, onClose: () -> Unit, onUpload: () -> Unit)
                                 title = "Your résumé, aimed at it",
                                 idle = "The same experience, reworded toward what this posting asks for.",
                                 busy = "Rewriting the whole résumé, then checking every name and number against your own…",
-                                step = a.resume, action = "Rebuild my résumé", primary = next == id, blocked = blocked,
+                                step = a.resume, action = "Rebuild my résumé", primary = next == id && done.values.any { it }, blocked = blocked,
                                 onRun = { awaiting = "resume"; vm.buildResume() }, onUnblock = { wantFocus = true }, onRead = { reading = "resume" },
                                 onRewrite = { awaiting = "resume"; vm.buildResume(it) }, onAddThem = onClose,
                             )
@@ -219,7 +240,7 @@ fun ApplyScreen(vm: DemoVm, a: Apply, onClose: () -> Unit, onUpload: () -> Unit)
                                 title = "Their screening questions",
                                 idle = "The questions on the employer's own form, answered from your résumé.",
                                 busy = "Reading the employer's own form…",
-                                step = a.answers, action = "Get their questions", primary = next == id, blocked = blocked,
+                                step = a.answers, action = "Get their questions", primary = next == id && done.values.any { it }, blocked = blocked,
                                 onRun = { awaiting = "answers"; vm.readAnswers() }, onUnblock = { wantFocus = true }, onRead = { reading = "answers" },
                             )
                         }
@@ -247,23 +268,35 @@ fun ApplyScreen(vm: DemoVm, a: Apply, onClose: () -> Unit, onUpload: () -> Unit)
                              color = T.text2, fontSize = Type.t2, lineHeight = 20.sp)
                         Spacer(Modifier.height(Space.s3))
                         if (blocked) MButton("Add your résumé →", primary = false) { wantFocus = true }
-                        else Row(horizontalArrangement = Arrangement.spacedBy(Space.s2)) {
-                            MButton("Open " + (p.company.takeIf { it.isNotBlank() } ?: "the employer") + "'s form ↗",
+                        else Column(verticalArrangement = Arrangement.spacedBy(Space.s2)) {
+                            /* IN THE APP, FILLED. The form opens here with every box it can
+                               fill already filled, and its file buttons take the .docx built
+                               for this job. Submit stays the candidate's. */
+                            MButton("Fill " + (p.company.takeIf { it.isNotBlank() } ?: "the employer") + "'s form →",
                                     primary = next == null) {
                                 if (pack.isNotEmpty()) clipboard.setText(AnnotatedString(pack))
                                 score?.let { vm.setStage(trackedFor(it, p), "applied") }
-                                runCatching { uri.openUri(formUrl(p.url)) }
+                                filling = true
                             }
-                            if (pack.isNotEmpty()) MButton("Copy everything", primary = false) {
-                                clipboard.setText(AnnotatedString(pack))
+                            Row(horizontalArrangement = Arrangement.spacedBy(Space.s2)) {
+                                MButton("Save résumé + letter (.docx)", primary = false,
+                                        enabled = a.resume.data != null || a.letter.data != null) {
+                                    saved = runCatching { "Saved to " + saveToDownloads(ctx, kitFiles(a)) + "." }
+                                        .getOrElse { "Could not save: ${it.message}" }
+                                }
+                                if (pack.isNotEmpty()) MButton("Copy everything", primary = false) {
+                                    clipboard.setText(AnnotatedString(pack))
+                                }
                             }
+                            saved?.let { Text(it, color = T.text2, fontSize = Type.t1, lineHeight = 17.sp) }
+                            MButton("Open in the browser instead ↗", primary = false) { runCatching { uri.openUri(formUrl(p.url)) } }
                         }
                         Spacer(Modifier.height(Space.s2))
                         Text(
                             when {
                                 pack.isEmpty() -> "Draft at least one of the three above and this hands the whole pack over in one move."
-                                direct -> "The form opens directly, not the posting, and everything above goes to your clipboard in the order it asks for. Pressing Submit stays yours: this employer's board only accepts an application through its own form."
-                                else -> "This employer does not publish a form that can be opened on its own, so this opens their posting with everything above already on your clipboard."
+                                direct -> "Their form opens here with your answers and details already in its boxes, and its file buttons take the résumé and letter built for this job. Check everything, then press Submit yourself: this employer's board only accepts an application through its own form."
+                                else -> "This employer does not publish a form that can be opened on its own, so this opens their posting here; the boxes are filled once you reach their form, and everything above is on your clipboard."
                             },
                             color = T.text3, fontSize = Type.t1, lineHeight = 17.sp,
                         )
@@ -294,6 +327,8 @@ fun ApplyScreen(vm: DemoVm, a: Apply, onClose: () -> Unit, onUpload: () -> Unit)
                 }
             }
         }
+
+        if (filling) FormFill(formUrl(p.url), fillPairs(a, ui.details), kitFiles(a)) { filling = false }
     }
 }
 
@@ -671,7 +706,11 @@ private fun Answers(r: AnswersResponse, onEdit: ((AnswersResponse) -> Unit)? = n
                     )
                 }
                 if (q.from.isNotEmpty() && q.answer.isNotEmpty()) Text(
-                    "from your résumé: “${q.from}”",
+                    when (q.src) {
+                        "details" -> "from your details"
+                        "draft" -> "drafted from your résumé (“${q.from}”) — make it yours before sending"
+                        else -> "from your résumé: “${q.from}”"
+                    },
                     color = T.text3, fontSize = Type.t1, lineHeight = 18.sp,
                     modifier = Modifier.padding(top = 3.dp),
                 )
@@ -682,4 +721,34 @@ private fun Answers(r: AnswersResponse, onEdit: ((AnswersResponse) -> Unit)? = n
 
 fun answersText(r: AnswersResponse): String = r.questions.joinToString("\n\n") { q ->
     q.label + "\n" + q.answer.ifEmpty { "[${q.why.ifEmpty { "yours to answer" }}]" }
+}
+
+/** Your details: eleven boxes, kept on this phone, Clear removes them (the web's #s-details). */
+@Composable
+private fun DetailsPanel(d: Map<String, String>, onSet: (String, String) -> Unit, onClear: () -> Unit) {
+    var open by remember { mutableStateOf(d.isEmpty()) }
+    Column(Modifier.fillMaxWidth().background(T.surface, Card).padding(Space.s4)) {
+        Row(Modifier.fillMaxWidth().clickable { open = !open }, verticalAlignment = Alignment.CenterVertically) {
+            Text("Your details", style = H2, fontSize = Type.t4, color = T.ink, modifier = Modifier.weight(1f))
+            Text((if (d.isEmpty()) "not set" else "${d.size} saved on this phone") + if (open) "  ▴" else "  ▾",
+                 color = T.text3, fontSize = Type.t1, fontWeight = FontWeight.Medium, letterSpacing = 0.08.em)
+        }
+        Spacer(Modifier.height(Space.s2))
+        Text("What every application form asks and no résumé says. Typed once, kept only on this phone, and used to fill their questions. Leave anything blank.",
+             color = T.text2, fontSize = Type.t2, lineHeight = 20.sp)
+        if (open) {
+            DetailsStore.FIELDS.forEach { (k, label) ->
+                Spacer(Modifier.height(Space.s3))
+                Text(label, color = T.ink, fontSize = Type.t2, fontWeight = FontWeight.Medium, lineHeight = 20.sp)
+                Box(Modifier.padding(top = Space.s1)) { EditableText(d[k] ?: "", { onSet(k, it) }, well = true) }
+            }
+            Spacer(Modifier.height(Space.s3))
+            Text("Sent only when their questions are read, to fill them in. We never store it. Gender, race, disability and veteran questions are never filled.",
+                 color = T.text3, fontSize = Type.t1, lineHeight = 17.sp)
+            if (d.isNotEmpty()) {
+                Spacer(Modifier.height(Space.s2))
+                MButton("Clear my details", primary = false, onClick = onClear)
+            }
+        }
+    }
 }

@@ -30,8 +30,12 @@ export function cleanDetails(raw) {
     }
   return d;
 }
+/* A question about SOMEONE ELSE, or an earlier tie to the employer, is not the candidate's own
+   detail even when it names one: "If you were previously employed by Remote, please share the
+   email" was answered with the candidate's own email on the live worker (2026-10-01). */
+export const NOT_YOURS = /previous(ly)?|former(ly)?|prior employ|referr|referee|\breferences?\b|recruiter|manager|supervisor|emergency|if you were|alumn/i;
 export function detailFor(label, d) {
-  if (DEMOGRAPHIC.test(label)) return null;
+  if (DEMOGRAPHIC.test(label) || NOT_YOURS.test(label)) return null;
   for (const [k, rx] of DETAIL_RULES) {
     if (!rx.test(label)) continue;
     if (k === "first_name") return d.name ? d.name.split(" ")[0] : null;

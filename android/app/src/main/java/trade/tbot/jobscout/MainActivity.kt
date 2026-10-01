@@ -148,6 +148,7 @@ data class Ui(
        launch and kept in step by the actions below, so the Saved screen never
        has to touch SharedPreferences while it is drawing. */
     val sweeps: List<KeptSweep> = emptyList(),
+    val details: Map<String, String> = emptyMap(),   // Kit.kt: on this phone only
 )
 
 class DemoVm(app: Application) : AndroidViewModel(app) {
@@ -155,7 +156,7 @@ class DemoVm(app: Application) : AndroidViewModel(app) {
         RunStore.load(app).let { r ->
             Ui(
                 tracker = TrackerStore.load(app), watched = WatchStore.load(app),
-                sweeps = SweepStore.all(app),
+                sweeps = SweepStore.all(app), details = DetailsStore.load(app),
                 // The market is checked against the run when the feed lands, not here:
                 // the saved market IS the market to open in, which setMarket does below.
                 market = r?.market ?: "ca",
@@ -540,6 +541,21 @@ class DemoVm(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    fun setDetail(k: String, v: String) {
+        val d = (_ui.value.details + (k to v.take(200))).filterValues { it.isNotBlank() }
+        _ui.update { it.copy(details = d) }
+        DetailsStore.save(getApplication<Application>(), d)
+    }
+    fun clearDetails() { _ui.update { it.copy(details = emptyMap()) }; DetailsStore.save(getApplication<Application>(), emptyMap()) }
+
+    /** "Prepare everything": every step not yet drafted, from one tap (the web's #do-all). */
+    fun prepareAll() {
+        val a = _ui.value.apply ?: return
+        if (a.letter.data == null) draftLetter()
+        if (a.resume.data == null) buildResume()
+        if (a.answers.data == null) readAnswers()
+    }
+
     /** debug harness only: pretend the cap was just reached */
     fun debugLimited() = _ui.update { it.copy(limitedAt = System.currentTimeMillis()) }
 
@@ -565,7 +581,7 @@ class DemoVm(app: Application) : AndroidViewModel(app) {
      * its form, which is worth saying plainly rather than showing as an error.
      */
     fun readAnswers() = draft("apply_open", { it.answers }, { a, s -> a.copy(answers = s) }) { p, post, fit ->
-        val r = Api.answers(p, post, fit)
+        val r = Api.answers(p, post, fit, _ui.value.details)
         when {
             r.unsupported -> Step(data = r)
             r.breaker || r.error != null -> Step(error = r.detail ?: r.error ?: "Unavailable.")
@@ -1308,7 +1324,8 @@ private fun InfoSheet(page: String, onClose: () -> Unit) {
                             "questions answered from what you wrote.",
                         "You apply, never us" to
                             "JobScout does not submit anything and cannot. It opens the employer's " +
-                            "own form with the answers already written, and you press send.",
+                            "own form inside the app with the boxes already filled and your résumé " +
+                            "and letter ready to attach, and you press send.",
                     )
                 ) { (h, b) ->
                     Column(
@@ -1334,6 +1351,11 @@ private fun InfoSheet(page: String, onClose: () -> Unit) {
                             "The list, the stages and your saved searches are in this app's own " +
                             "storage. Nothing is uploaded and nothing is emailed. Uninstalling " +
                             "removes them.",
+                        "Your details stay on this phone too" to
+                            "Name, contact, notice period and the rest are kept in this app's own " +
+                            "storage, sent only when an employer's questions are read so they can be " +
+                            "filled, and never stored by JobScout. Clear my details removes them. " +
+                            "Gender, race, disability and veteran questions are never filled.",
                     )
                 ) { (h, b) ->
                     Column(

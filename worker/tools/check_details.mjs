@@ -35,6 +35,9 @@ const cases = [
   ["Do you require sponsorship?", ["Yes, I will need it now", "No, I will not"], "No, I will not"],
   ["Are you a protected veteran?", ["Yes", "No"], null],
   ["Why are you interested in this role?", [], null],  // the drafter's, not a detail
+  // about an earlier tie or another person: never the candidate's own email/phone (live, 2026-10-01)
+  ["If you were previously employed by Remote, please share the email you used", [], null],
+  ["Referrer's email", [], null],
 ];
 let bad = 0;
 for (const [label, options, want] of cases) {

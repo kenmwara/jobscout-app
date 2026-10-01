@@ -584,18 +584,18 @@
       "date": "2026-09-30",
       "surface": "feed",
       "said": "The Kenyan market seems quite thin",
-      "status": "open",
-      "check": "none",
-      "evidence": "Usability session with Shyro, 30 Sep (ev sids kgwmv5 android + ibyhvc web, 06:20-06:36Z). Kenya feed 30 Sep: 392 postings, 382 pass; publish_feed.py caps PASS_PER_SECTOR=24 and PER_COMPANY=4, so every sector shows 14-27 regardless of supply (operations_support 24). Sources: reliefweb 121, careers 91, wwr 89, jobwebkenya 44, jobicy 20, himalayas 14, remoteok 11, remotive 2; 154 Kenya-located, 228 worldwide-remote. No fix yet: needs Ken's ruling on caps and new Kenyan sources."
+      "status": "live",
+      "check": "node tools/check_ke_feed.mjs",
+      "evidence": "Capped, not thin: 1,099 eligible, 376 published, 24 a sector (operations_support 24 of 119). 1 Oct fix (jobscout repo, droplet cron unchanged): publish_feed.py MARKET_CAPS ke = 150 a sector, 4 a company, 1,500 in all; supplier tenders (RFO/RFQ/RFP, tender notices, calls for expressions of interest, pre-qualification) rejected unless an individual consultancy; lexicon widened so 'other' shrinks (check_ke_gate.py there, 3 mutations caught). Live 1 Oct: 896 pass (was 376; 897 before a call for expressions of interest was also rejected), operations_support 109, largest sector 150, 671 KB. check_ke_feed.mjs reads the live feed (mutation 'thin' caught). New Kenyan boards (BrighterMonday, Fuzu, MyJobMag, UN Nairobi) are a separate row once their terms are read."
     },
     {
       "id": "mobile-web-drift",
       "date": "2026-09-30",
       "surface": "both",
       "said": "There's a mobile vs web drift - she was on her phone and I was on web, same cv but different results",
-      "status": "open",
-      "check": "none",
-      "evidence": "Same session: both ran market ke, sector operations_support, 24 s apart, so feed and market were not the cause. Two causes found: (1) the CV text differed: web = file upload through /api/extract, android = pasted text, so different words pick a different eight and score differently; (2) /api/score set NO temperature, so it ran at the API default of 1.0 (the 0.3 is the drafting call): the same CV on the same eight Kenya postings, scored twice 30 Sep, moved 3 of 8 fits by 4 points (58 vs 62 on one), enough to cross the drafting floor. The pickers (site/index.html runPipeline, Select.kt select) are line-for-line mirrors. 30 Sep fix: scoreOne temperature 0. A server-side score cache was considered and rejected: it would store CV-derived verdicts, against the privacy page's 'no profile text is stored'."
+      "status": "live",
+      "check": "node tools/check_drift.mjs",
+      "evidence": "Same session: both ran market ke, sector operations_support, 24 s apart, so feed and market were not the cause. Two causes: (1) the CV text differed: web = file upload through /api/extract, android = pasted text; (2) /api/score set NO temperature, so it ran at the API default of 1.0: the same CV on the same eight Kenya postings, scored twice 30 Sep, moved 3 of 8 fits. Fix: scoreOne temperature 0 (worker 74afb1f, live 1 Oct); measured live 1 Oct, the same CV on the same eight postings five times: 39 of 40 fits identical, one moved 28 -> 38 once (temperature 0 is near-, not bit-, deterministic on the API). The phone's résumé bar now leads with 'Attach' (Mobile.kt). check_drift.mjs guards both in source (mutations 'temp' and 'paste-first' caught); the live run is not repeated per deploy because it spends model calls against the hourly cap. A server-side score cache was rejected: it would store CV-derived verdicts, against 'no profile text is stored'."
     },
     {
       "id": "apply-double-work",
@@ -603,8 +603,8 @@
       "surface": "both",
       "said": "The application process end-to-end is quite exhausting. You re-create docs, then you have to download them onto your phone, before you can open the external application link then hopefully upload the docs one after the other. As for those screening questions, they only auto-fill one or two lines and then you have to fill in everything else, copy it and still re-fill the actual application form. All this double work makes the application actually harder and more time consuming!",
       "status": "unverified",
-      "check": "node tools/check_apply_details.mjs",
-      "evidence": "/api/answers drafts only what the CV settles (a verbatim 'from' phrase must be in the profile), so work authorisation, location, notice, start date, years and 'why this role' mostly come back blank; when the employer form cannot be read it falls back to eight generic questions. The tailored CV and letter are separate downloads, then a separate external tab, then one upload at a time. 30 Sep fix (web + worker): 'Your details' on the application page (11 fields, this browser only, Clear), sent only with /api/answers and matched to the question by worker/src/details.js (worker/tools/check_details.mjs, demographics never); 'why this role' now drafted from the CV with a cited phrase; 'Prepare everything' runs letter + résumé + questions in one tap with no windows left open; résumé + letter download together as .docx. Android to follow; live only once both ship and are run on the live hosts."
+      "check": "node tools/check_apply_details.mjs && bash tools/check_docx.sh",
+      "evidence": "/api/answers drafts only what the CV settles (a verbatim 'from' phrase must be in the profile), so work authorisation, location, notice, start date, years and 'why this role' mostly come back blank; when the employer form cannot be read it falls back to eight generic questions. The tailored CV and letter are separate downloads, then a separate external tab, then one upload at a time. 30 Sep fix (web + worker): 'Your details' on the application page (11 fields, this browser only, Clear), sent only with /api/answers and matched to the question by worker/src/details.js (worker/tools/check_details.mjs, demographics never); 'why this role' now drafted from the CV with a cited phrase; 'Prepare everything' runs letter + résumé + questions in one tap with no windows left open; résumé + letter download together as .docx. Worker 1 Oct: questions about an earlier tie or another person ('If you were previously employed by Remote, please share the email') are never filled from details (NOT_YOURS; seen live, now in check_details.mjs). Live 1 Oct on a Greenhouse form (Remote.com): 19 questions, 8 from your details, 1 drafted. Android 1 Oct: Your details (on the phone only, Clear), sent with /api/answers; Prepare everything; résumé + letter saved as .docx to Downloads/JobScout named for the job (Docx.kt; check_docx.sh opens both, mutations caught); the employer's form opens IN the app with text boxes filled from the answers and details, and its file buttons take the .docx built for this job (Kit.kt FormFill); Submit stays the candidate's. Unverified until the Android build is installed and walked on a phone."
     }
   ]
 }
