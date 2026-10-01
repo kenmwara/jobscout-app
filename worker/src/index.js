@@ -30,6 +30,7 @@ const DAILY_BUDGET_USD = 3.0;
 const PRICE_IN = 1.0, PRICE_OUT = 5.0;
 
 import { allowOrigin, CORS } from "./cors.js";
+import { cleanDetails, detailFor, fitOption, MOTIVATION } from "./details.js";
 
 
 const json = (status, body) =>
@@ -182,6 +183,10 @@ async function scoreOne(env, profile, posting, m = "ca") {
     body: JSON.stringify({
       model: MODEL,
       max_tokens: MAX_SCORE_TOKENS,
+      /* 0, not the API's default of 1.0 (2026-09-30, Ken: "she was on her phone and I was on
+         web, same cv but different results"). No temperature was ever set here, so the same
+         CV and posting drew a fresh sample each run: 3 of 8 fits moved by 4 points in a row. */
+      temperature: 0,
       system,
       messages: [{ role: "user", content: user }],
     }),
@@ -271,7 +276,8 @@ async function guarded(request, env, breakerNote) {
      "rewrite without those"). Short strings only; folded into the
      instruction, never into the profile. */
   const exclude = Array.isArray(body.exclude) ? body.exclude.slice(0, 12).map(x => String(x).slice(0, 80)) : [];
-  return { key, spent, profile, p, fit, stretch, exclude };
+  // details: the candidate's own answers from their device (only /api/answers reads them; never stored)
+  return { key, spent, profile, p, fit, stretch, exclude, details: body.details };
 }
 
 const postingText = p =>
@@ -388,6 +394,7 @@ async function readForm(rawUrl) {
 // outright, and this one did.
 const PERSONAL = /gender|pronoun|race|ethnic|veteran|disab|self.?identif|demograph|birth|age\b|salary|compensation|criminal|conviction|sexual|religio|passport|citizen|nationality|immigration|work permit|visa/i;
 const IDENTITY = /first name|last name|full name|email|phone|address|linkedin|website|portfolio|github/i;
+
 
 const inProfile = (profile, phrase) => phrase.trim().length >= 8 && squash(profile).includes(squash(phrase));
 
@@ -772,6 +779,20 @@ async function route(request, env) {
         asked = { fields: genericForm(p) };
       }
       asked = asked.fields;
+      const details = cleanDetails(g.details);
+      /* Your details first: a question one of them answers is filled with the candidate's own
+         words (src "details"), before anything is drafted, and costs nothing. A choice question
+         takes one of its options or stays open with their words shown. */
+      const fromDetails = [];
+      asked = asked.filter(q => {
+        const v = detailFor(q.label || "", details);
+        if (!v) return true;
+        const answer = fitOption(v, q.options || []);
+        fromDetails.push({ label: q.label, required: q.required, type: q.type, options: q.options,
+                           answer, from: answer ? "your details" : "", src: answer ? "details" : "",
+                           why: answer ? "" : `pick the option that matches your details: ${v}` });
+        return false;
+      });
       // Shown, never drafted. Seeing that a form asks at all is the point of
       // reading it early; answering on someone's behalf is a different thing.
       const never = l => PERSONAL.test(l) ? "yours alone — we never draft this"
@@ -782,7 +803,8 @@ async function route(request, env) {
                      options: q.options, answer: "", from: "", why: never(q.label || "") }));
 
       if (!drafting.length)
-        return json(200, { source, url: p.url, questions: yours, drafted: 0, generic });
+        return json(200, { source, url: p.url, questions: [...fromDetails, ...yours], drafted: 0,
+                           from_details: fromDetails.filter(q => q.answer).length, generic });
 
       const ask = drafting.map((q, i) =>
         `${i + 1}. ${q.label}${q.required ? " [required]" : ""} (${q.type})` +
@@ -800,6 +822,11 @@ async function route(request, env) {
         // a profile that said outright where it lived and that it could work there.
         "Answer every question the profile settles, including where the candidate lives, whether they are legally " +
         "eligible to work somewhere, and their notice or availability — if the profile says it, use it. " +
+        // 2026-09-30: "why this role" was omitted on every form, because no résumé settles a motive.
+        // It is drafted now, as a link between the two documents, still citing the profile.
+        "For a question about why they want this role or company, or about themselves, draft two or three " +
+        "sentences connecting what the PROFILE shows to what the POSTING asks for — no feelings or ambitions " +
+        "the profile does not state; from is the profile phrase you lean on. " +
         "Omit a question entirely — do not guess, do not hedge, do not answer in general terms — when the profile " +
         "does not settle it. Never answer these at all, whatever the profile says: how they heard about the company, " +
         "salary expectations, criminal history, and anything about race, gender, disability or veteran status.",
@@ -822,7 +849,7 @@ async function route(request, env) {
         return {
           label: q.label, required: q.required, type: q.type, options: q.options,
           answer: grounded ? a.answer.trim() : "",
-          from: grounded ? a.from : "",
+          from: grounded ? a.from : "", src: grounded ? (MOTIVATION.test(q.label || "") ? "draft" : "resume") : "",
           why: grounded ? "" : "yours to answer — your profile does not settle it",
         };
       });
@@ -830,8 +857,9 @@ async function route(request, env) {
       await recordRun(env, g.key, d.usage.input_tokens, d.usage.output_tokens, d.cost);
       return json(200, {
         source, url: p.url,
-        questions: [...yours, ...questions],
+        questions: [...fromDetails, ...yours, ...questions],
         drafted: questions.filter(q => q.answer).length,
+        from_details: fromDetails.filter(q => q.answer).length,
         // The page must be able to say whether these are THEIR questions or
         // the usual ones — presenting a stand-in as the employer's own form
         // would be the kind of quiet lie this product exists not to tell.

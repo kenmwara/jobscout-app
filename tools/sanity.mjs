@@ -84,6 +84,11 @@ const CHECKS = [
      browser and an unfurler never runs that. site/_worker.js rewrites four
      tags. What is asserted is not the copy but that a cosmetic worker in a
      live request path cannot break the site. */
+  /* 2026-09-30, Ken after Shyro's session: "those screening questions, they only auto-fill one or
+     two lines ... All this double work". Details asked once and kept on the device; one tap for
+     the three drafts; both documents in one move. details.js is checked on its own (no browser). */
+  { id: "details",   file: "tools/check_apply_details.mjs", mutations: ["details-everywhere", "details-nowhere", "no-kit", "no-persist", "kit-popups"], guards: "your details are kept on the device and sent only to fill the questions; one tap prepares all three; no window is left open" },
+  { id: "detailmap", file: "worker/tools/check_details.mjs", guards: "a detail answers the question it fits, a choice takes one of its options, demographics are never filled" },
   { id: "preview",   file: "tools/check_preview.mjs", mutations: ["no-failsafe", "all-hosts", "not-html", "no-url", "no-kenya", "all-paths", "bare-title"], guards: "the ROOT of the Kenyan host previews as Kenya, every other page keeps its own title, and the worker fails safe on an unknown host, a non-HTML response or any throw" },
 ];
 const run = (file, argv, py) => new Promise(res => {

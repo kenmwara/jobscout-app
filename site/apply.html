@@ -86,6 +86,13 @@
   .head .go{display:flex;gap:var(--s2);flex-wrap:wrap;margin-top:var(--s5)}
 
   .step{margin:0 0 var(--s5)}
+  /* Your details (2026-09-30): the answers no résumé says, typed once, kept on this device. */
+  .dets{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,15rem),1fr));gap:var(--s3) var(--s4)}
+  .det{display:flex;flex-direction:column;gap:var(--s1);font:500 var(--t2)/1.4 var(--sans);color:var(--text2);margin:0}
+  .det input{font:400 var(--t3)/1.5 var(--sans);color:var(--ink);background:var(--surface);
+    border:1px solid var(--hair);border-radius:12px;padding:var(--s2) var(--s3);min-height:44px;width:100%;box-sizing:border-box}
+  .kit{display:flex;gap:var(--s3);flex-wrap:wrap;align-items:center;margin:0 0 var(--s5)}
+  .kit .note{margin:0;max-width:52ch}
   .step .bar{display:flex;align-items:center;gap:var(--s3);flex-wrap:wrap;margin:0 0 var(--s1)}
   .step h2{font:400 var(--t5)/1.2 var(--serif);letter-spacing:-.015em;color:var(--ink);margin:0}
   .step .state{font:500 var(--t1)/1 var(--sans);letter-spacing:.08em;text-transform:uppercase;
@@ -419,6 +426,33 @@ nav.main{margin-left:auto;display:flex;gap:var(--s2);align-items:center}
     </div>
 
     <div id="steps" hidden>
+      <section class="step panel" id="s-details">
+        <div class="bar"><h2>Your details</h2><span class="state" id="st-details">not set</span></div>
+        <p class="lede">What every application form asks and no résumé says. Typed once, kept only in this browser, and used to fill their questions below. Leave anything blank.</p>
+        <div class="dets">
+          <label class="det">Full name<input id="d-name" autocomplete="name"></label>
+          <label class="det">Email<input id="d-email" type="email" autocomplete="email"></label>
+          <label class="det">Phone<input id="d-phone" type="tel" autocomplete="tel"></label>
+          <label class="det">Where you live<input id="d-location" autocomplete="address-level2" placeholder="City, country"></label>
+          <label class="det">Can you work where the job is?<input id="d-work_auth" placeholder="e.g. Yes, citizen"></label>
+          <label class="det">Need visa sponsorship?<input id="d-sponsorship" placeholder="Yes or No"></label>
+          <label class="det">Notice period / earliest start<input id="d-notice" placeholder="e.g. Two weeks"></label>
+          <label class="det">Years of experience<input id="d-years" inputmode="numeric"></label>
+          <label class="det">LinkedIn<input id="d-linkedin" type="url" placeholder="linkedin.com/in/…"></label>
+          <label class="det">Portfolio or GitHub<input id="d-portfolio" type="url"></label>
+          <label class="det">Salary expectation (only if a form asks)<input id="d-salary"></label>
+        </div>
+        <div class="acts">
+          <button class="btn2" type="button" id="d-clear">Clear from this browser</button>
+          <p class="grounded">Sent only when their questions are read, to fill them in. We never store it.</p>
+        </div>
+      </section>
+
+      <div class="kit">
+        <button class="btn" type="button" id="do-all">Prepare everything</button>
+        <p class="note">The letter, your rebuilt résumé and their questions, in one go.</p>
+      </div>
+
       <section class="step panel" id="s-letter">
         <div class="bar"><h2>Cover letter</h2><span class="state" id="st-letter">not drafted</span></div>
         <p class="lede">A short letter for this posting, built from your résumé alone &mdash; no invented experience, no credentials you did not list.</p>
@@ -472,6 +506,7 @@ nav.main{margin-left:auto;display:flex;gap:var(--s2);align-items:center}
                hides .btn and shows this. Without it this section went blank. -->
           <button class="btn btn--unblock" type="button" data-unblock>Add your r&eacute;sum&eacute; <span aria-hidden="true">&rarr;</span></button>
           <button class="btn2" type="button" id="cp-send">Copy everything</button>
+          <button class="btn2" type="button" id="dl-files" disabled>Download résumé + letter (.docx)</button>
         </div>
         <p class="note" id="send-note"></p>
       </section>
@@ -539,6 +574,43 @@ if (qid && tracker[qid] && S.posting?.id !== qid) {
 
 const p = S.posting;
 
+/* ── your details (2026-09-30) ────────────────────────────────────────────
+   Ken, after a session with Shyro: "those screening questions, they only
+   auto-fill one or two lines and then you have to fill in everything else".
+   A résumé never says whether you may work somewhere or your notice period,
+   so these are asked once and kept in THIS browser only (localStorage, with
+   a clear button). They leave the device only inside the /api/answers call
+   that fills the questions, and the worker keeps none of them. */
+const DKEY = "jobscout.details";
+const DFIELDS = ["name", "email", "phone", "location", "work_auth", "sponsorship", "notice", "years", "linkedin", "portfolio", "salary"];
+let DETAILS = {};
+try { DETAILS = JSON.parse(localStorage.getItem(DKEY) || "{}") || {}; } catch (e) { DETAILS = {}; }
+function readDetails(){
+  const d = {};
+  for (const k of DFIELDS){ const el = document.getElementById("d-" + k); const v = (el ? el.value : DETAILS[k] || "").trim(); if (v) d[k] = v; }
+  return d;
+}
+function syncDetails(){
+  DETAILS = readDetails();
+  try { Object.keys(DETAILS).length ? localStorage.setItem(DKEY, JSON.stringify(DETAILS)) : localStorage.removeItem(DKEY); } catch (e) {}
+  const n = Object.keys(DETAILS).length, st = document.getElementById("st-details");
+  if (st){ st.textContent = n ? `${n} saved in this browser` : "not set"; st.className = "state" + (n ? " done" : ""); }
+}
+document.addEventListener("DOMContentLoaded", () => {
+  for (const k of DFIELDS){
+    const el = document.getElementById("d-" + k);
+    if (!el) continue;
+    el.value = DETAILS[k] || "";
+    el.addEventListener("input", syncDetails);
+  }
+  const clr = document.getElementById("d-clear");
+  if (clr) clr.onclick = () => {
+    for (const k of DFIELDS){ const el = document.getElementById("d-" + k); if (el) el.value = ""; }
+    syncDetails();
+  };
+  syncDetails();
+});
+
 /* Two overlapping sheets — the clipboard shape every form on the web uses, so
    it needs no label to be understood. The word rides alongside it anyway,
    because an icon alone is a guess. */
@@ -567,6 +639,11 @@ function ago(iso){
 let PREP_ORDER = ["do-letter", "do-tailor", "do-answers"];
 function promoteNext(){
   const open = PREP_ORDER.filter(id => $("#" + id) && !$("#" + id).hidden);
+  /* One filled button: while "Prepare everything" has not run, IT is the next move, and the
+     three single steps stay outlined beside it. Once it has, the order below takes over. */
+  const all = $("#do-all");
+  if (all) all.className = all.dataset.done || !open.length ? "btn2" : "btn";
+  if (all && !all.dataset.done && open.length){ PREP_ORDER.forEach(id => { const b = $("#" + id); if (b) b.className = "btn2"; }); return; }
   PREP_ORDER.forEach(id => { const b = $("#" + id); if (b) b.className = id === open[0] ? "btn" : "btn2"; });
 }
 function render(){
@@ -865,8 +942,11 @@ function readable(id, title, now){
   };
   // The way back in, always: a document you closed has to be findable.
   home.after(b);
-  if (now) b.onclick();
+  /* Not while "Prepare everything" is running: three windows would open in a row and the last
+     would sit over the page. The documents stay on their cards, each one link away. */
+  if (now && !KIT) b.onclick();
 }
+let KIT = false;   // true while "Prepare everything" runs the three steps
 
 /* Which document the window is holding, so it can be put back exactly where
    it came from. */
@@ -937,6 +1017,7 @@ async function copyInto(cp, plain, id){
    question, in the order the form asks, already on the clipboard. Nothing is
    ever sent in the candidate's name by us. */
 const PACK = { letter: "", tailor: "", answers: "" };
+let DOC = null;   // the rebuilt résumé as currently edited, for "Download résumé + letter"
 const PACK_TITLE = { letter: "COVER LETTER", tailor: "RÉSUMÉ, AIMED AT THIS POSTING",
                      answers: "THEIR SCREENING QUESTIONS, ANSWERED" };
 const GH_FORM = /^https?:\/\/(?:job-boards|boards)\.greenhouse\.io\/([^/?#]+)\/jobs\/(\d+)/;
@@ -961,6 +1042,15 @@ function syncSend(){
   if (!st) return;
   st.textContent = have.length ? `${have.length} of 3 ready` : "nothing drafted yet";
   cp.disabled = !have.length;
+  const df = $("#dl-files");
+  if (df){
+    df.disabled = !(DOC || PACK.letter);
+    df.onclick = () => {
+      if (DOC) download(docx(DOC), `resume-${slug}.docx`);
+      // a second download in the same click is blocked by some browsers; a beat apart is not
+      if (PACK.letter) setTimeout(() => download(letterDocx(PACK.letter), `cover-letter-${slug}.docx`), DOC ? 600 : 0);
+    };
+  }
   const direct = formUrl(p.url) !== (p.url || "");
   note.textContent = have.length
     ? (direct
@@ -1030,6 +1120,13 @@ function zip(files){
     { type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document" });
 }
 const xe = s => String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+function letterDocx(text){
+  const body = String(text || "").trim().split(/\n{2,}/).map(par =>
+    `<w:p><w:pPr><w:spacing w:before="0" w:after="200"/></w:pPr><w:r><w:rPr><w:sz w:val="22"/><w:szCs w:val="22"/></w:rPr>` +
+    par.split("\n").map((ln, i) => (i ? "<w:br/>" : "") + `<w:t xml:space="preserve">${xe(ln)}</w:t>`).join("") +
+    `</w:r></w:p>`).join("");
+  return packDocx(body);
+}
 function docx(r){
   const para = (text, o = {}) =>
     `<w:p><w:pPr>${o.ind ? '<w:ind w:left="284" w:hanging="170"/>' : ""}` +
@@ -1052,6 +1149,9 @@ function docx(r){
       for (const b of it.bullets) body += para("•  " + b, { sz: 20, ind: true, after: 40 });
     }
   }
+  return packDocx(body);
+}
+function packDocx(body){
   return zip([
     ["[Content_Types].xml",
      '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
@@ -1110,7 +1210,8 @@ function failed(id, msg, label, d){
    one — so it has to travel on every call, not just the letter. */
 const post = (path) => fetch(API + path, {
   method: "POST", headers: { "content-type": "application/json" },
-  body: JSON.stringify({ profile: S.profile, posting: p, fit: S.fit, stretch: !!S.stretch, exclude: S.exclude || undefined }),
+  body: JSON.stringify({ profile: S.profile, posting: p, fit: S.fit, stretch: !!S.stretch, exclude: S.exclude || undefined,
+                         details: path === "/api/answers" ? readDetails() : undefined }),
 }).then(r => r.json().then(d => { S.exclude = undefined; return { r, d }; }));
 
 $("#do-letter").onclick = async () => {
@@ -1127,7 +1228,9 @@ $("#do-letter").onclick = async () => {
     $("#do-letter").hidden = true; promoteNext();
     $("#gr-letter").textContent = "Grounded only in the résumé you gave.";
     yoursNow("letter", "Click into the letter and type. Copy and Download take what is on screen.");
-    offer("letter", d.letter, `cover-letter-${slug}.txt`);
+    offer("letter", d.letter, null);
+    const dl = $("#dl-letter"); dl.hidden = false; dl.textContent = "Download .docx";
+    dl.onclick = () => download(letterDocx(PACK.letter), `cover-letter-${slug}.docx`);
     readable("letter", "Cover letter", true);
   }catch(e){ failed("letter", "Letter API unreachable: " + e, "Write the letter"); }
 };
@@ -1167,11 +1270,11 @@ $("#do-tailor").onclick = async () => {
     /* D is the live document. The three outputs below build from it, not from
        `d` as delivered, so an edited heading reaches the .docx an employer
        opens and not only the preview the reader edited it in. */
-    let D = d;
+    let D = d; DOC = D;
     const box = $("#out-tailor");
     box.querySelectorAll(".dname, .dcontact, .dhead, .dsec h5, .dtitle, .dmeta, .ditem li")
        .forEach(el => editable(el, () => {
-         D = readDoc(box, d);
+         D = readDoc(box, d); DOC = D;
          PACK.tailor = resumeText(D); syncSend();
        }));
     PACK.tailor = resumeText(D); syncSend();
@@ -1185,6 +1288,19 @@ $("#do-tailor").onclick = async () => {
     cp.onclick = () => copyInto(cp, PACK.tailor, "tailor");
     readable("tailor", "Your résumé, rebuilt for this job", true);
   }catch(e){ failed("tailor", "Résumé API unreachable: " + e, "Rebuild my résumé"); }
+};
+
+/* Prepare everything (2026-09-30, Ken: "You re-create docs ... All this double work makes the
+   application actually harder"). The three steps are the same calls the buttons make, run in the
+   page's order; any already done is skipped, and each one's own failure stays in its own section. */
+$("#do-all").onclick = async () => {
+  const all = $("#do-all"); all.disabled = true; all.textContent = "Preparing…"; KIT = true;
+  for (const id of PREP_ORDER){
+    const b = $("#" + id);
+    if (b && !b.hidden && typeof b.onclick === "function"){ try { await b.onclick(); } catch (e) { /* shown in its section */ } }
+  }
+  KIT = false; all.textContent = "Prepared"; all.dataset.done = "1"; promoteNext(); syncSend();
+  $("#s-send").scrollIntoView({ behavior: "smooth", block: "start" });
 };
 
 /* Last, so everything render() reaches for is already defined. */
@@ -1232,7 +1348,9 @@ $("#do-answers").onclick = async () => {
              aria-label="Copy the answer to &quot;${esc(q.label)}&quot;">${COPYICON}<span>Copy</span></button>
         </div>
         <p class="ans" data-q="${i}" data-ph="${esc(q.why || "yours to answer")}" aria-label="Your answer to &quot;${esc(q.label)}&quot;">${esc(q.answer || "")}</p>
-        ${q.from ? `<p class="cite">from your resume: &ldquo;${esc(q.from)}&rdquo;</p>` : ""}
+        ${q.src === "details" ? `<p class="cite">from your details</p>`
+          : q.src === "draft" && q.from ? `<p class="cite">drafted from your résumé (&ldquo;${esc(q.from)}&rdquo;) &mdash; make it yours before sending</p>`
+          : q.from ? `<p class="cite">from your resume: &ldquo;${esc(q.from)}&rdquo;</p>` : ""}
       </div>`).join("");
     /* One field at a time is how a form is actually filled. Only answered
        questions get a button: there is nothing of yours to paste into the
