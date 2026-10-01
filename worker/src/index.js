@@ -399,6 +399,15 @@ const IDENTITY = /first name|last name|full name|email|phone|address|linkedin|we
 
 
 const inProfile = (profile, phrase) => phrase.trim().length >= 8 && squash(profile).includes(squash(phrase));
+/* A drafted answer may lean on more than one line of the résumé. The model cites them joined
+   with "; ", and a joined citation is not one contiguous run of the profile, so a correct,
+   grounded mission answer was thrown away on every run (Shyro x M-KOPA, 2026-10-01). Each
+   part must still be in the profile, verbatim: the guard is no looser, only able to read a list. */
+export const AUTH_EVIDENCE = /citizen|nationality|authori[sz]ed|right to work|work permit|permit|visa|resident|sponsorship/i;
+export const citesProfile = (profile, from) => {
+  const parts = String(from || "").split(/\s*;\s*/).filter(p => p.trim());
+  return parts.length > 0 && parts.every(p => inProfile(profile, p));
+};
 
 // What a rewrite fabricates, and what a plain capitalised word is not: numbers
 // and dates, acronyms (AWS, KQL, SRE), CamelCase and dotted product names
@@ -827,7 +836,8 @@ async function route(request, env) {
         '{"answers": [{"n": number, "answer": string, "from": string}]}. ' +
         "n: the question's number. answer: what the candidate would put, in their own register, at most 60 words; " +
         "for a question with OPTIONS the answer MUST be one option copied exactly, or \"\" if the profile supports none. " +
-        "from: a phrase copied VERBATIM from the profile that establishes the answer. " +
+        "from: a phrase copied VERBATIM from the profile that establishes the answer " +
+        "(or several such phrases, each verbatim, separated by ' ; '). " +
         // Stated as "answer what the profile settles", not "omit what is sensitive":
         // the cautious reading of the earlier wording drafted nothing at all, even for
         // a profile that said outright where it lived and that it could work there.
@@ -859,7 +869,13 @@ async function route(request, env) {
         const a = by.get(i + 1);
         // Two guards, both refusable: the cited phrase has to be in the profile,
         // and a choice has to be one the employer actually offers.
-        const grounded = a && a.answer.trim() && inProfile(profile, a.from)
+        /* Citing A line is not citing a REASON: "legal right to work: Yes" came back cited from
+           "Legal name: Alice Wanjiru Ogolla" (Shyro x M-KOPA, 2026-10-01). A work-authorisation
+           or sponsorship answer drafted from the résumé must cite a line that is about it;
+           otherwise it is hers to answer once, and her saved answer fills every later form. */
+        const aboutAuth = ["work_auth", "sponsorship"].includes(detailKey(q.label || ""));
+        const grounded = a && a.answer.trim() && citesProfile(profile, a.from)
+          && (!aboutAuth || AUTH_EVIDENCE.test(a.from))
           && (!q.options.length || q.options.includes(a.answer.trim()));
         return {
           label: q.label, required: q.required, type: q.type, options: q.options, key: detailKey(q.label || "") || "",

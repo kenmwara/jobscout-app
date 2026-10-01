@@ -4,6 +4,7 @@
 // must come out. Demographics must never be filled, whatever is passed.
 //   node worker/tools/check_details.mjs
 import { cleanDetails, detailFor, detailKey, fitOption, fromProfile } from "../src/details.js";
+import { citesProfile, AUTH_EVIDENCE } from "../src/index.js";
 
 const d = cleanDetails({
   name: "Wanjiru Kamau", email: "w@example.com", phone: "+254 700 000 000", location: "Nairobi, Kenya",
@@ -62,6 +63,25 @@ for (const [label, k] of [["What is your expected monthly gross salary in KES?",
                           ["First Name", "name"], ["Please confirm your gender?", null], ["Referrer's email", null]]) {
   const ok = detailKey(label) === k; if (!ok) bad++;
   console.log(`${ok ? "  ok " : "  BAD"}  remembered as: ${label} -> ${detailKey(label)}`);
+}
+// A drafted answer may cite several résumé lines joined by "; " (Shyro x M-KOPA, 2026-10-01: the
+// mission answer was grounded but dropped every run). Each part must still be verbatim in the profile.
+const P = "Operations manager at Siri Studio, Nairobi, since 2024.\nFounder & Operator · S-Ryder, Nairobi 2026 – Present";
+for (const [from, want] of [
+  ["Operations manager at Siri Studio; Founder & Operator · S-Ryder", true],     // two real lines
+  ["Operations manager at Siri Studio", true],                                     // one
+  ["Operations manager at Siri Studio; Head of Global Logistics", false],         // one part invented
+  ["", false],
+  ["Siri; S-Ryder", false],                                                         // parts too short to cite
+]) {
+  const ok = citesProfile(P, from) === want; if (!ok) bad++;
+  console.log(`${ok ? "  ok " : "  BAD"}  citation "${from}" -> ${citesProfile(P, from)}`);
+}
+// a right-to-work answer needs a line ABOUT authorisation, not any line (M-KOPA, 1 Oct: cited "Legal name: ...")
+for (const [from, want] of [["Legal name: Alice Wanjiru Ogolla", false], ["Kenyan citizen", true], ["Canadian permanent resident", true],
+                            ["Open work permit valid to 2028", true], ["Ngong Road, Nairobi", false]]) {
+  const ok = AUTH_EVIDENCE.test(from) === want; if (!ok) bad++;
+  console.log(`${ok ? "  ok " : "  BAD"}  right-to-work evidence "${from}" -> ${AUTH_EVIDENCE.test(from)}`);
 }
 const leaked = ["gender", "race"].filter(k => k in d);
 if (leaked.length) { bad++; console.log(`  BAD  cleanDetails kept ${leaked.join(", ")}`); }
