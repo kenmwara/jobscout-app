@@ -147,6 +147,25 @@ private const val FILL_JS = """
     }
     setVal(el,v);n++;
   });
+  /* Choice questions drawn as radio buttons (Ashby: "Do you have the legal right to work...?
+     Yes / No / Other", M-KOPA, 2026-10-01). A group is the nearest box holding more than one
+     radio; it is this question's if its text starts with the question. The option whose own
+     words ARE the answer is tapped, and a group already answered is left alone. */
+  var radios=[].slice.call(document.querySelectorAll('input[type=radio]'));
+  var groupOf=function(r){var t=r.parentElement;while(t&&t.querySelectorAll('input[type=radio]').length<2)t=t.parentElement;return t;};
+  var optOf=function(r){var l=r.id&&document.querySelector('label[for="'+CSS.escape(r.id)+'"]');return norm((l||r.closest("label")||r.parentElement).textContent);};
+  Q.forEach(function(q){
+    var want=norm(q[0]),v=norm(q[1]);if(!want||!v)return;
+    /* the options' box may not hold the question: climb while the box still holds only these radios */
+    var g=null;radios.some(function(r){var c=groupOf(r);if(!c)return false;var k=c.querySelectorAll('input[type=radio]').length;
+      for(var t=c;t&&t.querySelectorAll('input[type=radio]').length===k;t=t.parentElement){var x=norm(t.textContent).indexOf(want);if(x>=0&&x<40){g=c;return true;}}
+      return false;});
+    if(!g)return;
+    var opts=[].slice.call(g.querySelectorAll('input[type=radio]'));
+    if(opts.some(function(r){return r.checked;}))return;
+    var hit=opts.find(function(r){return optOf(r)===v;})||opts.find(function(r){return optOf(r).indexOf(v+" ")===0;});
+    if(hit){hit.click();n++;}
+  });
   /* which file box was tapped: a cover-letter box gets the letter, every other the résumé */
   if(!window.__jsKit){window.__jsKit=1;
     document.addEventListener("pointerdown",function(e){

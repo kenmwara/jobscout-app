@@ -340,7 +340,9 @@ const hostOf = u => { try { return new URL(u).host; } catch { return ""; } };
 const ASHBY_URL = /^https?:\/\/jobs\.ashbyhq\.com\/([^/?#]+)\/([0-9a-f-]{36})/;
 // A file field is an attachment the candidate adds themselves; the rest we can read.
 const ANSWERABLE = new Set(["input_text", "textarea", "multi_value_single_select"]);
-const ASHBY_ANSWERABLE = new Set(["String", "LongText", "ValueSelect", "Number", "Boolean"]);
+// Email and Phone are types of their own on Ashby: without them a required Email and Phone
+// never reached "your details" (M-KOPA's form, Shyro's test, 2026-10-01).
+const ASHBY_ANSWERABLE = new Set(["String", "LongText", "ValueSelect", "Number", "Boolean", "Email", "Phone"]);
 
 /* One shape out of two boards: {source, fields:[{label, required, type, options}]},
    or null when the form is not published anywhere we can reach. */
