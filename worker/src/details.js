@@ -86,3 +86,17 @@ export function fitOption(value, options) {
   return hit || "";
 }
 export const MOTIVATION = /\bwhy\b|interest|motivat|tell us about yourself|about you\b|what (excites|attracts|draws)|mission|values|resonat/i;
+
+/* Grounding helpers, here (pure, no imports) so the checks can load them without the worker's
+   own dependencies (unpdf): importing index.js from a check broke the CI gate on 1 Oct. */
+export const squash = t => String(t).toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+export const inProfile = (profile, phrase) => phrase.trim().length >= 8 && squash(profile).includes(squash(phrase));
+/* A drafted answer may lean on more than one line of the résumé. The model cites them joined
+   with "; ", and a joined citation is not one contiguous run of the profile, so a correct,
+   grounded mission answer was thrown away on every run (Shyro x M-KOPA, 2026-10-01). Each
+   part must still be in the profile, verbatim: the guard is no looser, only able to read a list. */
+export const AUTH_EVIDENCE = /citizen|nationality|authori[sz]ed|right to work|work permit|permit|visa|resident|sponsorship/i;
+export const citesProfile = (profile, from) => {
+  const parts = String(from || "").split(/\s*;\s*/).filter(p => p.trim());
+  return parts.length > 0 && parts.every(p => inProfile(profile, p));
+};

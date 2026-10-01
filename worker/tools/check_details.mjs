@@ -4,7 +4,7 @@
 // must come out. Demographics must never be filled, whatever is passed.
 //   node worker/tools/check_details.mjs
 import { cleanDetails, detailFor, detailKey, fitOption, fromProfile } from "../src/details.js";
-import { citesProfile, AUTH_EVIDENCE } from "../src/index.js";
+import { citesProfile, AUTH_EVIDENCE } from "../src/details.js";
 
 const d = cleanDetails({
   name: "Wanjiru Kamau", email: "w@example.com", phone: "+254 700 000 000", location: "Nairobi, Kenya",

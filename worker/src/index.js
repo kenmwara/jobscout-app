@@ -30,7 +30,7 @@ const DAILY_BUDGET_USD = 3.0;
 const PRICE_IN = 1.0, PRICE_OUT = 5.0;
 
 import { allowOrigin, CORS } from "./cors.js";
-import { cleanDetails, detailFor, detailKey, fitOption, fromProfile, MOTIVATION } from "./details.js";
+import { cleanDetails, detailFor, detailKey, fitOption, fromProfile, MOTIVATION, squash, inProfile, citesProfile, AUTH_EVIDENCE } from "./details.js";
 
 
 const json = (status, body) =>
@@ -307,7 +307,6 @@ async function draft(env, max_tokens, system, content, temperature = 0.3) {
            cost: (usage.input_tokens * PRICE_IN + usage.output_tokens * PRICE_OUT) / 1_000_000 };
 }
 
-const squash = t => String(t).toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
 
 /* A cover letter is plain text on every surface that shows it — the web page, the
    Android screen and the iOS sheet all render it as a string, so a markdown heading
@@ -398,16 +397,6 @@ const PERSONAL = /gender|pronoun|race|ethnic|veteran|disab|self.?identif|demogra
 const IDENTITY = /first name|last name|full name|email|phone|address|linkedin|website|portfolio|github/i;
 
 
-const inProfile = (profile, phrase) => phrase.trim().length >= 8 && squash(profile).includes(squash(phrase));
-/* A drafted answer may lean on more than one line of the résumé. The model cites them joined
-   with "; ", and a joined citation is not one contiguous run of the profile, so a correct,
-   grounded mission answer was thrown away on every run (Shyro x M-KOPA, 2026-10-01). Each
-   part must still be in the profile, verbatim: the guard is no looser, only able to read a list. */
-export const AUTH_EVIDENCE = /citizen|nationality|authori[sz]ed|right to work|work permit|permit|visa|resident|sponsorship/i;
-export const citesProfile = (profile, from) => {
-  const parts = String(from || "").split(/\s*;\s*/).filter(p => p.trim());
-  return parts.length > 0 && parts.every(p => inProfile(profile, p));
-};
 
 // What a rewrite fabricates, and what a plain capitalised word is not: numbers
 // and dates, acronyms (AWS, KQL, SRE), CamelCase and dotted product names
