@@ -1299,8 +1299,15 @@ $("#do-all").onclick = async () => {
     const b = $("#" + id);
     if (b && !b.hidden && typeof b.onclick === "function"){ try { await b.onclick(); } catch (e) { /* shown in its section */ } }
   }
-  KIT = false; all.textContent = "Prepared"; all.dataset.done = "1"; promoteNext(); syncSend();
-  $("#s-send").scrollIntoView({ behavior: "smooth", block: "start" });
+  KIT = false;
+  /* "Prepared" only when something WAS. Shyro x M-KOPA, 1 Oct: the hourly cap refused all
+     three calls and the button still read "Prepared" two seconds later. */
+  // a private form (answers step hidden) is finished with nothing to hand over, not failed
+  const got = ["letter", "tailor", "answers"].filter(k => PACK[k] || (k === "answers" && $("#do-answers").hidden)).length;
+  if (got === 3){ all.textContent = "Prepared"; all.dataset.done = "1"; }
+  else { all.disabled = false; all.textContent = got ? `${got} of 3 prepared — try the rest` : "Nothing prepared — try again"; }
+  promoteNext(); syncSend();
+  if (got) $("#s-send").scrollIntoView({ behavior: "smooth", block: "start" });
 };
 
 /* Last, so everything render() reaches for is already defined. */

@@ -93,9 +93,26 @@ try {
   // E — the answer names its source
   check(/from your details/.test(await page.locator("#out-answers").innerText().catch(() => "")), "E  a detail-filled answer says so");
 
-  await page.click("#d-clear");
+  await page.click("#d-clear", { timeout: 5000 }).catch(() => {});   // a window left open blocks it: a finding (F), not a crash
   check(await page.evaluate(() => localStorage.getItem("jobscout.details")) === null && await page.inputValue("#d-location") === "",
         "A  Clear removes them from the browser and the page");
+
+  // G — refused calls are not "Prepared" (Shyro x M-KOPA, 1 Oct: the hourly cap refused all three
+  //     and the button still said Prepared two seconds later)
+  const p2 = await browser.newPage();
+  await p2.route("**/api/**", r => r.fulfill({ status: 429, contentType: "application/json",
+    body: JSON.stringify({ error: "rate_limited", detail: "Demo cap: 24 runs/hour." }) }));
+  if (MUTATE === "kit-lies") await p2.route("**/apply.html", async r => {
+    const res = await r.fetch(); r.fulfill({ response: res, body: (await res.text()).replace("if (got === 3){", "if (true){") });
+  });
+  await p2.goto(`${SITE}/privacy.html`);
+  await p2.evaluate(s => sessionStorage.setItem("jobscout.apply", JSON.stringify(s)), SESSION);
+  await p2.goto(`${SITE}/apply.html`);
+  await p2.waitForSelector("#steps:not([hidden])");
+  await p2.click("#do-all");
+  await p2.waitForFunction(() => !/Preparing/.test(document.querySelector("#do-all").textContent), null, { timeout: 15000 }).catch(() => {});
+  const label = await p2.locator("#do-all").innerText();
+  check(label !== "Prepared" && await p2.locator("#do-all").isEnabled(), `G  every call refused: the button says "${label}" and can be pressed again`);
 } finally { await browser.close(); }
 
 say(fails.length ? `VERDICT: FAIL (${fails.length})` : "VERDICT: PASS — details asked once, kept on the device, sent only to fill the questions; one tap prepares everything");
