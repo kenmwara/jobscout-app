@@ -164,7 +164,8 @@ data class Question(
     val answer: String = "",
     val from: String = "",      // the phrase in the profile that establishes it
     val why: String = "",       // set when it is the candidate's to answer
-    val src: String = "",       // "details" | "draft" (a motivation answer, theirs to make their own) | "resume"
+    val src: String = "",       // "details" | "cv" | "draft" (a motivation answer, theirs to make their own) | "resume"
+    val key: String = "",       // which saved answer this question IS (worker detailKey), "" for none
 )
 
 @Serializable

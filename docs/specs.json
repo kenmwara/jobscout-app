@@ -605,6 +605,24 @@
       "status": "unverified",
       "check": "node tools/check_apply_details.mjs && bash tools/check_docx.sh",
       "evidence": "/api/answers drafts only what the CV settles (a verbatim 'from' phrase must be in the profile), so work authorisation, location, notice, start date, years and 'why this role' mostly come back blank; when the employer form cannot be read it falls back to eight generic questions. The tailored CV and letter are separate downloads, then a separate external tab, then one upload at a time. 30 Sep fix (web + worker): 'Your details' on the application page (11 fields, this browser only, Clear), sent only with /api/answers and matched to the question by worker/src/details.js (worker/tools/check_details.mjs, demographics never); 'why this role' now drafted from the CV with a cited phrase; 'Prepare everything' runs letter + résumé + questions in one tap with no windows left open; résumé + letter download together as .docx. Worker 1 Oct: questions about an earlier tie or another person ('If you were previously employed by Remote, please share the email') are never filled from details (NOT_YOURS; seen live, now in check_details.mjs). Live 1 Oct on a Greenhouse form (Remote.com): 19 questions, 8 from your details, 1 drafted. Android 1 Oct: Your details (on the phone only, Clear), sent with /api/answers; Prepare everything; résumé + letter saved as .docx to Downloads/JobScout named for the job (Docx.kt; check_docx.sh opens both, mutations caught); the employer's form opens IN the app with text boxes filled from the answers and details, and its file buttons take the .docx built for this job (Kit.kt FormFill); Submit stays the candidate's. Unverified until the Android build is installed and walked on a phone."
+    },
+    {
+      "id": "apply-carry-through",
+      "date": "2026-10-01",
+      "surface": "both",
+      "said": "Basically, one session's details need to carry through the entire session until successful application - the goal of JobScout is not to show jobs but to get the user one, THROUGH APPLYING!!!",
+      "status": "unverified",
+      "check": "node tools/check_apply_details.mjs && node worker/tools/check_details.mjs",
+      "evidence": "Shyro x M-KOPA test, 1 Oct (Ashby, Demand Planning Lead). Same day Ken: 'Her details need to transfer to the MKOPA application automatically', 'tapping Upload File doesn't require her to fill in JobScout's many forms', 'Filling in forms on JobScout should amount to something, not just an exercise in futility!'. Fix: nothing is asked up front. Name, email, phone, LinkedIn and site are lifted from the CV by pattern, verbatim, no model (worker details.js fromProfile); what she types into an employer's question no CV settles is kept under the detail it is (detailKey) and fills the next form (web localStorage, phone app storage); the phone app's in-app form filler types it all into the employer's own form: on M-KOPA's live form (stand-in contact values) Full Name, Email, Phone, the location type-ahead (Kenya, a real option pick: with the tap removed Ashby clears it), right to work (Yes radio) and the mission answer filled; consent, gender, salary and 'how did you hear' left hers. check_apply_details: 7 mutations caught; check_details: fromProfile + detailKey cases. The web cannot type into another site's form (browser same-origin rule): there it is copy per answer. Unverified until the Android build is walked on a phone."
+    },
+    {
+      "id": "apply-upload-resume",
+      "date": "2026-10-01",
+      "surface": "android",
+      "said": "It should even upload the same resume she was asked for directly into MKOPA!!",
+      "status": "unverified",
+      "check": "none",
+      "evidence": "Phone: the employer's upload boxes are filled with no tap (Kit.kt ATTACH_JS, a File set through a DataTransfer): the résumé rebuilt for the job, else the very file she gave JobScout (held in memory for the session, never written; the chooser's cache copy is deleted with the page). 'Autofill from resume' boxes are skipped so the employer's parser cannot overwrite what was filled; a box already holding a file is never replaced. Proven on M-KOPA's live Ashby form with tools/check_formfill_live.mjs: Shyro's CV PDF shown in the Resume box. Ashby UPLOADS a chosen file to its own storage at once, before any Submit (ApiCreateFileUploadHandle -> S3 -> ApiSetFormValueToFile, seen with a dummy file), so the app says so on screen, and the live check is never run in CI. Check 'none' because the only proof touches a real employer's storage; run it by hand. Unverified until walked on a phone."
     }
   ]
 }

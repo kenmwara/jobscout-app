@@ -426,9 +426,9 @@ nav.main{margin-left:auto;display:flex;gap:var(--s2);align-items:center}
     </div>
 
     <div id="steps" hidden>
-      <section class="step panel" id="s-details">
-        <div class="bar"><h2>Your details</h2><span class="state" id="st-details">not set</span></div>
-        <p class="lede">What every application form asks and no résumé says. Typed once, kept only in this browser, and used to fill their questions below. Leave anything blank.</p>
+      <section class="step panel" id="s-details" hidden>
+        <div class="bar"><h2>Your saved answers</h2><span class="state" id="st-details">not set</span></div>
+        <p class="lede">What you typed into an employer's question that no résumé says, kept only in this browser and used again whenever another form asks the same thing. Your name, email and phone come from your résumé.</p>
         <div class="dets">
           <label class="det">Full name<input id="d-name" autocomplete="name"></label>
           <label class="det">Email<input id="d-email" type="email" autocomplete="email"></label>
@@ -595,6 +595,10 @@ function syncDetails(){
   try { Object.keys(DETAILS).length ? localStorage.setItem(DKEY, JSON.stringify(DETAILS)) : localStorage.removeItem(DKEY); } catch (e) {}
   const n = Object.keys(DETAILS).length, st = document.getElementById("st-details");
   if (st){ st.textContent = n ? `${n} saved in this browser` : "not set"; st.className = "state" + (n ? " done" : ""); }
+  /* Nothing is asked up front (Ken, 2026-10-01: "Filling in forms on JobScout should amount to
+     something, not just an exercise in futility!"). Name, email and phone come from the résumé;
+     the rest is typed once, into the employer's own question, and shows here only once it exists. */
+  const sec = document.getElementById("s-details"); if (sec) sec.hidden = !n;
 }
 document.addEventListener("DOMContentLoaded", () => {
   for (const k of DFIELDS){
@@ -1355,7 +1359,8 @@ $("#do-answers").onclick = async () => {
              aria-label="Copy the answer to &quot;${esc(q.label)}&quot;">${COPYICON}<span>Copy</span></button>
         </div>
         <p class="ans" data-q="${i}" data-ph="${esc(q.why || "yours to answer")}" aria-label="Your answer to &quot;${esc(q.label)}&quot;">${esc(q.answer || "")}</p>
-        ${q.src === "details" ? `<p class="cite">from your details</p>`
+        ${q.src === "details" ? `<p class="cite">from your saved answers</p>`
+          : q.src === "cv" ? `<p class="cite">from your résumé</p>`
           : q.src === "draft" && q.from ? `<p class="cite">drafted from your résumé (&ldquo;${esc(q.from)}&rdquo;) &mdash; make it yours before sending</p>`
           : q.from ? `<p class="cite">from your resume: &ldquo;${esc(q.from)}&rdquo;</p>` : ""}
       </div>`).join("");
@@ -1392,6 +1397,9 @@ $("#do-answers").onclick = async () => {
     $("#out-answers").querySelectorAll(".ans").forEach(el => editable(el, () => {
       const i = +el.dataset.q;
       qs[i].answer = liveText(el);
+      /* typed once, kept for the next form that asks the same thing ("name" is the résumé's) */
+      const k = qs[i].key, box = k && k !== "name" && document.getElementById("d-" + k);
+      if (box){ box.value = qs[i].answer; syncDetails(); }
       /* Clearing a box by hand leaves contenteditable's own <br> behind, so
          :empty stops matching and the placeholder never comes back. Emptied
          means empty. */

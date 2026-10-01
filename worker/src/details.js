@@ -44,6 +44,34 @@ export function detailFor(label, d) {
   }
   return null;
 }
+/* Which of your details a question asks for, or null. The page keeps what the candidate types
+   into that question's box under this key, so the next form that asks it is already answered:
+   asked once, where it comes up, never up front (Ken, 2026-10-01: "having her fill in all that
+   info is pointless"). */
+export function detailKey(label) {
+  if (DEMOGRAPHIC.test(label) || NOT_YOURS.test(label)) return null;
+  const hit = DETAIL_RULES.find(([, rx]) => rx.test(label));
+  return hit ? (hit[0] === "first_name" || hit[0] === "last_name" ? "name" : hit[0]) : null;
+}
+/* What the CV itself says, copied character for character: no model, so nothing invented.
+   Ken, 2026-10-01: "tapping Upload File doesn't require her to fill in JobScout's many forms" -
+   M-KOPA's own form lifts name, email and phone from a résumé, so JobScout must too. */
+const EMAIL = /[\w.+-]+@[\w-]+(\.[\w-]+)+/;
+const PHONE = /(?:\+|\b0)\d[\d ()-]{7,16}\d/;
+const LINKEDIN = /(?:https?:\/\/)?(?:[\w-]+\.)?linkedin\.com\/in\/[\w%-]+\/?/i;
+const SITE = /(?:https?:\/\/)?(?:www\.)?(?:github\.com\/[\w-]+|[\w-]+\.(?:dev|io|me|site|page|com)(?:\/[\w-]*)?)(?=[\s|,;)]|$)/i;
+export function fromProfile(profile) {
+  const t = String(profile || ""), d = {};
+  const first = t.split("\n").map(s => s.trim()).find(Boolean) || "";
+  // a name line: two to four words of letters, nothing else on it
+  const nm = /^([\p{L}'’.-]+(?:\s+[\p{L}'’.-]+){1,3})\s*$/u.exec(first.replace(/\s*[|·•,].*$/, ""));
+  if (nm && !/curriculum|resume|résumé|cv\b/i.test(nm[1])) d.name = nm[1];
+  const e = EMAIL.exec(t); if (e) d.email = e[0];
+  const p = PHONE.exec(t); if (p) d.phone = p[0].trim();
+  const li = LINKEDIN.exec(t); if (li) d.linkedin = li[0];
+  const s = SITE.exec(t.replace(EMAIL, " ").replace(LINKEDIN, " ")); if (s) d.portfolio = s[0];
+  return d;
+}
 /* A choice question takes one of ITS options, never free text. Yes/No collapse to their
    first word ("Yes, I am authorised" answers a "Yes" option); otherwise an option that the
    detail contains, or that contains the detail, wins. No match: left for the candidate, with

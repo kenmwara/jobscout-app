@@ -3,7 +3,7 @@
 // Greenhouse/Ashby forms in the feed go in; the candidate's own words, or the matching option,
 // must come out. Demographics must never be filled, whatever is passed.
 //   node worker/tools/check_details.mjs
-import { cleanDetails, detailFor, fitOption } from "../src/details.js";
+import { cleanDetails, detailFor, detailKey, fitOption, fromProfile } from "../src/details.js";
 
 const d = cleanDetails({
   name: "Wanjiru Kamau", email: "w@example.com", phone: "+254 700 000 000", location: "Nairobi, Kenya",
@@ -45,6 +45,23 @@ for (const [label, options, want] of cases) {
   const ok = got === want;
   if (!ok) bad++;
   console.log(`${ok ? "  ok " : "  BAD"}  ${label.slice(0, 70)} -> ${JSON.stringify(got)}${ok ? "" : ` (want ${JSON.stringify(want)})`}`);
+}
+// From the CV itself (Ken, 2026-10-01: "tapping Upload File doesn't require her to fill in
+// JobScout's many forms"): name, email, phone, LinkedIn and a site, copied, never written.
+const cv = fromProfile("Achieng Otieno\nNgong Road, Nairobi | +254 711 222 333 | achieng.o@example.com\n" +
+  "linkedin.com/in/achieng-otieno · achieng.dev\nOPERATIONS MANAGER\nRan dispatch for 40 riders.");
+const want = { name: "Achieng Otieno", email: "achieng.o@example.com", phone: "+254 711 222 333",
+               linkedin: "linkedin.com/in/achieng-otieno", portfolio: "achieng.dev" };
+for (const [k, v] of Object.entries(want)) {
+  const ok = cv[k] === v; if (!ok) bad++;
+  console.log(`${ok ? "  ok " : "  BAD"}  from the CV: ${k} -> ${JSON.stringify(cv[k])}${ok ? "" : ` (want ${JSON.stringify(v)})`}`);
+}
+if (fromProfile("CURRICULUM VITAE\nSummary...").name) { bad++; console.log("  BAD  a 'Curriculum Vitae' heading was taken for a name"); }
+// what she types into a question's box is kept under the detail it IS, so the next form has it
+for (const [label, k] of [["What is your expected monthly gross salary in KES?", "salary"], ["Notice period", "notice"],
+                          ["First Name", "name"], ["Please confirm your gender?", null], ["Referrer's email", null]]) {
+  const ok = detailKey(label) === k; if (!ok) bad++;
+  console.log(`${ok ? "  ok " : "  BAD"}  remembered as: ${label} -> ${detailKey(label)}`);
 }
 const leaked = ["gender", "race"].filter(k => k in d);
 if (leaked.length) { bad++; console.log(`  BAD  cleanDetails kept ${leaked.join(", ")}`); }

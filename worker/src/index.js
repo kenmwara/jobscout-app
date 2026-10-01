@@ -30,7 +30,7 @@ const DAILY_BUDGET_USD = 3.0;
 const PRICE_IN = 1.0, PRICE_OUT = 5.0;
 
 import { allowOrigin, CORS } from "./cors.js";
-import { cleanDetails, detailFor, fitOption, MOTIVATION } from "./details.js";
+import { cleanDetails, detailFor, detailKey, fitOption, fromProfile, MOTIVATION } from "./details.js";
 
 
 const json = (status, body) =>
@@ -784,7 +784,10 @@ async function route(request, env) {
         asked = { fields: genericForm(p) };
       }
       asked = asked.fields;
-      const details = cleanDetails(g.details);
+      /* What the CV says comes first and costs the candidate nothing; what they typed wins
+         where the two differ (a newer phone number, a different email for applications). */
+      const typed = cleanDetails(g.details), cvd = fromProfile(profile);
+      const details = { ...cvd, ...typed };
       /* Your details first: a question one of them answers is filled with the candidate's own
          words (src "details"), before anything is drafted, and costs nothing. A choice question
          takes one of its options or stays open with their words shown. */
@@ -793,8 +796,9 @@ async function route(request, env) {
         const v = detailFor(q.label || "", details);
         if (!v) return true;
         const answer = fitOption(v, q.options || []);
-        fromDetails.push({ label: q.label, required: q.required, type: q.type, options: q.options,
-                           answer, from: answer ? "your details" : "", src: answer ? "details" : "",
+        const k = detailKey(q.label || ""), mine = k && typed[k];
+        fromDetails.push({ label: q.label, required: q.required, type: q.type, options: q.options, key: k || "",
+                           answer, from: answer ? (mine ? "your details" : "your CV") : "", src: answer ? (mine ? "details" : "cv") : "",
                            why: answer ? "" : `pick the option that matches your details: ${v}` });
         return false;
       });
@@ -804,7 +808,7 @@ async function route(request, env) {
                        : IDENTITY.test(l) ? "yours to type" : "";
       const drafting = asked.filter(q => !never(q.label || ""));
       const yours = asked.filter(q => never(q.label || ""))
-        .map(q => ({ label: q.label, required: q.required, type: q.type,
+        .map(q => ({ label: q.label, required: q.required, type: q.type, key: detailKey(q.label || "") || "",
                      options: q.options, answer: "", from: "", why: never(q.label || "") }));
 
       if (!drafting.length)
@@ -852,7 +856,7 @@ async function route(request, env) {
         const grounded = a && a.answer.trim() && inProfile(profile, a.from)
           && (!q.options.length || q.options.includes(a.answer.trim()));
         return {
-          label: q.label, required: q.required, type: q.type, options: q.options,
+          label: q.label, required: q.required, type: q.type, options: q.options, key: detailKey(q.label || "") || "",
           answer: grounded ? a.answer.trim() : "",
           from: grounded ? a.from : "", src: grounded ? (MOTIVATION.test(q.label || "") ? "draft" : "resume") : "",
           why: grounded ? "" : "yours to answer — your profile does not settle it",

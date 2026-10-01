@@ -7,15 +7,22 @@
  * lines and then you have to fill in everything else ... All this double work makes the
  * application actually harder and more time consuming!"
  *
- *   A  the application page asks for the details once, keeps them in THIS browser, clears them
- *   B  the details travel with /api/answers and with nothing else (letter, résumé)
+ * Ken, 2026-10-01, on Shyro x M-KOPA: "Filling in forms on JobScout should amount to something,
+ * not just an exercise in futility!" and "one session's details need to carry through the entire
+ * session until successful application".
+ *
+ *   A  nothing is asked up front; what is typed into an employer's question is kept in THIS
+ *      browser under the detail it is, survives a reload, and Clear removes it
+ *   B  kept answers travel with /api/answers and with nothing else (letter, résumé)
  *   C  "Prepare everything" runs all three steps from one tap
  *   D  the résumé + letter download unlocks once there is something to download
- *   E  an answer filled from the details says so ("from your details")
+ *   E  an answer lifted from the résumé says so ("from your résumé")
+ *   F  no document window is left open by the kit
+ *   G  refused calls are never reported as "Prepared"
  *
  * The API is mocked: this measures the page, not the model.
  *   node tools/check_apply_details.mjs
- *   node tools/check_apply_details.mjs --mutate details-everywhere | details-nowhere | no-kit | no-persist | kit-popups
+ *   node tools/check_apply_details.mjs --mutate details-everywhere | details-nowhere | no-kit | no-persist | kit-popups | kit-lies | no-remember
  */
 import { chromium } from "playwright";
 const SITE = process.env.SITE || "http://localhost:8765/site";
@@ -36,9 +43,11 @@ const MOCK = {
   "/api/letter": { letter: "Dear hiring team,\n\nI coordinate logistics.\n\nKind regards" },
   "/api/resume": { name: "Test Person", contact: "", headline: "Operations", gaps: [],
                    sections: [{ heading: "Experience", items: [{ title: "Coordinator", meta: "2019-2025", bullets: ["Ran logistics"] }] }] },
-  "/api/answers": { source: "example.org", url: "https://example.org/jobs/1", generic: true, drafted: 0, from_details: 1,
-                    questions: [{ label: "Where are you currently located?", required: true, type: "text", options: [],
-                                  answer: "Nairobi, Kenya", from: "your details", src: "details", why: "" }] },
+  "/api/answers": { source: "example.org", url: "https://example.org/jobs/1", generic: false, drafted: 0, from_details: 1,
+                    questions: [{ label: "Where are you currently located?", required: true, type: "text", options: [], key: "location",
+                                  answer: "Nairobi, Kenya", from: "your CV", src: "cv", why: "" },
+                                { label: "What is your notice period?", required: true, type: "text", options: [], key: "notice",
+                                  answer: "", from: "", src: "", why: "yours to answer" }] },
 };
 
 const browser = await chromium.launch();
@@ -51,6 +60,9 @@ try {
   });
   await page.goto(`${SITE}/privacy.html`);
   await page.evaluate(s => { sessionStorage.setItem("jobscout.apply", JSON.stringify(s)); localStorage.removeItem("jobscout.details"); }, SESSION);
+  if (MUTATE === "no-remember") await page.route("**/apply.html", async r => {
+    const res = await r.fetch(); r.fulfill({ response: res, body: (await res.text()).replace("const k = qs[i].key,", "const k = null,") });
+  });
   await page.goto(`${SITE}/apply.html`);
   await page.waitForSelector("#steps:not([hidden])");
 
@@ -67,34 +79,36 @@ try {
   };
   await mutate();
 
-  // A — asked once, kept here, cleared here
-  check(await page.locator(".det input").count() === 11, "A  eleven detail fields on the page");
-  await page.fill("#d-location", "Nairobi, Kenya");
-  await page.fill("#d-notice", "Two weeks");
-  const stored = await page.evaluate(() => JSON.parse(localStorage.getItem("jobscout.details") || "{}"));
-  check(stored.location === "Nairobi, Kenya" && stored.notice === "Two weeks", "A  typed details are kept in this browser");
-  await page.reload(); await page.waitForSelector("#steps:not([hidden])");
-  await mutate();
-  check(await page.inputValue("#d-location") === "Nairobi, Kenya", "A  they survive a reload");
+  // A — nothing up front
+  check(await page.locator("#s-details").isHidden(), "A  nothing is asked up front: no details panel on a first visit");
 
-  // C + B — one tap, and only the answers call carries the details
+  // C — one tap
   await page.click("#do-all");
   await page.waitForFunction(() => document.querySelector("#do-all").textContent === "Prepared", null, { timeout: 15000 }).catch(() => {});
   check(!!sent["/api/letter"] && !!sent["/api/resume"] && !!sent["/api/answers"], "C  Prepare everything ran the letter, the résumé and the questions");
-  check(sent["/api/answers"]?.details?.location === "Nairobi, Kenya", "B  the details went with the questions");
+  check(!(await page.evaluate(() => document.querySelector("#docModal").open)), "F  no document window is left open over the page");
+  check(await page.locator("#dl-files").isEnabled(), "D  résumé + letter download is offered");
+  check(/from your résumé/.test(await page.locator("#out-answers").innerText().catch(() => "")), "E  an answer lifted from the résumé says so");
+
+  // A — typed once, into THEIR question, kept under the detail it is
+  await page.click('.ans[data-q="1"]', { timeout: 5000 }).catch(() => {});
+  await page.keyboard.type("Two weeks");
+  await page.waitForTimeout(300);
+  const stored = await page.evaluate(() => JSON.parse(localStorage.getItem("jobscout.details") || "{}"));
+  check(stored.notice === "Two weeks", `A  an answer typed into their question is kept in this browser (notice: ${JSON.stringify(stored.notice)})`);
+  await page.reload(); await page.waitForSelector("#steps:not([hidden])");
+  await mutate();
+  check(await page.locator("#s-details").isVisible() && await page.inputValue("#d-notice") === "Two weeks", "A  it survives a reload and is shown as a saved answer");
+
+  // B — and it rides with the next form's questions, and with nothing else
+  for (const k of Object.keys(sent)) delete sent[k];
+  await page.click("#do-all");
+  await page.waitForFunction(() => document.querySelector("#do-all").textContent === "Prepared", null, { timeout: 15000 }).catch(() => {});
+  check(sent["/api/answers"]?.details?.notice === "Two weeks", "B  the saved answer went with the questions");
   check(!sent["/api/letter"]?.details && !sent["/api/resume"]?.details, "B  and with nothing else");
 
-  // F — one tap, no window left sitting over the page
-  check(!(await page.evaluate(() => document.querySelector("#docModal").open)), "F  no document window is left open over the page");
-
-  // D — both documents in one move
-  check(await page.locator("#dl-files").isEnabled(), "D  résumé + letter download is offered");
-
-  // E — the answer names its source
-  check(/from your details/.test(await page.locator("#out-answers").innerText().catch(() => "")), "E  a detail-filled answer says so");
-
   await page.click("#d-clear", { timeout: 5000 }).catch(() => {});   // a window left open blocks it: a finding (F), not a crash
-  check(await page.evaluate(() => localStorage.getItem("jobscout.details")) === null && await page.inputValue("#d-location") === "",
+  check(await page.evaluate(() => localStorage.getItem("jobscout.details")) === null && await page.locator("#s-details").isHidden(),
         "A  Clear removes them from the browser and the page");
 
   // G — refused calls are not "Prepared" (Shyro x M-KOPA, 1 Oct: the hourly cap refused all three
@@ -115,5 +129,5 @@ try {
   check(label !== "Prepared" && await p2.locator("#do-all").isEnabled(), `G  every call refused: the button says "${label}" and can be pressed again`);
 } finally { await browser.close(); }
 
-say(fails.length ? `VERDICT: FAIL (${fails.length})` : "VERDICT: PASS — details asked once, kept on the device, sent only to fill the questions; one tap prepares everything");
+say(fails.length ? `VERDICT: FAIL (${fails.length})` : "VERDICT: PASS — nothing asked up front; what she types into a question is kept and carried to the next form; one tap prepares everything");
 process.exit(fails.length ? 1 : 0);

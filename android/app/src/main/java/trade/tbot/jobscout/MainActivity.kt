@@ -109,6 +109,10 @@ data class Ui(
     /** When the worker's hourly cap tripped (ms), or 0. A STATE, not a wall: it counts down. */
     val limitedAt: Long = 0L,
     val resume: String = "",          // pasted/extracted resume text — in-memory only, never persisted
+    /* The file itself, same rule: memory only, for this session. The employer's upload box gets
+       it straight from here (Kit.kt attachFiles) - Ken, 2026-10-01: "upload the same resume she
+       was asked for directly into MKOPA". */
+    val resumeFile: KitFile? = null,
     val uploading: Boolean = false,
     val uploadStatus: String? = null,
     val phase: Phase = Phase.IDLE,
@@ -242,7 +246,8 @@ class DemoVm(app: Application) : AndroidViewModel(app) {
     private var pasteCounted = false
     fun setResume(s: String) {
         if (!pasteCounted && s.trim().length > 40) { pasteCounted = true; Api.ev("paste", market = _ui.value.market) }
-        _ui.update { it.copy(resume = s.take(6000)) }
+        // an emptied box is a different résumé to come: the file goes with it
+        _ui.update { it.copy(resume = s.take(6000), resumeFile = if (s.isBlank()) null else it.resumeFile) }
     }
 
     /* Same rule as the web page: the pasted resume, once it is long enough to be one,
@@ -294,6 +299,7 @@ class DemoVm(app: Application) : AndroidViewModel(app) {
                 if (r.error != null) r.detail ?: r.error
                 else {
                     setResume(r.text)
+                    _ui.update { it.copy(resumeFile = KitFile("resume", name, mime, bytes)) }
                     "✓ ${"%,d".format(r.chars)} characters extracted from $name — review, then run" +
                         (if (r.chars > 6000) " (trimmed to 6,000)" else "")
                 }
@@ -1351,10 +1357,11 @@ private fun InfoSheet(page: String, onClose: () -> Unit) {
                             "The list, the stages and your saved searches are in this app's own " +
                             "storage. Nothing is uploaded and nothing is emailed. Uninstalling " +
                             "removes them.",
-                        "Your details stay on this phone too" to
-                            "Name, contact, notice period and the rest are kept in this app's own " +
-                            "storage, sent only when an employer's questions are read so they can be " +
-                            "filled, and never stored by JobScout. Clear my details removes them. " +
+                        "Your saved answers stay on this phone too" to
+                            "What you type into an employer's question that no résumé says (notice " +
+                            "period, salary, sponsorship) is kept in this app's own storage, sent only " +
+                            "when the next employer's questions are read so they can be filled, and never " +
+                            "stored by JobScout. Clear my details removes them. " +
                             "Gender, race, disability and veteran questions are never filled.",
                     )
                 ) { (h, b) ->

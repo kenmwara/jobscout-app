@@ -71,6 +71,20 @@ fun kitFiles(a: Apply): List<Pair<String, ByteArray>> = buildList {
     a.letter.data?.let { add("cover-letter-$slug.docx" to Docx.letter(it)) }
 }
 
+/** A file the form's own upload boxes receive: kind is "resume" or "letter". */
+class KitFile(val kind: String, val name: String, val mime: String, val bytes: ByteArray)
+
+/**
+ * What goes into the employer's upload boxes. Ken, 2026-10-01: "It should even upload the same
+ * resume she was asked for directly into MKOPA!!" The résumé rebuilt for this job if there is
+ * one, otherwise the very file she gave JobScout (held in memory for the session, never saved).
+ */
+fun attachFiles(a: Apply, original: KitFile?): List<KitFile> = buildList {
+    val slug = jobSlug(a.posting)
+    (a.resume.data?.let { KitFile("resume", "resume-$slug.docx", DOCX_MIME, Docx.resume(it)) } ?: original)?.let(::add)
+    a.letter.data?.let { add(KitFile("letter", "cover-letter-$slug.docx", DOCX_MIME, Docx.letter(it))) }
+}
+
 /**
  * Saves into Downloads/JobScout, where every ATS app and the phone's own file
  * picker look first. Returns where it went, in words, or throws.
@@ -131,10 +145,12 @@ private const val FILL_JS = """
     if(!t){var c=el.closest("label");if(c)t=c.textContent;}
     if(!t)t=el.getAttribute("aria-label")||"";
     if(!t){var lb=el.getAttribute("aria-labelledby");if(lb)t=lb.split(" ").map(function(i){var e=document.getElementById(i);return e?e.textContent:"";}).join(" ");}
+    /* Ashby puts the question on the fieldset, not a label (M-KOPA "Where are you located?") */
+    if(!t){var fs=el.closest("fieldset");if(fs){var lg=fs.querySelector("legend,label");t=lg?lg.textContent:fs.textContent;}}
     if(!t)t=el.placeholder||el.name||"";
     return norm(t);
   };
-  var fields=[].slice.call(document.querySelectorAll('input:not([type=hidden]):not([type=file]):not([type=submit]):not([type=button]):not([type=checkbox]):not([type=radio]):not([role=combobox]),textarea,select'));
+  var fields=[].slice.call(document.querySelectorAll('input:not([type=hidden]):not([type=file]):not([type=submit]):not([type=button]):not([type=checkbox]):not([type=radio]),textarea,select'));
   var n=0,used=[];
   Q.forEach(function(q){
     var want=norm(q[0]),v=q[1];if(!want||!v)return;
@@ -144,6 +160,16 @@ private const val FILL_JS = """
     if(el.tagName==="SELECT"){
       var o=[].slice.call(el.options).find(function(o){return norm(o.text)===norm(v);})||[].slice.call(el.options).find(function(o){return norm(o.text).indexOf(norm(v))===0;});
       if(o){setVal(el,o.value);n++;}return;
+    }
+    if(el.getAttribute("role")==="combobox"){
+      /* a type-ahead: type the answer, then tap the option that IS the answer; none, and the box is emptied again */
+      setVal(el,v);el.focus();n++;
+      setTimeout(function(){
+        var os=[].slice.call(document.querySelectorAll("[role=option]"));
+        var o=os.find(function(x){return norm(x.textContent)===norm(v);})||os.find(function(x){return norm(x.textContent).indexOf(norm(v))===0;});
+        if(o){o.dispatchEvent(new MouseEvent("mousedown",{bubbles:true}));o.click();}else setVal(el,"");
+      },900);
+      return;
     }
     setVal(el,v);n++;
   });
@@ -176,6 +202,31 @@ private const val FILL_JS = """
 })
 """
 
+/*
+ * The upload boxes, filled without a tap. Chromium lets a page put a File into a file input
+ * through a DataTransfer; Ashby showed the name and "Replace" exactly as if it had been picked
+ * (M-KOPA, 2026-10-01). Each box is named by the first text above it that says résumé, CV or
+ * cover letter; "Autofill from resume" boxes are left alone, because the employer's own parser
+ * would overwrite what was filled; a box that already holds a file is never replaced.
+ */
+private const val ATTACH_JS = """
+(function(F){
+  var done=[];
+  [].slice.call(document.querySelectorAll("input[type=file]")).forEach(function(inp){
+    if(inp.files&&inp.files.length)return;
+    var t=inp,txt="";
+    while(t&&t!==document.body){t=t.parentElement;txt=t?t.textContent:"";if(/resume|\bcv\b|cover letter/i.test(txt))break;}
+    if(/autofill/i.test(txt))return;
+    var f=/cover/i.test(txt)?F.letter:(/resume|\bcv\b/i.test(txt)?F.resume:null);
+    if(!f)return;
+    var bin=atob(f.b64),u=new Uint8Array(bin.length);for(var i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);
+    var dt=new DataTransfer();dt.items.add(new File([u],f.name,{type:f.type}));
+    inp.files=dt.files;inp.dispatchEvent(new Event("change",{bubbles:true}));done.push(f.name);
+  });
+  return done.join(", ");
+})
+"""
+
 /**
  * The employer's form, inside the app, filled to the review screen. The file
  * button hands over the .docx already built for this job, so nothing is
@@ -183,13 +234,21 @@ private const val FILL_JS = """
  */
 @SuppressLint("SetJavaScriptEnabled")
 @Composable
-fun FormFill(url: String, pairs: List<Pair<String, String>>, files: List<Pair<String, ByteArray>>, onClose: () -> Unit) {
+fun FormFill(url: String, pairs: List<Pair<String, String>>, files: List<KitFile>, onClose: () -> Unit) {
     val ctx = LocalContext.current
     var filled by remember { mutableStateOf<Int?>(null) }
     var web by remember { mutableStateOf<WebView?>(null) }
     var pending by remember { mutableStateOf<ValueCallback<Array<Uri>>?>(null) }
     val lastTap = remember { arrayOf("") }
-    DisposableEffect(Unit) { onDispose { web?.destroy() } }
+    var attached by remember { mutableStateOf("") }
+    // a copy handed to the phone's file chooser is deleted with the page: no résumé stays on disk
+    DisposableEffect(Unit) { onDispose { web?.destroy(); File(ctx.cacheDir, "kit").deleteRecursively() } }
+    val f = remember(files) {
+        JSONObject().apply { files.forEach { k -> put(k.kind, JSONObject().put("name", k.name).put("type", k.mime)
+            .put("b64", android.util.Base64.encodeToString(k.bytes, android.util.Base64.NO_WRAP))) } }.toString()
+    }
+    val attach = { w: WebView -> w.evaluateJavascript("($ATTACH_JS)($f)") { r ->
+        r?.trim('"')?.takeIf { it.isNotBlank() }?.let { attached = if (attached.isBlank()) it else "$attached, $it" } } }
     val q = remember(pairs) { JSONArray(pairs.map { JSONArray(listOf(it.first, it.second)) }).toString() }
     val fill = { w: WebView -> w.evaluateJavascript("($FILL_JS)($q)") { r -> r?.toIntOrNull()?.let { filled = maxOf(filled ?: 0, it) } } }
     // No built file for this box (a letter box before a letter exists): the phone's own picker.
@@ -201,11 +260,13 @@ fun FormFill(url: String, pairs: List<Pair<String, String>>, files: List<Pair<St
             horizontalArrangement = Arrangement.spacedBy(Space.s2)) {
             MButton("← Back", primary = false, onClick = onClose)
             Spacer(Modifier.weight(1f))
-            MButton("Fill again", primary = false) { web?.let(fill) }
+            MButton("Fill again", primary = false) { web?.let { fill(it); attach(it) } }
         }
         Text(
-            (filled?.let { "$it box${if (it == 1) "" else "es"} filled from your answers and details. " } ?: "Filling the boxes it can… ") +
-                "Check every answer, tap the file buttons to attach the résumé and letter built for this job, then press Submit yourself.",
+            (filled?.let { "$it box${if (it == 1) "" else "es"} filled from your résumé and answers. " } ?: "Filling the boxes it can… ") +
+                // Ashby uploads a chosen file to its own storage at once, before any Submit (seen 2026-10-01): say so
+                (if (attached.isNotBlank()) "Attached: $attached — their form uploads it to their system now, and it becomes an application only when you press Submit. " else "") +
+                "Check every answer, then press Submit yourself.",
             color = T.text2, fontSize = Type.t1, lineHeight = 17.sp,
             modifier = Modifier.padding(horizontal = Space.s3, vertical = Space.s1),
         )
@@ -220,19 +281,19 @@ fun FormFill(url: String, pairs: List<Pair<String, String>>, files: List<Pair<St
                     webViewClient = object : WebViewClient() {
                         override fun onPageFinished(view: WebView, u: String?) {
                             // Greenhouse and Ashby draw the form after load: try again as it appears.
-                            listOf(0L, 1500L, 4000L).forEach { d -> view.postDelayed({ fill(view) }, d) }
+                            listOf(0L, 1500L, 4000L).forEach { d -> view.postDelayed({ fill(view); attach(view) }, d) }
                         }
                     }
                     webChromeClient = object : WebChromeClient() {
                         override fun onShowFileChooser(v: WebView, cb: ValueCallback<Array<Uri>>, p: FileChooserParams): Boolean {
                             val letter = Regex("cover", RegexOption.IGNORE_CASE).containsMatchIn(lastTap[0])
-                            val f = files.firstOrNull { it.first.startsWith(if (letter) "cover-letter" else "resume") }
-                            if (f == null) {
+                            val k = files.firstOrNull { it.kind == if (letter) "letter" else "resume" }
+                            if (k == null) {
                                 pending = cb
                                 runCatching { picker.launch(arrayOf("*/*")) }.onFailure { cb.onReceiveValue(null); pending = null }
                                 return true
                             }
-                            val out = File(File(ctx.cacheDir, "kit").apply { mkdirs() }, f.first).apply { writeBytes(f.second) }
+                            val out = File(File(ctx.cacheDir, "kit").apply { mkdirs() }, k.name).apply { writeBytes(k.bytes) }
                             cb.onReceiveValue(arrayOf(Uri.fromFile(out)))
                             return true
                         }

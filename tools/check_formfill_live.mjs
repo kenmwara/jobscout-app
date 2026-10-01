@@ -6,16 +6,19 @@
  * Ken, 2026-10-01: "Let's do a thorough test using Shyro's cv and the MKOPA job that has
  * no paywall - how does JobScout help her application process??"
  *
- *   node tools/check_formfill_live.mjs <form-url> <pairs.json>
+ *   node tools/check_formfill_live.mjs <form-url> <pairs.json> [resume-file]
  * pairs.json = [[label, value], ...] exactly as Kit.kt fillPairs() builds them.
  * Reports which boxes filled, whether React kept them, and which file box the résumé goes to.
  */
 import { chromium, devices } from "playwright";
 import { readFileSync } from "node:fs";
-const [url, pairsFile] = process.argv.slice(2);
+const [url, pairsFile, resumeFile] = process.argv.slice(2);
 const pairs = JSON.parse(readFileSync(pairsFile, "utf8"));
 const kt = readFileSync(new URL("../android/app/src/main/java/trade/tbot/jobscout/Kit.kt", import.meta.url), "utf8");
-const FILL_JS = kt.slice(kt.indexOf('FILL_JS = """') + 13, kt.indexOf('"""', kt.indexOf('FILL_JS = """') + 13));
+const js = name => { const i = kt.indexOf(name + ' = """') + name.length + 7; return kt.slice(i, kt.indexOf('"""', i)); };
+const FILL_JS = js("FILL_JS"), ATTACH_JS = js("ATTACH_JS");
+const F = resumeFile ? { resume: { name: resumeFile.split(/[\\/]/).pop(), type: resumeFile.endsWith(".pdf") ? "application/pdf"
+  : "application/vnd.openxmlformats-officedocument.wordprocessingml.document", b64: readFileSync(resumeFile).toString("base64") } } : {};
 const say = s => { try { process.stdout.write(s + "\n"); } catch { process.stdout.write(s.replace(/[^\x00-\x7F]/g, "-") + "\n"); } };
 
 const browser = await chromium.launch();
@@ -27,6 +30,8 @@ try {
   // the app runs it at load, +1.5 s and +4 s; three passes here too
   let n = 0;
   for (let i = 0; i < 3; i++) { n = Math.max(n, await page.evaluate(`(${FILL_JS})(${JSON.stringify(pairs)})`)); await page.waitForTimeout(800); }
+  const attached = await page.evaluate(`(${ATTACH_JS})(${JSON.stringify(F)})`);
+  await page.waitForTimeout(2000);
   // React must KEEP the values: type into nothing, blur everything, re-render, then read back
   await page.mouse.click(5, 5); await page.waitForTimeout(500);
   const fields = await page.evaluate(() => [...document.querySelectorAll("input:not([type=hidden]):not([type=file]),textarea")]
@@ -36,6 +41,7 @@ try {
       return { label: t.trim().slice(0, 70), type: el.type, value: (el.type === "radio" || el.type === "checkbox") ? (el.checked ? "checked" : "") : el.value };
     }));
   say(`filled by the script: ${n}`);
+  if (resumeFile) say(`attached by the script: "${attached}" -> the form now shows it: ${(await page.locator("body").innerText()).includes(F.resume.name)}`);
   for (const f of fields) say(`  ${f.value ? "FILLED" : "  -   "}  [${f.type}] ${f.label}${f.value && f.type !== "radio" ? "  =  " + f.value.slice(0, 50) : ""}`);
   // the résumé box: what label does the tap report, and would Kit.kt pick the résumé (not the letter)?
   const up = page.getByRole("button", { name: /upload file/i }).last();

@@ -203,7 +203,7 @@ fun ApplyScreen(vm: DemoVm, a: Apply, onClose: () -> Unit, onUpload: () -> Unit)
 
                 /* YOUR DETAILS, asked once and kept on this phone: what every form
                    asks and no résumé says (Ken + Shyro, 2026-09-30). */
-                item { DetailsPanel(ui.details, vm::setDetail, vm::clearDetails) }
+                if (ui.details.isNotEmpty()) item { DetailsPanel(ui.details, vm::setDetail, vm::clearDetails) }
 
                 /* ONE TAP for all three; no draft pops open while it runs (the web's KIT). */
                 if (!blocked) item {
@@ -323,12 +323,18 @@ fun ApplyScreen(vm: DemoVm, a: Apply, onClose: () -> Unit, onUpload: () -> Unit)
             }
             "answers" -> a.answers.data?.let { d ->
                 DraftSheet("Their screening questions", answersText(d), { reading = null }) {
-                    Answers(d) { next -> vm.editDraft { it.copy(answers = it.answers.copy(data = next)) } }
+                    Answers(d) { next ->
+                        /* typed once, into THEIR question, kept for every form after it ("name" is the résumé's) */
+                        next.questions.zip(d.questions).forEach { (n, o) ->
+                            if (n.key.isNotEmpty() && n.key != "name" && n.answer != o.answer) vm.setDetail(n.key, n.answer)
+                        }
+                        vm.editDraft { it.copy(answers = it.answers.copy(data = next)) }
+                    }
                 }
             }
         }
 
-        if (filling) FormFill(formUrl(p.url), fillPairs(a, ui.details), kitFiles(a)) { filling = false }
+        if (filling) FormFill(formUrl(p.url), fillPairs(a, ui.details), attachFiles(a, ui.resumeFile)) { filling = false }
     }
 }
 
@@ -707,7 +713,8 @@ private fun Answers(r: AnswersResponse, onEdit: ((AnswersResponse) -> Unit)? = n
                 }
                 if (q.from.isNotEmpty() && q.answer.isNotEmpty()) Text(
                     when (q.src) {
-                        "details" -> "from your details"
+                        "details" -> "from your saved answers"
+                        "cv" -> "from your résumé"
                         "draft" -> "drafted from your résumé (“${q.from}”) — make it yours before sending"
                         else -> "from your résumé: “${q.from}”"
                     },
@@ -726,15 +733,15 @@ fun answersText(r: AnswersResponse): String = r.questions.joinToString("\n\n") {
 /** Your details: eleven boxes, kept on this phone, Clear removes them (the web's #s-details). */
 @Composable
 private fun DetailsPanel(d: Map<String, String>, onSet: (String, String) -> Unit, onClear: () -> Unit) {
-    var open by remember { mutableStateOf(d.isEmpty()) }
+    var open by remember { mutableStateOf(false) }
     Column(Modifier.fillMaxWidth().background(T.surface, Card).padding(Space.s4)) {
         Row(Modifier.fillMaxWidth().clickable { open = !open }, verticalAlignment = Alignment.CenterVertically) {
-            Text("Your details", style = H2, fontSize = Type.t4, color = T.ink, modifier = Modifier.weight(1f))
+            Text("Your saved answers", style = H2, fontSize = Type.t4, color = T.ink, modifier = Modifier.weight(1f))
             Text((if (d.isEmpty()) "not set" else "${d.size} saved on this phone") + if (open) "  ▴" else "  ▾",
                  color = T.text3, fontSize = Type.t1, fontWeight = FontWeight.Medium, letterSpacing = 0.08.em)
         }
         Spacer(Modifier.height(Space.s2))
-        Text("What every application form asks and no résumé says. Typed once, kept only on this phone, and used to fill their questions. Leave anything blank.",
+        Text("What you typed into an employer's question that no résumé says, kept only on this phone and used again on every form that asks it. Your name, email and phone come from your résumé.",
              color = T.text2, fontSize = Type.t2, lineHeight = 20.sp)
         if (open) {
             DetailsStore.FIELDS.forEach { (k, label) ->
