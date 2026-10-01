@@ -317,7 +317,7 @@ const BAND = f => { const b = JSBand.bandFor(f) || "near-miss"; return [b, `var(
    browser; a single word is counted so the funnel has an end. */
 const STATUS = [["", "what happened?"], ["applied", "applied"], ["pending", "waiting to hear"],
                 ["responded", "they replied"], ["interviewed", "interview"], ["callback", "callback"],
-                ["declined", "declined"]];
+                ["offer", "offer"], ["hired", "hired"], ["declined", "declined"]];
 let SID = "";
 try{
   SID = localStorage.getItem("jobscout.sid") || "";

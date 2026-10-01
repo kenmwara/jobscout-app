@@ -14,6 +14,8 @@ let stages = [
     Stage(id: "responded", label: "Responded"),
     Stage(id: "interviewed", label: "Interviewed"),
     Stage(id: "callback", label: "Callback"),
+    Stage(id: "offer", label: "Offer"),
+    Stage(id: "hired", label: "Hired"),
     Stage(id: "declined", label: "Declined"),   // a no is an outcome; the set had no way to say it
 ]
 

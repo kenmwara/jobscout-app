@@ -91,7 +91,7 @@ const EV_NAMES = new Set([
 ]);
 const EV_SURFACES = new Set(["web", "android", "ios"]);
 // The apps' stage ids (Tracker.kt / TrackerView.swift), which the web page now shares.
-const OUTCOMES = ["applied", "pending", "responded", "interviewed", "callback", "declined"];
+const OUTCOMES = ["applied", "pending", "responded", "interviewed", "callback", "offer", "hired", "declined"];   // offer + hired 2026-10-01: the goal is the job, and the tracker could not record one
 
 async function recordRun(env, key, tokensIn, tokensOut, costUsd) {
   const day = new Date().toISOString().slice(0, 10);
@@ -284,11 +284,11 @@ const postingText = p =>
   `${p.title} — ${p.company}\n${p.location || ""} · ${p.remote_policy || ""}\n${p.summary || ""}`;
 
 // One Haiku call: {text, usage, cost} or the 502 Response.
-async function draft(env, max_tokens, system, content) {
+async function draft(env, max_tokens, system, content, temperature = 0.3) {
   const r = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: { "x-api-key": env.ANTHROPIC_API_KEY, "anthropic-version": "2023-06-01", "content-type": "application/json" },
-    body: JSON.stringify({ model: MODEL, max_tokens, temperature: 0.3, system, messages: [{ role: "user", content }] }),
+    body: JSON.stringify({ model: MODEL, max_tokens, temperature, system, messages: [{ role: "user", content }] }),
   });
   if (!r.ok) {
     /* SAY WHY. Anthropic answers 400 for a malformed request AND for an
@@ -533,8 +533,10 @@ async function route(request, env) {
         "Plain professional voice, no flattery padding, no 'I am writing to express'. " +
         // A leftover from the persona demo: real letters went out signed "the candidate"
         // (Shyro x M-KOPA, 2026-10-01). Her name was on the first line of her own CV.
-        "Sign off with the candidate's name exactly as the profile gives it; if the profile " +
-        "gives no name, end the letter without a name line. " +
+        // ...and then signed with the LEGAL name from a "Legal name:" line, where she goes by the
+        // name on the CV's first line. The name is read off the CV, not chosen by the model.
+        "Sign off with exactly the name given after SIGN AS, and no other form of it; if SIGN AS is " +
+        "empty, end the letter without a name line. " +
         // It kept opening with a markdown heading, which every client renders as
         // literal asterisks because a letter is plain text everywhere it is shown.
         "Write PLAIN TEXT only: no markdown, no ** bold, no headings, and do not title it.";
@@ -558,7 +560,7 @@ async function route(request, env) {
             "No apology, no 'although', no 'I lack', no 'while I have not'. The recruiter " +
             "decides whether it is enough; this letter's job is to be read that far."
           : common + " Open with the single strongest genuine alignment.",
-        `PROFILE:\n${profile}\n\nPOSTING:\n${postingText(p)}`);
+        `PROFILE:\n${profile}\n\nPOSTING:\n${postingText(p)}\n\nSIGN AS: ${fromProfile(profile).name || ""}`);
       if (d instanceof Response) return d;
       await recordRun(env, g.key, d.usage.input_tokens, d.usage.output_tokens, d.cost);
       return json(200, { letter: plainText(d.text), stretch, meta: meta(d, g.spent) });
@@ -833,13 +835,17 @@ async function route(request, env) {
         "eligible to work somewhere, and their notice or availability — if the profile says it, use it. " +
         // 2026-09-30: "why this role" was omitted on every form, because no résumé settles a motive.
         // It is drafted now, as a link between the two documents, still citing the profile.
-        "For a question about why they want this role or company, or about themselves, draft two or three " +
+        "For a question about why they want this role or company, about themselves, or about what in their " +
+        "experience fits the company's mission or values, draft two or three " +
         "sentences connecting what the PROFILE shows to what the POSTING asks for — no feelings or ambitions " +
         "the profile does not state; from is the profile phrase you lean on. " +
         "Omit a question entirely — do not guess, do not hedge, do not answer in general terms — when the profile " +
         "does not settle it. Never answer these at all, whatever the profile says: how they heard about the company, " +
         "salary expectations, criminal history, and anything about race, gender, disability or veteran status.",
-        `PROFILE:\n${profile}\n\nPOSTING:\n${postingText(p)}\n\nQUESTIONS:\n${ask}`);
+        `PROFILE:\n${profile}\n\nPOSTING:\n${postingText(p)}\n\nQUESTIONS:\n${ask}`,
+        // The same CV on the same form drafted the mission answer once and left it blank the next
+        // time (Shyro x M-KOPA, 2026-10-01): an answer sheet must not depend on the roll.
+        0);
       if (d instanceof Response) return d;
 
       const out = parseJson(d.text);

@@ -13,6 +13,8 @@ val STAGES = listOf(
     "responded" to "Responded",
     "interviewed" to "Interviewed",
     "callback" to "Callback",
+    "offer" to "Offer",
+    "hired" to "Hired",          // the point of the whole product; the set could not say it (2026-10-01)
     "declined" to "Declined",   // a no is an outcome; the set had no way to say it
 )
 

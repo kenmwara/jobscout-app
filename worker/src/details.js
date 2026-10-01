@@ -85,4 +85,4 @@ export function fitOption(value, options) {
     || options.find(o => o.length > 2 && (v.includes(o.toLowerCase()) || o.toLowerCase().includes(v)));
   return hit || "";
 }
-export const MOTIVATION = /\bwhy\b|interest|motivat|tell us about yourself|about you\b|what (excites|attracts|draws)/i;
+export const MOTIVATION = /\bwhy\b|interest|motivat|tell us about yourself|about you\b|what (excites|attracts|draws)|mission|values|resonat/i;
