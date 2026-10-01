@@ -531,7 +531,10 @@ async function route(request, env) {
         "Draft a short, specific cover letter (150-200 words) grounded ONLY in the " +
         "candidate profile provided — never invent experience, credentials, or claims. " +
         "Plain professional voice, no flattery padding, no 'I am writing to express'. " +
-        "Sign off as 'the candidate'. " +
+        // A leftover from the persona demo: real letters went out signed "the candidate"
+        // (Shyro x M-KOPA, 2026-10-01). Her name was on the first line of her own CV.
+        "Sign off with the candidate's name exactly as the profile gives it; if the profile " +
+        "gives no name, end the letter without a name line. " +
         // It kept opening with a markdown heading, which every client renders as
         // literal asterisks because a letter is plain text everywhere it is shown.
         "Write PLAIN TEXT only: no markdown, no ** bold, no headings, and do not title it.";
