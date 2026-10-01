@@ -93,7 +93,8 @@
     border:1px solid var(--hair);border-radius:12px;padding:var(--s2) var(--s3);min-height:44px;width:100%;box-sizing:border-box}
   .kit{display:flex;gap:var(--s3);flex-wrap:wrap;align-items:center;margin:0 0 var(--s5)}
   /* The bookmark is a desktop door: a phone browser has no bookmarks bar to click, and the app fills the form itself. */
-  #kitmark-box{margin-top:var(--s3)} #kitmark{cursor:grab;display:inline-block}
+  #kitmark-box{margin-top:var(--s4);display:flex;gap:var(--s3);align-items:center;flex-wrap:wrap}
+  #kitmark-box .note{flex:1 1 320px;margin:0} #kitmark{cursor:grab;flex:none}
   @media (pointer: coarse){ #kitmark-box{display:none} }
   .kit .note{margin:0;max-width:52ch}
   .step .bar{display:flex;align-items:center;gap:var(--s3);flex-wrap:wrap;margin:0 0 var(--s1)}
@@ -514,9 +515,9 @@ nav.main{margin-left:auto;display:flex;gap:var(--s2);align-items:center}
         </div>
         <p class="note" id="send-note"></p>
         <div id="kitmark-box">
-          <p class="note"><b>On a computer:</b> drag <a class="btn2" id="kitmark" href="#">Fill with JobScout</a> to your bookmarks bar, once.
-          Then open their form with the button above and, on their form, click the bookmark: it fills every box it can from what is on this page
-          and attaches your r&eacute;sum&eacute;. Keep this tab open while it does. Pressing Submit stays yours.</p>
+          <a class="btn2" id="kitmark" href="#">Fill with JobScout</a>
+          <p class="note"><b>On a computer,</b> drag this to your bookmarks bar once. Open their form with the button above, then click the
+          bookmark on their form: it fills every box it can from this page and attaches your r&eacute;sum&eacute;. Keep this tab open; Submit stays yours.</p>
         </div>
       </section>
     </div>
