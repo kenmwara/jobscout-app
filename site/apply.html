@@ -92,6 +92,9 @@
   .det input{font:400 var(--t3)/1.5 var(--sans);color:var(--ink);background:var(--surface);
     border:1px solid var(--hair);border-radius:12px;padding:var(--s2) var(--s3);min-height:44px;width:100%;box-sizing:border-box}
   .kit{display:flex;gap:var(--s3);flex-wrap:wrap;align-items:center;margin:0 0 var(--s5)}
+  /* The bookmark is a desktop door: a phone browser has no bookmarks bar to click, and the app fills the form itself. */
+  #kitmark-box{margin-top:var(--s3)} #kitmark{cursor:grab;display:inline-block}
+  @media (pointer: coarse){ #kitmark-box{display:none} }
   .kit .note{margin:0;max-width:52ch}
   .step .bar{display:flex;align-items:center;gap:var(--s3);flex-wrap:wrap;margin:0 0 var(--s1)}
   .step h2{font:400 var(--t5)/1.2 var(--serif);letter-spacing:-.015em;color:var(--ink);margin:0}
@@ -335,6 +338,7 @@ nav.main{margin-left:auto;display:flex;gap:var(--s2);align-items:center}
 <script src="band.js"></script>
 <script src="evidence.js"></script>
 <script src="rose.js"></script>
+<script src="kit-fill.js"></script>
 </head>
 <body id="top">
 <!-- THE PAGE MARK: the eight-dot rose at page scale, pinned to the viewport
@@ -509,6 +513,11 @@ nav.main{margin-left:auto;display:flex;gap:var(--s2);align-items:center}
           <button class="btn2" type="button" id="dl-files" disabled>Download résumé + letter (.docx)</button>
         </div>
         <p class="note" id="send-note"></p>
+        <div id="kitmark-box">
+          <p class="note"><b>On a computer:</b> drag <a class="btn2" id="kitmark" href="#">Fill with JobScout</a> to your bookmarks bar, once.
+          Then open their form with the button above and, on their form, click the bookmark: it fills every box it can from what is on this page
+          and attaches your r&eacute;sum&eacute;. Keep this tab open while it does. Pressing Submit stays yours.</p>
+        </div>
       </section>
     </div>
   </div>
@@ -803,7 +812,10 @@ $("#do-send").onclick = async () => {
      ReferenceError it threw stopped the line below from ever running - the
      button marked the job applied and then opened nothing, which reads exactly
      like a dead button. */
-  window.open(formUrl(p.url), "_blank", "noopener");
+  /* NOT noopener: the bookmark on their form asks THIS tab for the kit through window.opener,
+     and this tab answers only the window it opened (FORMWIN). The cost, accepted: their page
+     can also reach this tab's location. */
+  FORMWIN = window.open(formUrl(p.url), "_blank");
 };
 
 /* Each step is the same shape: ask once, show the result, offer it back as
@@ -1021,7 +1033,9 @@ async function copyInto(cp, plain, id){
    question, in the order the form asks, already on the clipboard. Nothing is
    ever sent in the candidate's name by us. */
 const PACK = { letter: "", tailor: "", answers: "" };
-let DOC = null;   // the rebuilt résumé as currently edited, for "Download résumé + letter"
+let DOC = null;
+let QS = [];        // the employer's questions as currently answered, for the bookmark
+let FORMWIN = null;  // the employer's form, opened from here: the only window ever handed the kit   // the rebuilt résumé as currently edited, for "Download résumé + letter"
 const PACK_TITLE = { letter: "COVER LETTER", tailor: "RÉSUMÉ, AIMED AT THIS POSTING",
                      answers: "THEIR SCREENING QUESTIONS, ANSWERED" };
 const GH_FORM = /^https?:\/\/(?:job-boards|boards)\.greenhouse\.io\/([^/?#]+)\/jobs\/(\d+)/;
@@ -1338,7 +1352,7 @@ $("#do-answers").onclick = async () => {
     }
     if (!Array.isArray(d.questions))
       return failed("answers", d.detail || d.error || "The form could not be read right now.", "Get their questions");
-    const qs = d.questions;
+    const qs = d.questions; QS = qs;
     /* EVERY question gets a box, answered or not. It used to get one only
        when the model had settled it, and the rest got a grey line reading
        "yours to answer" — which named the work and then gave the reader
@@ -1428,6 +1442,55 @@ $("#do-answers").onclick = async () => {
     readable("answers", "Their screening questions", true);
   }catch(e){ failed("answers", "Answers API unreachable: " + e, "Get their questions"); }
 };
+
+/* ── THE BOOKMARK (Ken, 2026-10-01: "Yes, build the bookmark button too") ──────────────
+   A web page cannot type into another site's form; a bookmark the candidate clicks ON that
+   form can. It runs the phone's own filler (kit-fill.js, generated from Kit.kt), asks the
+   JobScout tab that opened the form for the kit, and this tab answers that one window only.
+   Nothing is stored anywhere: the answers and files cross from tab to tab, in memory. */
+function fillPairs(){
+  const out = [];
+  for (const q of QS) if ((q.answer || "").trim()) out.push([q.label, q.answer]);
+  const d = readDetails(), add = (l, v) => v && out.push([l, v]);
+  if (d.name){ const ps = d.name.trim().split(/\s+/); add("First name", ps[0]); if (ps.length > 1) add("Last name", ps.slice(1).join(" ")); add("Full name", d.name); add("Name", d.name); }
+  add("Email", d.email); add("Phone", d.phone);
+  add("Location", d.location); add("Location (City)", d.location); add("Current location", d.location);
+  add("LinkedIn", d.linkedin); add("LinkedIn profile", d.linkedin);
+  add("Website", d.portfolio); add("Portfolio", d.portfolio); add("GitHub", d.portfolio);
+  return out;
+}
+const DOCX_TYPE = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+const b64 = blob => new Promise(res => { const fr = new FileReader(); fr.onload = () => res(String(fr.result).split(",")[1] || ""); fr.readAsDataURL(blob); });
+async function kitFiles(){
+  const f = {};
+  /* the résumé rebuilt for this job, else the very file uploaded on the first page (this tab only) */
+  if (DOC) f.resume = { name: `resume-${slug}.docx`, type: DOCX_TYPE, b64: await b64(docx(DOC)) };
+  else { try { const o = JSON.parse(sessionStorage.getItem("jobscout.applyfile") || "null"); if (o && o.b64) f.resume = o; } catch (e) {} }
+  if (PACK.letter) f.letter = { name: `cover-letter-${slug}.docx`, type: DOCX_TYPE, b64: await b64(letterDocx(PACK.letter)) };
+  return f;
+}
+addEventListener("message", async e => {
+  if (!FORMWIN || e.source !== FORMWIN || !e.data || e.data.jobscout !== "want") return;
+  e.source.postMessage({ jobscout: "kit", pairs: fillPairs(), files: await kitFiles() }, e.origin);
+});
+function bookmarklet(){
+  const say = 'function(m){var d=document.createElement("div");d.textContent=m;d.style.cssText="position:fixed;z-index:2147483647;left:16px;right:16px;bottom:16px;max-width:560px;margin:auto;padding:14px 16px;background:#1f1a2e;color:#fff;font:15px/1.45 system-ui,sans-serif;border-radius:12px;box-shadow:0 8px 30px rgba(0,0,0,.3)";document.body.appendChild(d);setTimeout(function(){d.remove()},12000);}';
+  const body = "(function(){var O=" + JSON.stringify(location.origin) + ",say=" + say + ";" +
+    'if(!window.opener){say("JobScout: open this form with the Open-their-form button on your JobScout application page, then click this bookmark again.");return;}' +
+    "var FILL=" + window.JSKIT_FILL + ",ATTACH=" + window.JSKIT_ATTACH + ",got=false;" +
+    'window.addEventListener("message",function h(e){if(e.origin!==O||!e.data||e.data.jobscout!=="kit")return;window.removeEventListener("message",h);got=true;' +
+    'var n=FILL(e.data.pairs),a=ATTACH(e.data.files||{});' +
+    'setTimeout(function(){n+=FILL(e.data.pairs);var b=ATTACH(e.data.files||{});if(b)a=a?a+", "+b:b;' +
+    'say("JobScout filled "+n+" box"+(n==1?"":"es")+(a?" and attached "+a+" (their form uploads it to their system now)":"")+". Check every answer, then press Submit yourself.");},1500);});' +
+    'window.opener.postMessage({jobscout:"want"},"*");' +
+    'setTimeout(function(){if(!got)say("JobScout: the JobScout tab that opened this form did not answer. Keep it open, then click the bookmark again.");},4000);})()';
+  return "javascript:" + encodeURIComponent(body);
+}
+(() => {
+  const a = $("#kitmark"); if (!a || !window.JSKIT_FILL) return;
+  a.href = bookmarklet();
+  a.onclick = e => { e.preventDefault(); a.textContent = "Drag me to your bookmarks bar"; setTimeout(() => { a.textContent = "Fill with JobScout"; }, 2400); };
+})();
 </script>
 <script src="hsheet.js"></script>
 <script src="field.js"></script>

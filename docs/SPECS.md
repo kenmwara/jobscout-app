@@ -81,6 +81,7 @@ Audited **2026-09-22**. Source: every message Ken sent, pulled from the session 
 | OK | `demo-runs-retention`<br><sub>2026-09-24</sub> | Create a retention rule for demo_runs | web | `node worker/tools/check_retention.mjs` |
 | OK | `ke-market-thin`<br><sub>2026-09-30</sub> | The Kenyan market seems quite thin | feed | `node tools/check_ke_feed.mjs` |
 | OK | `mobile-web-drift`<br><sub>2026-09-30</sub> | There's a mobile vs web drift - she was on her phone and I was on web, same cv but different results | both | `node tools/check_drift.mjs` |
+| OK | `web-bookmark`<br><sub>2026-10-01</sub> | Yes, build the bookmark button too | web | `node tools/check_bookmark.mjs && node tools/gen_kit_js.mjs --check` |
 
 ## What is not settled
 

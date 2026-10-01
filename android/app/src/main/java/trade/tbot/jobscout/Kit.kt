@@ -196,7 +196,7 @@ private const val FILL_JS = """
   if(!window.__jsKit){window.__jsKit=1;
     document.addEventListener("pointerdown",function(e){
       var t=e.target;while(t&&t!==document.body&&!(t.querySelector&&t.querySelector("input[type=file]")))t=t.parentElement;
-      JobScoutKit.tapped(t&&t.textContent?t.textContent.slice(0,200):"");
+      if(window.JobScoutKit)JobScoutKit.tapped(t&&t.textContent?t.textContent.slice(0,200):"");
     },true);}
   return n;
 })

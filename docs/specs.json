@@ -623,6 +623,15 @@
       "status": "unverified",
       "check": "none",
       "evidence": "Phone: the employer's upload boxes are filled with no tap (Kit.kt ATTACH_JS, a File set through a DataTransfer): the résumé rebuilt for the job, else the very file she gave JobScout (held in memory for the session, never written; the chooser's cache copy is deleted with the page). 'Autofill from resume' boxes are skipped so the employer's parser cannot overwrite what was filled; a box already holding a file is never replaced. Proven on M-KOPA's live Ashby form with tools/check_formfill_live.mjs: Shyro's CV PDF shown in the Resume box. Ashby UPLOADS a chosen file to its own storage at once, before any Submit (ApiCreateFileUploadHandle -> S3 -> ApiSetFormValueToFile, seen with a dummy file), so the app says so on screen, and the live check is never run in CI. Check 'none' because the only proof touches a real employer's storage; run it by hand. Unverified until walked on a phone."
+    },
+    {
+      "id": "web-bookmark",
+      "date": "2026-10-01",
+      "surface": "web",
+      "said": "Yes, build the bookmark button too",
+      "status": "live",
+      "check": "node tools/check_bookmark.mjs && node tools/gen_kit_js.mjs --check",
+      "evidence": "On a computer the web cannot type into another site's form, so the apply page offers a 'Fill with JobScout' bookmark (drag once to the bookmarks bar; hidden on touch screens). Clicked on the employer's form, it runs the PHONE's filler (site/kit-fill.js is generated from Kit.kt; gen_kit_js --check fails on any drift) and asks the JobScout tab that opened the form (window.opener) for the kit; that tab answers only the window it opened (FORMWIN), in memory, nothing stored, nothing through JobScout's servers. Files: the résumé rebuilt for the job, else the very file uploaded on the first page (sessionStorage, this tab only), and the letter. check_bookmark on a stand-in Ashby-shaped form on another origin: name/email/phone, type-ahead location (real pick), right-to-work radio, mission answer, résumé + letter in their upload boxes; Autofill-from-resume and gender left alone; a second window JobScout opened gets nothing; a form not opened from JobScout is told how. Mutations any-window, noopener, no-attach all caught. Not yet run by a person on a real employer form in desktop Chrome."
     }
   ]
 }

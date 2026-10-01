@@ -1723,6 +1723,8 @@ function scoreCard(x, i){
     ev("apply_open", stretch ? "stretch" : null);
     try{ sessionStorage.setItem("jobscout.apply",
       JSON.stringify({ posting: p, profile: scoredProfile, fit: x.fit, stretch, strongest: x.strongest || "", weakest: x.weakest || "" })); }catch(e){}
+    // apart from the above, so a file too big for the tab's storage never costs the application page its posting
+    try{ OWNFILE ? sessionStorage.setItem("jobscout.applyfile", JSON.stringify(OWNFILE)) : sessionStorage.removeItem("jobscout.applyfile"); }catch(e){}
     go("apply");
   });
   return el;
@@ -1754,6 +1756,10 @@ $("#ownFile").onchange = async () => {
     });
     const d = await r.json();
     if (d.text){
+      /* The file itself rides to the application page (this tab only, gone with it), so the
+         employer's upload box gets the same résumé she gave us (Ken, 2026-10-01: "It should
+         even upload the same resume she was asked for directly into MKOPA!!"). */
+      try { const fr = new FileReader(); fr.onload = () => { OWNFILE = { name: file.name, type: file.type || "application/octet-stream", b64: String(fr.result).split(",")[1] || "" }; }; fr.readAsDataURL(file); } catch (e) {}
       $("#ownText").value = d.text;
       const fld = $("#ownText").closest(".field"); if (fld) { fld.dataset.state = "typing"; $("#ownText").dispatchEvent(new Event("input", { bubbles: true })); }
       st.textContent = `✓ ${d.chars.toLocaleString()} characters extracted from ${file.name} — review, then run` + (d.chars > 6000 ? " (trimmed to 6,000)" : "");
@@ -1766,7 +1772,9 @@ $("#ownFile").onchange = async () => {
 };
 // typing a real resume deselects the sample, so the run and the chips never disagree
 let pasted = false;
+let OWNFILE = null;   // the uploaded résumé file, memory only until the application page takes it
 $("#ownText").oninput = () => {
+  if (!$("#ownText").value.trim()) OWNFILE = null;   // an emptied box is a different résumé to come
   if ($("#ownText").value.trim().length > 40){
     selected = null;
     if (!pasted){ pasted = true; ev("paste"); }   // once a tab: this is a step, not a keystroke

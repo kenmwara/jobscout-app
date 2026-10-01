@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Stand-in employer form</title></head>
+<body>
+<!-- A stand-in for an Ashby application form, built from M-KOPA's real one (2026-10-01): labels
+     on fieldsets, a type-ahead location, a yes/no radio group, an "Autofill from resume" box that
+     must be left alone, and separate résumé and cover-letter uploads. tools/check_bookmark.mjs -->
+<form>
+  <fieldset><label>Autofill from resume</label><p>Upload your resume here to autofill key application fields.</p><input type="file" id="auto"></fieldset>
+  <fieldset><label for="n">Full Name</label><input id="n" type="text"></fieldset>
+  <fieldset><label for="e">Email</label><input id="e" type="email"></fieldset>
+  <fieldset><label for="t">Phone Number</label><input id="t" type="tel"></fieldset>
+  <fieldset><label>Resume</label><div><button type="button">Upload File</button><input type="file" id="cv"></div></fieldset>
+  <fieldset><label>Cover letter</label><div><input type="file" id="cl"></div></fieldset>
+  <fieldset><label>Where are you located?</label>
+    <input id="loc" role="combobox" placeholder="Start typing...">
+    <div id="opts" role="listbox"></div></fieldset>
+  <fieldset><label>Do you have the legal right to work in the country you are applying to work in?</label>
+    <div><label><input type="radio" name="rtw" value="y"> Yes</label><label><input type="radio" name="rtw" value="n"> No</label></div></fieldset>
+  <fieldset><label for="m">What experience do you have that resonates with our mission?</label><textarea id="m"></textarea></fieldset>
+  <fieldset><label>Please confirm your gender?</label><div><label><input type="radio" name="g"> Female</label><label><input type="radio" name="g"> Male</label></div></fieldset>
+</form>
+<script>
+  // a type-ahead like Ashby's: typing shows options; picking one sets the value, leaving without a pick empties it
+  const loc = document.getElementById("loc"), opts = document.getElementById("opts");
+  loc.addEventListener("input", () => {
+    opts.innerHTML = "";
+    ["Kenya", "Uganda", "Ghana"].filter(c => c.toLowerCase().startsWith(loc.value.toLowerCase()) && loc.value)
+      .forEach(c => { const o = document.createElement("div"); o.setAttribute("role", "option"); o.textContent = c;
+                      o.addEventListener("click", () => { loc.value = c; loc.dataset.picked = c; opts.innerHTML = ""; }); opts.appendChild(o); });
+  });
+</script>
+</body></html>
