@@ -578,6 +578,33 @@
       "status": "unverified",
       "check": "node worker/tools/check_security.mjs",
       "evidence": "/api/stats needs Authorization: Bearer STATS_TOKEN (worker secret; unset = closed) and checks it before any query. A WRONG token is a SIEM event. ops/stats.html asks for the token once and keeps it in localStorage (the repo is public). api_sweep expects 401 without it; check_ev_shape --live and check_security --live read STATS_TOKEN from the nightly workflow's secret. The gate runs the static half (it runs BEFORE the deploy, so --live would ask the old worker); --live runs nightly after deploy."
+    },
+    {
+      "id": "ke-market-thin",
+      "date": "2026-09-30",
+      "surface": "feed",
+      "said": "The Kenyan market seems quite thin",
+      "status": "open",
+      "check": "none",
+      "evidence": "Usability session with Shyro, 30 Sep (ev sids kgwmv5 android + ibyhvc web, 06:20-06:36Z). Kenya feed 30 Sep: 392 postings, 382 pass; publish_feed.py caps PASS_PER_SECTOR=24 and PER_COMPANY=4, so every sector shows 14-27 regardless of supply (operations_support 24). Sources: reliefweb 121, careers 91, wwr 89, jobwebkenya 44, jobicy 20, himalayas 14, remoteok 11, remotive 2; 154 Kenya-located, 228 worldwide-remote. No fix yet: needs Ken's ruling on caps and new Kenyan sources."
+    },
+    {
+      "id": "mobile-web-drift",
+      "date": "2026-09-30",
+      "surface": "both",
+      "said": "There's a mobile vs web drift - she was on her phone and I was on web, same cv but different results",
+      "status": "open",
+      "check": "none",
+      "evidence": "Same session: both ran market ke, sector operations_support, 24 s apart, so feed and market were not the cause. Two causes found: (1) the CV text differed: web = file upload through /api/extract, android = pasted text, so different words pick a different eight and score differently; (2) /api/score runs Haiku at temperature 0.3: the same CV on the same eight Kenya postings, scored twice 30 Sep, moved 3 of 8 fits by 4 points (58 vs 62 on one), enough to cross the drafting floor. The pickers (site/index.html runPipeline, Select.kt select) are line-for-line mirrors."
+    },
+    {
+      "id": "apply-double-work",
+      "date": "2026-09-30",
+      "surface": "both",
+      "said": "The application process end-to-end is quite exhausting. You re-create docs, then you have to download them onto your phone, before you can open the external application link then hopefully upload the docs one after the other. As for those screening questions, they only auto-fill one or two lines and then you have to fill in everything else, copy it and still re-fill the actual application form. All this double work makes the application actually harder and more time consuming!",
+      "status": "open",
+      "check": "none",
+      "evidence": "/api/answers drafts only what the CV settles (a verbatim 'from' phrase must be in the profile), so work authorisation, location, notice, start date, years and 'why this role' mostly come back blank; when the employer form cannot be read it falls back to eight generic questions. The tailored CV and letter are separate downloads, then a separate external tab, then one upload at a time."
     }
   ]
 }
