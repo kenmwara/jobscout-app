@@ -19,10 +19,12 @@
  *   E  an answer lifted from the résumé says so ("from your résumé")
  *   F  no document window is left open by the kit
  *   G  refused calls are never reported as "Prepared"
+ *   H  saved answers belong to the résumé's owner: another person's set, saved in the same
+ *      browser, is never shown, sent or filled (Ken, 2026-10-02: his test showed Shyro's details)
  *
  * The API is mocked: this measures the page, not the model.
  *   node tools/check_apply_details.mjs
- *   node tools/check_apply_details.mjs --mutate details-everywhere | details-nowhere | no-kit | no-persist | kit-popups | kit-lies | no-remember
+ *   node tools/check_apply_details.mjs --mutate details-everywhere | details-nowhere | no-kit | no-persist | kit-popups | kit-lies | no-remember | shared-details
  */
 import { chromium } from "playwright";
 const SITE = process.env.SITE || "http://localhost:8765/site";
@@ -94,7 +96,7 @@ try {
   await page.click('.ans[data-q="1"]', { timeout: 5000 }).catch(() => {});
   await page.keyboard.type("Two weeks");
   await page.waitForTimeout(300);
-  const stored = await page.evaluate(() => JSON.parse(localStorage.getItem("jobscout.details") || "{}"));
+  const stored = await page.evaluate(() => Object.values(JSON.parse(localStorage.getItem("jobscout.details") || "{}").by || {})[0] || {});
   check(stored.notice === "Two weeks", `A  an answer typed into their question is kept in this browser (notice: ${JSON.stringify(stored.notice)})`);
   await page.reload(); await page.waitForSelector("#steps:not([hidden])");
   await mutate();
@@ -110,6 +112,33 @@ try {
   await page.click("#d-clear", { timeout: 5000 }).catch(() => {});   // a window left open blocks it: a finding (F), not a crash
   check(await page.evaluate(() => localStorage.getItem("jobscout.details")) === null && await page.locator("#s-details").isHidden(),
         "A  Clear removes them from the browser and the page");
+
+  // H — another person's saved answers (the pre-2026-10-02 flat shape, same browser) stay theirs
+  const p3 = await browser.newPage();
+  const sent3 = {};
+  await p3.route("**/api/**", async route => {
+    const path = new URL(route.request().url()).pathname;
+    try { sent3[path] = JSON.parse(route.request().postData() || "{}"); } catch { sent3[path] = {}; }
+    await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(MOCK[path] || {}) });
+  });
+  if (MUTATE === "shared-details") await p3.route("**/apply.html", async r => {
+    const res = await r.fetch(); r.fulfill({ response: res, body: (await res.text()).replace("const ownerOf = profile => {", "const ownerOf = profile => { return 'everyone';") });
+  });
+  await p3.goto(`${SITE}/privacy.html`);
+  await p3.evaluate(s => {
+    sessionStorage.setItem("jobscout.apply", JSON.stringify(s));
+    localStorage.setItem("jobscout.details", JSON.stringify({ name: "Other Person", email: "other@example.org", location: "Mombasa", salary: "90000" }));
+  }, SESSION);
+  if (MUTATE === "shared-details") await p3.evaluate(() => localStorage.setItem("jobscout.details", JSON.stringify({ by: { everyone: { name: "Other Person", location: "Mombasa" } } })));
+  await p3.goto(`${SITE}/apply.html`);
+  await p3.waitForSelector("#steps:not([hidden])");
+  check(await p3.inputValue("#d-name") === "" && await p3.locator("#s-details").isHidden(), "H  another person's saved answers are not shown for this résumé");
+  await p3.click("#do-all");
+  await p3.waitForFunction(() => document.querySelector("#do-all").textContent === "Prepared", null, { timeout: 15000 }).catch(() => {});
+  check(!sent3["/api/answers"]?.details?.name && !sent3["/api/answers"]?.details?.location, "H  nor sent with this résumé's questions");
+  const kept = await p3.evaluate(() => JSON.parse(localStorage.getItem("jobscout.details") || "{}"));
+  check(MUTATE === "shared-details" || kept.by?.["other@example.org"]?.location === "Mombasa", "H  and their set is kept for them, under their own email");
+  await p3.close();
 
   // G — refused calls are not "Prepared" (Shyro x M-KOPA, 1 Oct: the hourly cap refused all three
   //     and the button still said Prepared two seconds later)
