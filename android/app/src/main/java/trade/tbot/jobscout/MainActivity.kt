@@ -160,7 +160,7 @@ class DemoVm(app: Application) : AndroidViewModel(app) {
         RunStore.load(app).let { r ->
             Ui(
                 tracker = TrackerStore.load(app), watched = WatchStore.load(app),
-                sweeps = SweepStore.all(app), details = DetailsStore.load(app),
+                sweeps = SweepStore.all(app),   // details: none until a résumé says whose (setResume)
                 // The market is checked against the run when the feed lands, not here:
                 // the saved market IS the market to open in, which setMarket does below.
                 market = r?.market ?: "ca",
@@ -248,7 +248,11 @@ class DemoVm(app: Application) : AndroidViewModel(app) {
         if (!pasteCounted && s.trim().length > 40) { pasteCounted = true; Api.ev("paste", market = _ui.value.market) }
         // an emptied box is a different résumé to come: the file goes with it
         _ui.update { it.copy(resume = s.take(6000), resumeFile = if (s.isBlank()) null else it.resumeFile) }
+        // this résumé's saved answers, nobody else's (DetailsStore)
+        val o = DetailsStore.ownerOf(s.take(6000))
+        if (o != owner) { owner = o; _ui.update { it.copy(details = DetailsStore.load(getApplication(), o)) } }
     }
+    private var owner = ""
 
     /* Same rule as the web page: the pasted resume, once it is long enough to be one,
        or nothing. Three fictional candidates used to sit under the button as a
@@ -550,9 +554,9 @@ class DemoVm(app: Application) : AndroidViewModel(app) {
     fun setDetail(k: String, v: String) {
         val d = (_ui.value.details + (k to v.take(200))).filterValues { it.isNotBlank() }
         _ui.update { it.copy(details = d) }
-        DetailsStore.save(getApplication<Application>(), d)
+        DetailsStore.save(getApplication<Application>(), owner, d)
     }
-    fun clearDetails() { _ui.update { it.copy(details = emptyMap()) }; DetailsStore.save(getApplication<Application>(), emptyMap()) }
+    fun clearDetails() { _ui.update { it.copy(details = emptyMap()) }; DetailsStore.save(getApplication<Application>(), owner, emptyMap()) }
 
     /** "Prepare everything": every step not yet drafted, from one tap (the web's #do-all). */
     fun prepareAll() {

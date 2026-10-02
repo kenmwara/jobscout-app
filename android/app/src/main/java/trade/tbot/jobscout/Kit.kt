@@ -54,14 +54,36 @@ object DetailsStore {
         "salary" to "Salary expectation (only if a form asks)",
     )
     private fun prefs(ctx: Context) = ctx.getSharedPreferences("jobscout", Context.MODE_PRIVATE)
-    fun load(ctx: Context): Map<String, String> = runCatching {
-        val o = JSONObject(prefs(ctx).getString(KEY, null) ?: return@runCatching emptyMap())
-        FIELDS.mapNotNull { (k, _) -> o.optString(k).trim().takeIf { it.isNotEmpty() }?.let { k to it } }.toMap()
-    }.getOrDefault(emptyMap())
-    fun save(ctx: Context, d: Map<String, String>) = prefs(ctx).edit().apply {
+
+    /* Saved answers belong to the PERSON, not the phone (Ken, 2026-10-02: on the web his own
+       résumé was offered Shyro's name, email, phone, location and salary, saved on the same
+       laptop). Kept per résumé owner, as site/apply.html does: {"by": {owner: {...}}}. */
+    private val EMAIL = Regex("""[\w.+-]+@[\w-]+(\.[\w-]+)+""")
+    /** Whose answers: the résumé's email, else its first line; "" until there is a résumé. */
+    fun ownerOf(resume: String): String =
+        if (resume.trim().length <= 40) ""
+        else (EMAIL.find(resume)?.value ?: resume.lineSequence().map { it.trim() }.first { it.isNotEmpty() }).lowercase()
+    private fun all(ctx: Context): JSONObject {
+        val raw = runCatching { JSONObject(prefs(ctx).getString(KEY, null) ?: "{}") }.getOrDefault(JSONObject())
+        raw.optJSONObject("by")?.let { return it }
+        if (raw.length() == 0) return JSONObject()
+        // before 2026-10-02 one flat set per phone: it belongs to whoever's email/name it holds
+        return JSONObject().put(raw.optString("email").ifBlank { raw.optString("name") }.lowercase(), raw)
+    }
+    fun load(ctx: Context, owner: String): Map<String, String> {
+        if (owner.isEmpty()) return emptyMap()
+        val o = all(ctx).optJSONObject(owner) ?: return emptyMap()
+        return FIELDS.mapNotNull { (k, _) -> o.optString(k).trim().takeIf { it.isNotEmpty() }?.let { k to it } }.toMap()
+    }
+    fun save(ctx: Context, owner: String, d: Map<String, String>) {
+        if (owner.isEmpty()) return
+        val by = all(ctx)
         val kept = d.filterValues { it.isNotBlank() }
-        if (kept.isEmpty()) remove(KEY) else putString(KEY, JSONObject(kept).toString())
-    }.apply()
+        if (kept.isEmpty()) by.remove(owner) else by.put(owner, JSONObject(kept))
+        prefs(ctx).edit().apply {
+            if (by.length() == 0) remove(KEY) else putString(KEY, JSONObject().put("by", by).toString())
+        }.apply()
+    }
 }
 
 /** The documents this application has, as (file name, bytes). */
