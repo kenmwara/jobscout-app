@@ -158,5 +158,10 @@ try {
   check(label !== "Prepared" && await p2.locator("#do-all").isEnabled(), `G  every call refused: the button says "${label}" and can be pressed again`);
 } finally { await browser.close(); }
 
+if (MUTATE) {   // sanity.mjs --mutations reads exit 0 as caught, anything else as ASLEEP (red nightly since 2026-10-01)
+  say(fails.length ? `VERDICT: the "${MUTATE}" mutation was caught (${fails.length} failure(s)) — awake`
+                   : `VERDICT: ASLEEP — the "${MUTATE}" mutation did not fail this check`);
+  process.exit(fails.length ? 0 : 2);
+}
 say(fails.length ? `VERDICT: FAIL (${fails.length})` : "VERDICT: PASS — nothing asked up front; what she types into a question is kept and carried to the next form; one tap prepares everything");
 process.exit(fails.length ? 1 : 0);
