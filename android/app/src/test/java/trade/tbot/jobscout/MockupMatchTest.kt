@@ -41,6 +41,13 @@ class MockupMatchTest {
         Posting(id = "4", title = "Inside Business Development Manager", company = "Manulife", remote_policy = "remote"),
     )
 
+    /* MHead grew home/theme/menu parameters (the landing's segmented groups vs the chip and
+       "..." elsewhere) and this file stopped compiling, which silently stopped EVERY unit test
+       in the app (found 2026-10-02). No-op handlers: this grades structure and copy, not taps. */
+    @androidx.compose.runtime.Composable
+    private fun Head(market: String, home: Boolean) =
+        MHead(market, home = home, themeChoice = null, onHome = {}, onMarket = {}, onTheme = {}, onMenu = {})
+
     private fun tree(market: String, content: @androidx.compose.runtime.Composable () -> Unit): String {
         compose.setContent {
             CompositionLocalProvider(LocalTokens provides tokensFor(market, dark = false)) {
@@ -57,7 +64,7 @@ class MockupMatchTest {
        untouched — it was asserting a count string the test itself had written. */
     @Test fun `landing carries the head, the hero and the feed`() {
         val t = tree("ca") {
-            MHead("ca") {}
+            Head("ca", home = true)   // the landing: both markets, segmented
             MHero(resume = "", onResume = {}, onRun = {}, policy = null, onPolicy = {},
                   onUpload = {}, uploading = false, hint = null)
             MTitle("Browse by what the feed actually knows")
@@ -67,14 +74,14 @@ class MockupMatchTest {
         }
         listOf(
             "JobScout",
-            // BOTH markets, always. One pill carrying only the current market meant
-            // Kenya did not exist unless you already knew the pill was a switch.
-            "Canada", "Kenya",
+            // The chip and the "⋯" on every screen, the landing included (Mobile.kt
+            // MHead): the market switch lives in the menu, graded by its own test below.
+            "CA", "⋯",
             "Find the work", "made for you.",
-            "Paste your resume",
+            "Attach your résumé, or paste it",
             // The upload control lives in the box. It was dropped in the v3 rebuild
             // and there was then no way to upload a file at all.
-            "Upload",
+            "Attach",
             "Remote", "Hybrid", "On site",
             // The feed, above the sweep: the web's order, asked for on the phone too.
             "Browse by what the feed actually knows", "Finance & banking", "24 open",
@@ -105,7 +112,7 @@ class MockupMatchTest {
     // ── frame 2 ────────────────────────────────────────────────────────────
     @Test fun `browse carries the title, the three filters and the sweep`() {
         val t = tree("ca") {
-            MHead("ca") {}
+            Head("ca", home = false)
             MTitle("Explore today’s sweep")
             MFilter("Remote 184", on = true) {}
             MFilter("Hybrid 28", on = false) {}
@@ -122,7 +129,7 @@ class MockupMatchTest {
     @Test fun `matches carries the bands the mockup paints`() {
         val fits = listOf(92, 85, 78, 67)
         val t = tree("ca") {
-            MHead("ca") {}
+            Head("ca", home = false)
             MTitle("Your matches")
             MCount("46 survived the gate of 309")
             postings.forEachIndexed { i, p -> MJob(p.title, p.company, fit = fits[i]) }
@@ -178,12 +185,22 @@ class MockupMatchTest {
 
     // One setContent per rule, so the two markets are two tests rather than one
     // with two calls — the second call throws "Cannot call setContent twice".
-    @Test fun `the kenya chip says Kenya`() {
-        assertTrue(tree("ke") { MHead("ke") {} }.contains("Kenya"))
+    @Test fun `the kenya chip says KE`() {
+        val t = tree("ke") { Head("ke", home = false) }
+        assertTrue(t, t.contains("KE") && t.contains("🇰🇪"))
     }
 
-    @Test fun `the canada chip says Canada`() {
-        assertTrue(tree("ca") { MHead("ca") {} }.contains("Canada"))
+    @Test fun `the canada chip says CA`() {
+        val t = tree("ca") { Head("ca", home = false) }
+        assertTrue(t, t.contains("CA") && t.contains("🇨🇦"))
+    }
+
+    /* BOTH markets, always. One pill carrying only the current market meant Kenya did not
+       exist unless you already knew the pill was a switch. The chip opens the menu, and the
+       menu names both, whichever market you are in. */
+    @Test fun `the menu offers both markets`() {
+        val t = tree("ca") { MenuSheet("ca", themeChoice = null, saved = 0, onMarket = {}, onTheme = {}, onGo = {}, onClose = {}) }
+        listOf("MARKET", "Canada", "Kenya").forEach { assertTrue("menu is missing \"$it\" in:\n$t", t.contains(it)) }
     }
 }
 
