@@ -1,4 +1,4 @@
-<!-- banner --><a href="https://github.com/kenmwara"><img src="https://raw.githubusercontent.com/kenmwara/kenmwara/main/assets/brand/card-jobscout.png?v=b67f41eb" width="100%" alt="JobScout: Real postings scored live by Claude with the reasoning shown, and native Android and iOS clients on one guarded API. LIVE jobscout.page."></a>
+<!-- banner --><a href="https://github.com/kenmwara"><img src="https://raw.githubusercontent.com/kenmwara/kenmwara/main/assets/brand/card-jobscout.png?v=f82daf18" width="100%" alt="JobScout: Real postings scored live by Claude with the reasoning shown, and native Android and iOS clients on one guarded API. LIVE jobscout.page."></a>
 
 # JobScout — AI job-search copilot
 
