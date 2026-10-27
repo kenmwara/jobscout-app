@@ -656,7 +656,7 @@ dark there is no shadow at all, so `--sheet-edge` carries it.
 
 ### 15.5 The letter has no letterhead
 
-"Ken Kariuki kenmwara@gmail.com +1 778 847 3965" runs as body text at the
+"Ken Kariuki kenmwara@gmail.com +1 604 555 0100" runs as body text at the
 same size and weight as the letter itself. It is a letterhead: name at
 `--text` 500, contact at `--text-2` 11px, then a `--hairline` rule, then the
 body. This is the same inverted-hierarchy error as §12.3.
