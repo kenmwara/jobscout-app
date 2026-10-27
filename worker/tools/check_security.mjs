@@ -12,7 +12,7 @@
  * caller with no credential.
  *
  *   node worker/tools/check_security.mjs [--live]
- *   node worker/tools/check_security.mjs --mutate <injection-blind|honest-flagged|stats-open|silent-429|no-pause|page-drift|no-binding|text-in-event|bare-probe-pages>
+ *   node worker/tools/check_security.mjs --mutate <injection-blind|honest-flagged|stats-open|silent-429|no-pause|page-drift|no-binding|text-in-event|bare-probe-pages|unblocked>
  */
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
@@ -21,7 +21,7 @@ import * as shipping from "../src/security.js";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(HERE, "..", "..");
-const MUTANTS = ["injection-blind", "honest-flagged", "stats-open", "silent-429", "no-pause", "page-drift", "no-binding", "text-in-event", "bare-probe-pages"];
+const MUTANTS = ["injection-blind", "honest-flagged", "stats-open", "silent-429", "no-pause", "page-drift", "no-binding", "text-in-event", "bare-probe-pages", "unblocked"];
 const MUTATE = process.argv.indexOf("--mutate") < 0 ? null : process.argv[process.argv.indexOf("--mutate") + 1];
 if (MUTATE && !MUTANTS.includes(MUTATE)) { console.log(`unknown mutation "${MUTATE}"`); process.exit(2); }
 
@@ -37,6 +37,7 @@ if (MUTATE === "no-pause") worker = worker.replace("const isPaused = await pause
 if (MUTATE === "page-drift") page = page.replace(/(id="security-events"[\s\S]*?deleted after <b>)\d+( days<\/b>)/, "$130$2");
 if (MUTATE === "no-binding") toml = toml.replace(/\[\[services\]\][\s\S]*?service = "ingest-worker"/, "");
 if (MUTATE === "bare-probe-pages") worker = worker.replace('if (request.headers.get("x-control-secret") && await once', "if (await once");
+if (MUTATE === "unblocked") worker = worker.replace("if (await edgeBlocked(env,", "if (false && await edgeBlocked(env,");
 if (MUTATE === "text-in-event") worker = worker.replace("{ endpoint, markers, chars: profile.length, ip_hash: key }", "{ endpoint, markers, text: profile, ip_hash: key }");
 
 let fails = 0;
@@ -101,7 +102,19 @@ const m = li.match(/deleted after <b>(\d+) days<\/b>/);
 is(!!m && Number(m[1]) === shipping.SECURITY_EVENT_KEEP_DAYS,
    `privacy.html states ${m ? m[1] : "no"} days for security events; the code says ${shipping.SECURITY_EVENT_KEEP_DAYS}`);
 
-// 6. the deployed worker refuses the unauthenticated
+// 6. the SOAR edge blocklist (2026-10-27): refused before any route, read from the ops store, fails open
+is(/async fetch\(request, env, ctx\) \{\s*if \(await edgeBlocked\(env, request\.headers\.get\("cf-connecting-ip"\)/.test(worker),
+   "a blocked address is refused before any route runs");
+is(/\[\[d1_databases\]\]\s*binding = "SECDB"\s*database_name = "unified-events"/.test(toml), "wrangler.toml binds the ops store the blocklist lives in");
+{
+  const db = list => ({ prepare: () => ({ all: async () => { if (list === "boom") throw new Error("d1"); return { results: list.map(ip => ({ ip })) }; } }) });
+  is(await shipping.edgeBlocked({ SECDB: db(["198.51.100.7"]) }, "198.51.100.7", 1e12), "a listed address is blocked");
+  is(!(await shipping.edgeBlocked({ SECDB: db(["198.51.100.7"]) }, "203.0.113.1", 1e12)), "an unlisted address passes");
+  is(!(await shipping.edgeBlocked({ SECDB: db("boom") }, "203.0.113.1", 2e12)), "a database failure fails open");
+  is(await shipping.edgeBlocked({ SECDB: db("boom") }, "198.51.100.7", 3e12), "…and keeps the last list it read");
+}
+
+// 7. the deployed worker refuses the unauthenticated
 if (process.argv.includes("--live") && !MUTATE) {
   const API = "https://jobscout-app-api.kenmwara.workers.dev";
   const UA = { "user-agent": "Mozilla/5.0 (check_security; jobscout)" };

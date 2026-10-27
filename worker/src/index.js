@@ -11,7 +11,7 @@ import { extractText, getDocumentProxy } from "unpdf";
 import { unzipSync } from "fflate";
 import { sweepDemoRuns } from "./retention.js";
 import { isBotUA, botShaped } from "./counted.js";
-import { audit, once, hourBucket, injectionMarkers, paused, sameSecret } from "./security.js";
+import { audit, edgeBlocked, once, hourBucket, injectionMarkers, paused, sameSecret } from "./security.js";
 
 const MODEL = "claude-haiku-4-5-20251001";
 const MAX_SCORE_TOKENS = 400;
@@ -421,7 +421,11 @@ export default {
     ctx.waitUntil(env.DB.prepare("DELETE FROM sec_seen WHERE ts_ms < ?").bind(Date.now() - 2 * 86400_000).run());
     ctx.waitUntil(yesterdayShapeEvent(env));
   },
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
+    if (await edgeBlocked(env, request.headers.get("cf-connecting-ip") || "")) {
+      ctx.waitUntil(audit(env, request, "info", `blocked address refused on ${new URL(request.url).pathname}`));
+      return new Response(JSON.stringify({ error: "forbidden" }), { status: 403, headers: { "content-type": "application/json" } });
+    }
     // One decision, at the boundary: every route below returns without
     // thinking about origins, and the answer is stamped on the way out.
     const res = await route(request, env);

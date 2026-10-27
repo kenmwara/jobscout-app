@@ -85,6 +85,19 @@ export async function paused(env) {
   } catch { return false; }
 }
 
+/** The estate-wide edge blocklist (2026-10-27): addresses blocked from the SOAR incident page live in
+ *  sec_blocklist in the ops event store (env.SECDB, read only here). Refused before any route.
+ *  Cached per isolate 60 s; a D1 failure keeps the last list (fails open), so it cannot take the site down. */
+let blk = { at: 0, ips: new Set() };
+export async function edgeBlocked(env, ip, now = Date.now()) {
+  if (!ip || !env.SECDB) return false;
+  if (now - blk.at > 60_000) {
+    try { blk = { at: now, ips: new Set(((await env.SECDB.prepare("SELECT ip FROM sec_blocklist").all()).results ?? []).map(r => String(r.ip))) }; }
+    catch { blk.at = now; }
+  }
+  return blk.ips.has(ip);
+}
+
 /** Constant-time-ish comparison for the shared secrets (length leak only). */
 export function sameSecret(a, b) {
   if (!a || !b || a.length !== b.length) return false;

@@ -23,3 +23,9 @@ crons = ["23 3 * * *"]
 [[services]]
 binding = "INGEST"
 service = "ingest-worker"
+
+# 2026-10-27: the ops event store, read only for sec_blocklist (addresses blocked from the SOAR incident page)
+[[d1_databases]]
+binding = "SECDB"
+database_name = "unified-events"
+database_id = "4ea46de3-5195-4eb6-9135-335c3d110682"
