@@ -106,3 +106,8 @@ problem, requirements, architecture decisions, risks, security, testing, deploym
   run the checks (**`python tools/specs.py --check` and the relevant `tools/check_*` scripts**); commit with a descriptive message.
 - **Commit after every finished task**, before starting the next. Recovery after a crash or lost context: a new session
   runs Start, then reads `git diff` and the plan of record before touching anything.
+- **Ship flow (dev tier, 27 Oct 2026):** commit to `dev` and push → the full gate runs, then the site deploys to the
+  preview **https://dev.jobscout-app.pages.dev** (production untouched) → Ken clicks through it → fast-forward to
+  production: `git checkout main && git merge --ff-only dev && git push`. The API worker deploys only from `main`, so a
+  preview talks to the live API (no dev worker yet). Live-site hotfixes may still go straight to `main`; then
+  `git checkout dev && git merge --ff-only main` so the branches don't drift.

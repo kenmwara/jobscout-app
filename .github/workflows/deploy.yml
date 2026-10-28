@@ -18,7 +18,10 @@ name: deploy site
 
 on:
   push:
-    branches: [main]
+    # dev = the preview tier (spec-driven dev, 27 Oct 2026): the same gate, then the site goes to
+    # https://dev.jobscout-app.pages.dev instead of production. Ken clicks through the preview, then
+    # dev is fast-forwarded into main. The worker never deploys from dev (see the worker job).
+    branches: [main, dev]
     # tools/** and docs/specs.json are IN the filter on purpose: a change to a
     # CHECK, or to the ledger of what the checks must prove, has to re-run the
     # gate. Without them the first fix to a check did not re-run the suite,
@@ -28,7 +31,7 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: pages-deploy
+  group: pages-deploy-${{ github.ref_name }}
   cancel-in-progress: true
 
 jobs:
@@ -132,7 +135,7 @@ jobs:
 
           npx --yes wrangler@4.95.0 pages deploy site \
             --project-name jobscout-app \
-            --branch main \
+            --branch "${{ github.ref_name }}" \
             --commit-dirty=true
 
   # The API worker deploys the same way and with the same token. If the token was minted from
@@ -140,6 +143,9 @@ jobs:
   # failure: the page's counters are fire-and-forget, so an old worker just drops them.
   worker:
     needs: checks
+    # Production only: there is no dev worker yet, so a preview build talks to the live API.
+    # A dev worker with its own D1 is the next step (docs/SPEC-DRIVEN-DEV.md in tbot-platform).
+    if: github.ref_name == 'main'
     runs-on: ubuntu-latest
     permissions:
       contents: read
