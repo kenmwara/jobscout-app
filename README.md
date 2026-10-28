@@ -96,20 +96,8 @@ sight, so they cost it nothing. BrighterMonday and Fuzu expose no feed or API.
 
 ## Architecture
 
-```
-visitor ── Cloudflare Pages (site/)
-              │  /api/feed?market · /api/score · /api/letter · /api/tailor
-         Cloudflare Worker (worker/)
-              ├─ guard 1 · per-IP sliding-window rate limit (D1)
-              ├─ guard 2 · global daily budget breaker (D1) — over cap,
-              │            the demo says so and serves a cached real run
-              ├─ Claude (Haiku-class) — scoring + letters, prompts server-side
-              └─ D1 — feed, telemetry, cached showcase
-              ▲
-   droplet cron (tools/publish_feed.py) — sanitizes the private pipeline's
-   daily sweep into a public-safe feed (titles/companies/locations/reasons;
-   no scraped bodies, no scores, nothing profile-derived)
-```
+
+<img src="images/architecture.png" width="100%" alt="Architecture diagram of JobScout. Web visitors (jobscout.page and the Kenya market on nairobi.jobscout.page) and the native Android (Kotlin, Jetpack Compose) and iOS (Swift, SwiftUI) apps call one Cloudflare Worker. Cloudflare Pages serves the demo UI behind a CORS allowlist. The Worker applies guard 1, a per-IP sliding-window rate limit in D1, and guard 2, a global daily budget breaker that serves a cached real run when the cap is reached, before calling Claude (Haiku-class, prompts server-side); D1 holds the feed, telemetry and the cached showcase. The résumé is read in memory and never stored. Guard 3: a droplet cron job, publish_feed.py, sanitises the private pipeline's daily sweep into a public-safe feed. GitHub runs the sanity suite and the spec ledger before both deploys, dev first. Audit events go to the ops dashboard's event store; D1 is backed up daily with a proven restore.">
 
 Design decisions in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md); the plain-English
 walkthrough for non-readers-of-code in [docs/HOW-IT-WORKS.md](docs/HOW-IT-WORKS.md).
