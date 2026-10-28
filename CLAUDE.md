@@ -89,3 +89,20 @@ A green check is evidence about one assertion, never about the product.
   submission ID. 0.9.8 is #18.
 - After a web push, re-measure on the live hosts, both markets:
   `SITE=https://jobscout.page node tools/check_field_phone.mjs`
+
+## Session protocol (spec-driven development)
+
+Adopted 27 Oct 2026 from Josh Madakor's method (`cyber-range/reference/josh-mcp-server/AgenticCodingGuide.md`;
+plan and gaps in `tbot-platform/docs/SPEC-DRIVEN-DEV.md`). The target docs are `docs/SolutionDesign.md` (what and why:
+problem, requirements, architecture decisions, risks, security, testing, deployment) and `docs/PhasedSolutionPlan.md`
+(phases, progress, open items, decisions log). Until they exist, the plan of record is **docs/SPECS.md and docs/specs.json**.
+
+- **Start** (each session): read the plan of record and `git log -15`; say which phase or task we're on, what the last
+  session finished, and what's next.
+- **Plan** (before each task or task group): break it down (independent vs sequential pieces), say whether parallel agents
+  are worth it, flag only the decisions with real trade-offs that need Ken (and any ambiguity in the plan doc), then
+  review the plan critically. **Don't execute until Ken approves.**
+- **Close** (end of session): summarise what was done; update the plan of record; list open items and decisions for Ken;
+  run the checks (**`python tools/specs.py --check` and the relevant `tools/check_*` scripts**); commit with a descriptive message.
+- **Commit after every finished task**, before starting the next. Recovery after a crash or lost context: a new session
+  runs Start, then reads `git diff` and the plan of record before touching anything.
