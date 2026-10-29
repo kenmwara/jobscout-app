@@ -1,4 +1,4 @@
-<!-- banner --><a href="https://github.com/kenmwara"><img src="https://raw.githubusercontent.com/kenmwara/kenmwara/main/assets/brand/card-jobscout.png?v=f82daf18" width="100%" alt="JobScout: Real postings scored live by Claude with the reasoning shown, and native Android and iOS clients on one guarded API. LIVE jobscout.page."></a>
+<!-- banner --><a href="https://github.com/kenmwara"><img src="https://raw.githubusercontent.com/kenmwara/kenmwara/main/assets/brand/card-jobscout.png?v=34970f8f" width="100%" alt="JobScout: Real postings scored live by Claude with the reasoning shown, and native Android and iOS clients on one guarded API. LIVE jobscout.page."></a>
 
 # JobScout — AI job-search copilot
 
@@ -10,6 +10,8 @@ Built from the private pipeline that has run the author's own job search in
 production since July 2026. The demo is not a mock: the postings are that
 pipeline's actual daily sweep, the eligibility verdicts are its production
 prefilter's own reasons, and every score and cover letter is a live Claude call.
+
+<img src="images/flow.png" width="100%" alt="Flow diagram in five steps. 1: Visitor sends a résumé; Web, Android or iOS; read in memory, never stored. 2: Origin check; A CORS allowlist: only the site's own origins may call the API. 3: Guard 1: rate limit; A per-address sliding window so one visitor can't hog it. 4: Guard 2: daily budget; Over the cap, a cached real run is served instead of the model. 5: Claude scores and drafts; Postings scored with reasoning shown; a grounded cover letter drafted. Guards: Fairness, one visitor can't hog the service; Cost, nobody can run up the bill; Privacy, only a sanitised daily feed is published.">
 
 ## The 90-second tour
 
