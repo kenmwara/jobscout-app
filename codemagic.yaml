@@ -50,14 +50,34 @@ workflows:
     max_build_duration: 30
     environment:
       java: 17
+      # APPETIZE_API_TOKEN (secure) lives in the Codemagic group "appetize", added by Ken.
+      groups:
+        - appetize
+      vars:
+        # The one Appetize app every debug build replaces, so Ken's link never changes.
+        # Empty = the first upload creates it; then paste the printed key here.
+        APPETIZE_PUBLIC_KEY: ""
     scripts:
       - name: Build debug APK
         script: |
           cd android
           bash ../tools/gradle.sh assembleDebug
           mv app/build/outputs/apk/debug/app-debug.apk app/build/outputs/apk/debug/JobScout-debug.apk
+      # Ken, 29 Oct 2026: approve a build from the computer, not by installing every APK.
+      # Appetize runs the APK in a browser tab. A failed upload never fails the build.
+      - name: Upload to Appetize (browser preview)
+        script: |
+          if [ -z "${APPETIZE_API_TOKEN:-}" ]; then echo "no APPETIZE_API_TOKEN: skipped"; exit 0; fi
+          URL=https://api.appetize.io/v1/apps${APPETIZE_PUBLIC_KEY:+/$APPETIZE_PUBLIC_KEY}
+          curl -sS -H "X-API-KEY: $APPETIZE_API_TOKEN" "$URL" \
+            -F "file=@android/app/build/outputs/apk/debug/JobScout-debug.apk" -F "platform=android" \
+            -F "note=${CM_BRANCH} ${CM_COMMIT:0:7}" -o appetize.json || { echo "upload failed"; exit 0; }
+          KEY=$(python3 -c "import json;print(json.load(open('appetize.json')).get('publicKey',''))")
+          [ -n "$KEY" ] || { echo "no publicKey in the reply"; exit 0; }
+          echo "Preview: https://appetize.io/app/$KEY" | tee appetize-link.txt
     artifacts:
       - android/app/build/outputs/apk/debug/*.apk
+      - appetize-link.txt
 
   # Store build: a signed AAB for Google Play plus a signed APK for the GitHub
   # Release, both under the same upload key so the key fingerprint registered
