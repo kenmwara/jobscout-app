@@ -84,7 +84,7 @@ A green check is evidence about one assertion, never about the product.
   decision rather than a build. **Never tag without being asked.**
 - **An app release needs Ken's OK on a phone (29 Oct 2026).** The web has a preview Ken clicks through; the
   app's equivalent is the debug APK Codemagic builds from a `dev` push. Flow: commit to `dev` → Codemagic
-  debug build → send Ken the build page and say exactly what to check → Ken says go on the device → fast-forward
+  debug build → send Ken the Appetize link (https://appetize.io/app/zhejtifsqu4cb7mjyojdxqpwfu, runs in a browser) and say exactly what to check → Ken says go on the device → fast-forward
   `main` → tag. A green build is not approval, and neither is "tag once green".
 - **A green Codemagic build is a claim; Play Console's Submission activity is the record.**
   0.9.7 was reported as live on the strength of a step named *Publishing* — which publishes
