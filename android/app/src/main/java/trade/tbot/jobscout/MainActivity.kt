@@ -891,12 +891,13 @@ private fun LazyListScope.landing(
     feed?.let { f ->
         val by = f.passers.groupingBy { it.sector }.eachCount()
             .toList().sortedByDescending { it.second }
+        val cap = feedCap(by.map { it.second })
         item {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 by.take(8).chunked(2).forEach { pair ->
                     Row(Modifier.fillMaxWidth(), Arrangement.spacedBy(8.dp)) {
                         pair.forEach { (sec, n) ->
-                            MTax(f.labels[sec] ?: sec, n, Modifier.weight(1f)) { onSector(sec) }
+                            MTax(f.labels[sec] ?: sec, "${capped(n, cap)} of ${f.postings.size}", Modifier.weight(1f)) { onSector(sec) }
                         }
                         if (pair.size == 1) Spacer(Modifier.weight(1f))
                     }
@@ -975,8 +976,7 @@ private fun LazyListScope.browse(
            by count with the count inline (a "+" where it sits on the feed's
            cap plateau, law 12), sticky so the filter stays reachable. Every
            sector is still here, still tappable; it scrolls sideways. */
-        val max = by.firstOrNull()?.second ?: 1
-        val cap = if (by.count { it.second == max } >= 3) max else null
+        val cap = feedCap(by.map { it.second })
         stickyHeader {
             LazyRow(
                 Modifier.fillMaxWidth().background(T.canvas).padding(vertical = 8.dp),
@@ -984,7 +984,7 @@ private fun LazyListScope.browse(
             ) {
                 item { MFilter("All", on = sector == null) { sector?.let { onSector(it) } } }
                 items(by) { (sec, n) ->
-                    MFilter((f.labels[sec] ?: sec) + "  " + (if (n == cap) "$n+" else "$n"), on = sector == sec) { onSector(sec) }
+                    MFilter((f.labels[sec] ?: sec) + "  " + capped(n, cap), on = sector == sec) { onSector(sec) }
                 }
             }
         }

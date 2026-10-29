@@ -68,7 +68,7 @@ class MockupMatchTest {
             MHero(resume = "", onResume = {}, onRun = {}, policy = null, onPolicy = {},
                   onUpload = {}, uploading = false, hint = null)
             MTitle("Browse by what the feed actually knows")
-            MTax("Finance & banking", 24) {}
+            MTax("Finance & banking", "24+ of 377") {}
             MTitle("Explore today’s sweep")
             postings.take(2).forEach { MJob(it.title, it.company, policy = it.remote_policy) }
         }
@@ -84,7 +84,7 @@ class MockupMatchTest {
             "Attach",
             "Remote", "Hybrid", "On site",
             // The feed, above the sweep: the web's order, asked for on the phone too.
-            "Browse by what the feed actually knows", "Finance & banking", "24 open",
+            "Browse by what the feed actually knows", "Finance & banking", "24+ of 377",
             "Explore today’s sweep",
             "External Wholesaler Canada Insurance", "Manulife",
         ).forEach { assertTrue("landing is missing \"$it\" in:\n$t", t.contains(it)) }

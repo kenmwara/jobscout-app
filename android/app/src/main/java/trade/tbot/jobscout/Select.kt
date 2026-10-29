@@ -194,3 +194,16 @@ fun nofitNote(fit: Int, p: Posting?, id: String) =
     "Nothing in today's pool clears the bar for this profile. The nearest was $fit out of 100 — " +
     (p?.title?.ifEmpty { null } ?: id) + (p?.company?.takeIf { it.isNotEmpty() }?.let { " · $it" } ?: "") +
     ". A cover letter or a tailored résumé is only offered from $FIT_FLOOR up, so none is offered here. The verdicts below say why."
+
+/* ── Counts on the feed's cap ────────────────────────────────────────────
+ * The feed is a capped slice per sector (24 a sector in Canada, 150 in Kenya), so
+ * when three or more sectors share the top count that count is the cap, not a
+ * total: it reads "24+", never "24 open" (law 12). Same rule as the web's
+ * taxTiles (site/index.html). Ken, 29 Oct 2026: every Canada tile on the phone
+ * said "24 open". */
+fun feedCap(counts: List<Int>): Int? {
+    val max = counts.maxOrNull() ?: return null
+    return if (counts.count { it == max } >= 3) max else null
+}
+
+fun capped(n: Int, cap: Int?) = if (n == cap) "$n+" else "$n"

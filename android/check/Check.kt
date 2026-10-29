@@ -132,6 +132,17 @@ fun main() {
     val onlyOne = feedOf(p("s1", "Senior Platform Engineer", "engineering", "python typescript platform"))
     check("a lone real match still comes through", select(LEAD, onlyOne).postings.size == 1)
 
+    // ── a count on the feed's cap says so (29 Oct: every Canada tile read "24 open") ──
+    println("\ncounts on the cap carry a plus")
+    val ca = listOf(24, 24, 24, 24, 24, 24, 24, 24, 9)
+    check("eight sectors on 24 is the cap", feedCap(ca) == 24, "${feedCap(ca)}")
+    check("a capped count reads 24+", capped(24, feedCap(ca)) == "24+", capped(24, feedCap(ca)))
+    check("a count below the cap is exact", capped(9, feedCap(ca)) == "9")
+    val ke = listOf(150, 150, 150, 150, 150, 131, 109, 71)
+    check("Kenya's 131 is exact, its 150 is the cap", capped(131, feedCap(ke)) == "131" && capped(150, feedCap(ke)) == "150+")
+    check("two sectors tied at the top are not a cap", feedCap(listOf(40, 40, 12)) == null)
+    check("an empty feed has no cap", feedCap(emptyList()) == null)
+
     println(if (failed == 0) "\nALL GREEN" else "\n$failed FAILED")
     if (failed > 0) kotlin.system.exitProcess(1)
 }

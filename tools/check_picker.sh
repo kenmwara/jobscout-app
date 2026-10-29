@@ -34,8 +34,15 @@ KOTLINC="$DIR/bin/kotlinc"
 OUT="$(mktemp -d)"
 trap 'rm -rf "$OUT"' EXIT
 
+# Select.kt reads the score bands from the generated design tokens (v3, bb668cc), and
+# Tokens.kt needs Compose. The Band object itself is plain Kotlin, so copy just that.
+{ echo "package trade.tbot.jobscout.design"
+  awk '/^object Band \{/{on=1} on{print} on&&/^\}/{exit}' "$ROOT/android/app/src/main/java/trade/tbot/jobscout/design/Tokens.kt"
+} > "$OUT/Band.kt"
+
 "$KOTLINC" \
   "$ROOT/android/app/src/main/java/trade/tbot/jobscout/Select.kt" \
+  "$OUT/Band.kt" \
   "$ROOT/android/check/Stubs.kt" \
   "$ROOT/android/check/Check.kt" \
   -include-runtime -d "$OUT/check.jar" 2>&1 | grep -v '^warning: ' || true

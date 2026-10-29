@@ -589,7 +589,7 @@ fun MEvidence(label: String, text: String?, fg: Color, rule: Color, body_: Color
 private val TAX_H = 66.dp
 
 @Composable
-fun MTax(label: String, count: Int, modifier: Modifier = Modifier, onClick: () -> Unit) {
+fun MTax(label: String, count: String, modifier: Modifier = Modifier, onClick: () -> Unit) {
     Column(
         modifier.fillMaxWidth().height(TAX_H).clip(CardShape).background(T.surface)
             .border(1.dp, T.hair, CardShape).clickable(onClick = onClick)
@@ -597,7 +597,7 @@ fun MTax(label: String, count: Int, modifier: Modifier = Modifier, onClick: () -
     ) {
         Text(label, fontSize = Type.t2, fontWeight = FontWeight.Medium, color = T.ink, maxLines = 1)
         Spacer(Modifier.height(3.dp))
-        Text("$count open", fontSize = Type.t1, color = T.text3)
+        Text(count, fontSize = Type.t1, color = T.text3)
     }
 }
 
