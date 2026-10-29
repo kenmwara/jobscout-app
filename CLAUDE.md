@@ -82,6 +82,10 @@ A green check is evidence about one assertion, never about the product.
   paid Codemagic build. **A `v*` tag builds AND PUBLISHES to the Alpha closed track** — since
   2026-09-23 there is no human step between the tag and the testers, so a tag is a release
   decision rather than a build. **Never tag without being asked.**
+- **An app release needs Ken's OK on a phone (29 Oct 2026).** The web has a preview Ken clicks through; the
+  app's equivalent is the debug APK Codemagic builds from a `dev` push. Flow: commit to `dev` → Codemagic
+  debug build → send Ken the build page and say exactly what to check → Ken says go on the device → fast-forward
+  `main` → tag. A green build is not approval, and neither is "tag once green".
 - **A green Codemagic build is a claim; Play Console's Submission activity is the record.**
   0.9.7 was reported as live on the strength of a step named *Publishing* — which publishes
   artefacts to the build page — while Play had never heard of it, and the API had said so:

@@ -27,8 +27,13 @@ workflows:
     triggering:
       events:
         - push
+      # dev too (Ken, 29 Oct 2026): the debug APK from a dev push is the phone's preview,
+      # the way dev.jobscout-app.pages.dev is the web's. Ken checks it on a phone before
+      # anything reaches main or a v* tag.
       branch_patterns:
         - pattern: main
+          include: true
+        - pattern: dev
           include: true
       cancel_previous_builds: true
     when:
