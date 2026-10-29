@@ -51,12 +51,11 @@ workflows:
     environment:
       java: 17
       # APPETIZE_API_TOKEN (secure) lives in the Codemagic group "appetize", added by Ken.
+      # APPETIZE_PUBLIC_KEY (the one Appetize app every build replaces, so the link never
+      # changes) goes under `vars:` once the first upload has printed it. Codemagic refuses
+      # an empty value, so there is no placeholder.
       groups:
         - appetize
-      vars:
-        # The one Appetize app every debug build replaces, so Ken's link never changes.
-        # Empty = the first upload creates it; then paste the printed key here.
-        APPETIZE_PUBLIC_KEY: ""
     scripts:
       - name: Build debug APK
         script: |
