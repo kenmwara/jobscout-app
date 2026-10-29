@@ -632,12 +632,12 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-private val RESUME_MIMES = arrayOf(
-    "application/pdf",
-    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-    "text/plain",
-    "text/markdown",
-)
+/* Any file, not the four résumé types. Ken, 29 Oct 2026: the paperclip's picker listed no
+   Google Drive while WhatsApp's did. Android's picker drops every source whose roots don't
+   declare one of the requested types, so asking for PDF/DOCX/TXT/MD hid Drive; WhatsApp
+   asks for anything. The worker still refuses other types with "PDF, DOCX, TXT or MD only.",
+   which importResume shows as the upload status, so nothing unreadable gets through. */
+private val RESUME_MIMES = arrayOf("*/*")
 
 /** Which of the mockup's three mobile screens is showing. */
 enum class Screen { LANDING, BROWSE, MATCHES }
