@@ -89,12 +89,7 @@ ReliefWeb's jobs API, the UN and NGO sector Nairobi is a hub for, approved and l
 rows are marked at the source and the author's own pipeline rejects them on
 sight, so they cost it nothing. BrighterMonday and Fuzu expose no feed or API.
 
-<p>
-  <a href="https://jobscout.page"><img src="docs/img/web-canada.png" width="49%" alt="jobscout.page — the default market: indigo, and the three setup cards"></a>
-  <a href="https://nairobi.jobscout.page"><img src="docs/img/web-kenya.png" width="49%" alt="nairobi.jobscout.page — the Kenya market: green, a KENYA chip, three Kenyan candidates"></a>
-</p>
-
-*The same page in its two markets: jobscout.page on the left, nairobi.jobscout.page on the right.*
+<a href="https://jobscout.page"><img src="images/js-web.png" width="100%" alt="One page, two markets. jobscout.page: The default market. nairobi.jobscout.page: The Kenya market, with Kenyan sample candidates."></a>
 
 ## Architecture
 
@@ -185,19 +180,7 @@ Apple Developer account). The Play listing is in **closed testing** (Play's
 gate for a new personal account: 12 testers over 14 days before production);
 the app targets Android 16 (API 36), which Play requires of new apps.
 
-<p>
-  <img src="docs/img/native/android-01-setup.png" height="470" alt="JobScout on Android — the setup screen: resume first, then where you can work and remote only, with the samples below">
-  &nbsp;&nbsp;
-  <img src="docs/img/native/android-02-scoring.jpg" height="470" alt="JobScout on Android — live scoring: the bearing rose lit to each fit, the route band, and the reasoning both ways">
-  &nbsp;&nbsp;
-  <img src="docs/img/native/android-03-gates.jpg" height="470" alt="JobScout on Android — the gate verdicts below the results, six shown with the rest one tap away">
-</p>
-
-*Left — the setup screen, captured on an emulator in CI on the current build:
-the resume first, then where you can work and remote only, with the sample
-candidates below. Middle and right are Android on a real phone — live scoring
-with the rose lit to each fit and the reasoning both ways, then the gate
-verdicts sitting below the results as receipts.*
+<img src="images/js-android.png" width="100%" alt="The Android app, from setup to scored jobs. Setup: Résumé first, then where you can work. Captured automatically on each build. Live scoring: Each job's fit, with the reasons for and against. On a real phone. Why jobs were ruled out: The reasons sit below the results. On a real phone.">
 
 Captured by hand rather than in CI. The `android-screens` workflow now targets
 `linux_x2`, which is the only instance that can run it — the emulator needs KVM
