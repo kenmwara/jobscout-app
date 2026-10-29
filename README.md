@@ -11,7 +11,7 @@ production since July 2026. The demo is not a mock: the postings are that
 pipeline's actual daily sweep, the eligibility verdicts are its production
 prefilter's own reasons, and every score and cover letter is a live Claude call.
 
-<img src="images/flow.png" width="100%" alt="Flow diagram in five steps. 1: Visitor sends a résumé; Web, Android or iOS; read in memory, never stored. 2: Origin check; A CORS allowlist: only the site's own origins may call the API. 3: Guard 1: rate limit; A per-address sliding window so one visitor can't hog it. 4: Guard 2: daily budget; Over the cap, a cached real run is served instead of the model. 5: Claude scores and drafts; Postings scored with reasoning shown; a grounded cover letter drafted. Guards: Fairness, one visitor can't hog the service; Cost, nobody can run up the bill; Privacy, only a sanitised daily feed is published.">
+<img src="images/flow.png" width="100%" alt="How it works, in five steps. 1. You send a résumé: From the web, Android or iPhone; it's read, never saved. 2. Only our apps may ask: Requests from other websites are refused. 3. Fair use: Each visitor gets a limited number of tries, so nobody can hog it. 4. A daily spending cap: Past the cap, a saved real example is shown instead of calling the AI. 5. The AI does the work: Real job posts are scored with reasons, and a cover letter is drafted from your résumé. Safeguards: Fairness: One visitor can't hog the service; Cost: Nobody can run up the bill; Privacy: Only a cleaned daily job list is ever published.">
 
 ## The 90-second tour
 
