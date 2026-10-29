@@ -89,7 +89,7 @@ ReliefWeb's jobs API, the UN and NGO sector Nairobi is a hub for, approved and l
 rows are marked at the source and the author's own pipeline rejects them on
 sight, so they cost it nothing. BrighterMonday and Fuzu expose no feed or API.
 
-<a href="https://jobscout.page"><img src="images/js-web.png" width="100%" alt="One page, two markets. jobscout.page: The default market. nairobi.jobscout.page: The Kenya market, with Kenyan sample candidates."></a>
+<a href="https://jobscout.page"><img src="images/js-web.png" width="100%" alt="One page, two markets. jobscout.page: The Canada market, the default. nairobi.jobscout.page: The Kenya market, with its own daily job list."></a>
 
 ## Architecture
 
