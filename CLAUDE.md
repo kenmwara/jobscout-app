@@ -90,7 +90,7 @@ A green check is evidence about one assertion, never about the product.
   0.9.7 was reported as live on the strength of a step named *Publishing* — which publishes
   artefacts to the build page — while Play had never heard of it, and the API had said so:
   empty `publish`, nothing for Google Play. Do not call a release published without a
-  submission ID. 0.9.8 is #18.
+  submission ID. 0.9.8 is #18; 0.10.1 is #21 (29 Oct, the first release through the phone-preview step).
 - After a web push, re-measure on the live hosts, both markets:
   `SITE=https://jobscout.page node tools/check_field_phone.mjs`
 
