@@ -66,14 +66,17 @@ workflows:
       # Appetize runs the APK in a browser tab. A failed upload never fails the build.
       - name: Upload to Appetize (browser preview)
         script: |
-          if [ -z "${APPETIZE_API_TOKEN:-}" ]; then echo "no APPETIZE_API_TOKEN: skipped"; exit 0; fi
+          # appetize-link.txt is always written: the link, or why there is none (never the token).
+          cd "$CM_BUILD_DIR"
+          if [ -z "${APPETIZE_API_TOKEN:-}" ]; then echo "skipped: no APPETIZE_API_TOKEN in this build" | tee appetize-link.txt; exit 0; fi
+          APK=android/app/build/outputs/apk/debug/JobScout-debug.apk
+          [ -f "$APK" ] || { echo "skipped: no APK at $APK" | tee appetize-link.txt; exit 0; }
           URL=https://api.appetize.io/v1/apps${APPETIZE_PUBLIC_KEY:+/$APPETIZE_PUBLIC_KEY}
-          curl -sS -H "X-API-KEY: $APPETIZE_API_TOKEN" "$URL" \
-            -F "file=@android/app/build/outputs/apk/debug/JobScout-debug.apk" -F "platform=android" \
-            -F "note=${CM_BRANCH} ${CM_COMMIT:0:7}" -o appetize.json || { echo "upload failed"; exit 0; }
-          KEY=$(python3 -c "import json;print(json.load(open('appetize.json')).get('publicKey',''))")
-          [ -n "$KEY" ] || { echo "no publicKey in the reply"; exit 0; }
-          echo "Preview: https://appetize.io/app/$KEY" | tee appetize-link.txt
+          CODE=$(curl -sS -o appetize.json -w "%{http_code}" -H "X-API-KEY: $APPETIZE_API_TOKEN" "$URL" \
+            -F "file=@$APK" -F "platform=android" -F "note=${CM_BRANCH} ${CM_COMMIT:0:7}") || CODE="curl failed"
+          KEY=$(python3 -c "import json;print(json.load(open('appetize.json')).get('publicKey',''))" 2>/dev/null || true)
+          if [ -n "$KEY" ]; then echo "Preview: https://appetize.io/app/$KEY" | tee appetize-link.txt
+          else { echo "upload failed: HTTP $CODE"; head -c 600 appetize.json 2>/dev/null; } | tee appetize-link.txt; fi
     artifacts:
       - android/app/build/outputs/apk/debug/*.apk
       - appetize-link.txt
