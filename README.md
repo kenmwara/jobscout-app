@@ -180,7 +180,7 @@ Apple Developer account). The Play listing is in **closed testing** (Play's
 gate for a new personal account: 12 testers over 14 days before production);
 the app targets Android 16 (API 36), which Play requires of new apps.
 
-<img src="images/js-android.png" width="100%" alt="The Android app, from setup to scored jobs. Setup: Résumé first, then where you can work. Captured automatically on each build. Live scoring: Each job's fit, with the reasons for and against. On a real phone. Why jobs were ruled out: The reasons sit below the results. On a real phone.">
+<img src="images/js-android.png" width="100%" alt="The Android app, in both markets. Captured on a real phone, 29 October 2026. Canada: Attach a résumé or paste it, pick how you want to work, or browse today's jobs by field. Kenya: The same app on the Kenya job list, after a résumé was scored: 8 matches.">
 
 Captured by hand rather than in CI. The `android-screens` workflow now targets
 `linux_x2`, which is the only instance that can run it — the emulator needs KVM
