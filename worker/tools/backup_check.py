@@ -43,6 +43,7 @@ import subprocess
 import sys
 import sqlite3
 import tempfile
+import time
 
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
 
@@ -65,15 +66,41 @@ _WRANGLER = (["wrangler"] if shutil.which("wrangler") else ["npx", "-y", "wrangl
 LAST_ERR = [""]
 
 
+# Cloudflare D1 throws these when the account is briefly over its query budget
+# ("code: 7429, too much load on D1 DBs, back off and try again later") or the
+# edge hiccups. They clear on their own, so a backup must NOT fail and page on
+# them. Permanent errors (7403 not-authorized, a bad token, SQL errors) are not
+# in this list and fall through to the real failure path unchanged.
+_TRANSIENT = ("7429", "too much load", "try again later", "rate limit",
+              "temporarily unavailable", "please try again", "timed out",
+              "timeout", "internal error", "code: 500", "code: 502", "code: 503")
+_BACKOFF = (5, 15, 30, 60)   # seconds between wrangler retries on a transient error
+
+
 def wr(*args, timeout=900):
-    """wrangler, from the app directory, with its output captured."""
-    r = subprocess.run([*_WRANGLER, *args], cwd=APP, capture_output=True,
-                       timeout=timeout, shell=(os.name == "nt"))
-    out = r.stdout.decode("utf-8", "replace")
-    err = r.stderr.decode("utf-8", "replace")
-    if r.returncode != 0:
+    """wrangler, from the app directory, with its output captured.
+
+    Retries on transient Cloudflare errors (see _TRANSIENT) with backoff, so a
+    passing backup is not turned into a failed one by a momentary D1 rate limit.
+    """
+    last = (1, "", "")
+    for attempt in range(len(_BACKOFF) + 1):
+        r = subprocess.run([*_WRANGLER, *args], cwd=APP, capture_output=True,
+                           timeout=timeout, shell=(os.name == "nt"))
+        out = r.stdout.decode("utf-8", "replace")
+        err = r.stderr.decode("utf-8", "replace")
+        if r.returncode == 0:
+            return r.returncode, out, err
         LAST_ERR[0] = (err or out).strip()
-    return r.returncode, out, err
+        last = (r.returncode, out, err)
+        blob = (err + " " + out).lower()
+        if attempt == len(_BACKOFF) or not any(p in blob for p in _TRANSIENT):
+            return last
+        wait = _BACKOFF[attempt]
+        say(f"        transient wrangler/D1 error, backing off {wait}s and retrying "
+            f"(attempt {attempt + 1} of {len(_BACKOFF)}) ...")
+        time.sleep(wait)
+    return last
 
 
 def rows(db, sql, local):
